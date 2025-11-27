@@ -213,6 +213,7 @@ body {
   font-size: 3rem;
   font-weight: 700;
   line-height: 0.85;
+
 }
 
 @media (min-width: 640px) {
@@ -578,5 +579,373 @@ body {
   }
   to {
     transform: translateX(-100%);
+  }
+}
+
+/* Order Page Styles */
+
+/* Order Category Tab */
+.order-category-tab {
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  transition: all 0.2s;
+  background-color: white;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.order-category-tab.active {
+  background-color: #F7C400;
+  border-color: #F7C400;
+  color: #000;
+}
+
+.order-category-tab:hover {
+  border-color: #F7C400;
+}
+
+/* Order Product Card */
+.order-product-card {
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+/* Order Flavor Button */
+.order-flavor-btn {
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  background-color: #f3f4f6;
+  color: #374151;
+  transition: all 0.2s;
+}
+
+.order-flavor-btn.active {
+  background-color: #552627;
+  color: white;
+}
+
+.order-flavor-btn:hover {
+  background-color: #e5e7eb;
+}
+
+.order-flavor-btn.active:hover {
+  background-color: #552627;
+}
+
+/* Order Size Button */
+.order-size-btn {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.625rem;
+  background-color: #f3f4f6;
+  color: #374151;
+  transition: all 0.2s;
+}
+
+.order-size-btn.active {
+  background-color: #552627;
+  color: white;
+}
+
+.order-size-btn:hover {
+  background-color: #e5e7eb;
+}
+
+.order-size-btn.active:hover {
+  background-color: #552627;
+}
+
+/* Order Quantity Button */
+.order-qty-btn {
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-size: 1rem;
+  font-weight: 600;
+  background-color: #f3f4f6;
+  color: #374151;
+  transition: all 0.2s;
+}
+
+.order-qty-btn:hover {
+  background-color: #e5e7eb;
+}
+
+.order-qty-btn-plus {
+  background-color: #F7C400;
+  color: #000;
+}
+
+.order-qty-btn-plus:hover {
+  background-color: #EAB308;
+}
+
+/* Order Add Button */
+.order-add-btn {
+  width: 100%;
+  padding: 0.625rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  background-color: white;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s;
+}
+
+.order-add-btn:hover {
+  background-color: #F7C400;
+  border-color: #F7C400;
+  color: #000;
+}
+
+/* Order Cart Card */
+.order-cart-card {
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+/* Order Checkout Button */
+.order-checkout-btn {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  background-color: #FDF5E5;
+  color: #552627;
+  transition: all 0.2s;
+}
+
+.order-checkout-btn:hover {
+  background-color: #F7C400;
+}
+
+/* Order Now and Add to Cart Buttons (for expanded card) */
+.order-now-btn {
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  background-color: #F7C400;
+  color: #552627;
+  transition: all 0.2s;
+}
+
+.order-now-btn:hover {
+  background-color: #552627;
+  color: white;
+}
+
+.order-addtocart-btn {
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  background-color: white;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s;
+}
+
+.order-addtocart-btn:hover {
+  background-color: #f3f4f6;
+}
+
+/* Responsive Spacing Fixes for Smaller Screens */
+@media (max-width: 1024px) {
+  .section-title {
+    font-size: 1.75rem;
+  }
+  
+  .think-box-text {
+    font-size: 40px;
+    line-height: 1;
+  }
+  
+  .wc-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .footer-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* Fix Category Tabs overflow */
+.category-tab {
+  height: auto;
+  padding: 0.75rem 1rem;
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  .category-tab {
+    height: 60px;
+    padding: 0 1.5rem;
+    font-size: 16px;
+  }
+}
+
+/* Fix Flavor Section Grid */
+@media (max-width: 768px) {
+  .flavor-image {
+    height: auto;
+    max-height: 250px;
+    width: 100%;
+    object-fit: cover;
+  }
+}
+
+/* Fix Delivery Button Width */
+@media (max-width: 640px) {
+  .delivery-order-btn {
+    width: 100% !important;
+    max-width: 300px;
+  }
+}
+
+/* Fix Wingclub Cards Grid */
+@media (max-width: 640px) {
+  .wc-card-img {
+    border-radius: 6px;
+  }
+}
+
+/* Newsletter Section Responsive */
+@media (max-width: 768px) {
+  .newsletter-input {
+    padding: 0.875rem 2.5rem 0.875rem 1rem;
+  }
+}
+
+/* Delivery Button */
+.delivery-btn {
+  display: inline-block;
+  padding: 0.875rem 2.5rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-align: center;
+  background-color: #552627;
+  color: white;
+  transition: all 0.2s;
+  width: 100%;
+  max-width: 280px;
+}
+
+.delivery-btn:hover {
+  background-color: #F7C400;
+  color: #552627;
+}
+
+@media (min-width: 768px) {
+  .delivery-btn {
+    padding: 1rem 3rem;
+    font-size: 1rem;
+    max-width: 350px;
+  }
+}
+
+/* Better responsive hero title */
+.hero-title {
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+
+@media (min-width: 480px) {
+  .hero-title {
+    font-size: 2.25rem;
+  }
+}
+
+@media (min-width: 640px) {
+  .hero-title {
+    font-size: 2.75rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .hero-title {
+    font-size: 3.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-title {
+    font-size: 4rem;
+  }
+}
+
+/* Better responsive think box text */
+.think-box-text {
+  font-size: 1.75rem;
+  line-height: 1.1;
+}
+
+@media (min-width: 480px) {
+  .think-box-text {
+    font-size: 2.25rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .think-box-text {
+    font-size: 2.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .think-box-text {
+    font-size: 4rem;
+    line-height: 1;
+  }
+}
+
+@media (min-width: 1280px) {
+  .think-box-text {
+    font-size: 5rem;
+  }
+}
+
+/* Better category tabs */
+.category-tab {
+  height: auto;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+  .category-tab {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .category-tab {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .category-tab {
+    height: 60px;
+    padding: 0 2rem;
   }
 }
