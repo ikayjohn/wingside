@@ -494,3 +494,89 @@ body {
 .flavor-image:hover {
   transform: scale(1.05);
 }
+
+/* Sidebar Link */
+.sidebar-link {
+  display: block;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 2.5;
+  color: #552627;
+  transition: color 0.2s;
+}
+
+.sidebar-link:hover {
+  color: #F7C400;
+}
+
+/* Sidebar Order Button */
+.sidebar-order-btn {
+  display: inline-block;
+  padding: 0.75rem 2.5rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  background-color: #F7C400;
+  color: #552627;
+  transition: all 0.2s;
+}
+
+.sidebar-order-btn:hover {
+  background-color: #552627;
+  color: white;
+}
+
+/* Sidebar Slide Animation */
+.sidebar-overlay {
+  opacity: 0;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.sidebar-overlay.closing {
+  animation: fadeOut 0.3s ease forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.sidebar-panel {
+  transform: translateX(-100%);
+  animation: slideIn 0.3s ease forwards;
+}
+
+.sidebar-panel.closing {
+  animation: slideOut 0.3s ease forwards;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}

@@ -1,11 +1,20 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setMenuOpen(false);
+      setIsClosing(false);
+    }, 300);
+  };
 
   return (
     <>
@@ -15,10 +24,14 @@ export default function Header() {
           <div className="flex justify-between items-center h-24">
             {/* Menu Button */}
             <button 
-              onClick={() => setMenuOpen(!menuOpen)}
+              onClick={() => setMenuOpen(true)}
               className="flex items-center gap-2 text-gray-800 hover:text-gray-600"
             >
-              {menuOpen ? <X size={20} /> : <Menu size={20} />}
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </svg>
               <span className="text-sm font-medium">Menu</span>
             </button>
             
@@ -52,94 +65,116 @@ export default function Header() {
 
       {/* Mobile Menu Overlay */}
       {menuOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={() => setMenuOpen(false)}>
+        <div 
+          className={`fixed inset-0 bg-black/50 z-40 sidebar-overlay ${isClosing ? 'closing' : ''}`} 
+          onClick={handleClose}
+        >
           <div 
-            className="fixed left-0 top-0 bottom-0 w-80 bg-white shadow-xl p-8 overflow-y-auto"
+            className={`fixed left-0 top-0 bottom-0 w-80 bg-white shadow-xl overflow-y-auto sidebar-panel ${isClosing ? 'closing' : ''}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <nav className="space-y-6">
+            {/* Sidebar Header */}
+            <div className="flex justify-between items-start px-10 py-10">
               <div>
-                <h3 className="font-bold text-sm uppercase tracking-wide text-gray-500 mb-4">Menu</h3>
-                <ul className="space-y-3">
-                  <li>
-                    <Link 
-                      href="/menu" 
-                      className="footer-link block text-lg"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      Our Flavors
-                    </Link>
-                  </li>
-                  <li>
-                    <Link 
-                      href="/order" 
-                      className="footer-link block text-lg"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      Order Now
-                    </Link>
-                  </li>
-                  <li>
-                    <Link 
-                      href="/wingclub" 
-                      className="footer-link block text-lg"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      Wingclub
-                    </Link>
-                  </li>
-                  <li>
-                    <Link 
-                      href="/delivery" 
-                      className="footer-link block text-lg"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      Delivery
-                    </Link>
-                  </li>
-                </ul>
+                <img 
+                  src="/logo.png" 
+                  alt="Wingside Logo" 
+                  className="h-24 w-auto"
+                />
               </div>
+              <button 
+                onClick={handleClose}
+                className="text-gray-800 hover:text-gray-600 p-1"
+              >
+                <X size={24} />
+              </button>
+            </div>
 
-              <div className="pt-6 border-t">
-                <h3 className="font-bold text-sm uppercase tracking-wide text-gray-500 mb-4">Company</h3>
-                <ul className="space-y-3">
-                  <li>
-                    <Link 
-                      href="/about" 
-                      className="footer-link block text-lg"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      About Us
-                    </Link>
-                  </li>
-                  <li>
-                    <Link 
-                      href="/contact" 
-                      className="footer-link block text-lg"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      Contact
-                    </Link>
-                  </li>
-                  <li>
-                    <Link 
-                      href="/careers" 
-                      className="footer-link block text-lg"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      Careers
-                    </Link>
-                  </li>
-                </ul>
-              </div>
+            {/* Sidebar Links */}
+            <nav className="px-10 py-4">
+              <ul className="space-y-5">
+                <li>
+                  <Link 
+                    href="/business" 
+                    className="sidebar-link"
+                    onClick={handleClose}
+                  >
+                    Wingside Business
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    href="/wingcafe" 
+                    className="sidebar-link"
+                    onClick={handleClose}
+                  >
+                    Wingcafé
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    href="/gifts" 
+                    className="sidebar-link"
+                    onClick={handleClose}
+                  >
+                    Wingside Gifts
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    href="/connect" 
+                    className="sidebar-link"
+                    onClick={handleClose}
+                  >
+                    Wingside Connect
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    href="/hotspots" 
+                    className="sidebar-link"
+                    onClick={handleClose}
+                  >
+                    Wingside Hotspots
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    href="/kids" 
+                    className="sidebar-link"
+                    onClick={handleClose}
+                  >
+                    Wingside Kids
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    href="/sports" 
+                    className="sidebar-link"
+                    onClick={handleClose}
+                  >
+                    Wingside Sports
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    href="/wingclub" 
+                    className="sidebar-link"
+                    onClick={handleClose}
+                  >
+                    Join the Wingclub
+                  </Link>
+                </li>
+              </ul>
 
-              <div className="pt-6">
+              {/* Order Button */}
+              <div className="mt-8">
                 <Link 
                   href="/order"
-                  className="btn-primary block text-center w-full"
-                  onClick={() => setMenuOpen(false)}
+                  className="sidebar-order-btn"
+                  onClick={handleClose}
                 >
-                  Order Now
+                  Order now
                 </Link>
               </div>
             </nav>
