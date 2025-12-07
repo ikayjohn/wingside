@@ -29,6 +29,11 @@ export default function CheckoutPage() {
     }
   }, []);
 
+  // Reset delivery area when switching between delivery and pickup
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, deliveryArea: '' }));
+  }, [orderType]);
+
   // Delivery fee mapping
   const deliveryFees: { [key: string]: number } = {
     'pickup-autograph': 0,
@@ -250,9 +255,11 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Pickup/Delivery Area */}
+                {/* Delivery Area / Pickup Store */}
                 <div className="mb-8">
-                  <label className="checkout-label">Pickup/delivery area</label>
+                  <label className="checkout-label">
+                    {orderType === 'delivery' ? 'Delivery Area' : 'Pickup Store'}
+                  </label>
                   <div className="relative">
                     <select
                       name="deliveryArea"
@@ -260,46 +267,55 @@ export default function CheckoutPage() {
                       onChange={handleInputChange}
                       className="checkout-select"
                     >
-                      <option value="">Choose delivery options/areas</option>
-                      <option value="pickup-autograph">Pickup – Wingside, Autograph Mall — FREE</option>
-                      <option value="pickup-gra">Pickup – Wingside, 24 King Perekule Street, GRA — FREE</option>
-                      <option value="new-gra">New GRA — ₦1,000</option>
-                      <option value="d-line">D-Line — ₦1,000</option>
-                      <option value="stadium-road">Stadium Road — ₦1,000</option>
-                      <option value="old-gra">Old GRA — ₦1,000</option>
-                      <option value="town">Town — ₦1,000</option>
-                      <option value="borokiri">Borokiri — ₦1,200</option>
-                      <option value="olu-obasanjo">Olu Obasanjo — ₦1,200</option>
-                      <option value="diobu-mile-1">Diobu Mile 1 — ₦1,200</option>
-                      <option value="diobu-mile-2">Diobu Mile 2 — ₦1,300</option>
-                      <option value="diobu-mile-3">Diobu Mile 3 — ₦1,400</option>
-                      <option value="trans-amadi">Trans-Amadi — ₦1,500</option>
-                      <option value="shell-ra">Shell RA — ₦1,500</option>
-                      <option value="elelenwo">Elelenwo (near side) — ₦1,600</option>
-                      <option value="rumuola">Rumuola — ₦1,700</option>
-                      <option value="rumuokwuta">Rumuokwuta — ₦1,800</option>
-                      <option value="rumuigbo">Rumuigbo — ₦1,900</option>
-                      <option value="nkpogu">Nkpogu — ₦1,900</option>
-                      <option value="peter-odili">Peter Odili Road — ₦2,000</option>
-                      <option value="woji">Woji — ₦2,100</option>
-                      <option value="rumuomasi">Rumuomasi — ₦2,200</option>
-                      <option value="rumuodara">Rumuodara — ₦2,300</option>
-                      <option value="oginigba">Oginigba — ₦2,300</option>
-                      <option value="rumuibekwe">Rumuibekwe — ₦2,300</option>
-                      <option value="rumuodomaya">Rumuodomaya — ₦2,400</option>
-                      <option value="rumuokoro">Rumuokoro — ₦2,700</option>
-                      <option value="rumunduru">Rumunduru — ₦2,900</option>
-                      <option value="eliozu">Eliozu — ₦3,000</option>
-                      <option value="eliowhani">Eliowhani — ₦3,100</option>
-                      <option value="mgbuoba">Mgbuoba — ₦3,200</option>
-                      <option value="okuru">Okuru — ₦3,200</option>
-                      <option value="akpajo">Akpajo — ₦3,200</option>
-                      <option value="choba">Choba — ₦3,500</option>
-                      <option value="alakahia">Alakahia — ₦3,700</option>
-                      <option value="aluu">Aluu — ₦4,000</option>
-                      <option value="igwuruta">Igwuruta — ₦4,500</option>
-                      <option value="omagwa">Omagwa — ₦4,500</option>
-                      <option value="airport-road">Airport Road — ₦5,000</option>
+                      <option value="">
+                        {orderType === 'delivery' ? 'Choose delivery area' : 'Choose pickup location'}
+                      </option>
+                      {orderType === 'pickup' ? (
+                        <>
+                          <option value="pickup-autograph">Wingside, Autograph Mall — FREE</option>
+                          <option value="pickup-gra">Wingside, 24 King Perekule Street, GRA — FREE</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="new-gra">New GRA — ₦1,000</option>
+                          <option value="d-line">D-Line — ₦1,000</option>
+                          <option value="stadium-road">Stadium Road — ₦1,000</option>
+                          <option value="old-gra">Old GRA — ₦1,000</option>
+                          <option value="town">Town — ₦1,000</option>
+                          <option value="borokiri">Borokiri — ₦1,200</option>
+                          <option value="olu-obasanjo">Olu Obasanjo — ₦1,200</option>
+                          <option value="diobu-mile-1">Diobu Mile 1 — ₦1,200</option>
+                          <option value="diobu-mile-2">Diobu Mile 2 — ₦1,300</option>
+                          <option value="diobu-mile-3">Diobu Mile 3 — ₦1,400</option>
+                          <option value="trans-amadi">Trans-Amadi — ₦1,500</option>
+                          <option value="shell-ra">Shell RA — ₦1,500</option>
+                          <option value="elelenwo">Elelenwo (near side) — ₦1,600</option>
+                          <option value="rumuola">Rumuola — ₦1,700</option>
+                          <option value="rumuokwuta">Rumuokwuta — ₦1,800</option>
+                          <option value="rumuigbo">Rumuigbo — ₦1,900</option>
+                          <option value="nkpogu">Nkpogu — ₦1,900</option>
+                          <option value="peter-odili">Peter Odili Road — ₦2,000</option>
+                          <option value="woji">Woji — ₦2,100</option>
+                          <option value="rumuomasi">Rumuomasi — ₦2,200</option>
+                          <option value="rumuodara">Rumuodara — ₦2,300</option>
+                          <option value="oginigba">Oginigba — ₦2,300</option>
+                          <option value="rumuibekwe">Rumuibekwe — ₦2,300</option>
+                          <option value="rumuodomaya">Rumuodomaya — ₦2,400</option>
+                          <option value="rumuokoro">Rumuokoro — ₦2,700</option>
+                          <option value="rumunduru">Rumunduru — ₦2,900</option>
+                          <option value="eliozu">Eliozu — ₦3,000</option>
+                          <option value="eliowhani">Eliowhani — ₦3,100</option>
+                          <option value="mgbuoba">Mgbuoba — ₦3,200</option>
+                          <option value="okuru">Okuru — ₦3,200</option>
+                          <option value="akpajo">Akpajo — ₦3,200</option>
+                          <option value="choba">Choba — ₦3,500</option>
+                          <option value="alakahia">Alakahia — ₦3,700</option>
+                          <option value="aluu">Aluu — ₦4,000</option>
+                          <option value="igwuruta">Igwuruta — ₦4,500</option>
+                          <option value="omagwa">Omagwa — ₦4,500</option>
+                          <option value="airport-road">Airport Road — ₦5,000</option>
+                        </>
+                      )}
                     </select>
                     <div className="checkout-select-arrow">
                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
