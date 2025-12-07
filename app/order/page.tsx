@@ -1102,7 +1102,7 @@ export default function OrderPage() {
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {product.riceOptions.map((rice) => {
-                          const current = Array.isArray(selectedRice[product.id]) ? selectedRice[product.id] : (selectedRice[product.id] ? [selectedRice[product.id] as string] : []);
+                          const current: string[] = Array.isArray(selectedRice[product.id]) ? selectedRice[product.id] as string[] : (selectedRice[product.id] ? [selectedRice[product.id] as string] : []);
                           const selectedCount = current.filter((r: string) => r === rice.name).length;
                           const isSelected = selectedCount > 0;
                           const isSingleSelect = !product.riceCount || product.riceCount === 1;
@@ -1153,7 +1153,7 @@ export default function OrderPage() {
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {product.drinkOptions.map((drink) => {
-                          const current = Array.isArray(selectedDrinks[product.id]) ? selectedDrinks[product.id] : (selectedDrinks[product.id] ? [selectedDrinks[product.id] as string] : []);
+                          const current: string[] = Array.isArray(selectedDrinks[product.id]) ? selectedDrinks[product.id] as string[] : (selectedDrinks[product.id] ? [selectedDrinks[product.id] as string] : []);
                           const selectedCount = current.filter((d: string) => d === drink).length;
                           const isSelected = selectedCount > 0;
                           const isSingleSelect = !product.drinkCount || product.drinkCount === 1;
