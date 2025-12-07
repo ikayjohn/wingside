@@ -520,12 +520,7 @@ export default function CheckoutPage() {
                   <div className="mb-4">
                     <div className="flex justify-between">
                       <div className="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
-                          <circle cx="5.5" cy="17.5" r="3.5"></circle>
-                          <circle cx="18.5" cy="17.5" r="3.5"></circle>
-                          <path d="M2 5h8.5l3 7H22l-3 5H9"></path>
-                          <path d="M9 12h3.5"></path>
-                        </svg>
+                        <img src="/delivery.svg" alt="Delivery" width="16" height="16" className="text-gray-400" />
                         <span className="text-sm text-gray-600">Delivery Fee</span>
                       </div>
                       <span className={`text-sm font-medium ${deliveryFee === 0 ? 'text-green-600' : ''}`}>
