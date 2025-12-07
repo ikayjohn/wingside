@@ -1017,6 +1017,108 @@ body {
   }
 }
 
+/* Delivery/Pickup Selector */
+.delivery-pickup-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.delivery-pickup-card {
+  position: relative;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+  background-color: #fff;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.delivery-pickup-card.active {
+  border-color: #F7C400;
+  background-color: #FFFBEB;
+}
+
+.delivery-pickup-card:hover {
+  border-color: #F7C400;
+}
+
+.delivery-pickup-radio {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  border: 2px solid #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delivery-pickup-card.active .delivery-pickup-radio {
+  border-color: #F7C400;
+}
+
+.radio-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background-color: transparent;
+}
+
+.radio-dot.active {
+  background-color: #F7C400;
+}
+
+.delivery-pickup-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.75rem;
+}
+
+.delivery-icon {
+  background-color: #F7C400;
+  color: #fff;
+}
+
+.pickup-icon {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.delivery-pickup-card.active .pickup-icon {
+  background-color: #F7C400;
+  color: #fff;
+}
+
+.delivery-pickup-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.delivery-pickup-desc {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+}
+
+.delivery-pickup-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
 /* Form Elements */
 .checkout-label {
   display: block;
