@@ -123,26 +123,36 @@ export default function WingsideLanding() {
   return (
     <div className="min-h-screen bg-white">
 
-      {/* Hero Section */}
-      <section className="pt-4 sm:pt-8 md:pt-12 pb-8 md:pb-12 px-4 md:px-6">
-        <div className="max-w-7xl mx-auto text-center">
-          <h1 className="hero-title mb-2 md:mb-4">
-            <span style={{ color: '#552627' }}>Where </span>
+      {/* Hero Section with Video Background */}
+      <section className="hero-video-section">
+        {/* Video Background */}
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="hero-video"
+        >
+          <source src="/wingbanner.mp4" type="video/mp4" />
+        </video>
+        
+        {/* Dark Overlay */}
+        <div className="hero-overlay"></div>
+        
+        {/* Hero Content */}
+        <div className="hero-content">
+          <h1 className="hero-video-title">
+            <span className="text-white">Where </span>
             <span className="text-yellow-400">Flavor</span>
-            <span style={{ color: '#552627' }}> takes </span>
+            <span className="text-white"> takes </span>
             <span className="text-yellow-400">Flight</span>
           </h1>
-          <p className="hero-subtitle mb-1 md:mb-2">
-            Your <span className="italic font-semibold">wings</span>, Your <span className="italic font-semibold">way</span>
+          <p className="hero-video-subtitle">
+            Your <span className="italic">wings</span>, Your <span className="italic">way</span>
           </p>
-          <p className="text-xs sm:text-sm md:text-base text-gray-600 font-medium mb-4 md:mb-8">
+          <p className="hero-video-description">
             20 bold flavors, endless cravings. Ready to take off?
           </p>
-          
-          {/* Wings Platter Image */}
-          <div className="relative max-w-3xl mx-auto">
-            <img src="/wings-platter.png" alt="Wings Platter" className="w-full rounded-lg float-animation" />
-          </div>
         </div>
       </section>
 
@@ -285,10 +295,10 @@ export default function WingsideLanding() {
                   </div>
                   <div className="order-1 md:order-2">
                     <img 
-  src={flavor.image} 
-  alt={flavor.name} 
-  className="w-auto h-[200px] md:h-[300px] lg:h-[400px] flavor-image"
-/>
+                      src={flavor.image} 
+                      alt={flavor.name} 
+                      className="w-auto h-[200px] md:h-[300px] lg:h-[400px] flavor-image"
+                    />
                   </div>
                 </div>
               ))

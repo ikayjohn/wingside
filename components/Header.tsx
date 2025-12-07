@@ -21,7 +21,7 @@ export default function Header() {
       {/* Header */}
       <header className="w-full bg-white z-50 pt-2.5">
         <div className="w-full gutter-x">
-          <div className="flex justify-between items-center h-24">
+          <div className="flex justify-between items-center h-34">
             {/* Menu Button */}
             <button 
               onClick={() => setMenuOpen(true)}

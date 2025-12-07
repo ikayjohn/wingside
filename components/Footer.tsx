@@ -14,7 +14,7 @@ export default function Footer() {
                 <img 
                   src="/logo.png" 
                   alt="Wingside Logo" 
-                  className="h-80 md:h-80 w-auto mb-3 md:mb-4 mx-auto md:mx-0"
+                  className="h-40 md:h-60 w-auto mb-3 md:mb-4 mx-auto md:mx-0"
                 />
               </div>
             </div>
