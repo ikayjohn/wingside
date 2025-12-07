@@ -212,10 +212,12 @@ export default function CheckoutPage() {
                     </div>
                     <div className="delivery-pickup-icon delivery-icon">
                       <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="1" y="3" width="15" height="13"></rect>
-                        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
-                        <circle cx="5.5" cy="18.5" r="2.5"></circle>
-                        <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                        <circle cx="5.5" cy="17.5" r="3.5"></circle>
+                        <circle cx="18.5" cy="17.5" r="3.5"></circle>
+                        <path d="M5.5 14h7.5"></path>
+                        <path d="M15 7l2 8h3l-2-8h-3z"></path>
+                        <path d="M8 7l5 7"></path>
+                        <path d="M13 14l5-7"></path>
                       </svg>
                     </div>
                     <h3 className="delivery-pickup-title">Delivery</h3>
@@ -384,7 +386,7 @@ export default function CheckoutPage() {
                   {/* City & Email Row */}
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="checkout-label">Town/City</label>
+                      <label className="checkout-label">City</label>
                       <input
                         type="text"
                         name="city"
@@ -400,7 +402,7 @@ export default function CheckoutPage() {
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        placeholder="your.email@yahoo.com (no Gmail abeg)"
+                        placeholder="your.email@mail.com"
                         className="checkout-input"
                       />
                     </div>
