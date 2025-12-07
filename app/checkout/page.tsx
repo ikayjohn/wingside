@@ -11,7 +11,7 @@ export default function CheckoutPage() {
     phone: '',
     streetAddress: '',
     streetAddress2: '',
-    city: '',
+    city: 'Port Harcourt',
     email: '',
     createAccount: false,
     agreeTerms: false,
@@ -325,10 +325,10 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Billing Details */}
+                {/* Delivery Details */}
                 <div>
-                  <h2 className="text-lg font-bold mb-4">Billing Details</h2>
-                  
+                  <h2 className="text-lg font-bold mb-4">Delivery Details</h2>
+
                   {/* Name Row */}
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
@@ -381,19 +381,6 @@ export default function CheckoutPage() {
                     />
                   </div>
 
-                  {/* Street Address 2 */}
-                  <div className="mb-4">
-                    <label className="checkout-label">Street Address</label>
-                    <input
-                      type="text"
-                      name="streetAddress2"
-                      value={formData.streetAddress2}
-                      onChange={handleInputChange}
-                      placeholder="Apartment, suit, unit, etc. (optional)"
-                      className="checkout-input"
-                    />
-                  </div>
-
                   {/* City & Email Row */}
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
@@ -402,9 +389,8 @@ export default function CheckoutPage() {
                         type="text"
                         name="city"
                         value={formData.city}
-                        onChange={handleInputChange}
-                        placeholder="Apartment, suit, unit, etc. (optional)"
-                        className="checkout-input"
+                        readOnly
+                        className="checkout-input bg-gray-100 cursor-not-allowed"
                       />
                     </div>
                     <div>
@@ -414,7 +400,7 @@ export default function CheckoutPage() {
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        placeholder="Apartment, suit, unit, etc. (optional)"
+                        placeholder="your.email@yahoo.com (no Gmail abeg)"
                         className="checkout-input"
                       />
                     </div>
