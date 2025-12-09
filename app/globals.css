@@ -3624,3 +3624,187 @@ body {
 .fund-wallet-copy-btn svg {
   flex-shrink: 0;
 }
+/* ==================== */
+/* WINGCLUB HOW IT WORKS */
+/* ==================== */
+
+.wingclub-how-it-works {
+  background: linear-gradient(135deg, #6B2C2E 0%, #8B3A3D 100%);
+  padding: 4rem 0;
+}
+
+.wingclub-how-header {
+  text-align: center;
+  margin-bottom: 4rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.wingclub-how-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #F7C400;
+  margin-bottom: 1rem;
+}
+
+.wingclub-how-subtitle {
+  font-size: 1rem;
+  color: white;
+  line-height: 1.6;
+}
+
+.wingclub-how-steps {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+}
+
+@media (min-width: 640px) {
+  .wingclub-how-steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .wingclub-how-steps {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+  }
+}
+
+.wingclub-how-step {
+  text-align: center;
+}
+
+.wingclub-how-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #F7C400;
+}
+
+.wingclub-how-step-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #F7C400;
+  margin-bottom: 0.75rem;
+}
+
+.wingclub-how-step-text {
+  font-size: 0.875rem;
+  color: white;
+  line-height: 1.5;
+}
+
+/* ==================== */
+/* WINGCLUB REWARD TIERS */
+/* ==================== */
+
+.wingclub-reward-tiers {
+  background: #f9fafb;
+  padding: 4rem 0;
+}
+
+.wingclub-tiers-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.wingclub-tiers-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  .wingclub-tiers-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.wingclub-tier-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.wingclub-tier-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.wingclub-tier-card.blue {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+}
+
+.wingclub-tier-card.yellow {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+}
+
+.wingclub-tier-card.purple {
+  background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+}
+
+.wingclub-tier-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.wingclub-tier-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.wingclub-tier-stars {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.wingclub-tier-benefits {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 2rem 0;
+}
+
+.wingclub-tier-benefits li {
+  font-size: 0.875rem;
+  color: #374151;
+  padding: 0.5rem 0;
+  padding-left: 1.5rem;
+  position: relative;
+  line-height: 1.5;
+}
+
+.wingclub-tier-benefits li:before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #1f2937;
+  font-weight: bold;
+}
+
+.wingclub-tier-footer {
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.wingclub-tier-range {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6b7280;
+}

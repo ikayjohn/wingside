@@ -58,8 +58,71 @@ export default function WingclubPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* How it works Section */}
+      <div className="wingclub-how-it-works">
+        <div className="max-w-[1200px] mx-auto px-4 py-16 md:px-6 lg:px-8">
+          <div className="wingclub-how-header">
+            <h2 className="wingclub-how-title">How it works</h2>
+            <p className="wingclub-how-subtitle">
+              It's basically turning your cravings into currency, best part, this currency is valid across our entire store. The Wingside universal currency we call it.
+            </p>
+          </div>
+
+          <div className="wingclub-how-steps">
+            <div className="wingclub-how-step">
+              <div className="wingclub-how-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="9" cy="21" r="1"></circle>
+                  <circle cx="20" cy="21" r="1"></circle>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+              </div>
+              <h3 className="wingclub-how-step-title">Order</h3>
+              <p className="wingclub-how-step-text">Place your wing order online or in-store</p>
+            </div>
+
+            <div className="wingclub-how-step">
+              <div className="wingclub-how-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <text x="12" y="16" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#552627">₦</text>
+                </svg>
+              </div>
+              <h3 className="wingclub-how-step-title">Earn Points</h3>
+              <p className="wingclub-how-step-text">Get 1 point for every ₦100 spent</p>
+            </div>
+
+            <div className="wingclub-how-step">
+              <div className="wingclub-how-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 12 20 22 4 22 4 12"></polyline>
+                  <rect x="2" y="7" width="20" height="5"></rect>
+                  <line x1="12" y1="22" x2="12" y2="7"></line>
+                  <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+                  <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+                </svg>
+              </div>
+              <h3 className="wingclub-how-step-title">Unlock Perks</h3>
+              <p className="wingclub-how-step-text">Redeem points for rewards & discounts</p>
+            </div>
+
+            <div className="wingclub-how-step">
+              <div className="wingclub-how-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <polyline points="1 20 1 14 7 14"></polyline>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+              </div>
+              <h3 className="wingclub-how-step-title">Keep Earning</h3>
+              <p className="wingclub-how-step-text">Keep earning, keep enjoying!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="wingclub-container">
-        
+
         {/* Left Side - Image */}
         <div className="wingclub-image-section">
           <img src="/signup.jpg" alt="Join Wingclub" />
@@ -331,6 +394,84 @@ export default function WingclubPage() {
               </p>
             </>
           )}
+        </div>
+      </div>
+
+      {/* Reward Tiers Section */}
+      <div className="wingclub-reward-tiers">
+        <div className="max-w-[1200px] mx-auto px-4 py-16 md:px-6 lg:px-8">
+          <h2 className="wingclub-tiers-title">Reward Tiers</h2>
+
+          <div className="wingclub-tiers-grid">
+            {/* Wing Member */}
+            <div className="wingclub-tier-card blue">
+              <div className="wingclub-tier-header">
+                <h3 className="wingclub-tier-name">Wing Member</h3>
+                <div className="wingclub-tier-stars">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#F7C400" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                </div>
+              </div>
+              <ul className="wingclub-tier-benefits">
+                <li>10% off first order</li>
+                <li>1 point for every ₦100 spent</li>
+                <li>₦3000 off your 10th purchase</li>
+                <li>Redeem ₦3000 for every 500 points earned</li>
+              </ul>
+              <div className="wingclub-tier-footer">
+                <span className="wingclub-tier-range">(0-1000 points)</span>
+              </div>
+            </div>
+
+            {/* Wing Leader */}
+            <div className="wingclub-tier-card yellow">
+              <div className="wingclub-tier-header">
+                <h3 className="wingclub-tier-name">Wing Leader</h3>
+                <div className="wingclub-tier-stars">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#F7C400" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#F7C400" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                </div>
+              </div>
+              <ul className="wingclub-tier-benefits">
+                <li>All Freshman perks</li>
+                <li>Birthday Wings - because cake is overrated.</li>
+              </ul>
+              <div className="wingclub-tier-footer">
+                <span className="wingclub-tier-range">(1001- 2000 points)</span>
+              </div>
+            </div>
+
+            {/* Wingzard */}
+            <div className="wingclub-tier-card purple">
+              <div className="wingclub-tier-header">
+                <h3 className="wingclub-tier-name">Wingzard</h3>
+                <div className="wingclub-tier-stars">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#F7C400" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#F7C400" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#F7C400" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                </div>
+              </div>
+              <ul className="wingclub-tier-benefits">
+                <li>All Pro perks</li>
+                <li>Free delivery (your wallet says thanks)</li>
+                <li>VIP access to exclusive events</li>
+              </ul>
+              <div className="wingclub-tier-footer">
+                <span className="wingclub-tier-range">(2500+ points)</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
