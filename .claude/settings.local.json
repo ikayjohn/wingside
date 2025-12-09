@@ -10,7 +10,9 @@
       "Bash(taskkill:*)",
       "Bash(if exist \"out\\dev\\lock\" del \"out\\dev\\lock\")",
       "Bash(timeout /t 5 /nobreak)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(mkdir:*)",
+      "Bash(move:*)"
     ],
     "deny": [],
     "ask": []

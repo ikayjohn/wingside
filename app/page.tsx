@@ -377,7 +377,7 @@ export default function WingsideLanding() {
               <p className="text-gray-600 text-sm md:text-lg">Get on our side, Get Rewarded.</p>
             </div>
 
-            <Link href="/wingclub" className="btn-primary inline-block mt-4 md:mt-0 px-6 py-3 text-sm md:text-base">
+            <Link href="/my-account" className="btn-primary inline-block mt-4 md:mt-0 px-6 py-3 text-sm md:text-base">
               Join the wingclub
             </Link>
           </div>

@@ -1,100 +1,151 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 export default function WingclubPage() {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'signup' | 'login'>('signup');
-  const [showPassword, setShowPassword] = useState(false);
-  
-  const [signupData, setSignupData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    countryCode: 'NG',
-    phone: '',
-    password: '',
-    referralId: '',
-    agreePrivacy: false,
-  });
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const slides = [
+    {
+      image: '/wingclubhero1.jpg',
+      title: 'Where cravings pay you back',
+      description: 'Join the coolest club in town. Sign up today, get a FREE gift on your first purchase, and start stacking points every time you take a bite.'
+    },
+    {
+      image: '/wingclubhero2.jpg',
+      title: 'Where cravings pay you back',
+      description: 'Join the coolest club in town. Sign up today, get a FREE gift on your first purchase, and start stacking points every time you take a bite.'
+    }
+  ];
 
-  const [loginData, setLoginData] = useState({
-    email: '',
-    password: '',
-    rememberMe: false,
-  });
-
-  const handleSignupChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    setSignupData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-    }));
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % slides.length);
   };
 
-  const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setLoginData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
-  const handleSignupSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Signup submitted:', signupData);
-    // Redirect to dashboard (authentication will be added later)
-    router.push('/wingclub/dashboard');
-  };
-
-  const handleLoginSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Login submitted:', loginData);
-    // Redirect to dashboard (authentication will be added later)
-    router.push('/wingclub/dashboard');
-  };
+  // Auto-advance slider every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(nextSlide, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Hero Slider Section */}
+      <div className="relative h-[750px] overflow-hidden">
+        {slides.map((slide, index) => (
+          <div
+            key={index}
+            className={`absolute inset-0 transition-opacity duration-700 ${
+              index === currentSlide ? 'opacity-100' : 'opacity-0'
+            }`}
+            style={{
+              backgroundImage: `url(${slide.image})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          >
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-black/20"></div>
+
+            {/* Content */}
+            <div className="relative h-full w-[90%] mx-auto flex flex-col justify-center">
+              {/* Wingclub Badge */}
+              <div className="mb-6">
+                <span className="inline-block bg-white text-gray-900 px-4 py-2 rounded-full text-sm font-medium">
+                  Wingclub
+                </span>
+              </div>
+
+              {/* Heading */}
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 lg:whitespace-nowrap">
+                {slide.title}
+              </h1>
+
+              {/* Description */}
+              <p className="text-white text-lg md:text-xl mb-8 max-w-full md:max-w-3xl lg:max-w-4xl">
+                {slide.description}
+              </p>
+
+              {/* CTA Button */}
+              <div>
+                <Link
+                  href="/my-account"
+                  className="inline-block bg-[#F7C400] text-gray-900 px-8 py-4 rounded-full font-semibold text-lg hover:bg-[#e5b500] transition-colors"
+                >
+                  Get Started
+                </Link>
+              </div>
+            </div>
+
+            {/* Navigation Controls */}
+            <div className="absolute bottom-8 right-8 flex items-center gap-4 text-white">
+              <button
+                onClick={prevSlide}
+                className="hover:text-[#F7C400] transition-colors font-semibold"
+              >
+                PREV
+              </button>
+              <span className="font-semibold">
+                {currentSlide + 1}/{slides.length}
+              </span>
+              <button
+                onClick={nextSlide}
+                className="hover:text-[#F7C400] transition-colors font-semibold"
+              >
+                NEXT
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
       {/* How it works Section */}
-      <div className="wingclub-how-it-works">
-        <div className="max-w-[1200px] mx-auto px-4 py-16 md:px-6 lg:px-8">
-          <div className="wingclub-how-header">
-            <h2 className="wingclub-how-title">How it works</h2>
-            <p className="wingclub-how-subtitle">
+      <div className="bg-[#5D2E2F] py-16 md:py-20">
+        <div className="w-full max-w-[1200px] mx-auto px-4 md:px-6 lg:px-8">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-[#F7C400] mb-4">
+              How it works
+            </h2>
+            <p className="text-white text-base md:text-lg max-w-2xl mx-auto">
               It's basically turning your cravings into currency, best part, this currency is valid across our entire store. The Wingside universal currency we call it.
             </p>
           </div>
 
-          <div className="wingclub-how-steps">
-            <div className="wingclub-how-step">
-              <div className="wingclub-how-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          {/* Steps Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-6">
+            {/* Step 1: Order */}
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 md:w-20 md:h-20 mb-4 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="9" cy="21" r="1"></circle>
                   <circle cx="20" cy="21" r="1"></circle>
                   <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
                 </svg>
               </div>
-              <h3 className="wingclub-how-step-title">Order</h3>
-              <p className="wingclub-how-step-text">Place your wing order online or in-store</p>
+              <h3 className="text-[#F7C400] font-bold text-lg mb-2">Order</h3>
+              <p className="text-white text-sm">Place your wing order online or in-store</p>
             </div>
 
-            <div className="wingclub-how-step">
-              <div className="wingclub-how-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <text x="12" y="16" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#552627">₦</text>
+            {/* Step 2: Earn Points */}
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 md:w-20 md:h-20 mb-4 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="#F7C400" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                 </svg>
               </div>
-              <h3 className="wingclub-how-step-title">Earn Points</h3>
-              <p className="wingclub-how-step-text">Get 1 point for every ₦100 spent</p>
+              <h3 className="text-[#F7C400] font-bold text-lg mb-2">Earn Points</h3>
+              <p className="text-white text-sm">Get 1 point for every ₦100 spent</p>
             </div>
 
-            <div className="wingclub-how-step">
-              <div className="wingclub-how-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            {/* Step 3: Unlock Perks */}
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 md:w-20 md:h-20 mb-4 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="20 12 20 22 4 22 4 12"></polyline>
                   <rect x="2" y="7" width="20" height="5"></rect>
                   <line x1="12" y1="22" x2="12" y2="7"></line>
@@ -102,374 +153,157 @@ export default function WingclubPage() {
                   <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
                 </svg>
               </div>
-              <h3 className="wingclub-how-step-title">Unlock Perks</h3>
-              <p className="wingclub-how-step-text">Redeem points for rewards & discounts</p>
+              <h3 className="text-[#F7C400] font-bold text-lg mb-2">Unlock Perks</h3>
+              <p className="text-white text-sm">Redeem points for rewards & discounts</p>
             </div>
 
-            <div className="wingclub-how-step">
-              <div className="wingclub-how-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            {/* Step 4: Keep Earning */}
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 md:w-20 md:h-20 mb-4 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="23 4 23 10 17 10"></polyline>
                   <polyline points="1 20 1 14 7 14"></polyline>
                   <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
                 </svg>
               </div>
-              <h3 className="wingclub-how-step-title">Keep Earning</h3>
-              <p className="wingclub-how-step-text">Keep earning, keep enjoying!</p>
+              <h3 className="text-[#F7C400] font-bold text-lg mb-2">Keep Earning</h3>
+              <p className="text-white text-sm">Keep earning, keep enjoying!</p>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div className="wingclub-container">
-
-        {/* Left Side - Image */}
-        <div className="wingclub-image-section">
-          <img src="/signup.jpg" alt="Join Wingclub" />
-        </div>
-
-        {/* Right Side - Form */}
-        <div className="wingclub-form-section">
-          {/* Close Button */}
-          <Link href="/" className="wingclub-close-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="15" y1="9" x2="9" y2="15"></line>
-              <line x1="9" y1="9" x2="15" y2="15"></line>
-            </svg>
-          </Link>
-
-          {/* Tabs */}
-          <div className="wingclub-tabs">
-            <button
-              className={`wingclub-tab ${activeTab === 'signup' ? 'active' : ''}`}
-              onClick={() => setActiveTab('signup')}
-            >
-              Sign Up
-            </button>
-            <button
-              className={`wingclub-tab ${activeTab === 'login' ? 'active' : ''}`}
-              onClick={() => setActiveTab('login')}
-            >
-              Login
-            </button>
-          </div>
-
-          {/* Signup Form */}
-          {activeTab === 'signup' && (
-            <>
-              <h2 className="wingclub-title">Join the Wingclub</h2>
-              <p className="wingclub-subtitle">Enter your information and claim your spot at the Wing table.</p>
-
-              <form onSubmit={handleSignupSubmit}>
-                {/* Name Row */}
-                <div className="wingclub-row">
-                  <div className="wingclub-field">
-                    <label className="wingclub-label">First name</label>
-                    <input
-                      type="text"
-                      name="firstName"
-                      value={signupData.firstName}
-                      onChange={handleSignupChange}
-                      placeholder="First name"
-                      className="wingclub-input"
-                    />
-                  </div>
-                  <div className="wingclub-field">
-                    <label className="wingclub-label">Last name</label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={signupData.lastName}
-                      onChange={handleSignupChange}
-                      placeholder="Last name"
-                      className="wingclub-input"
-                    />
-                  </div>
-                </div>
-
-                {/* Email */}
-                <div className="wingclub-field">
-                  <label className="wingclub-label">Email</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={signupData.email}
-                    onChange={handleSignupChange}
-                    placeholder="you@company.com"
-                    className="wingclub-input"
-                  />
-                </div>
-
-                {/* Phone */}
-                <div className="wingclub-field">
-                  <label className="wingclub-label">Phone number</label>
-                  <div className="wingclub-phone-wrapper">
-                    <select
-                      name="countryCode"
-                      value={signupData.countryCode}
-                      onChange={handleSignupChange}
-                      className="wingclub-country-select"
-                    >
-                      <option value="NG">NG</option>
-                      <option value="US">US</option>
-                      <option value="UK">UK</option>
-                      <option value="GH">GH</option>
-                    </select>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={signupData.phone}
-                      onChange={handleSignupChange}
-                      placeholder="+1 (555) 000-0000"
-                      className="wingclub-phone-input"
-                    />
-                  </div>
-                </div>
-
-                {/* Password */}
-                <div className="wingclub-field">
-                  <label className="wingclub-label">Set a password</label>
-                  <div className="wingclub-password-wrapper">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      name="password"
-                      value={signupData.password}
-                      onChange={handleSignupChange}
-                      placeholder="Enter a password"
-                      className="wingclub-input"
-                    />
-                    <button
-                      type="button"
-                      className="wingclub-password-toggle"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        {showPassword ? (
-                          <>
-                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                            <line x1="1" y1="1" x2="23" y2="23"></line>
-                          </>
-                        ) : (
-                          <>
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                          </>
-                        )}
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Referral ID */}
-                <div className="wingclub-field">
-                  <label className="wingclub-label">Referral ID</label>
-                  <input
-                    type="text"
-                    name="referralId"
-                    value={signupData.referralId}
-                    onChange={handleSignupChange}
-                    placeholder="e.g. Wingmanwings"
-                    className="wingclub-input wingclub-input-highlight"
-                  />
-                </div>
-
-                {/* Privacy Checkbox */}
-                <div className="wingclub-checkbox-wrapper">
-                  <input
-                    type="checkbox"
-                    name="agreePrivacy"
-                    id="agreePrivacy"
-                    checked={signupData.agreePrivacy}
-                    onChange={handleSignupChange}
-                    className="wingclub-checkbox"
-                  />
-                  <label htmlFor="agreePrivacy" className="wingclub-checkbox-label">
-                    I agree to the <Link href="/privacy" className="wingclub-link">privacy policy.</Link>
-                  </label>
-                </div>
-
-                {/* Submit Button */}
-                <button type="submit" className="wingclub-submit-btn">
-                  Join the Wingclub
-                </button>
-              </form>
-
-              {/* Login Link */}
-              <p className="wingclub-switch-text">
-                Already have an account?{' '}
-                <button onClick={() => setActiveTab('login')} className="wingclub-switch-link">
-                  Login
-                </button>
-              </p>
-            </>
-          )}
-
-          {/* Login Form */}
-          {activeTab === 'login' && (
-            <>
-              <h2 className="wingclub-title">Welcome Back</h2>
-              <p className="wingclub-subtitle">Enter your credentials to access your account.</p>
-
-              <form onSubmit={handleLoginSubmit}>
-                {/* Email */}
-                <div className="wingclub-field">
-                  <label className="wingclub-label">Email</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={loginData.email}
-                    onChange={handleLoginChange}
-                    placeholder="you@company.com"
-                    className="wingclub-input"
-                  />
-                </div>
-
-                {/* Password */}
-                <div className="wingclub-field">
-                  <label className="wingclub-label">Password</label>
-                  <div className="wingclub-password-wrapper">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      name="password"
-                      value={loginData.password}
-                      onChange={handleLoginChange}
-                      placeholder="Enter your password"
-                      className="wingclub-input"
-                    />
-                    <button
-                      type="button"
-                      className="wingclub-password-toggle"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        {showPassword ? (
-                          <>
-                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                            <line x1="1" y1="1" x2="23" y2="23"></line>
-                          </>
-                        ) : (
-                          <>
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                          </>
-                        )}
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Remember Me & Forgot Password */}
-                <div className="wingclub-login-options">
-                  <div className="wingclub-checkbox-wrapper">
-                    <input
-                      type="checkbox"
-                      name="rememberMe"
-                      id="rememberMe"
-                      checked={loginData.rememberMe}
-                      onChange={handleLoginChange}
-                      className="wingclub-checkbox"
-                    />
-                    <label htmlFor="rememberMe" className="wingclub-checkbox-label">
-                      Remember me
-                    </label>
-                  </div>
-                  <Link href="/forgot-password" className="wingclub-forgot-link">
-                    Forgot password?
-                  </Link>
-                </div>
-
-                {/* Submit Button */}
-                <button type="submit" className="wingclub-submit-btn">
-                  Login
-                </button>
-              </form>
-
-              {/* Signup Link */}
-              <p className="wingclub-switch-text">
-                Don't have an account?{' '}
-                <button onClick={() => setActiveTab('signup')} className="wingclub-switch-link">
-                  Sign Up
-                </button>
-              </p>
-            </>
-          )}
         </div>
       </div>
 
       {/* Reward Tiers Section */}
-      <div className="wingclub-reward-tiers">
-        <div className="max-w-[1200px] mx-auto px-4 py-16 md:px-6 lg:px-8">
-          <h2 className="wingclub-tiers-title">Reward Tiers</h2>
+      <div className="py-16 md:py-20 bg-white">
+        <div className="w-[90%] mx-auto">
+          {/* Section Title */}
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-12 text-gray-300">
+            Reward Tiers
+          </h2>
 
-          <div className="wingclub-tiers-grid">
-            {/* Wing Member */}
-            <div className="wingclub-tier-card blue">
-              <div className="wingclub-tier-header">
-                <h3 className="wingclub-tier-name">Wing Member</h3>
-                <div className="wingclub-tier-stars">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#F7C400" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          {/* Tiers Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+            {/* Wing Member - Blue */}
+            <div className="relative bg-[#D6E9F5] rounded-3xl p-8 overflow-hidden min-h-[400px]">
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-6">
+                  <h3 className="text-2xl font-bold text-black">Wing Member</h3>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                   </svg>
                 </div>
+                <ul className="space-y-2 mb-16 text-base text-black">
+                  <li>• 10% off first order</li>
+                  <li>• 1 point for every ₦100 spent</li>
+                  <li>• ₦3000 off your 10th purchase</li>
+                  <li>• Redeem ₦3000 for every 500 points earned.</li>
+                </ul>
+                <p className="text-base text-black font-semibold">(0-1000 points)</p>
               </div>
-              <ul className="wingclub-tier-benefits">
-                <li>10% off first order</li>
-                <li>1 point for every ₦100 spent</li>
-                <li>₦3000 off your 10th purchase</li>
-                <li>Redeem ₦3000 for every 500 points earned</li>
-              </ul>
-              <div className="wingclub-tier-footer">
-                <span className="wingclub-tier-range">(0-1000 points)</span>
+              {/* Decorative Shape */}
+              <div className="absolute bottom-0 right-0 w-64 h-64 translate-x-12 translate-y-12">
+                <img src="/ellipse.png" alt="" className="w-full h-full object-contain" />
               </div>
             </div>
 
-            {/* Wing Leader */}
-            <div className="wingclub-tier-card yellow">
-              <div className="wingclub-tier-header">
-                <h3 className="wingclub-tier-name">Wing Leader</h3>
-                <div className="wingclub-tier-stars">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#F7C400" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            {/* Wing Leader - Yellow */}
+            <div className="relative bg-[#FFF8E1] rounded-3xl p-8 overflow-hidden min-h-[400px]">
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-6">
+                  <h3 className="text-2xl font-bold text-black">Wing Leader</h3>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                   </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#F7C400" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                   </svg>
                 </div>
+                <ul className="space-y-2 mb-16 text-base text-black">
+                  <li>• All Freshman perks</li>
+                  <li>• Birthday Wings - because cake is overrated.</li>
+                </ul>
+                <p className="text-base text-black font-semibold">(1001- 2000 points)</p>
               </div>
-              <ul className="wingclub-tier-benefits">
-                <li>All Freshman perks</li>
-                <li>Birthday Wings - because cake is overrated.</li>
-              </ul>
-              <div className="wingclub-tier-footer">
-                <span className="wingclub-tier-range">(1001- 2000 points)</span>
+              {/* Decorative Shape */}
+              <div className="absolute bottom-0 right-0 w-64 h-64 translate-x-12 translate-y-12">
+                <img src="/star.png" alt="" className="w-full h-full object-contain" />
               </div>
             </div>
 
-            {/* Wingzard */}
-            <div className="wingclub-tier-card purple">
-              <div className="wingclub-tier-header">
-                <h3 className="wingclub-tier-name">Wingzard</h3>
-                <div className="wingclub-tier-stars">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#F7C400" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            {/* Wingzard - Purple */}
+            <div className="relative bg-[#EDE7F6] rounded-3xl p-8 overflow-hidden min-h-[400px]">
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-6">
+                  <h3 className="text-2xl font-bold text-black">Wingzard</h3>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                   </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#F7C400" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                   </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#F7C400" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                   </svg>
                 </div>
+                <ul className="space-y-2 mb-16 text-base text-black">
+                  <li>• All Pro perks</li>
+                  <li>• Free delivery (your wallet says thanks)</li>
+                  <li>• VIP access to exclusive events</li>
+                </ul>
+                <p className="text-base text-black font-semibold">(2500+ points)</p>
               </div>
-              <ul className="wingclub-tier-benefits">
-                <li>All Pro perks</li>
-                <li>Free delivery (your wallet says thanks)</li>
-                <li>VIP access to exclusive events</li>
-              </ul>
-              <div className="wingclub-tier-footer">
-                <span className="wingclub-tier-range">(2500+ points)</span>
+              {/* Decorative Shape */}
+              <div className="absolute bottom-0 right-0 w-64 h-64 translate-x-12 translate-y-12">
+                <img src="/subtract.png" alt="" className="w-full h-full object-contain" />
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stop Drooling CTA Section */}
+      <div className="py-16 md:py-20 bg-white">
+        <div className="w-[70%] mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative">
+            {/* Left Content */}
+            <div className="relative">
+              <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-8 leading-1.0">
+                Stop drooling,<br />
+                Start earning.
+              </h2>
+              <Link
+                href="/my-account"
+                className="inline-block bg-[#F7C400] text-black px-8 py-4 rounded-full font-semibold text-lg hover:bg-[#e5b500] transition-colors"
+              >
+                Get Started
+              </Link>
+            </div>
+
+            {/* Center Burst Decoration */}
+            <div className="absolute left-1/2 top-1/6 -translate-x-1/2 -translate-y-1/2 w-48 h-48 lg:w-64 lg:h-64 pointer-events-none z-10">
+              <img
+                src="/clubburst1.png"
+                alt=""
+                className="w-full h-full object-contain"
+              />
+            </div>
+
+            {/* Decorative Badge - positioned below left content */}
+            <div className="absolute bottom-0 left-125 w-32 h-32 lg:w-40 lg:h-40 z-20">
+              <img
+                src="/clubbadge1.png"
+                alt="Wingclub Badge"
+                className="w-full h-full object-contain"
+              />
+            </div>
+
+            {/* Right Image */}
+            <div className="relative z-0">
+              <img
+                src="/wingclubearn1.jpg"
+                alt="Join Wingclub"
+                className="w-full h-auto rounded-3xl object-cover"
+              />
             </div>
           </div>
         </div>

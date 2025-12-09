@@ -25,7 +25,7 @@ export default function ForgotPasswordPage() {
         {/* Right Side - Form */}
         <div className="wingclub-form-section">
           {/* Close Button */}
-          <Link href="/wingclub" className="wingclub-close-btn">
+          <Link href="/my-account" className="wingclub-close-btn">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="15" y1="9" x2="9" y2="15"></line>
@@ -64,7 +64,7 @@ export default function ForgotPasswordPage() {
               {/* Back to Login */}
               <p className="wingclub-switch-text">
                 Remember your password?{' '}
-                <Link href="/wingclub" className="wingclub-switch-link">
+                <Link href="/my-account" className="wingclub-switch-link">
                   Back to Login
                 </Link>
               </p>
@@ -84,7 +84,7 @@ export default function ForgotPasswordPage() {
               </p>
 
               {/* Back to Login */}
-              <Link href="/wingclub" className="wingclub-submit-btn" style={{ textAlign: 'center', display: 'block' }}>
+              <Link href="/my-account" className="wingclub-submit-btn" style={{ textAlign: 'center', display: 'block' }}>
                 Back to Login
               </Link>
             </>

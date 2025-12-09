@@ -112,7 +112,7 @@ export default function WingclubDashboard() {
             <span>Convert Points</span>
           </button>
           
-          <Link href="/wingclub/earn-rewards" className="dashboard-action-card">
+          <Link href="/my-account/earn-rewards" className="dashboard-action-card">
             <div className="dashboard-action-icon yellow">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
@@ -120,8 +120,8 @@ export default function WingclubDashboard() {
             </div>
             <span>Earn rewards</span>
           </Link>
-          
-          <Link href="/wingclub/tier-progression" className="dashboard-action-card">
+
+          <Link href="/my-account/tier-progression" className="dashboard-action-card">
             <div className="dashboard-action-icon gray">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="m2 4 3 12h14l3-12-6 7-4-4-4 4-6-7z"></path>
@@ -130,8 +130,8 @@ export default function WingclubDashboard() {
             </div>
             <span>Tier Progression</span>
           </Link>
-          
-          <Link href="/wingclub/wallet-history" className="dashboard-action-card">
+
+          <Link href="/my-account/wallet-history" className="dashboard-action-card">
             <div className="dashboard-action-icon green">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10"></circle>

@@ -13,8 +13,8 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Check if user is on dashboard or any wingclub page (logged in)
-  const isLoggedIn = pathname?.startsWith('/wingclub/') && pathname !== '/wingclub';
+  // Check if user is on dashboard or any my-account page (logged in)
+  const isLoggedIn = pathname?.startsWith('/my-account/') && pathname !== '/my-account';
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -123,7 +123,7 @@ export default function Header() {
                       {/* Menu Items */}
                       <div className="dashboard-dropdown-divider"></div>
 
-                      <Link href="/wingclub/dashboard" className="dashboard-dropdown-item" onClick={() => setDashboardDropdownOpen(false)}>
+                      <Link href="/my-account/dashboard" className="dashboard-dropdown-item" onClick={() => setDashboardDropdownOpen(false)}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <rect x="3" y="3" width="7" height="7"></rect>
                           <rect x="14" y="3" width="7" height="7"></rect>
@@ -133,7 +133,7 @@ export default function Header() {
                         Dashboard
                       </Link>
 
-                      <Link href="/wingclub/orders" className="dashboard-dropdown-item" onClick={() => setDashboardDropdownOpen(false)}>
+                      <Link href="/my-account/orders" className="dashboard-dropdown-item" onClick={() => setDashboardDropdownOpen(false)}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <circle cx="9" cy="21" r="1"></circle>
                           <circle cx="20" cy="21" r="1"></circle>
@@ -142,7 +142,7 @@ export default function Header() {
                         Orders
                       </Link>
 
-                      <Link href="/wingclub/wallet-history" className="dashboard-dropdown-item" onClick={() => setDashboardDropdownOpen(false)}>
+                      <Link href="/my-account/wallet-history" className="dashboard-dropdown-item" onClick={() => setDashboardDropdownOpen(false)}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
                           <line x1="1" y1="10" x2="23" y2="10"></line>
@@ -150,7 +150,7 @@ export default function Header() {
                         Wallet History
                       </Link>
 
-                      <Link href="/wingclub/edit-profile" className="dashboard-dropdown-item" onClick={() => setDashboardDropdownOpen(false)}>
+                      <Link href="/my-account/edit-profile" className="dashboard-dropdown-item" onClick={() => setDashboardDropdownOpen(false)}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                           <circle cx="12" cy="7" r="4"></circle>
@@ -158,7 +158,7 @@ export default function Header() {
                         Edit Profile
                       </Link>
 
-                      <Link href="/wingclub/my-addresses" className="dashboard-dropdown-item" onClick={() => setDashboardDropdownOpen(false)}>
+                      <Link href="/my-account/my-addresses" className="dashboard-dropdown-item" onClick={() => setDashboardDropdownOpen(false)}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
                           <circle cx="12" cy="10" r="3"></circle>
@@ -292,19 +292,28 @@ export default function Header() {
                   </Link>
                 </li>
                 <li>
-                  <Link 
-                    href="/wingclub" 
+                  <Link
+                    href="/wingclub"
                     className="sidebar-link"
                     onClick={handleClose}
                   >
                     Join the Wingclub
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    href="/my-account"
+                    className="sidebar-link"
+                    onClick={handleClose}
+                  >
+                    My Account
+                  </Link>
+                </li>
               </ul>
 
               {/* Order Button */}
               <div className="mt-8">
-                <Link 
+                <Link
                   href="/order"
                   className="sidebar-order-btn"
                   onClick={handleClose}

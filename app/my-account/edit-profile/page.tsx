@@ -45,7 +45,7 @@ export default function EditProfilePage() {
       <div className="max-w-[1200px] mx-auto px-4 py-8 md:px-6 lg:px-8">
 
         {/* Back to Dashboard */}
-        <Link href="/wingclub/dashboard" className="wallet-history-back">
+        <Link href="/my-account/dashboard" className="wallet-history-back">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>
@@ -133,7 +133,7 @@ export default function EditProfilePage() {
                   Save Changes
                 </button>
                 <Link
-                  href="/wingclub/dashboard"
+                  href="/my-account/dashboard"
                   className="flex-1 bg-white border border-gray-300 text-gray-700 py-3 px-6 rounded-full font-medium hover:bg-gray-50 transition-colors text-center"
                 >
                   Cancel

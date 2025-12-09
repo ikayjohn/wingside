@@ -134,7 +134,7 @@ export default function EarnRewardsPage() {
       <div className="max-w-[1200px] mx-auto px-4 py-8 md:px-6 lg:px-8">
 
         {/* Back to Dashboard */}
-        <Link href="/wingclub/dashboard" className="earn-rewards-back">
+        <Link href="/my-account/dashboard" className="earn-rewards-back">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>

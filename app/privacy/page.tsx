@@ -9,12 +9,12 @@ export default function PrivacyPage() {
       <div className="privacy-container gutter-x py-12">
         {/* Header */}
         <div className="max-w-4xl mx-auto">
-          <Link href="/wingclub" className="inline-flex items-center text-[#552627] hover:text-[#F7C400] mb-8 transition-colors">
+          <Link href="/my-account" className="inline-flex items-center text-[#552627] hover:text-[#F7C400] mb-8 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
-            Back to Wingclub
+            Back to My Account
           </Link>
 
           <h1 className="text-4xl md:text-5xl font-bold text-[#552627] mb-4">Privacy Policy</h1>
