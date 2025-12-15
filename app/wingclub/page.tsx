@@ -221,6 +221,8 @@ export default function WingclubPage() {
                 <ul className="space-y-2 mb-16 text-base text-black">
                   <li>• All Freshman perks</li>
                   <li>• Birthday Wings - because cake is overrated.</li>
+                  <li><br></br> </li>
+                  <li> <br></br></li>
                 </ul>
                 <p className="text-base text-black font-semibold">(1001- 2000 points)</p>
               </div>
@@ -249,6 +251,7 @@ export default function WingclubPage() {
                   <li>• All Pro perks</li>
                   <li>• Free delivery (your wallet says thanks)</li>
                   <li>• VIP access to exclusive events</li>
+                  <li> <br></br></li>
                 </ul>
                 <p className="text-base text-black font-semibold">(2500+ points)</p>
               </div>
@@ -263,7 +266,7 @@ export default function WingclubPage() {
 
       {/* Stop Drooling CTA Section */}
       <div className="py-16 md:py-20 bg-white">
-        <div className="w-[70%] mx-auto">
+        <div className="w-[80%] mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative">
             {/* Left Content */}
             <div className="relative">
@@ -280,7 +283,7 @@ export default function WingclubPage() {
             </div>
 
             {/* Center Burst Decoration */}
-            <div className="absolute left-1/2 top-1/6 -translate-x-1/2 -translate-y-1/2 w-48 h-48 lg:w-64 lg:h-64 pointer-events-none z-10">
+            <div className="hidden md:block absolute left-1/2 top-1 -translate-x-1/2 -translate-y-1/2 w-48 h-48 lg:w-64 lg:h-64 pointer-events-none z-10">
               <img
                 src="/clubburst1.png"
                 alt=""
@@ -289,7 +292,7 @@ export default function WingclubPage() {
             </div>
 
             {/* Decorative Badge - positioned below left content */}
-            <div className="absolute bottom-0 left-125 w-32 h-32 lg:w-40 lg:h-40 z-20">
+            <div className="hidden md:block absolute bottom-4 md:left-32 lg:left-[600px] w-24 h-24 md:w-32 md:h-32 lg:w-40 lg:h-40 z-20">
               <img
                 src="/clubbadge1.png"
                 alt="Wingclub Badge"

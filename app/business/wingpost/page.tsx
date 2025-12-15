@@ -1,0 +1,694 @@
+"use client";
+
+import React, { useState } from 'react';
+import Link from 'next/link';
+
+interface Location {
+  id: number;
+  name: string;
+  badge?: string;
+  address: string;
+  city: string;
+  rating: number;
+  reviews: number;
+  thumbnail: string;
+  image: string;
+  phone: string;
+  distance: string;
+  hours: string;
+  mapsUrl: string;
+}
+
+export default function WingpostPage() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [isPartnerFormOpen, setIsPartnerFormOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    companyName: '',
+    contactName: '',
+    email: '',
+    phone: '',
+    address: '',
+    spaceType: '',
+    message: '',
+  });
+
+  const locations: Location[] = [
+    {
+      id: 1,
+      name: 'Microsoft Nigeria',
+      badge: 'Popular',
+      address: 'Walter Carrington Crescent',
+      city: 'Victoria Island, Lagos',
+      rating: 4.9,
+      reviews: 1245,
+      distance: '0.5 km',
+      thumbnail: '/wingpost-location-1.jpg',
+      image: '/wingpost-location-1.jpg',
+      phone: '08090191999',
+      hours: '8:00 AM - 10:00 PM Daily',
+      mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Microsoft+Nigeria+Walter+Carrington+Crescent+Victoria+Island+Lagos',
+    },
+    {
+      id: 2,
+      name: 'J Signature Hotel',
+      address: '146 Omerelu Isiokpo Road',
+      city: 'Port Harcourt',
+      rating: 4.9,
+      reviews: 1245,
+      distance: '0.8 km',
+      thumbnail: '/wingpost-location-2.jpg',
+      image: '/wingpost-location-2.jpg',
+      phone: '08090191999',
+      hours: '8:00 AM - 10:00 PM Daily',
+      mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Js+Nightcare+Hotel+146+Omerelu+Isiokpo+Road+Port+Harcourt',
+    },
+    {
+      id: 3,
+      name: 'Alliance Hotel',
+      address: 'Ikwerre Road',
+      city: 'Port Harcourt',
+      rating: 4.9,
+      reviews: 1245,
+      distance: '1.2 km',
+      thumbnail: '/wingpost-location-3.jpg',
+      image: '/wingpost-location-3.jpg',
+      phone: '08090191999',
+      hours: '8:00 AM - 10:00 PM Daily',
+      mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Alliance+Hotel+Ikwerre+Road+Port+Harcourt',
+    },
+    {
+      id: 4,
+      name: 'Erastus Hotels',
+      address: 'Ikwerre Road',
+      city: 'Port Harcourt',
+      rating: 4.9,
+      reviews: 1245,
+      distance: '1.5 km',
+      thumbnail: '/wingpost-location-4.jpg',
+      image: '/wingpost-location-4.jpg',
+      phone: '08090191999',
+      hours: '8:00 AM - 10:00 PM Daily',
+      mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Erastus+Hotels+Ikwerre+Road+Port+Harcourt',
+    },
+    {
+      id: 5,
+      name: 'Serenity Lodge',
+      address: 'Elechi',
+      city: 'Diobu, Rivers State',
+      rating: 4.9,
+      reviews: 1245,
+      distance: '2.0 km',
+      thumbnail: '/wingpost-location-5.jpg',
+      image: '/wingpost-location-5.jpg',
+      phone: '08090191999',
+      hours: '8:00 AM - 10:00 PM Daily',
+      mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Serenity+Lodge+Elechi+Diobu+Rivers+State',
+    },
+    {
+      id: 6,
+      name: 'Palm Valley Hotel',
+      address: 'Airport Road',
+      city: 'Port Harcourt',
+      rating: 4.9,
+      reviews: 1245,
+      distance: '2.5 km',
+      thumbnail: '/wingpost-location-6.jpg',
+      image: '/wingpost-location-6.jpg',
+      phone: '08090191999',
+      hours: '8:00 AM - 10:00 PM Daily',
+      mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Palm+Valley+Hotel+Airport+Road+Port+Harcourt',
+    },
+  ];
+
+  // Auto-select first location on mount
+  React.useEffect(() => {
+    if (locations.length > 0 && !selectedLocation) {
+      setSelectedLocation(locations[0]);
+    }
+  }, []);
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Create email content
+    const emailBody = `
+New Wingpost Partnership Request
+
+Company Name: ${formData.companyName}
+Contact Person: ${formData.contactName}
+Email: ${formData.email}
+Phone: ${formData.phone}
+Address: ${formData.address}
+Space Type: ${formData.spaceType}
+Message: ${formData.message}
+    `.trim();
+
+    // Create mailto link
+    const mailtoLink = `mailto:reachus@wingside.ng?subject=Wingpost Partnership Request - ${formData.companyName}&body=${encodeURIComponent(emailBody)}&cc=${formData.email}`;
+
+    // Open default email client
+    window.location.href = mailtoLink;
+
+    // Close modal and reset form
+    setTimeout(() => {
+      setIsPartnerFormOpen(false);
+      setFormData({
+        companyName: '',
+        contactName: '',
+        email: '',
+        phone: '',
+        address: '',
+        spaceType: '',
+        message: '',
+      });
+    }, 500);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const filteredLocations = locations.filter(location => {
+    return searchQuery === '' ||
+      location.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      location.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      location.city.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Back Button */}
+      <div className="bg-white px-4 md:px-8 lg:px-16 py-6">
+        <Link href="/business" className="inline-flex items-center gap-2 text-black hover:text-[#F7C400] transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          <span className="font-medium">Back to Wingside Business</span>
+        </Link>
+      </div>
+
+      {/* Hero Section */}
+      <div className="relative h-[700px] md:h-[800px] lg:h-[900px]">
+        <img
+          src="/wingpost-hero-machine.jpg"
+          alt="Wingpost"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/40" />
+
+        {/* Content */}
+        <div className="absolute inset-0 flex flex-col justify-between px-4 md:px-8 lg:px-16 py-10 md:py-22">
+          {/* Badge at Top */}
+          <div>
+            <div className="inline-block bg-[#FDEDB2] px-4 py-2 rounded-full">
+              <span className="text-sm font-medium text-gray-800">Wingpost</span>
+            </div>
+          </div>
+
+          {/* Text Content at Bottom */}
+          <div className="w-full max-w-6xl">
+            {/* Heading */}
+            <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 leading-tight">
+              Wings, sandwiches & more <br />anytime, anywhere.
+            </h1>
+
+            {/* Description */}
+            <p className="text-sm md:text-base lg:text-lg text-white mb-8 max-w-3xl leading-relaxed">
+              With WingPost, get a grab-and-go spot for fresh, ready-to-eat wings, sandwiches, and more. 24/7, right where you need it.
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-wrap gap-4">
+              <a
+                href="#find-location"
+                className="inline-block bg-[#F7C400] text-black px-8 py-4 rounded-full font-semibold text-lg hover:bg-[#e5b500] transition-colors"
+              >
+                Find a post near you
+              </a>
+              <button
+                onClick={() => setIsPartnerFormOpen(true)}
+                className="inline-block border-2 border-white text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-white hover:text-black transition-colors"
+              >
+                Partner with us
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bring Wingpost to Your Space Section */}
+      <div className="bg-[#FDF5E5] py-16 md:py-24 px-4 md:px-8 lg:px-16">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-black mb-3">
+              BRING WINGPOST TO<br />YOUR SPACE
+            </h2>
+            <p className="text-gray-700">
+              Whether it's an office, hospital, school, or residential complex - <br />WingPost brings hassle-free fresh food to your location.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
+            {/* Text Content */}
+            <div className="bg-[#FDEDB2] rounded-l-3xl p-8 md:p-12 flex flex-col justify-center">
+              <h3 className="text-2xl md:text-3xl font-bold text-black mb-4">
+                YOUR FAVOURITE FOOD<br />SPOT, REIMAGINED.
+              </h3>
+              <p className="text-gray-800 mb-4">
+                Wingpost is our fun, smart, and convenient way to enjoy good food on the go — anytime you crave it.
+              </p>
+              <p className="text-gray-800 mb-4">
+                Think of it as your go-to kiosk for fresh meals — placed in offices, hospitals, campuses, and complex buildings.
+              </p>
+              <p className="text-gray-800 mb-4">
+                Each Post is restocked daily with a mix of delicious meals.
+              </p>
+              <p className="text-gray-800">
+                Walk up, choose what you crave, pay instantly, and enjoy. It's food made simple.
+              </p>
+            </div>
+
+            {/* Image */}
+            <div className="rounded-r-3xl overflow-hidden h-full">
+              <img
+                src="/wingpost-machine.jpg"
+                alt="Wingpost Machine"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Lifestyle Image Section */}
+      <div className="w-full">
+        <img
+          src="/wingpost-lifestyle.jpg"
+          alt="Wingpost Experience"
+          className="w-full h-[700px] md:h-[900px] object-cover"
+        />
+      </div>
+
+      {/* Collaboration Section */}
+      <div className="bg-white py-16 md:py-24 px-4 md:px-8 lg:px-16" id="partner">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-center text-black mb-12 max-w-4xl mx-auto leading-tight">
+            We collaborate with organizations and communities to make fresh food easy to access. You provide the space.
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-0 mb-8 h-[540px]">
+            {/* Left Image */}
+            <div className="rounded-l-3xl overflow-hidden h-full">
+              <img
+                src="/wingpost-workspace-1.jpg"
+                alt="Workspace"
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            {/* Center Content */}
+            <div className="bg-[#F7C400] p-8 flex flex-col justify-center items-center text-center h-full">
+              <h3 className="text-2xl md:text-3xl font-bold text-black mb-6">
+                Workspaces to Hospitals and Residential<br />Buildings.
+              </h3>
+              <button
+                onClick={() => setIsPartnerFormOpen(true)}
+                className="bg-[#5D4037] text-white px-8 py-3 rounded-full font-semibold hover:bg-[#4a332b] transition-colors"
+              >
+                Partner with us
+              </button>
+            </div>
+
+            {/* Right Image */}
+            <div className="rounded-r-3xl overflow-hidden h-full">
+              <img
+                src="/wingpost-workspace-2.jpg"
+                alt="Residential"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Location Finder Section */}
+      <div className="bg-gray-50 py-16 md:py-24 px-4 md:px-8 lg:px-16" id="find-location">
+        <div className="max-w-[1400px] mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Column - Location List */}
+            <div>
+              <h2 className="text-3xl font-bold text-black mb-6">Find a WingPost Near You</h2>
+
+              {/* Search Bar */}
+              <div className="relative mb-4">
+                <input
+                  type="text"
+                  placeholder="Search locations..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-6 py-4 rounded-full border border-gray-300 focus:outline-none focus:border-[#F7C400] text-gray-700"
+                />
+                <svg
+                  className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.35-4.35"></path>
+                </svg>
+              </div>
+
+              <p className="text-gray-600 text-sm mb-6">Showing {filteredLocations.length} near you</p>
+
+              {/* Location Cards */}
+              <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2">
+                {filteredLocations.map((location) => (
+                  <div
+                    key={location.id}
+                    onClick={() => setSelectedLocation(location)}
+                    className={`bg-white rounded-2xl p-6 cursor-pointer transition-all ${
+                      selectedLocation?.id === location.id
+                        ? 'border-2 border-[#F7C400] shadow-md'
+                        : 'border border-gray-200 hover:border-[#F7C400] hover:shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-bold text-lg text-black">{location.name}</h3>
+                          {location.badge && (
+                            <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded">
+                              {location.badge}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 mb-1">{location.address}</p>
+                        <p className="text-sm text-gray-600 mb-3">{location.city}</p>
+                        <div className="flex items-center gap-4 text-sm">
+                          <div className="flex items-center gap-1">
+                            <svg className="w-4 h-4 fill-[#F7C400]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                            <span className="font-semibold text-black">{location.rating}</span>
+                            <span className="text-gray-500">({location.reviews})</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-gray-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                              <path d="M2 12h20"></path>
+                            </svg>
+                            <span>{location.distance}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <img
+                        src={location.thumbnail}
+                        alt={location.name}
+                        className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right Column - Location Details */}
+            {selectedLocation && (
+              <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 sticky top-8 h-fit">
+                {/* Location Image */}
+                <div className="relative aspect-[4/3]">
+                  <img
+                    src={selectedLocation.image}
+                    alt={selectedLocation.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* Details Content */}
+                <div className="p-6">
+                  <h2 className="text-2xl font-bold text-black mb-2">{selectedLocation.name}</h2>
+                  <div className="flex items-center gap-1 mb-4">
+                    <svg className="w-5 h-5 fill-[#F7C400]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    <span className="font-semibold text-black">{selectedLocation.rating}</span>
+                    <span className="text-gray-500">({selectedLocation.reviews} reviews)</span>
+                  </div>
+
+                  {/* Address */}
+                  <div className="flex items-start gap-3 mb-3">
+                    <svg className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                      <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    <div>
+                      <p className="text-gray-700">{selectedLocation.address}</p>
+                      <p className="text-gray-700">{selectedLocation.city}</p>
+                    </div>
+                  </div>
+
+                  {/* Phone */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <svg className="w-5 h-5 text-gray-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                    </svg>
+                    <p className="text-gray-700">{selectedLocation.phone}</p>
+                  </div>
+
+                  {/* Distance */}
+                  <div className="flex items-center gap-3 mb-6">
+                    <svg className="w-5 h-5 text-gray-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 11l19-9-9 19-2-8-8-2z"></path>
+                    </svg>
+                    <p className="text-gray-700">{selectedLocation.distance} away</p>
+                  </div>
+
+                  {/* Hours */}
+                  <div className="mb-6">
+                    <h3 className="font-semibold text-black mb-3 flex items-center gap-2">
+                      <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                      </svg>
+                      Hours
+                    </h3>
+                    <p className="text-gray-900 font-medium">{selectedLocation.hours}</p>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="space-y-3">
+                    <a
+                      href={selectedLocation.mapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full bg-[#5D4037] text-white font-semibold py-4 rounded-full hover:bg-[#4a332b] transition-colors flex items-center justify-center gap-2"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 11l19-9-9 19-2-8-8-2z"></path>
+                      </svg>
+                      Get Direction
+                    </a>
+                    <a
+                      href={`tel:${selectedLocation.phone}`}
+                      className="w-full border-2 border-gray-300 text-gray-700 font-semibold py-4 rounded-full hover:border-[#F7C400] hover:text-black transition-colors flex items-center justify-center gap-2"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                      </svg>
+                      Call Location
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Partner Form Modal */}
+      {isPartnerFormOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setIsPartnerFormOpen(false)}>
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 md:p-8">
+              {/* Header */}
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h2 className="text-2xl md:text-3xl font-bold text-black mb-2">Partner with Wingpost</h2>
+                  <p className="text-gray-600">Fill out the form below and we'll get back to you shortly.</p>
+                </div>
+                <button
+                  onClick={() => setIsPartnerFormOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleFormSubmit} className="space-y-4">
+                {/* Company Name */}
+                <div>
+                  <label htmlFor="companyName" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Company/Organization Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="companyName"
+                    name="companyName"
+                    required
+                    value={formData.companyName}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#F7C400] transition-colors"
+                    placeholder="Enter company name"
+                  />
+                </div>
+
+                {/* Contact Name & Email */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="contactName" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Contact Person *
+                    </label>
+                    <input
+                      type="text"
+                      id="contactName"
+                      name="contactName"
+                      required
+                      value={formData.contactName}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#F7C400] transition-colors"
+                      placeholder="Your name"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      required
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#F7C400] transition-colors"
+                      placeholder="your@email.com"
+                    />
+                  </div>
+                </div>
+
+                {/* Phone & Space Type */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Phone Number *
+                    </label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      required
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#F7C400] transition-colors"
+                      placeholder="08012345678"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="spaceType" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Space Type *
+                    </label>
+                    <select
+                      id="spaceType"
+                      name="spaceType"
+                      required
+                      value={formData.spaceType}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#F7C400] transition-colors"
+                    >
+                      <option value="">Select type</option>
+                      <option value="Office/Workspace">Office/Workspace</option>
+                      <option value="Hospital/Healthcare">Hospital/Healthcare</option>
+                      <option value="School/University">School/University</option>
+                      <option value="Residential Complex">Residential Complex</option>
+                      <option value="Hotel">Hotel</option>
+                      <option value="Shopping Mall">Shopping Mall</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Address */}
+                <div>
+                  <label htmlFor="address" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Location Address *
+                  </label>
+                  <input
+                    type="text"
+                    id="address"
+                    name="address"
+                    required
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#F7C400] transition-colors"
+                    placeholder="Enter your location address"
+                  />
+                </div>
+
+                {/* Message */}
+                <div>
+                  <label htmlFor="message" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Additional Information (Optional)
+                  </label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    rows={3}
+                    value={formData.message}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#F7C400] transition-colors resize-none"
+                    placeholder="Tell us more about your space..."
+                  />
+                </div>
+
+                {/* Submit Button */}
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsPartnerFormOpen(false)}
+                    className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-full hover:border-gray-400 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-6 py-3 bg-[#F7C400] text-black font-semibold rounded-full hover:bg-[#e5b500] transition-colors"
+                  >
+                    Submit Request
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

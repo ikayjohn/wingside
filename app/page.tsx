@@ -315,9 +315,7 @@ export default function WingsideLanding() {
       <section className="py-8 md:py-16 gutter-x bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-6 md:mb-10">
-            <p className="text-base md:text-xl font-semibold uppercase" style={{ color: '#552627' }}>
-              CORE BUSINESS
-            </p>
+            <hr></hr>
           </div>
           
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
@@ -377,7 +375,7 @@ export default function WingsideLanding() {
               <p className="text-gray-600 text-sm md:text-lg">Get on our side, Get Rewarded.</p>
             </div>
 
-            <Link href="/my-account" className="btn-primary inline-block mt-4 md:mt-0 px-6 py-3 text-sm md:text-base">
+            <Link href="/wingclub" className="btn-primary inline-block mt-4 md:mt-0 px-6 py-3 text-sm md:text-base">
               Join the wingclub
             </Link>
           </div>

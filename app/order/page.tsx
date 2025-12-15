@@ -15,12 +15,14 @@ interface CartItem {
   rice?: string | string[];
   drink?: string | string[];
   milkshake?: string;
+  cake?: string;
 }
 
 interface Product {
   id: number;
   name: string;
   category: string;
+  subcategory?: string;
   image: string;
   flavors: string[];
   sizes: { name: string; price: number }[];
@@ -33,10 +35,27 @@ interface Product {
   drinkOptions?: string[];
   drinkCount?: number;
   milkshakeOptions?: string[];
+  cakeOptions?: string[];
+  description?: string;
 }
+
+const wingCafeSubcategories = [
+  'Coffee Classics',
+  'Everyday Sips',
+  'Toasted & Spiced Lattes',
+  'Gourmet & Dessert-Inspired Lattes',
+  'Matcha Lattes',
+  'Chai Lattes',
+  'Hot Smelts',
+  'Teas',
+  'Wingfreshers',
+  'Milkshakes',
+  'Signature Pairings'
+];
 
 export default function OrderPage() {
   const [activeCategory, setActiveCategory] = useState('Wings');
+  const [activeSubcategory, setActiveSubcategory] = useState<string>('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedFlavors, setSelectedFlavors] = useState<{ [key: number]: string[] }>({});
   const [selectedSizes, setSelectedSizes] = useState<{ [key: number]: string }>({});
@@ -44,8 +63,9 @@ export default function OrderPage() {
   const [selectedRice, setSelectedRice] = useState<{ [key: number]: string | string[] }>({});
   const [selectedDrinks, setSelectedDrinks] = useState<{ [key: number]: string | string[] }>({});
   const [selectedMilkshakes, setSelectedMilkshakes] = useState<{ [key: number]: string }>({});
+  const [selectedCakes, setSelectedCakes] = useState<{ [key: number]: string }>({});
 
-  const categories = ['Wings', 'Sides', 'Sandwiches', 'Wraps', 'Salads', 'Milkshakes', 'Wing Cafe', 'Pastries', 'Wingside Special', 'Drinks', 'Meal Deals', 'Party Packs'];
+  const categories = ['Wings', 'Sides', 'Sandwiches', 'Wraps', 'Salads', 'Wing Cafe', 'Pastries', 'Wingside Special', 'Drinks', 'Meal Deals', 'Party Packs', 'Kids'];
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -194,13 +214,15 @@ export default function OrderPage() {
     },
     {
       id: 5,
-      name: 'Latte',
+      name: 'Café Latte',
       category: 'Wing Cafe',
+      subcategory: 'Coffee Classics',
       image: '/order-latte.jpg',
-      flavors: ['Regular'],
+      flavors: ['Hot', 'Iced'],
       sizes: [
         { name: 'Regular', price: 4500 },
       ],
+      flavorLabel: 'Temperature',
     },
     {
       id: 6,
@@ -295,7 +317,8 @@ export default function OrderPage() {
     {
       id: 20,
       name: 'Cookie Shake',
-      category: 'Milkshakes',
+      category: 'Wing Cafe',
+      subcategory: 'Milkshakes',
       image: '/order-cookie-shake.jpg',
       flavors: ['Regular'],
       sizes: [
@@ -305,7 +328,8 @@ export default function OrderPage() {
     {
       id: 21,
       name: 'Malted Shake',
-      category: 'Milkshakes',
+      category: 'Wing Cafe',
+      subcategory: 'Milkshakes',
       image: '/order-malted-shake.jpg',
       flavors: ['Regular'],
       sizes: [
@@ -315,7 +339,8 @@ export default function OrderPage() {
     {
       id: 22,
       name: 'Strawberry Shake',
-      category: 'Milkshakes',
+      category: 'Wing Cafe',
+      subcategory: 'Milkshakes',
       image: '/order-strawberry-shake.jpg',
       flavors: ['Regular'],
       sizes: [
@@ -325,7 +350,8 @@ export default function OrderPage() {
     {
       id: 23,
       name: 'Vanilla Shake',
-      category: 'Milkshakes',
+      category: 'Wing Cafe',
+      subcategory: 'Milkshakes',
       image: '/order-vanilla-shake.jpg',
       flavors: ['Regular'],
       sizes: [
@@ -334,28 +360,33 @@ export default function OrderPage() {
     },
     {
       id: 38,
-      name: 'Espresso (x2)',
+      name: 'Espresso',
       category: 'Wing Cafe',
+      subcategory: 'Coffee Classics',
       image: '/order-espresso-x2.jpg',
-      flavors: ['Regular'],
+      flavors: ['Hot', 'Iced'],
       sizes: [
         { name: 'Regular', price: 3500 },
       ],
+      flavorLabel: 'Temperature',
     },
     {
       id: 24,
       name: 'Cappuccino',
       category: 'Wing Cafe',
+      subcategory: 'Coffee Classics',
       image: '/order-cappuccino.jpg',
-      flavors: ['Regular'],
+      flavors: ['Hot', 'Iced'],
       sizes: [
         { name: 'Regular', price: 4500 },
       ],
+      flavorLabel: 'Temperature',
     },
     {
       id: 25,
       name: 'Chai Latte',
       category: 'Wing Cafe',
+      subcategory: 'Chai Lattes',
       image: '/order-chai-latte.jpg',
       flavors: ['Regular'],
       sizes: [
@@ -366,20 +397,430 @@ export default function OrderPage() {
       id: 26,
       name: 'Hot Chocolate',
       category: 'Wing Cafe',
+      subcategory: 'Hot Smelts',
       image: '/order-hot-chocolate.jpg',
       flavors: ['Regular'],
       sizes: [
         { name: 'Regular', price: 4500 },
       ],
     },
+    // Coffee Classics - Additional
     {
-      id: 27,
-      name: 'Iced Coffee',
+      id: 49,
+      name: 'Americano',
       category: 'Wing Cafe',
-      image: '/order-iced-coffee.jpg',
-      flavors: ['Regular'],
+      subcategory: 'Coffee Classics',
+      image: '/order-americano.jpg',
+      flavors: ['Hot', 'Iced'],
       sizes: [
         { name: 'Regular', price: 4500 },
+      ],
+      flavorLabel: 'Temperature',
+    },
+    {
+      id: 50,
+      name: 'Flat White',
+      category: 'Wing Cafe',
+      subcategory: 'Coffee Classics',
+      image: '/order-flat-white.jpg',
+      flavors: ['Hot', 'Iced'],
+      sizes: [
+        { name: 'Regular', price: 4500 },
+      ],
+      flavorLabel: 'Temperature',
+    },
+    {
+      id: 51,
+      name: 'Mocha',
+      category: 'Wing Cafe',
+      subcategory: 'Coffee Classics',
+      image: '/order-mocha.jpg',
+      flavors: ['Hot', 'Iced'],
+      sizes: [
+        { name: 'Regular', price: 4500 },
+      ],
+      flavorLabel: 'Temperature',
+    },
+    {
+      id: 52,
+      name: 'Affogato Pop',
+      category: 'Wing Cafe',
+      subcategory: 'Coffee Classics',
+      image: '/order-affogato-pop.jpg',
+      flavors: ['Hot', 'Iced'],
+      sizes: [
+        { name: 'Regular', price: 4500 },
+      ],
+      flavorLabel: 'Temperature',
+    },
+    // Everyday Sips
+    {
+      id: 53,
+      name: 'Vanilla Latte',
+      category: 'Wing Cafe',
+      subcategory: 'Everyday Sips',
+      image: '/order-vanilla-latte.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    {
+      id: 54,
+      name: 'Caramel Latte',
+      category: 'Wing Cafe',
+      subcategory: 'Everyday Sips',
+      image: '/order-caramel-latte.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    {
+      id: 55,
+      name: 'Salted Caramel Latte',
+      category: 'Wing Cafe',
+      subcategory: 'Everyday Sips',
+      image: '/order-salted-caramel-latte.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    {
+      id: 56,
+      name: 'Hazelnut Latte',
+      category: 'Wing Cafe',
+      subcategory: 'Everyday Sips',
+      image: '/order-hazelnut-latte.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    {
+      id: 57,
+      name: 'Maple Latte',
+      category: 'Wing Cafe',
+      subcategory: 'Everyday Sips',
+      image: '/order-maple-latte.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    // Toasted & Spiced Lattes
+    {
+      id: 58,
+      name: 'Gingerbread Latte',
+      category: 'Wing Cafe',
+      subcategory: 'Toasted & Spiced Lattes',
+      image: '/order-gingerbread-latte.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    {
+      id: 59,
+      name: 'Cinnamon Roll Latte',
+      category: 'Wing Cafe',
+      subcategory: 'Toasted & Spiced Lattes',
+      image: '/order-cinnamon-roll-latte.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    {
+      id: 60,
+      name: 'Pumpkin Pie Latte',
+      category: 'Wing Cafe',
+      subcategory: 'Toasted & Spiced Lattes',
+      image: '/order-pumpkin-pie-latte.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+      badge: 'Seasonal',
+    },
+    // Gourmet & Dessert-Inspired Lattes
+    {
+      id: 61,
+      name: 'Tiramisu Latte',
+      category: 'Wing Cafe',
+      subcategory: 'Gourmet & Dessert-Inspired Lattes',
+      image: '/order-tiramisu-latte.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    {
+      id: 62,
+      name: 'Popcorn Latte',
+      category: 'Wing Cafe',
+      subcategory: 'Gourmet & Dessert-Inspired Lattes',
+      image: '/order-popcorn-latte.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    {
+      id: 63,
+      name: 'Irish Cream Latte',
+      category: 'Wing Cafe',
+      subcategory: 'Gourmet & Dessert-Inspired Lattes',
+      image: '/order-irish-cream-latte.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    {
+      id: 64,
+      name: 'Pistachio Latte',
+      category: 'Wing Cafe',
+      subcategory: 'Gourmet & Dessert-Inspired Lattes',
+      image: '/order-pistachio-latte.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    {
+      id: 65,
+      name: 'Caramelized Peanut Latte',
+      category: 'Wing Cafe',
+      subcategory: 'Gourmet & Dessert-Inspired Lattes',
+      image: '/order-caramelized-peanut-latte.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+      badge: 'Seasonal',
+    },
+    {
+      id: 66,
+      name: 'Terry\'s Orange Chocolate Latte',
+      category: 'Wing Cafe',
+      subcategory: 'Gourmet & Dessert-Inspired Lattes',
+      image: '/order-terrys-orange-chocolate-latte.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+      badge: 'Seasonal',
+    },
+    // Matcha Lattes
+    {
+      id: 67,
+      name: 'Classic Green Matcha',
+      category: 'Wing Cafe',
+      subcategory: 'Matcha Lattes',
+      image: '/order-classic-green-matcha.jpg',
+      flavors: ['Hot', 'Iced'],
+      sizes: [
+        { name: 'Regular', price: 4500 },
+      ],
+      flavorLabel: 'Temperature',
+    },
+    {
+      id: 68,
+      name: 'Strawberry Matcha',
+      category: 'Wing Cafe',
+      subcategory: 'Matcha Lattes',
+      image: '/order-strawberry-matcha.jpg',
+      flavors: ['Hot', 'Iced'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+      flavorLabel: 'Temperature',
+    },
+    {
+      id: 69,
+      name: 'Vanilla Honey Matcha',
+      category: 'Wing Cafe',
+      subcategory: 'Matcha Lattes',
+      image: '/order-vanilla-honey-matcha.jpg',
+      flavors: ['Hot', 'Iced'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+      flavorLabel: 'Temperature',
+    },
+    {
+      id: 70,
+      name: 'Coconut Lavender Matcha',
+      category: 'Wing Cafe',
+      subcategory: 'Matcha Lattes',
+      image: '/order-coconut-lavender-matcha.jpg',
+      flavors: ['Hot', 'Iced'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+      flavorLabel: 'Temperature',
+    },
+    {
+      id: 71,
+      name: 'Blueberry Matcha',
+      category: 'Wing Cafe',
+      subcategory: 'Matcha Lattes',
+      image: '/order-blueberry-matcha.jpg',
+      flavors: ['Hot', 'Iced'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+      flavorLabel: 'Temperature',
+    },
+    // Chai Lattes - Additional
+    {
+      id: 72,
+      name: 'Dirty Chai',
+      category: 'Wing Cafe',
+      subcategory: 'Chai Lattes',
+      image: '/order-dirty-chai.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    // Hot Smelts - Additional
+    {
+      id: 73,
+      name: 'Hot White Chocolate',
+      category: 'Wing Cafe',
+      subcategory: 'Hot Smelts',
+      image: '/order-hot-white-chocolate.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    // Teas
+    {
+      id: 74,
+      name: 'Teas',
+      category: 'Wing Cafe',
+      subcategory: 'Teas',
+      image: '/order-teas.jpg',
+      flavors: ['Black', 'Green', 'Herbal'],
+      sizes: [
+        { name: 'Regular', price: 5000 },
+      ],
+      flavorLabel: 'Tea Type',
+    },
+    // Wingfreshers
+    {
+      id: 75,
+      name: 'Peach Wingfresher',
+      category: 'Wing Cafe',
+      subcategory: 'Wingfreshers',
+      image: '/order-peach-wingfresher.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    {
+      id: 76,
+      name: 'Coconut Wingfresher',
+      category: 'Wing Cafe',
+      subcategory: 'Wingfreshers',
+      image: '/order-coconut-wingfresher.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    {
+      id: 77,
+      name: 'Strawberry Wingfresher',
+      category: 'Wing Cafe',
+      subcategory: 'Wingfreshers',
+      image: '/order-strawberry-wingfresher.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    // Signature Pairings
+    {
+      id: 78,
+      name: 'Tiramisu + White Chocolate',
+      category: 'Wing Cafe',
+      subcategory: 'Signature Pairings',
+      image: '/order-tiramisu-white-chocolate.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    {
+      id: 79,
+      name: 'Irish Cream + Chocolate',
+      category: 'Wing Cafe',
+      subcategory: 'Signature Pairings',
+      image: '/order-irish-cream-chocolate.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    {
+      id: 80,
+      name: 'Popcorn + Salted Caramel',
+      category: 'Wing Cafe',
+      subcategory: 'Signature Pairings',
+      image: '/order-popcorn-salted-caramel.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    {
+      id: 81,
+      name: 'Pistachio + Vanilla',
+      category: 'Wing Cafe',
+      subcategory: 'Signature Pairings',
+      image: '/order-pistachio-vanilla.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    {
+      id: 82,
+      name: 'Gingerbread + Caramelized Peanut',
+      category: 'Wing Cafe',
+      subcategory: 'Signature Pairings',
+      image: '/order-gingerbread-caramelized-peanut.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    {
+      id: 83,
+      name: 'Pumpkin Spice + White Chocolate',
+      category: 'Wing Cafe',
+      subcategory: 'Signature Pairings',
+      image: '/order-pumpkin-spice-white-chocolate.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
+      ],
+    },
+    {
+      id: 84,
+      name: 'Tiramisu + Irish Cream',
+      category: 'Wing Cafe',
+      subcategory: 'Signature Pairings',
+      image: '/order-tiramisu-irish-cream.jpg',
+      flavors: ['Regular'],
+      sizes: [
+        { name: 'Regular', price: 6000 },
       ],
     },
     {
@@ -467,20 +908,66 @@ export default function OrderPage() {
       name: 'Hunger Games',
       category: 'Party Packs',
       image: '/order-hunger-games.jpg',
-      flavors: ['Regular'],
+      flavors: [
+        'BBQ Fire',
+        'BBQ Rush',
+        'Braveheart',
+        'Cameroon Rub',
+        'Caribbean Jerk',
+        'Dragon Breath',
+        'Gustavo',
+        'Hot Nuts',
+        'Italian',
+        'Lemon Pepper',
+        'Mango Heat',
+        'Sweet Dreams',
+        'Tequila Wingrise',
+        'The Slayer',
+        'Tokyo',
+        'Wing of the North',
+        'Wingferno',
+        'Whiskey Vibes',
+        'Yaji',
+        'Yellow Gold'
+      ],
       sizes: [
         { name: 'Regular', price: 50000 },
       ],
+      wingCount: '60 Wings',
+      flavorCount: 6,
     },
     {
       id: 36,
       name: 'Lord of the Wings',
       category: 'Party Packs',
       image: '/order-lord-of-the-wings.jpg',
-      flavors: ['Regular'],
+      flavors: [
+        'BBQ Fire',
+        'BBQ Rush',
+        'Braveheart',
+        'Cameroon Rub',
+        'Caribbean Jerk',
+        'Dragon Breath',
+        'Gustavo',
+        'Hot Nuts',
+        'Italian',
+        'Lemon Pepper',
+        'Mango Heat',
+        'Sweet Dreams',
+        'Tequila Wingrise',
+        'The Slayer',
+        'Tokyo',
+        'Wing of the North',
+        'Wingferno',
+        'Whiskey Vibes',
+        'Yaji',
+        'Yellow Gold'
+      ],
       sizes: [
         { name: 'Regular', price: 80000 },
       ],
+      wingCount: '100 Wings',
+      flavorCount: 8,
     },
     {
       id: 39,
@@ -730,9 +1217,60 @@ export default function OrderPage() {
         { name: 'Regular', price: 6000 },
       ],
     },
+    {
+      id: 19,
+      name: 'The Genius',
+      category: 'Kids',
+      image: '/kids-the-genius.jpg',
+      flavors: [
+        'BBQ Fire',
+        'BBQ Rush',
+        'Braveheart',
+        'Cameroon Rub',
+        'Caribbean Jerk',
+        'Dragon Breath',
+        'Gustavo',
+        'Hot Nuts',
+        'Italian',
+        'Lemon Pepper',
+        'Mango Heat',
+        'Sweet Dreams',
+        'Tequila Wingrise',
+        'The Slayer',
+        'Tokyo',
+        'Wing of the North',
+        'Wingferno',
+        'Whiskey Vibes',
+        'Yaji',
+        'Yellow Gold'
+      ],
+      sizes: [
+        { name: 'Kids Meal', price: 5000 },
+      ],
+      flavorCount: 1,
+      description: '3 Wings, French Fries, 1 Juice Box and 1 Cake Slice',
+      cakeOptions: [
+        'Banana Cake Slice',
+        'Chocolate Cake Slice',
+        'Vanilla Cake Slice'
+      ],
+    },
   ];
 
-  const filteredProducts = products.filter(product => product.category === activeCategory);
+  const filteredProducts = products.filter(product => {
+    if (product.category !== activeCategory) return false;
+    if (activeCategory === 'Wing Cafe' && activeSubcategory && product.subcategory !== activeSubcategory) return false;
+    return true;
+  });
+
+  // Reset subcategory when changing main category
+  useEffect(() => {
+    if (activeCategory === 'Wing Cafe' && !activeSubcategory) {
+      setActiveSubcategory(wingCafeSubcategories[0]);
+    } else if (activeCategory !== 'Wing Cafe') {
+      setActiveSubcategory('');
+    }
+  }, [activeCategory, activeSubcategory]);
 
   const handleFlavorSelect = (productId: number, flavor: string, maxCount: number = 1) => {
     setSelectedFlavors(prev => {
@@ -847,6 +1385,10 @@ export default function OrderPage() {
     setSelectedMilkshakes(prev => ({ ...prev, [productId]: milkshake }));
   };
 
+  const handleCakeSelect = (productId: number, cake: string) => {
+    setSelectedCakes(prev => ({ ...prev, [productId]: cake }));
+  };
+
   const handleQuantityChange = (productId: number, delta: number) => {
     setQuantities(prev => ({
       ...prev,
@@ -874,11 +1416,16 @@ export default function OrderPage() {
   };
 
   const addToCart = (product: Product) => {
-    const selectedFlavorArray = selectedFlavors[product.id] || [];
+    let selectedFlavorArray = selectedFlavors[product.id] || [];
     const flavorCount = product.flavorCount || 1;
 
-    // Check if at least one flavor is selected
-    if (selectedFlavorArray.length === 0) {
+    // Auto-select flavor for simple items (single flavor products)
+    if (selectedFlavorArray.length === 0 && product.flavors.length === 1) {
+      selectedFlavorArray = [product.flavors[0]];
+    }
+
+    // Check if at least one flavor is selected (only for products with flavors)
+    if (product.flavors.length > 0 && selectedFlavorArray.length === 0) {
       return; // Silently prevent adding to cart
     }
 
@@ -894,6 +1441,7 @@ export default function OrderPage() {
     const rice = product.riceOptions ? selectedRice[product.id] : undefined;
     const drink = product.drinkOptions ? selectedDrinks[product.id] : undefined;
     const milkshake = product.milkshakeOptions ? selectedMilkshakes[product.id] : undefined;
+    const cake = product.cakeOptions ? selectedCakes[product.id] : undefined;
 
     const flavorKey = Array.isArray(flavor) ? flavor.join(',') : flavor;
     const riceKey = Array.isArray(rice) ? rice.join(',') : rice;
@@ -910,7 +1458,8 @@ export default function OrderPage() {
                item.size === size &&
                itemRiceKey === riceKey &&
                itemDrinkKey === drinkKey &&
-               item.milkshake === milkshake;
+               item.milkshake === milkshake &&
+               item.cake === cake;
       }
     );
 
@@ -930,6 +1479,7 @@ export default function OrderPage() {
         ...(rice && { rice }),
         ...(drink && { drink }),
         ...(milkshake && { milkshake }),
+        ...(cake && { cake }),
       }]);
     }
   };
@@ -991,6 +1541,23 @@ export default function OrderPage() {
         </div>
       </section>
 
+      {/* Wing Cafe Subcategory Tabs */}
+      {activeCategory === 'Wing Cafe' && (
+        <section className="px-4 md:px-8 lg:px-16 mb-4">
+          <div className="flex gap-2 md:gap-3 overflow-x-auto pb-4 scrollbar-hide">
+            {wingCafeSubcategories.map((subcat) => (
+              <button
+                key={subcat}
+                onClick={() => setActiveSubcategory(subcat)}
+                className={`order-flavor-btn ${activeSubcategory === subcat ? 'active' : ''}`}
+              >
+                {subcat}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Products and Cart Grid */}
       <section className="px-4 md:px-8 lg:px-16 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
@@ -1006,10 +1573,10 @@ export default function OrderPage() {
                         {product.badge}
                       </span>
                     )}
-                    <img 
-                      src={product.image} 
+                    <img
+                      src={product.image}
                       alt={product.name}
-                      className="w-full h-40 object-cover rounded-lg"
+                      className="w-full aspect-[2/1] object-cover rounded-lg"
                     />
                   </div>
 
@@ -1202,6 +1769,24 @@ export default function OrderPage() {
                             className={`order-size-btn ${selectedMilkshakes[product.id] === milkshake ? 'active' : ''}`}
                           >
                             {milkshake}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cake Selection */}
+                  {product.cakeOptions && product.cakeOptions.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-sm font-semibold text-gray-700 mb-2">Choose Your Cake Slice:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {product.cakeOptions.map((cake) => (
+                          <button
+                            key={cake}
+                            onClick={() => handleCakeSelect(product.id, cake)}
+                            className={`order-size-btn ${selectedCakes[product.id] === cake ? 'active' : ''}`}
+                          >
+                            {cake}
                           </button>
                         ))}
                       </div>

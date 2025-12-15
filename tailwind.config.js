@@ -17,7 +17,7 @@ module.exports = {
         'gutter': '60px',
       },
       fontFamily: {
-        poppins: ['Poppins', 'sans-serif'],
+        inter: ['Inter', 'sans-serif'],
       },
     },
   },

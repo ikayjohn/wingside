@@ -111,7 +111,11 @@ export default function OrdersPage() {
         {/* Orders List */}
         <div className="space-y-4">
           {orders.map((order) => (
-            <div key={order.id} className="bg-white rounded-xl p-6 shadow-sm">
+            <Link
+              key={order.id}
+              href={`/order-tracking?id=${order.id}`}
+              className="block bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
+            >
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
@@ -139,12 +143,12 @@ export default function OrdersPage() {
                     <p className="text-sm text-gray-500 mb-1">Total</p>
                     <p className="text-xl font-bold text-gray-900">₦{order.total.toLocaleString()}</p>
                   </div>
-                  <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                  <span className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white group-hover:bg-gray-50 transition-colors">
                     View Details
-                  </button>
+                  </span>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 
