@@ -229,7 +229,7 @@ This request was submitted through the Wingside Kids page.
 
             {/* Right Image */}
             <div className="flex justify-center">
-              <img src="/kids-hero.png" alt="Captain Wingside" className="w-500 max-w-[538px] h-auto" />
+              <img src="/kids-hero.png" alt="Captain Wingside" className="w-500 max-w-[538px] h-auto" loading="eager" />
             </div>
           </div>
         </div>
@@ -249,6 +249,7 @@ This request was submitted through the Wingside Kids page.
                   src="/kids-the-genius.jpg"
                   alt="The Genius"
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </div>
 
@@ -316,7 +317,7 @@ This request was submitted through the Wingside Kids page.
             {partyPackages.map((pkg, index) => (
               <div key={index} className="bg-white rounded-3xl overflow-hidden">
                 <div className="aspect-[4/3] bg-gray-200">
-                  <img src={pkg.image} alt={pkg.name} className="w-full h-full object-cover" />
+                  <img src={pkg.image} alt={pkg.name} className="w-full h-full object-cover" loading="lazy" />
                 </div>
                 <div className="p-8">
                   <h3 className="text-2xl font-bold text-black mb-2">{pkg.name}</h3>
@@ -348,7 +349,7 @@ This request was submitted through the Wingside Kids page.
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             {/* Left Image */}
             <div className="flex justify-center">
-              <img src="/kids-hero.png" alt="Captain Wingside" className="w-full max-w-md h-auto" />
+              <img src="/kids-hero.png" alt="Captain Wingside" className="w-full max-w-md h-auto" loading="lazy" />
             </div>
 
             {/* Right Content */}

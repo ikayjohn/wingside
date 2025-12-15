@@ -88,7 +88,7 @@ export default function WingcafePage() {
       {/* Hero Section */}
       <div className="relative h-[700px] md:h-[800px] lg:h-[900px]">
         <img
-          src="/wingcafe-hero.jpg"
+          src="/wingcafe-hero.jpg" loading="eager"
           alt="Wingcafé"
           className="w-full h-full object-cover"
         />
@@ -155,7 +155,7 @@ export default function WingcafePage() {
             {/* Matcha Made in Heaven */}
             <div className="relative rounded-3xl overflow-hidden aspect-[3/4] transition-all duration-300 hover:-translate-y-2 cursor-pointer">
               <img
-                src="/wingcafe-matcha-heaven.jpg"
+                src="/wingcafe-matcha-heaven.jpg" loading="lazy"
                 alt="matcha made in heaven"
                 className="w-full h-full object-cover"
               />
@@ -168,7 +168,7 @@ export default function WingcafePage() {
             {/* Matcha Magic */}
             <div className="relative rounded-3xl overflow-hidden aspect-[3/4] transition-all duration-300 hover:-translate-y-2 cursor-pointer">
               <img
-                src="/wingcafe-matcha-magic.jpg"
+                src="/wingcafe-matcha-magic.jpg" loading="lazy"
                 alt="Matcha magic"
                 className="w-full h-full object-cover"
               />
@@ -181,7 +181,7 @@ export default function WingcafePage() {
             {/* Wingcafé Brewing */}
             <div className="relative rounded-3xl overflow-hidden aspect-[3/4] transition-all duration-300 hover:-translate-y-2 cursor-pointer">
               <img
-                src="/wingcafe-brewing.jpg"
+                src="/wingcafe-brewing.jpg" loading="lazy"
                 alt="Wingcafé Brewing Bold Flavors"
                 className="w-full h-full object-cover"
               />
@@ -197,7 +197,7 @@ export default function WingcafePage() {
             {/* Much Ado About Latte */}
             <div className="relative rounded-3xl overflow-hidden aspect-video transition-all duration-300 hover:-translate-y-2 cursor-pointer">
               <img
-                src="/wingcafe-latte.jpg"
+                src="/wingcafe-latte.jpg" loading="lazy"
                 alt="Much Ado About Latte"
                 className="w-full h-full object-cover"
               />
@@ -210,7 +210,7 @@ export default function WingcafePage() {
             {/* Life is Greener */}
             <div className="relative rounded-3xl overflow-hidden aspect-video transition-all duration-300 hover:-translate-y-2 cursor-pointer">
               <img
-                src="/wingcafe-matcha-green.jpg"
+                src="/wingcafe-matcha-green.jpg" loading="lazy"
                 alt="life is greener on the matcha side"
                 className="w-full h-full object-cover"
               />

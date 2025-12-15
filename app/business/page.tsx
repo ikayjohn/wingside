@@ -12,6 +12,7 @@ export default function BusinessPage() {
           src="/business-hero.jpg"
           alt="Wingside Business"
           className="w-full h-full object-cover"
+          loading="eager"
         />
         <div className="absolute inset-0 bg-black/40" />
 
@@ -64,6 +65,7 @@ export default function BusinessPage() {
                   src="/business-wingpost.jpg"
                   alt="Wingpost"
                   className="w-full aspect-[4/3] object-cover"
+                  loading="lazy"
                 />
               </div>
               <h3 className="text-2xl md:text-3xl font-bold mb-3 group-hover:text-[#F7C400] transition-colors">Wingpost</h3>
@@ -79,6 +81,7 @@ export default function BusinessPage() {
                   src="/business-office-lunch.jpg"
                   alt="Wingside Office Lunch"
                   className="w-full aspect-[4/3] object-cover"
+                  loading="lazy"
                 />
               </div>
               <h3 className="text-2xl md:text-3xl font-bold mb-3 group-hover:text-[#F7C400] transition-colors">Wingside Office Lunch</h3>
@@ -94,6 +97,7 @@ export default function BusinessPage() {
                   src="/business-meetings.jpg"
                   alt="Wingside Meetings"
                   className="w-full aspect-[4/3] object-cover"
+                  loading="lazy"
                 />
               </div>
               <h3 className="text-2xl md:text-3xl font-bold mb-3 group-hover:text-[#F7C400] transition-colors">Wingside Meetings</h3>
@@ -109,6 +113,7 @@ export default function BusinessPage() {
                   src="/business-catering.jpg"
                   alt="Wingside Catering"
                   className="w-full aspect-[4/3] object-cover"
+                  loading="lazy"
                 />
               </div>
               <h3 className="text-2xl md:text-3xl font-bold mb-3 group-hover:text-[#F7C400] transition-colors">Wingside Catering</h3>

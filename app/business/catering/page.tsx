@@ -71,6 +71,7 @@ This request was submitted through the Wingside Catering page.
           src="/catering-hero.jpg"
           alt="Wingside Catering"
           className="w-full h-full object-cover"
+          loading="eager"
         />
         <div className="absolute inset-0 bg-black/40" />
 
@@ -128,7 +129,7 @@ This request was submitted through the Wingside Catering page.
                 <p className="text-black text-sm">Make it a wing-derful celebration.</p>
               </div>
               <div className="absolute bottom-0 right-0 w-40%] h-[70%]">
-                <img src="/catering-birthday.png" alt="Birthday" className="w-full h-full object-contain object-bottom" />
+                <img src="/catering-birthday.png" alt="Birthday" className="w-full h-full object-contain object-bottom" loading="lazy" />
               </div>
             </div>
 
@@ -139,7 +140,7 @@ This request was submitted through the Wingside Catering page.
                 <p className="text-black text-sm">Impress clients with flavor.</p>
               </div>
               <div className="absolute bottom-0 left-0 right-0 h-[75%]">
-                <img src="/catering-corporate.png" alt="Corporate" className="w-full h-full object-cover object-bottom" />
+                <img src="/catering-corporate.png" alt="Corporate" className="w-full h-full object-cover object-bottom" loading="lazy" />
               </div>
             </div>
 
@@ -150,7 +151,7 @@ This request was submitted through the Wingside Catering page.
                 <p className="text-black text-sm">Celebrate achievements<br /> with wings.</p>
               </div>
               <div className="absolute bottom-0 right-0 w-[50%] h-[80%]">
-                <img src="/catering-graduation.png" alt="Graduation" className="w-full h-full object-contain object-bottom" />
+                <img src="/catering-graduation.png" alt="Graduation" className="w-full h-full object-contain object-bottom" loading="lazy" />
               </div>
             </div>
 
@@ -161,7 +162,7 @@ This request was submitted through the Wingside Catering page.
                 <p className="text-black text-sm">Love at first bite.</p>
               </div>
               <div className="absolute bottom-0 left-0 w-[75%] h-[85%]">
-                <img src="/catering-wedding.png" alt="Wedding" className="w-full h-full object-contain object-bottom" />
+                <img src="/catering-wedding.png" alt="Wedding" className="w-full h-full object-contain object-bottom" loading="lazy" />
               </div>
             </div>
 
@@ -172,7 +173,7 @@ This request was submitted through the Wingside Catering page.
                 <p className="text-black text-sm">Game day fuel for the win.</p>
               </div>
               <div className="absolute bottom-0 right-0 w-[75%] h-[70%]">
-                <img src="/catering-sports.png" alt="Sports" className="w-full h-full object-contain object-bottom" />
+                <img src="/catering-sports.png" alt="Sports" className="w-full h-full object-contain object-bottom" loading="lazy" />
               </div>
             </div>
 
@@ -183,7 +184,7 @@ This request was submitted through the Wingside Catering page.
                 <p className="text-white text-sm">Couples portions and<br />mood lighting.</p>
               </div>
               <div className="absolute bottom-0 left-0 w-[55%] h-[85%]">
-                <img src="/catering-date.png" alt="Date Night" className="w-full h-full object-contain object-bottom" />
+                <img src="/catering-date.png" alt="Date Night" className="w-full h-full object-contain object-bottom" loading="lazy" />
               </div>
             </div>
           </div>

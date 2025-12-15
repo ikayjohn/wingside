@@ -64,10 +64,11 @@ export default function Header() {
             
             {/* Logo - Centered */}
             <Link href="/" className="absolute left-1/2 transform -translate-x-1/2 hover:opacity-80">
-              <img 
-                src="/logo.png" 
-                alt="Wingside Logo" 
+              <img
+                src="/logo.png"
+                alt="Wingside Logo"
                 className="h-24 w-auto"
+                loading="eager"
               />
             </Link>
 
@@ -182,7 +183,7 @@ export default function Header() {
               ) : (
                 <Link
                   href="/wingclub"
-                  className="text-sm text-gray-700 hover:text-gray-900 hidden sm:block"
+                  className="text-sm font-bold text-gray-700 hover:text-gray-900 hidden sm:block"
                 >
                   Join the Wingclub
                 </Link>
@@ -211,10 +212,11 @@ export default function Header() {
             {/* Sidebar Header */}
             <div className="flex justify-between items-start px-10 py-10">
               <div>
-                <img 
-                  src="/logo.png" 
-                  alt="Wingside Logo" 
+                <img
+                  src="/logo.png"
+                  alt="Wingside Logo"
                   className="h-24 w-auto"
+                  loading="lazy"
                 />
               </div>
               <button 

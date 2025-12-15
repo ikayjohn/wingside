@@ -161,10 +161,11 @@ export default function WingsideLanding() {
       <section className="relative py-6 md:py-10 lg:py-12">
         {/* Yellow Background */}
         <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 bg-gradient-to-br from-yellow-100 to-yellow-100 h-[180px] sm:h-[250px] md:h-[300px] lg:h-[400px] overflow-hidden">
-          <img 
-            src="/yellowpattern.png" 
-            alt="" 
+          <img
+            src="/yellowpattern.png"
+            alt=""
             className="absolute inset-0 w-full h-full object-cover opacity-90"
+            loading="eager"
           />
         </div>
         
@@ -180,18 +181,20 @@ export default function WingsideLanding() {
             </div>
             
             <div className="pr-4 xl:pr-8">
-              <img 
-                src="/thinkarrow.png" 
-                alt="Arrow" 
+              <img
+                src="/thinkarrow.png"
+                alt="Arrow"
                 className="w-24 xl:w-32 h-auto"
+                loading="eager"
               />
             </div>
             
             <div className="flex-1 flex justify-end">
-              <img 
-                src="/thinkbox.png" 
-                alt="Wingside Box" 
+              <img
+                src="/thinkbox.png"
+                alt="Wingside Box"
                 className="w-full max-w-md xl:max-w-xl h-auto float-hover"
+                loading="eager"
               />
             </div>
           </div>
@@ -203,18 +206,20 @@ export default function WingsideLanding() {
                 Think Inside<br />
                 <span>THE BOX</span>
               </h2>
-              <img 
-                src="/thinkarrow.png" 
-                alt="Arrow" 
+              <img
+                src="/thinkarrow.png"
+                alt="Arrow"
                 className="w-32 h-auto"
+                loading="eager"
               />
             </div>
             
             <div className="flex-1 flex justify-end">
-              <img 
-                src="/thinkbox.png" 
-                alt="Wingside Box" 
+              <img
+                src="/thinkbox.png"
+                alt="Wingside Box"
                 className="w-full max-w-xs h-auto float-hover"
+                loading="eager"
               />
             </div>
           </div>
@@ -226,18 +231,20 @@ export default function WingsideLanding() {
                 Think Inside<br />
                 <span>THE BOX</span>
               </h2>
-              <img 
-                src="/thinkarrow.png" 
-                alt="Arrow" 
+              <img
+                src="/thinkarrow.png"
+                alt="Arrow"
                 className="w-20 h-auto"
+                loading="eager"
               />
             </div>
             
             <div className="flex-1 flex justify-end">
-              <img 
-                src="/thinkbox.png" 
-                alt="Wingside Box" 
+              <img
+                src="/thinkbox.png"
+                alt="Wingside Box"
                 className="w-full max-w-[150px] h-auto float-hover"
+                loading="eager"
               />
             </div>
           </div>
@@ -294,10 +301,11 @@ export default function WingsideLanding() {
                     </Link>
                   </div>
                   <div className="order-1 md:order-2">
-                    <img 
-                      src={flavor.image} 
-                      alt={flavor.name} 
+                    <img
+                      src={flavor.image}
+                      alt={flavor.name}
                       className="w-auto h-[200px] md:h-[300px] lg:h-[400px] flavor-image"
+                      loading="lazy"
                     />
                   </div>
                 </div>
@@ -321,10 +329,11 @@ export default function WingsideLanding() {
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
             {/* Left: Delivery Image */}
             <div className="flex justify-center md:justify-start">
-              <img 
-                src="/bikewingside1.png" 
-                alt="Wingside Delivery" 
+              <img
+                src="/bikewingside1.png"
+                alt="Wingside Delivery"
                 className="w-full max-w-xs md:max-w-md h-auto"
+                loading="lazy"
               />
             </div>
 
@@ -382,16 +391,16 @@ export default function WingsideLanding() {
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
             <div className="wc-card-img">
-              <img src="/wc1.png" alt="Members Discount" />
+              <img src="/wc1.png" alt="Members Discount" loading="lazy" />
             </div>
             <div className="wc-card-img">
-              <img src="/wc2.png" alt="Points" />
+              <img src="/wc2.png" alt="Points" loading="lazy" />
             </div>
             <div className="wc-card-img">
-              <img src="/wc3.png" alt="Gift" />
+              <img src="/wc3.png" alt="Gift" loading="lazy" />
             </div>
             <div className="wc-card-img">
-              <img src="/wc4.png" alt="Birthday Wings" />
+              <img src="/wc4.png" alt="Birthday Wings" loading="lazy" />
             </div>
           </div>
         </div>
