@@ -906,7 +906,7 @@ export default function OrderPage() {
     {
       id: 35,
       name: 'Hunger Games',
-      category: 'Party Packs',
+      category: 'Wings',
       image: '/order-hunger-games.jpg',
       flavors: [
         'BBQ Fire',
@@ -939,7 +939,7 @@ export default function OrderPage() {
     {
       id: 36,
       name: 'Lord of the Wings',
-      category: 'Party Packs',
+      category: 'Wings',
       image: '/order-lord-of-the-wings.jpg',
       flavors: [
         'BBQ Fire',
