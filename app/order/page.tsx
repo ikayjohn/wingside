@@ -65,7 +65,7 @@ export default function OrderPage() {
   const [selectedMilkshakes, setSelectedMilkshakes] = useState<{ [key: number]: string }>({});
   const [selectedCakes, setSelectedCakes] = useState<{ [key: number]: string }>({});
 
-  const categories = ['Wings', 'Sides', 'Sandwiches', 'Wraps', 'Salads', 'Wing Cafe', 'Pastries', 'Wingside Special', 'Drinks', 'Meal Deals', 'Party Packs', 'Kids'];
+  const categories = ['Wings', 'Sides', 'Sandwiches', 'Wraps', 'Salads', 'Wing Cafe', 'Pastries', 'Wingside Special', 'Drinks', 'Meal Deals', 'Kids'];
 
   // Load cart from localStorage on mount
   useEffect(() => {
