@@ -70,7 +70,7 @@ export default function WingsideLanding() {
     // BOLD & FUN
     {
       id: 5,
-      name: 'ITALIAN',
+      name: 'THE ITALIAN',
       category: 'BOLD & FUN',
       description1: 'Garlic & cheese',
       description2: 'The ideal choice for sophisticated palates',
