@@ -1,119 +1,204 @@
 "use client";
 
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
 export default function WingsideLanding() {
-  const [activeCategory, setActiveCategory] = useState('BBQ');
+  const [activeCategory, setActiveCategory] = useState('HOT');
 
-  const categories = ['BBQ', 'HOT', 'SPICY DRY', 'BOLD & FUN', 'SWEET', 'BOOZY'];
+  const categories = ['HOT', 'BBQ', 'SPICY DRY', 'BOLD & FUN', 'SWEET', 'BOOZY'];
+
+  // Helper function to render flavor name with smaller iOS-style emojis
+  const renderFlavorName = (name: string) => {
+    const emojiRegex = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)/gu;
+    const parts = name.split(emojiRegex);
+
+    return parts.map((part, index) => {
+      if (part && part.match(emojiRegex)) {
+        // Convert emoji to Twemoji CDN image URL
+        const codePoint = part.codePointAt(0)?.toString(16);
+        const twemojiUrl = `https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/72x72/${codePoint}.png`;
+        return (
+          <img
+            key={index}
+            src={twemojiUrl}
+            alt={part}
+            className="inline-block w-[0.8em] h-[0.8em] align-middle mx-0.5"
+            style={{ display: 'inline', verticalAlign: '-0.1em' }}
+          />
+        );
+      }
+      return part;
+    });
+  };
 
   // Flavors data
   const flavors = [
+    // HOT
     {
       id: 1,
-      name: 'BBQ FIRE',
-      category: 'BBQ',
-      description1: 'BBQ Sauce & Chili peppers.',
-      description2: 'A fusion as epic as hell of flame & spicy.',
-      image: '/flavor-bbqfire.png'
+      name: 'WINGFERNO 🌶️🌶️🌶️🌶️',
+      category: 'HOT',
+      description1: 'Piping hot peppers',
+      description2: 'Something special for the insane…',
+      image: '/flavor-wingferno.png'
     },
     {
       id: 2,
-      name: 'BBQ RUSH',
-      category: 'BBQ',
-      description1: 'BBQ Sauce & Honey.',
-      description2: 'Enjoy a drip.',
-      image: '/flavor-bbqrush.png'
-    },
-    {
-      id: 3,
-      name: 'DRAGON BREATH',
+      name: 'DRAGON BREATH 🌶️🌶️🌶️',
       category: 'HOT',
-      description1: 'Classic hot sauce.',
-      description2: 'Turn up the heat.',
+      description1: 'Hot peppers & more hot peppers',
+      description2: 'Draaaagon!!! Your mushroom clouds will come for all of us…',
       image: '/flavor-dragon.png'
     },
     {
-      id: 4,
-      name: 'BRAVEHEART',
+      id: 3,
+      name: 'BRAVEHEART 🌶️🌶️',
       category: 'HOT',
-      description1: 'Classic hot sauce.',
-      description2: 'Turn up the heat.',
+      description1: 'Habaneros & hot chili',
+      description2: 'Feel the heat, feel the burn.',
       image: '/flavor-brave.png'
     },
     {
+      id: 4,
+      name: 'MANGO HEAT 🌶️',
+      category: 'HOT',
+      description1: 'Mango purée & hot peppers',
+      description2: 'All sweet, all heat…',
+      image: '/flavor-mango.png'
+    },
+    // BOLD & FUN
+    {
       id: 5,
-      name: 'LEMON PEPPER',
-      category: 'SPICY DRY',
-      description1: 'Dry spice rub.',
-      description2: 'All spice, no sauce.',
-      image: '/flavor-lemon.png'
-    },
-    {
-      id: 6,
-      name: 'CAMEROON RUB',
-      category: 'SPICY DRY',
-      description1: 'Dry spice rub.',
-      description2: 'All spice, no sauce.',
-      image: '/flavor-cameroon.png'
-    },
-    {
-      id: 7,
-      name: 'CARIBBEAN JERK',
-      category: 'SPICY DRY',
-      description1: 'Dry spice rub.',
-      description2: 'All spice, no sauce.',
-      image: '/flavor-caribbean.png'
-    },
-    {
-      id: 8,
-      name: 'WING OF THE NORTH',
+      name: 'ITALIAN',
       category: 'BOLD & FUN',
-      description1: 'Adventurous mix.',
-      description2: 'For the daring.',
-      image: '/flavor-wingnorth.png'
-    },
-    {
-      id: 9,
-      name: 'THE ITALIAN',
-      category: 'BOLD & FUN',
-      description1: 'Adventurous mix.',
-      description2: 'For the daring.',
+      description1: 'Garlic & cheese',
+      description2: 'The ideal choice for sophisticated palates',
       image: '/flavor-italian.png'
     },
     {
-      id: 10,
+      id: 6,
+      name: 'WING OF THE NORTH',
+      category: 'BOLD & FUN',
+      description1: 'Spicy dates & dates',
+      description2: 'Dont ask, dont tell',
+      image: '/flavor-wingnorth.png'
+    },
+    {
+      id: 7,
       name: 'TOKYO',
       category: 'BOLD & FUN',
-      description1: 'Adventurous mix.',
-      description2: 'For the daring.',
+      description1: 'Soy sauce & sweet chili',
+      description2: 'From Asia with love',
       image: '/flavor-tokyo.png'
     },
     {
+      id: 8,
+      name: 'HOT NUTS',
+      category: 'BOLD & FUN',
+      description1: 'Peanuts & hot chili',
+      description2: 'Delicious amazingness',
+      image: '/flavor-hotnuts.png'
+    },
+    {
+      id: 9,
+      name: 'YAJI',
+      category: 'BOLD & FUN',
+      description1: 'Its in the name',
+      description2: 'Born and raised in Nigeria',
+      image: '/flavor-yaji.png'
+    },
+    {
+      id: 10,
+      name: 'THE SLAYER',
+      category: 'BOLD & FUN',
+      description1: 'Garlic & herbs',
+      description2: 'Keeps the vampires away…',
+      image: '/flavor-slayer.png'
+    },
+    // BBQ
+    {
       id: 11,
-      name: 'SWEET DREAMS',
-      category: 'SWEET',
-      description1: 'Sweet glaze.',
-      description2: 'Perfect balance.',
-      image: '/flavor-sweetdreams.png'
+      name: 'BBQ RUSH',
+      category: 'BBQ',
+      description1: 'BBQ sauce & honey',
+      description2: 'Sweet ol BBQ',
+      image: '/flavor-bbqrush.png'
     },
     {
       id: 12,
-      name: 'MANGO HEAT',
-      category: 'SWEET',
-      description1: 'Sweet glaze.',
-      description2: 'Perfect balance.',
-      image: '/flavor-mango.png'
+      name: 'BBQ FIRE 🌶️',
+      category: 'BBQ',
+      description1: 'BBQ sauce & hot peppers',
+      description2: 'A flavorful hot fire mix of sweet & spicy',
+      image: '/flavor-bbqfire.png'
     },
+    // SPICY DRY
     {
       id: 13,
+      name: 'LEMON PEPPER',
+      category: 'SPICY DRY',
+      description1: 'Its all in the name',
+      description2: 'Tangy deliciousness',
+      image: '/flavor-lemon.png'
+    },
+    {
+      id: 14,
+      name: 'CAMEROON RUB',
+      category: 'SPICY DRY',
+      description1: 'Cameroon pepper & herbs',
+      description2: 'Part dry, part spicy, whole lotta good',
+      image: '/flavor-cameroon.png'
+    },
+    {
+      id: 15,
+      name: 'CARIBBEAN JERK',
+      category: 'SPICY DRY',
+      description1: 'Tropical spice mix',
+      description2: 'Mild peppers you love…',
+      image: '/flavor-caribbean.png'
+    },
+    // SWEET
+    {
+      id: 16,
+      name: 'SWEET DREAMS',
+      category: 'SWEET',
+      description1: 'Cola & garlic sauce',
+      description2: 'Sweet with heat on heat',
+      image: '/flavor-sweetdreams.png'
+    },
+    {
+      id: 17,
+      name: 'YELLOW GOLD',
+      category: 'SWEET',
+      description1: 'Honey & mustard',
+      description2: 'Sweet & sassy with soothing buttery flavour',
+      image: '/flavor-yellowgold.png'
+    },
+    // BOOZY
+    {
+      id: 18,
+      name: 'WHISKEY VIBES',
+      category: 'BOOZY',
+      description1: 'Whiskey & hot sauce',
+      description2: 'Booze is intellectual',
+      image: '/flavor-whiskeyvibes.png'
+    },
+    {
+      id: 19,
       name: 'TEQUILA WINGRISE',
       category: 'BOOZY',
-      description1: 'Infused with spirits.',
-      description2: 'Adult flavors.',
+      description1: 'Tequila & citrus',
+      description2: 'Now you can eat your tequila too',
       image: '/flavor-tequila.png'
+    },
+    {
+      id: 20,
+      name: 'GUSTAVO',
+      category: 'BOOZY',
+      description1: 'Beer & barbecue sauce',
+      description2: 'Hot wings, cold dings',
+      image: '/flavor-gustavo.png'
     }
   ];
 
@@ -158,7 +243,7 @@ export default function WingsideLanding() {
 
 
       {/* Think Inside The Box */}
-      <section className="relative py-6 md:py-10 lg:py-12">
+      <section className="relative py-0 -mt-[80px]">
         {/* Yellow Background */}
         <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 bg-gradient-to-br from-yellow-100 to-yellow-100 h-[180px] sm:h-[250px] md:h-[300px] lg:h-[400px] overflow-hidden">
           <img
@@ -289,7 +374,7 @@ export default function WingsideLanding() {
               filteredFlavors.map((flavor) => (
                 <div key={flavor.id} className="grid md:grid-cols-2 gap-4 md:gap-8 items-center">
                   <div className="order-2 md:order-1">
-                    <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 md:mb-4">{flavor.name}</h3>
+                    <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 md:mb-4">{renderFlavorName(flavor.name)}</h3>
                     <p className="text-gray-600 text-sm md:text-lg mb-1 font-semibold">
                       {flavor.description1}
                     </p>
@@ -344,7 +429,7 @@ export default function WingsideLanding() {
                 ONLINE DELIVERY
               </h2>
               <p className="text-gray-600 text-sm md:text-lg mb-4 md:mb-6 leading-relaxed">
-                Stay in. We'll bring the wings to you.<br />
+                Stay in. We&apos;ll bring the wings to you.<br />
                 Flavors that sing with every wing Delivered before you blink.
               </p>
               <Link 
