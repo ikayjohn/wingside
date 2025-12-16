@@ -103,7 +103,7 @@ export default function WingsideLanding() {
     {
       id: 9,
       name: 'YAJI',
-      category: 'BOLD & FUN',
+      category: 'SPICY DRY',
       description1: 'Its in the name',
       description2: 'Born and raised in Nigeria',
       image: '/flavor-yaji.png'
