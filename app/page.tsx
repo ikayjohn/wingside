@@ -6,7 +6,7 @@ import Link from 'next/link';
 export default function WingsideLanding() {
   const [activeCategory, setActiveCategory] = useState('HOT');
 
-  const categories = ['HOT', 'BBQ', 'SPICY DRY', 'BOLD & FUN', 'SWEET', 'BOOZY'];
+  const categories = ['HOT', 'BBQ', 'DRY RUB', 'BOLD & FUN', 'SWEET', 'BOOZY'];
 
   // Helper function to render flavor name with smaller iOS-style emojis
   const renderFlavorName = (name: string) => {
@@ -103,7 +103,7 @@ export default function WingsideLanding() {
     {
       id: 9,
       name: 'YAJI',
-      category: 'SPICY DRY',
+      category: 'DRY RUB',
       description1: 'Its in the name',
       description2: 'Born and raised in Nigeria',
       image: '/flavor-yaji.png'
@@ -137,7 +137,7 @@ export default function WingsideLanding() {
     {
       id: 13,
       name: 'LEMON PEPPER',
-      category: 'SPICY DRY',
+      category: 'DRY RUB',
       description1: 'Its all in the name',
       description2: 'Tangy deliciousness',
       image: '/flavor-lemon.png'
@@ -145,7 +145,7 @@ export default function WingsideLanding() {
     {
       id: 14,
       name: 'CAMEROON RUB',
-      category: 'SPICY DRY',
+      category: 'DRY RUB',
       description1: 'Cameroon pepper & herbs',
       description2: 'Part dry, part spicy, whole lotta good',
       image: '/flavor-cameroon.png'
@@ -153,7 +153,7 @@ export default function WingsideLanding() {
     {
       id: 15,
       name: 'CARIBBEAN JERK',
-      category: 'SPICY DRY',
+      category: 'DRY RUB',
       description1: 'Tropical spice mix',
       description2: 'Mild peppers you love…',
       image: '/flavor-caribbean.png'

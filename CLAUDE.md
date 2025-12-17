@@ -103,7 +103,7 @@ import Header from "@/components/Header";
 - Positioned text overlay with brand colors
 
 ### 2. Flavor Catalog
-- Category filtering (BBQ, HOT, SPICY DRY, BOLD & FUN, SWEET, BOOZY)
+- Category filtering (BBQ, HOT, DRY RUB, BOLD & FUN, SWEET, BOOZY)
 - Responsive grid layout with flavor images and descriptions
 - "Order Now" CTAs linking to `/order`
 
