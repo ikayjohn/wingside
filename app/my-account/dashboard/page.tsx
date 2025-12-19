@@ -1,43 +1,136 @@
 "use client";
 
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ConvertPointsModal from '@/components/ConvertPointsModal';
 import FundWalletModal from '@/components/FundWalletModal';
+
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  walletBalance: number;
+  cardNumber: string;
+  bankAccount: string;
+  bankName: string;
+  refId: string;
+  totalPoints: number;
+  pointsThisMonth: number;
+  currentTier: string;
+  memberSince: string;
+  availableToConvert: number;
+  convertiblePoints: number;
+  minConversion: number;
+  tierProgress: {
+    current: number;
+    target: number;
+    nextTier: string;
+    percentage: number;
+  };
+  addresses: any[];
+  recentOrders: any[];
+  totalOrders: number;
+  totalSpent: number;
+  role: string;
+}
+
+interface Transaction {
+  id: string;
+  type: string;
+  amount: number;
+  description: string;
+  status: string;
+  paymentMethod: string;
+  createdAt: string;
+  orderNumber?: string;
+}
 
 export default function WingclubDashboard() {
   const [copied, setCopied] = useState<'card' | 'ref' | null>(null);
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [showFundModal, setShowFundModal] = useState(false);
+  const [userData, setUserData] = useState<UserProfile | null>(null);
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // User data - in real app this would come from API/context
-  const userData = {
-    name: 'Fortune',
-    walletBalance: 15000,
-    cardNumber: 'WC001234567890',
-    bankAccount: '9012345678',
-    bankName: 'Wingside Bank',
-    refId: 'WingmanFortune',
-    totalPoints: 1500,
-    pointsThisMonth: 275,
-    currentTier: 'Wing Leader',
-    memberSince: '15/01/2024',
-    availableToConvert: 15000,
-    convertiblePoints: 2750,
-    minConversion: 100,
-    tierProgress: {
-      current: 2250,
-      target: 5000,
-      nextTier: 'Wingzard',
-      percentage: 44,
-    },
-  };
+  // Fetch user data on component mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setLoading(true);
+        setError('');
+
+        // Fetch user profile
+        const profileResponse = await fetch('/api/user/profile');
+        if (!profileResponse.ok) {
+          throw new Error('Failed to fetch profile');
+        }
+        const profileData = await profileResponse.json();
+
+        // Fetch wallet transactions
+        const transactionsResponse = await fetch('/api/user/wallet-history');
+        const transactionsData = await transactionsResponse.json();
+
+        setUserData(profileData.profile);
+        setRecentTransactions(transactionsData.transactions || []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const copyToClipboard = (text: string, type: 'card' | 'ref') => {
     navigator.clipboard.writeText(text);
     setCopied(type);
     setTimeout(() => setCopied(null), 2000);
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">Error loading dashboard</div>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-yellow-400 text-black px-6 py-2 rounded-lg hover:bg-yellow-500"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // No user data state
+  if (!userData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Unable to load user data</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -198,42 +291,116 @@ export default function WingclubDashboard() {
           <div className="dashboard-recent-section">
             <div className="dashboard-recent-header">
               <h3 className="dashboard-recent-title">My Recent Orders</h3>
-              <Link href="/orders" className="dashboard-view-all">View All</Link>
+              <Link href="/order-confirmation" className="dashboard-view-all">View All</Link>
             </div>
             
-            <div className="dashboard-empty-card">
-              <div className="dashboard-empty-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
+            {userData.recentOrders && userData.recentOrders.length > 0 ? (
+              <div className="space-y-3">
+                {userData.recentOrders.slice(0, 3).map((order) => (
+                  <div key={order.id} className="p-3 bg-white rounded-lg border border-gray-200">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium text-gray-900">{order.order_number}</p>
+                        <p className="text-sm text-gray-600">
+                          {new Date(order.created_at).toLocaleDateString('en-GB', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </p>
+                        {order.items && (
+                          <p className="text-sm text-gray-500">
+                            {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-gray-900">₦{Number(order.total).toLocaleString()}</p>
+                        <span className={`inline-block px-2 py-1 text-xs rounded-full ${
+                          order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                          order.status === 'preparing' ? 'bg-blue-100 text-blue-700' :
+                          order.status === 'out_for_delivery' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {order.status.replace('_', ' ').toUpperCase()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <h4 className="dashboard-empty-title">No Recent Orders</h4>
-              <p className="dashboard-empty-text">You currently do not have any recent orders</p>
-              <Link href="/order" className="dashboard-order-btn">Order now</Link>
-            </div>
+            ) : (
+              <div className="dashboard-empty-card">
+                <div className="dashboard-empty-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                </div>
+                <h4 className="dashboard-empty-title">No Recent Orders</h4>
+                <p className="dashboard-empty-text">You currently do not have any recent orders</p>
+                <Link href="/order" className="dashboard-order-btn">Order now</Link>
+              </div>
+            )}
           </div>
 
           {/* Recent Transactions */}
           <div className="dashboard-recent-section">
             <div className="dashboard-recent-header">
               <h3 className="dashboard-recent-title">Recent Transactions</h3>
-              <Link href="/transactions" className="dashboard-view-all">View All</Link>
+              <Link href="/my-account/wallet-history" className="dashboard-view-all">View All</Link>
             </div>
             
-            <div className="dashboard-empty-card">
-              <div className="dashboard-empty-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="8" width="18" height="12" rx="2"></rect>
-                  <path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"></path>
-                  <path d="M12 12v4"></path>
-                  <path d="M8 12v4"></path>
-                  <path d="M16 12v4"></path>
-                </svg>
+            {recentTransactions && recentTransactions.length > 0 ? (
+              <div className="space-y-3">
+                {recentTransactions.slice(0, 3).map((transaction) => (
+                  <div key={transaction.id} className="p-3 bg-white rounded-lg border border-gray-200">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium text-gray-900">{transaction.description}</p>
+                        <p className="text-sm text-gray-600">
+                          {new Date(transaction.createdAt).toLocaleDateString('en-GB', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </p>
+                        {transaction.paymentMethod && (
+                          <p className="text-sm text-gray-500">Via {transaction.paymentMethod}</p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className={`font-semibold ${
+                          transaction.amount < 0 ? 'text-red-600' : 'text-green-600'
+                        }`}>
+                          {transaction.amount < 0 ? '-' : '+'} ₦{Math.abs(transaction.amount).toLocaleString()}
+                        </p>
+                        <span className={`inline-block px-2 py-1 text-xs rounded-full ${
+                          transaction.status === 'completed' ? 'bg-green-100 text-green-700' :
+                          'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {transaction.status.toUpperCase()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <h4 className="dashboard-empty-title">No transaction recorded</h4>
-              <p className="dashboard-empty-text">You do not have any recent transaction</p>
-            </div>
+            ) : (
+              <div className="dashboard-empty-card">
+                <div className="dashboard-empty-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="8" width="18" height="12" rx="2"></rect>
+                    <path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"></path>
+                    <path d="M12 12v4"></path>
+                    <path d="M8 12v4"></path>
+                    <path d="M16 12v4"></path>
+                  </svg>
+                </div>
+                <h4 className="dashboard-empty-title">No transaction recorded</h4>
+                <p className="dashboard-empty-text">You do not have any recent transaction</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -252,7 +419,7 @@ export default function WingclubDashboard() {
         isOpen={showFundModal}
         onClose={() => setShowFundModal(false)}
         accountNumber={userData.bankAccount}
-        accountName="Wingclub / Fortune"
+        accountName={`Wingclub / ${userData.name}`}
         bankName={userData.bankName}
       />
     </div>
