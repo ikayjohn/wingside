@@ -1,11 +1,11 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  output: 'export',
-  distDir: 'out',
+  // Removed static export - now supports server-side features
   trailingSlash: true,
   images: {
-    unoptimized: true,
+    // Can now use Next.js image optimization
+    domains: [], // Add image domains as needed
   },
 }
 

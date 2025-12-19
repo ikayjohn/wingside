@@ -2,6 +2,27 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
+
+interface DeliveryArea {
+  id: string;
+  name: string;
+  description?: string;
+  delivery_fee: number;
+  min_order_amount: number;
+  estimated_time?: string;
+}
+
+interface PickupLocation {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  phone?: string;
+  opening_hours?: string;
+  estimated_time: string;
+}
 
 export default function CheckoutPage() {
   const [formData, setFormData] = useState({
@@ -14,12 +35,25 @@ export default function CheckoutPage() {
     city: 'Port Harcourt',
     email: '',
     createAccount: false,
+    password: '',
+    confirmPassword: '',
     agreeTerms: false,
   });
 
+  const supabase = createClient();
+
   const [promoCode, setPromoCode] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<any>(null);
+  const [promoError, setPromoError] = useState('');
+  const [applyingPromo, setApplyingPromo] = useState(false);
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('delivery');
+  const [deliveryAreas, setDeliveryAreas] = useState<DeliveryArea[]>([]);
+  const [pickupLocations, setPickupLocations] = useState<PickupLocation[]>([]);
+  const [loadingAreas, setLoadingAreas] = useState(true);
+  const [loadingPickup, setLoadingPickup] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -29,105 +63,155 @@ export default function CheckoutPage() {
     }
   }, []);
 
+  // Check for existing authenticated user and prefill form
+  useEffect(() => {
+    const checkExistingUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        // User is already logged in, prefill form and hide account creation
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, phone')
+          .eq('id', user.id)
+          .single();
+
+        setFormData(prev => ({
+          ...prev,
+          email: user.email || '',
+          firstName: profile?.full_name?.split(' ')[0] || '',
+          lastName: profile?.full_name?.split(' ').slice(1).join(' ') || '',
+          phone: profile?.phone || '',
+          createAccount: false, // Hide account creation for existing users
+        }));
+      }
+    };
+
+    checkExistingUser();
+  }, []);
+
+  // Fetch delivery areas and pickup locations from database
+  useEffect(() => {
+    fetchDeliveryAreas();
+    fetchPickupLocations();
+  }, []);
+
+  const fetchDeliveryAreas = async () => {
+    try {
+      const response = await fetch('/api/delivery-areas');
+      const data = await response.json();
+      if (data.deliveryAreas) {
+        setDeliveryAreas(data.deliveryAreas);
+      }
+    } catch (error) {
+      console.error('Error fetching delivery areas:', error);
+    } finally {
+      setLoadingAreas(false);
+    }
+  };
+
+  const fetchPickupLocations = async () => {
+    try {
+      const response = await fetch('/api/pickup-locations');
+      const data = await response.json();
+      if (data.pickupLocations) {
+        setPickupLocations(data.pickupLocations);
+      }
+    } catch (error) {
+      console.error('Error fetching pickup locations:', error);
+    } finally {
+      setLoadingPickup(false);
+    }
+  };
+
   // Reset delivery area when switching between delivery and pickup
   useEffect(() => {
     setFormData(prev => ({ ...prev, deliveryArea: '' }));
   }, [orderType]);
 
-  // Delivery fee mapping
-  const deliveryFees: { [key: string]: number } = {
-    'pickup-autograph': 0,
-    'pickup-gra': 0,
-    'new-gra': 1000,
-    'd-line': 1000,
-    'stadium-road': 1000,
-    'old-gra': 1000,
-    'town': 1000,
-    'borokiri': 1200,
-    'olu-obasanjo': 1200,
-    'diobu-mile-1': 1200,
-    'diobu-mile-2': 1300,
-    'diobu-mile-3': 1400,
-    'trans-amadi': 1500,
-    'shell-ra': 1500,
-    'elelenwo': 1600,
-    'rumuola': 1700,
-    'rumuokwuta': 1800,
-    'rumuigbo': 1900,
-    'nkpogu': 1900,
-    'peter-odili': 2000,
-    'woji': 2100,
-    'rumuomasi': 2200,
-    'rumuodara': 2300,
-    'oginigba': 2300,
-    'rumuibekwe': 2300,
-    'rumuodomaya': 2400,
-    'rumuokoro': 2700,
-    'rumunduru': 2900,
-    'eliozu': 3000,
-    'eliowhani': 3100,
-    'mgbuoba': 3200,
-    'okuru': 3200,
-    'akpajo': 3200,
-    'choba': 3500,
-    'alakahia': 3700,
-    'aluu': 4000,
-    'igwuruta': 4500,
-    'omagwa': 4500,
-    'airport-road': 5000,
+  // Get delivery fee for selected area
+  const getDeliveryFee = () => {
+    if (!formData.deliveryArea) return 0;
+
+    // Pickup is always free
+    const pickupLocation = pickupLocations.find(p => p.id === formData.deliveryArea);
+    if (pickupLocation) return 0;
+
+    // Find delivery area from database
+    const area = deliveryAreas.find(a => a.id === formData.deliveryArea);
+    return area ? area.delivery_fee : 0;
   };
 
-  // Delivery area display names
-  const deliveryAreaNames: { [key: string]: string } = {
-    'pickup-autograph': 'Pickup – Wingside, Autograph Mall',
-    'pickup-gra': 'Pickup – Wingside, 24 King Perekule Street, GRA',
-    'new-gra': 'New GRA',
-    'd-line': 'D-Line',
-    'stadium-road': 'Stadium Road',
-    'old-gra': 'Old GRA',
-    'town': 'Town',
-    'borokiri': 'Borokiri',
-    'olu-obasanjo': 'Olu Obasanjo',
-    'diobu-mile-1': 'Diobu Mile 1',
-    'diobu-mile-2': 'Diobu Mile 2',
-    'diobu-mile-3': 'Diobu Mile 3',
-    'trans-amadi': 'Trans-Amadi',
-    'shell-ra': 'Shell RA',
-    'elelenwo': 'Elelenwo (near side)',
-    'rumuola': 'Rumuola',
-    'rumuokwuta': 'Rumuokwuta',
-    'rumuigbo': 'Rumuigbo',
-    'nkpogu': 'Nkpogu',
-    'peter-odili': 'Peter Odili Road',
-    'woji': 'Woji',
-    'rumuomasi': 'Rumuomasi',
-    'rumuodara': 'Rumuodara',
-    'oginigba': 'Oginigba',
-    'rumuibekwe': 'Rumuibekwe',
-    'rumuodomaya': 'Rumuodomaya',
-    'rumuokoro': 'Rumuokoro',
-    'rumunduru': 'Rumunduru',
-    'eliozu': 'Eliozu',
-    'eliowhani': 'Eliowhani',
-    'mgbuoba': 'Mgbuoba',
-    'okuru': 'Okuru',
-    'akpajo': 'Akpajo',
-    'choba': 'Choba',
-    'alakahia': 'Alakahia',
-    'aluu': 'Aluu',
-    'igwuruta': 'Igwuruta',
-    'omagwa': 'Omagwa',
-    'airport-road': 'Airport Road',
+  // Get delivery area display name
+  const getDeliveryAreaName = () => {
+    if (!formData.deliveryArea) return '';
+
+    // Check if it's a pickup location
+    const pickupLocation = pickupLocations.find(p => p.id === formData.deliveryArea);
+    if (pickupLocation) {
+      return `Pickup – ${pickupLocation.name}, ${pickupLocation.address}`;
+    }
+
+    // Delivery area from database
+    const area = deliveryAreas.find(a => a.id === formData.deliveryArea);
+    if (area) {
+      return area.description ? `${area.name} (${area.description})` : area.name;
+    }
+
+    return formData.deliveryArea;
   };
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const taxRate = 0.075;
   const tax = subtotal * taxRate;
-  const deliveryFee = formData.deliveryArea ? (deliveryFees[formData.deliveryArea] || 0) : 0;
-  const total = subtotal + tax + deliveryFee;
+  const deliveryFee = getDeliveryFee();
+  const discount = appliedPromo ? appliedPromo.discountAmount : 0;
+  const total = subtotal + tax + deliveryFee - discount;
 
   const formatPrice = (price: number) => {
     return '₦' + price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const applyPromoCode = async () => {
+    if (!promoCode.trim()) {
+      setPromoError('Please enter a promo code');
+      return;
+    }
+
+    setApplyingPromo(true);
+    setPromoError('');
+
+    try {
+      const orderAmount = subtotal + tax + deliveryFee;
+
+      const response = await fetch('/api/promo-codes/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: promoCode, orderAmount }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setAppliedPromo(data);
+        setPromoError('');
+      } else {
+        setPromoError(data.error || 'Invalid promo code');
+        setAppliedPromo(null);
+      }
+    } catch (error) {
+      console.error('Error applying promo code:', error);
+      setPromoError('Error applying promo code');
+      setAppliedPromo(null);
+    } finally {
+      setApplyingPromo(false);
+    }
+  };
+
+  const removePromoCode = () => {
+    setAppliedPromo(null);
+    setPromoCode('');
+    setPromoError('');
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -158,39 +242,272 @@ export default function CheckoutPage() {
     localStorage.setItem('wingside-cart', JSON.stringify(newCart));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle order submission
-    console.log('Order submitted:', { formData, cartItems, total });
+    setSubmitError('');
+
+    // Validation
+    if (cartItems.length === 0) {
+      setSubmitError('Your cart is empty');
+      return;
+    }
+
+    if (!formData.deliveryArea) {
+      setSubmitError('Please select a delivery area or pickup location');
+      return;
+    }
+
+    if (!formData.firstName || !formData.lastName) {
+      setSubmitError('Please enter your full name');
+      return;
+    }
+
+    if (!formData.phone) {
+      setSubmitError('Please enter your phone number');
+      return;
+    }
+
+    if (!formData.email) {
+      setSubmitError('Please enter your email address');
+      return;
+    }
+
+    if (orderType === 'delivery' && !formData.streetAddress) {
+      setSubmitError('Please enter your delivery address');
+      return;
+    }
+
+    if (!formData.agreeTerms) {
+      setSubmitError('Please agree to the terms and conditions');
+      return;
+    }
+
+    // Validate password if creating account
+    if (formData.createAccount) {
+      if (!formData.password) {
+        setSubmitError('Please enter a password to create your account');
+        return;
+      }
+      if (formData.password.length < 6) {
+        setSubmitError('Password must be at least 6 characters');
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setSubmitError('Passwords do not match');
+        return;
+      }
+    }
+
+    setSubmitting(true);
+
+    // Create account if checkbox is checked
+    let userId: string | null = null;
+    if (formData.createAccount) {
+      try {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              full_name: `${formData.firstName} ${formData.lastName}`,
+              phone: formData.phone,
+            },
+          },
+        });
+
+        if (signUpError) {
+          if (signUpError.message.includes('already registered')) {
+            setSubmitError('This email is already registered. Please log in or use a different email.');
+          } else {
+            setSubmitError(signUpError.message);
+          }
+          setSubmitting(false);
+          return;
+        }
+
+        if (signUpData.user) {
+          userId = signUpData.user.id;
+
+          // Create profile
+          const { error: profileError } = await supabase.from('profiles').insert({
+            id: signUpData.user.id,
+            email: formData.email,
+            full_name: `${formData.firstName} ${formData.lastName}`,
+            phone: formData.phone,
+            role: 'customer',
+          });
+
+          if (profileError) {
+            console.error('Profile creation error:', profileError);
+            // Continue anyway - auth user was created
+          }
+
+          // Sync new customer to Zoho CRM and Embedly
+          fetch('/api/integrations/sync-customer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: signUpData.user.id,
+              email: formData.email,
+              full_name: `${formData.firstName} ${formData.lastName}`,
+              phone: formData.phone,
+              address: formData.streetAddress,
+              city: formData.city,
+              state: 'Rivers',
+            }),
+          }).catch(console.error); // Fire and forget
+
+          // Create address for the user
+          if (orderType === 'delivery' && formData.streetAddress) {
+            await supabase.from('addresses').insert({
+              user_id: signUpData.user.id,
+              label: 'Home',
+              street_address: formData.streetAddress + (formData.streetAddress2 ? ', ' + formData.streetAddress2 : ''),
+              city: formData.city,
+              state: 'Rivers',
+              is_default: true,
+            });
+          }
+        }
+      } catch (error: any) {
+        console.error('Account creation error:', error);
+        setSubmitError('Failed to create account. Please try again.');
+        setSubmitting(false);
+        return;
+      }
+    }
+
+    try {
+      // Transform cart items to API format
+      const orderItems = cartItems.map((item) => {
+        // Extract flavors array
+        let flavors: string[] = [];
+        if (Array.isArray(item.flavor)) {
+          flavors = item.flavor;
+        } else if (item.flavor && item.flavor !== 'Regular') {
+          flavors = [item.flavor];
+        }
+
+        // Build addons object
+        const addons: any = {};
+        if (item.rice) {
+          addons.rice = Array.isArray(item.rice) ? item.rice : [item.rice];
+        }
+        if (item.drink) {
+          addons.drink = Array.isArray(item.drink) ? item.drink : [item.drink];
+        }
+        if (item.milkshake) {
+          addons.milkshake = item.milkshake;
+        }
+
+        return {
+          product_id: item.productId || null,
+          product_name: item.name,
+          size: item.size,
+          flavors: flavors.length > 0 ? flavors : null,
+          addons: Object.keys(addons).length > 0 ? addons : null,
+          quantity: item.quantity,
+          unit_price: item.price,
+          total_price: item.price * item.quantity,
+        };
+      });
+
+      // Build delivery address text
+      const deliveryAddressText = orderType === 'delivery'
+        ? `${formData.streetAddress}${formData.streetAddress2 ? ', ' + formData.streetAddress2 : ''}, ${formData.city}`
+        : getDeliveryAreaName();
+
+      // Build order data
+      const orderData = {
+        customer_name: `${formData.firstName} ${formData.lastName}`,
+        customer_email: formData.email,
+        customer_phone: formData.phone,
+        user_id: userId, // Link order to user if account was created
+        delivery_address_id: null,
+        delivery_address_text: deliveryAddressText,
+        payment_method: 'card', // Default to card, will be updated when payment integration is added
+        delivery_fee: deliveryFee,
+        tax: tax,
+        notes: '',
+        promo_code_id: appliedPromo?.promoCode?.id || null,
+        discount_amount: discount,
+        items: orderItems,
+      };
+
+      // Create order
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create order');
+      }
+
+      // If promo code was applied, increment its usage count
+      if (appliedPromo?.promoCode?.id) {
+        await fetch(`/api/promo-codes/${appliedPromo.promoCode.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ increment_usage: true }),
+        });
+      }
+
+      // Initialize payment with Paystack
+      const paymentResponse = await fetch('/api/payment/initialize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order_id: data.order.id,
+          amount: total,
+          email: formData.email,
+          metadata: {
+            customer_name: `${formData.firstName} ${formData.lastName}`,
+            phone: formData.phone,
+          },
+        }),
+      });
+
+      const paymentData = await paymentResponse.json();
+
+      if (!paymentResponse.ok) {
+        throw new Error(paymentData.error || 'Failed to initialize payment');
+      }
+
+      // Clear cart (will be restored if payment fails)
+      localStorage.removeItem('wingside-cart');
+      setCartItems([]);
+
+      // Redirect to Paystack payment page
+      window.location.href = paymentData.authorization_url;
+    } catch (error: any) {
+      console.error('Error submitting order:', error);
+      setSubmitError(error.message || 'Failed to submit order. Please try again.');
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-white">
       
       {/* Hero Section */}
-      <section className="relative h-[400px] md:h-[900px] overflow-hidden">
+      <section className="relative h-[150px] md:h-[300px] overflow-hidden">
         <img
           src="/order-hero.png"
           alt="Wings and more"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-black/30" />
-        <div className="absolute inset-0 flex flex-col items-center justify-start text-center text-white px-4 pt-12 md:pt-20">
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-4 pt-12 md:pt-20">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
-            <span className="text-yellow-400">WINGS</span> and so<br />
-            "<span className="italic">munch</span>" more.
+            CHECKOUT
           </h1>
         </div>
       </section>
 
-      {/* Description */}
-      <section className="py-12 md:py-18 px-4 text-center">
-        <p className="text-lg md:text-3xl text-gray-700 max-w-5xl mx-auto leading-relaxed">
-          From expertly crafted espresso drinks and specialty lattes to<br className="hidden md:block" />
-          refreshing iced teas, nutritious smoothies, and light café snacks.<br className="hidden md:block" />
-          Every item is made fresh with premium ingredients.
-        </p>
-      </section>
 
       {/* Checkout Form Section */}
       <section className="py-8 md:py-12 gutter-x">
@@ -266,49 +583,31 @@ export default function CheckoutPage() {
                         {orderType === 'delivery' ? 'Choose delivery area' : 'Choose pickup location'}
                       </option>
                       {orderType === 'pickup' ? (
-                        <>
-                          <option value="pickup-autograph">Wingside, Autograph Mall — FREE</option>
-                          <option value="pickup-gra">Wingside, 24 King Perekule Street, GRA — FREE</option>
-                        </>
+                        loadingPickup ? (
+                          <option value="">Loading pickup locations...</option>
+                        ) : pickupLocations.length === 0 ? (
+                          <option value="">No pickup locations available</option>
+                        ) : (
+                          pickupLocations.map((location) => (
+                            <option key={location.id} value={location.id}>
+                              {location.name}, {location.address} — FREE
+                              {location.estimated_time && ` • ${location.estimated_time}`}
+                            </option>
+                          ))
+                        )
+                      ) : loadingAreas ? (
+                        <option value="">Loading delivery areas...</option>
                       ) : (
                         <>
-                          <option value="new-gra">New GRA — ₦1,000</option>
-                          <option value="d-line">D-Line — ₦1,000</option>
-                          <option value="stadium-road">Stadium Road — ₦1,000</option>
-                          <option value="old-gra">Old GRA — ₦1,000</option>
-                          <option value="town">Town — ₦1,000</option>
-                          <option value="borokiri">Borokiri — ₦1,200</option>
-                          <option value="olu-obasanjo">Olu Obasanjo — ₦1,200</option>
-                          <option value="diobu-mile-1">Diobu Mile 1 — ₦1,200</option>
-                          <option value="diobu-mile-2">Diobu Mile 2 — ₦1,300</option>
-                          <option value="diobu-mile-3">Diobu Mile 3 — ₦1,400</option>
-                          <option value="trans-amadi">Trans-Amadi — ₦1,500</option>
-                          <option value="shell-ra">Shell RA — ₦1,500</option>
-                          <option value="elelenwo">Elelenwo (near side) — ₦1,600</option>
-                          <option value="rumuola">Rumuola — ₦1,700</option>
-                          <option value="rumuokwuta">Rumuokwuta — ₦1,800</option>
-                          <option value="rumuigbo">Rumuigbo — ₦1,900</option>
-                          <option value="nkpogu">Nkpogu — ₦1,900</option>
-                          <option value="peter-odili">Peter Odili Road — ₦2,000</option>
-                          <option value="woji">Woji — ₦2,100</option>
-                          <option value="rumuomasi">Rumuomasi — ₦2,200</option>
-                          <option value="rumuodara">Rumuodara — ₦2,300</option>
-                          <option value="oginigba">Oginigba — ₦2,300</option>
-                          <option value="rumuibekwe">Rumuibekwe — ₦2,300</option>
-                          <option value="rumuodomaya">Rumuodomaya — ₦2,400</option>
-                          <option value="rumuokoro">Rumuokoro — ₦2,700</option>
-                          <option value="rumunduru">Rumunduru — ₦2,900</option>
-                          <option value="eliozu">Eliozu — ₦3,000</option>
-                          <option value="eliowhani">Eliowhani — ₦3,100</option>
-                          <option value="mgbuoba">Mgbuoba — ₦3,200</option>
-                          <option value="okuru">Okuru — ₦3,200</option>
-                          <option value="akpajo">Akpajo — ₦3,200</option>
-                          <option value="choba">Choba — ₦3,500</option>
-                          <option value="alakahia">Alakahia — ₦3,700</option>
-                          <option value="aluu">Aluu — ₦4,000</option>
-                          <option value="igwuruta">Igwuruta — ₦4,500</option>
-                          <option value="omagwa">Omagwa — ₦4,500</option>
-                          <option value="airport-road">Airport Road — ₦5,000</option>
+                          {deliveryAreas.map((area) => (
+                            <option key={area.id} value={area.id}>
+                              {area.name}
+                              {area.description && ` (${area.description})`}
+                              {' — ₦'}
+                              {area.delivery_fee.toLocaleString()}
+                              {area.estimated_time && ` • ${area.estimated_time}`}
+                            </option>
+                          ))}
                         </>
                       )}
                     </select>
@@ -402,18 +701,57 @@ export default function CheckoutPage() {
                   </div>
 
                   {/* Create Account Checkbox */}
-                  <div className="flex items-center gap-2 mt-6">
-                    <input
-                      type="checkbox"
-                      name="createAccount"
-                      id="createAccount"
-                      checked={formData.createAccount}
-                      onChange={handleInputChange}
-                      className="checkout-checkbox"
-                    />
-                    <label htmlFor="createAccount" className="text-sm text-gray-700">
-                      Create an account
-                    </label>
+                  <div className="mt-6">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        name="createAccount"
+                        id="createAccount"
+                        checked={formData.createAccount}
+                        onChange={handleInputChange}
+                        className="checkout-checkbox"
+                      />
+                      <label htmlFor="createAccount" className="text-sm text-gray-700">
+                        Create an account to track orders and earn rewards
+                      </label>
+                    </div>
+
+                    {/* Password fields - shown when createAccount is checked */}
+                    {formData.createAccount && (
+                      <div className="mt-4 p-4 bg-[#FDF5E5] rounded-lg border border-[#F7C400]/30">
+                        <p className="text-sm text-[#552627] font-medium mb-3">
+                          Create your password to complete registration
+                        </p>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="checkout-label">Password</label>
+                            <input
+                              type="password"
+                              name="password"
+                              value={formData.password}
+                              onChange={handleInputChange}
+                              placeholder="Min. 6 characters"
+                              className="checkout-input"
+                              minLength={6}
+                            />
+                          </div>
+                          <div>
+                            <label className="checkout-label">Confirm Password</label>
+                            <input
+                              type="password"
+                              name="confirmPassword"
+                              value={formData.confirmPassword}
+                              onChange={handleInputChange}
+                              placeholder="Re-enter password"
+                              className="checkout-input"
+                            />
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Your account will be created with the email: <strong>{formData.email || 'Enter email above'}</strong>
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -529,7 +867,7 @@ export default function CheckoutPage() {
                     </div>
                     {formData.deliveryArea && (
                       <p className="text-xs text-gray-400 mt-1 ml-6">
-                        {deliveryAreaNames[formData.deliveryArea] || formData.deliveryArea}
+                        {getDeliveryAreaName()}
                       </p>
                     )}
                   </div>
@@ -549,25 +887,65 @@ export default function CheckoutPage() {
                       </svg>
                       <span className="text-sm text-gray-600">Promo Code</span>
                     </div>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={promoCode}
-                        onChange={(e) => setPromoCode(e.target.value)}
-                        placeholder="Enter promo code"
-                        className="checkout-input flex-1"
-                      />
-                      <button
-                        type="button"
-                        className="checkout-apply-btn"
-                      >
-                        Apply
-                      </button>
-                    </div>
+                    {!appliedPromo ? (
+                      <>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={promoCode}
+                            onChange={(e) => {
+                              setPromoCode(e.target.value)
+                              setPromoError('')
+                            }}
+                            placeholder="Enter promo code"
+                            className="checkout-input flex-1"
+                            disabled={applyingPromo}
+                          />
+                          <button
+                            type="button"
+                            onClick={applyPromoCode}
+                            disabled={applyingPromo}
+                            className="checkout-apply-btn"
+                          >
+                            {applyingPromo ? 'Applying...' : 'Apply'}
+                          </button>
+                        </div>
+                        {promoError && (
+                          <p className="text-xs text-red-600 mt-2">{promoError}</p>
+                        )}
+                      </>
+                    ) : (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-semibold text-green-800">{appliedPromo.promoCode.code}</p>
+                            <p className="text-xs text-green-600">{appliedPromo.message}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={removePromoCode}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="18" y1="6" x2="6" y2="18"></line>
+                              <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Divider */}
                   <div className="border-t border-gray-200 my-4"></div>
+
+                  {/* Discount */}
+                  {appliedPromo && (
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm text-green-600 font-medium">Discount ({appliedPromo.promoCode.code})</span>
+                      <span className="text-sm font-medium text-green-600">-{formatPrice(discount)}</span>
+                    </div>
+                  )}
 
                   {/* Total */}
                   <div className="flex justify-between mb-6">
@@ -575,12 +953,20 @@ export default function CheckoutPage() {
                     <span className="font-bold text-lg">{formatPrice(total)}</span>
                   </div>
 
+                  {/* Error Message */}
+                  {submitError && (
+                    <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-4">
+                      <p className="text-sm">{submitError}</p>
+                    </div>
+                  )}
+
                   {/* Place Order Button */}
                   <button
                     type="submit"
-                    className="checkout-submit-btn"
+                    disabled={submitting || cartItems.length === 0}
+                    className="checkout-submit-btn disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Place Order
+                    {submitting ? 'Processing Order...' : 'Place Order'}
                   </button>
 
                   {/* Trust Badges */}

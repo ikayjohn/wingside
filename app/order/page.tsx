@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 // Types
 interface CartItem {
-  id: number;
+  id: string | number; // Support both UUID and number for backwards compatibility
   name: string;
   flavor: string | string[];
   size: string;
@@ -19,7 +19,7 @@ interface CartItem {
 }
 
 interface Product {
-  id: number;
+  id: string | number; // Support both UUID and number for backwards compatibility
   name: string;
   category: string;
   subcategory?: string;
@@ -65,6 +65,8 @@ export default function OrderPage() {
   const [selectedMilkshakes, setSelectedMilkshakes] = useState<{ [key: number]: string }>({});
   const [selectedCakes, setSelectedCakes] = useState<{ [key: number]: string }>({});
   const [selectedFlavorCategory, setSelectedFlavorCategory] = useState<{ [key: number]: string }>({});
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const categories = ['Wings', 'Sides', 'Sandwiches', 'Wraps', 'Salads', 'Wing Cafe', 'Pastries', 'Wingside Special', 'Drinks', 'Meal Deals', 'Kids'];
 
@@ -91,1182 +93,41 @@ export default function OrderPage() {
     localStorage.setItem('wingside-cart', JSON.stringify(cart));
   }, [cart]);
 
-  const products: Product[] = [
-    {
-      id: 1,
-      name: 'Rookie Pack',
-      category: 'Wings',
-      image: '/order-rookie-pack.jpg',
-      flavors: [  'BBQ Fire',
-  'BBQ Rush',
-  'Braveheart',
-  'Cameroon Rub',
-  'Caribbean Jerk',
-  'Dragon Breath',
-  'Gustavo',
-  'Hot Nuts',
-  'The Italian',
-  'Lemon Pepper',
-  'Mango Heat',
-  'Sweet Dreams',
-  'Tequila Wingrise',
-  'The Slayer',
-  'Tokyo',
-  'Wing of the North',
-  'Wingferno',
-  'Whiskey Vibes',
-  'Yaji',
-  'Yellow Gold'
-],
-      sizes: [
-        { name: 'Regular', price: 7500 },
-      ],
-      flavorCount: 1,
-      wingCount: '6 wings',
-    },
-    {
-      id: 2,
-      name: 'Regular Pack',
-      category: 'Wings',
-      image: '/order-regular-pack.jpg',
-      flavors: [  'BBQ Fire',
-  'BBQ Rush',
-  'Braveheart',
-  'Cameroon Rub',
-  'Caribbean Jerk',
-  'Dragon Breath',
-  'Gustavo',
-  'Hot Nuts',
-  'The Italian',
-  'Lemon Pepper',
-  'Mango Heat',
-  'Sweet Dreams',
-  'Tequila Wingrise',
-  'The Slayer',
-  'Tokyo',
-  'Wing of the North',
-  'Wingferno',
-  'Whiskey Vibes',
-  'Yaji',
-  'Yellow Gold'
-],
+  // Fetch products from API on mount
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const response = await fetch('/api/products');
+        const data = await response.json();
 
-      sizes: [
-        { name: 'Regular', price: 14000 },
-      ],
-      flavorCount: 2,
-      wingCount: '12 wings',
-    },
-    {
-      id: 3,
-      name: 'Pro Pack',
-      category: 'Wings',
-      image: '/order-pro-pack.jpg',
- flavors: [  'BBQ Fire',
-  'BBQ Rush',
-  'Braveheart',
-  'Cameroon Rub',
-  'Caribbean Jerk',
-  'Dragon Breath',
-  'Gustavo',
-  'Hot Nuts',
-  'The Italian',
-  'Lemon Pepper',
-  'Mango Heat',
-  'Sweet Dreams',
-  'Tequila Wingrise',
-  'The Slayer',
-  'Tokyo',
-  'Wing of the North',
-  'Wingferno',
-  'Whiskey Vibes',
-  'Yaji',
-  'Yellow Gold'
-],
+        if (data.products) {
+          // Transform API data to match expected format
+          const transformedProducts = data.products.map((p: any) => ({
+            id: p.id, // Keep as UUID string
+            name: p.name,
+            category: p.category?.name || 'Wings',
+            subcategory: p.subcategory,
+            image: p.image_url || p.image,
+            flavors: p.flavors || [],
+            sizes: p.sizes || [],
+            badge: p.badge,
+            flavorCount: p.max_flavors || 1,
+            wingCount: p.wing_count,
+            flavorLabel: p.flavorLabel, // Use camelCase from API
+            description: p.description,
+          }));
+          setProducts(transformedProducts);
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-      sizes: [
-        { name: 'Regular', price: 20000 },
-      ],
-      flavorCount: 3,
-      wingCount: '18 wings',
-    },
-    {
-      id: 4,
-      name: 'Veteran Pack',
-      category: 'Wings',
-      image: '/order-veteran-pack.jpg',
- flavors: [  'BBQ Fire',
-  'BBQ Rush',
-  'Braveheart',
-  'Cameroon Rub',
-  'Caribbean Jerk',
-  'Dragon Breath',
-  'Gustavo',
-  'Hot Nuts',
-  'The Italian',
-  'Lemon Pepper',
-  'Mango Heat',
-  'Sweet Dreams',
-  'Tequila Wingrise',
-  'The Slayer',
-  'Tokyo',
-  'Wing of the North',
-  'Wingferno',
-  'Whiskey Vibes',
-  'Yaji',
-  'Yellow Gold'
-],
+    fetchProducts();
+  }, []);
 
-      sizes: [
-        { name: 'Regular', price: 30000 },
-      ],
-      flavorCount: 4,
-      wingCount: '30 wings',
-    },
-    {
-      id: 5,
-      name: 'Café Latte',
-      category: 'Wing Cafe',
-      subcategory: 'Coffee Classics',
-      image: '/order-latte.jpg',
-      flavors: ['Hot', 'Iced'],
-      sizes: [
-        { name: 'Regular', price: 4500 },
-      ],
-      flavorLabel: 'Temperature',
-    },
-    {
-      id: 6,
-      name: 'Chicken Bacon Sandwich',
-      category: 'Sandwiches',
-      image: '/order-chicken-bacon-sandwich.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 3500 },
-      ],
-    },
-    {
-      id: 11,
-      name: 'Chicken Salad Sandwich',
-      category: 'Sandwiches',
-      image: '/order-chicken-salad-sandwich.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 3000 },
-      ],
-    },
-    {
-      id: 12,
-      name: 'Egg Salad Sandwich',
-      category: 'Sandwiches',
-      image: '/order-egg-salad-sandwich.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 3000 },
-      ],
-    },
-    {
-      id: 7,
-      name: 'Bacon Coconut Rice',
-      category: 'Sides',
-      image: '/order-bacon-coconut-rice.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 4000 },
-      ],
-    },
-    {
-      id: 8,
-      name: 'Potato Wedges',
-      category: 'Sides',
-      image: '/order-potato-wedges.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 3500 },
-      ],
-    },
-    {
-      id: 9,
-      name: 'Fiesta Rice',
-      category: 'Sides',
-      image: '/order-fiesta-rice.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 3500 },
-      ],
-    },
-    {
-      id: 10,
-      name: 'French Fries',
-      category: 'Sides',
-      image: '/order-french-fries.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 3500 },
-      ],
-    },
-    {
-      id: 19,
-      name: 'Jollof Rice',
-      category: 'Sides',
-      image: '/order-jollof-rice.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 3500 },
-      ],
-    },
-    {
-      id: 37,
-      name: 'Fried Plantain',
-      category: 'Sides',
-      image: '/order-fried-plantain.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 1500 },
-      ],
-    },
-    {
-      id: 20,
-      name: 'Cookie Shake',
-      category: 'Wing Cafe',
-      subcategory: 'Milkshakes',
-      image: '/order-cookie-shake.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 9000 },
-      ],
-    },
-    {
-      id: 21,
-      name: 'Malted Shake',
-      category: 'Wing Cafe',
-      subcategory: 'Milkshakes',
-      image: '/order-malted-shake.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 9000 },
-      ],
-    },
-    {
-      id: 22,
-      name: 'Strawberry Shake',
-      category: 'Wing Cafe',
-      subcategory: 'Milkshakes',
-      image: '/order-strawberry-shake.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 9000 },
-      ],
-    },
-    {
-      id: 23,
-      name: 'Vanilla Shake',
-      category: 'Wing Cafe',
-      subcategory: 'Milkshakes',
-      image: '/order-vanilla-shake.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 9000 },
-      ],
-    },
-    {
-      id: 38,
-      name: 'Espresso',
-      category: 'Wing Cafe',
-      subcategory: 'Coffee Classics',
-      image: '/order-espresso-x2.jpg',
-      flavors: ['Hot', 'Iced'],
-      sizes: [
-        { name: 'Regular', price: 3500 },
-      ],
-      flavorLabel: 'Temperature',
-    },
-    {
-      id: 24,
-      name: 'Cappuccino',
-      category: 'Wing Cafe',
-      subcategory: 'Coffee Classics',
-      image: '/order-cappuccino.jpg',
-      flavors: ['Hot', 'Iced'],
-      sizes: [
-        { name: 'Regular', price: 4500 },
-      ],
-      flavorLabel: 'Temperature',
-    },
-    {
-      id: 25,
-      name: 'Chai Latte',
-      category: 'Wing Cafe',
-      subcategory: 'Chai Lattes',
-      image: '/order-chai-latte.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 4500 },
-      ],
-    },
-    {
-      id: 26,
-      name: 'Hot Chocolate',
-      category: 'Wing Cafe',
-      subcategory: 'Hot Smelts',
-      image: '/order-hot-chocolate.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 4500 },
-      ],
-    },
-    // Coffee Classics - Additional
-    {
-      id: 49,
-      name: 'Americano',
-      category: 'Wing Cafe',
-      subcategory: 'Coffee Classics',
-      image: '/order-americano.jpg',
-      flavors: ['Hot', 'Iced'],
-      sizes: [
-        { name: 'Regular', price: 4500 },
-      ],
-      flavorLabel: 'Temperature',
-    },
-    {
-      id: 50,
-      name: 'Flat White',
-      category: 'Wing Cafe',
-      subcategory: 'Coffee Classics',
-      image: '/order-flat-white.jpg',
-      flavors: ['Hot', 'Iced'],
-      sizes: [
-        { name: 'Regular', price: 4500 },
-      ],
-      flavorLabel: 'Temperature',
-    },
-    {
-      id: 51,
-      name: 'Mocha',
-      category: 'Wing Cafe',
-      subcategory: 'Coffee Classics',
-      image: '/order-mocha.jpg',
-      flavors: ['Hot', 'Iced'],
-      sizes: [
-        { name: 'Regular', price: 4500 },
-      ],
-      flavorLabel: 'Temperature',
-    },
-    {
-      id: 52,
-      name: 'Affogato Pop',
-      category: 'Wing Cafe',
-      subcategory: 'Coffee Classics',
-      image: '/order-affogato-pop.jpg',
-      flavors: ['Hot', 'Iced'],
-      sizes: [
-        { name: 'Regular', price: 4500 },
-      ],
-      flavorLabel: 'Temperature',
-    },
-    // Everyday Sips
-    {
-      id: 53,
-      name: 'Vanilla Latte',
-      category: 'Wing Cafe',
-      subcategory: 'Everyday Sips',
-      image: '/order-vanilla-latte.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 54,
-      name: 'Caramel Latte',
-      category: 'Wing Cafe',
-      subcategory: 'Everyday Sips',
-      image: '/order-caramel-latte.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 55,
-      name: 'Salted Caramel Latte',
-      category: 'Wing Cafe',
-      subcategory: 'Everyday Sips',
-      image: '/order-salted-caramel-latte.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 56,
-      name: 'Hazelnut Latte',
-      category: 'Wing Cafe',
-      subcategory: 'Everyday Sips',
-      image: '/order-hazelnut-latte.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 57,
-      name: 'Maple Latte',
-      category: 'Wing Cafe',
-      subcategory: 'Everyday Sips',
-      image: '/order-maple-latte.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    // Toasted & Spiced Lattes
-    {
-      id: 58,
-      name: 'Gingerbread Latte',
-      category: 'Wing Cafe',
-      subcategory: 'Toasted & Spiced Lattes',
-      image: '/order-gingerbread-latte.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 59,
-      name: 'Cinnamon Roll Latte',
-      category: 'Wing Cafe',
-      subcategory: 'Toasted & Spiced Lattes',
-      image: '/order-cinnamon-roll-latte.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 60,
-      name: 'Pumpkin Pie Latte',
-      category: 'Wing Cafe',
-      subcategory: 'Toasted & Spiced Lattes',
-      image: '/order-pumpkin-pie-latte.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-      badge: 'Seasonal',
-    },
-    // Gourmet & Dessert-Inspired Lattes
-    {
-      id: 61,
-      name: 'Tiramisu Latte',
-      category: 'Wing Cafe',
-      subcategory: 'Gourmet & Dessert-Inspired Lattes',
-      image: '/order-tiramisu-latte.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 62,
-      name: 'Popcorn Latte',
-      category: 'Wing Cafe',
-      subcategory: 'Gourmet & Dessert-Inspired Lattes',
-      image: '/order-popcorn-latte.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 63,
-      name: 'Irish Cream Latte',
-      category: 'Wing Cafe',
-      subcategory: 'Gourmet & Dessert-Inspired Lattes',
-      image: '/order-irish-cream-latte.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 64,
-      name: 'Pistachio Latte',
-      category: 'Wing Cafe',
-      subcategory: 'Gourmet & Dessert-Inspired Lattes',
-      image: '/order-pistachio-latte.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 65,
-      name: 'Caramelized Peanut Latte',
-      category: 'Wing Cafe',
-      subcategory: 'Gourmet & Dessert-Inspired Lattes',
-      image: '/order-caramelized-peanut-latte.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-      badge: 'Seasonal',
-    },
-    {
-      id: 66,
-      name: 'Terry\'s Orange Chocolate Latte',
-      category: 'Wing Cafe',
-      subcategory: 'Gourmet & Dessert-Inspired Lattes',
-      image: '/order-terrys-orange-chocolate-latte.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-      badge: 'Seasonal',
-    },
-    // Matcha Lattes
-    {
-      id: 67,
-      name: 'Classic Green Matcha',
-      category: 'Wing Cafe',
-      subcategory: 'Matcha Lattes',
-      image: '/order-classic-green-matcha.jpg',
-      flavors: ['Hot', 'Iced'],
-      sizes: [
-        { name: 'Regular', price: 4500 },
-      ],
-      flavorLabel: 'Temperature',
-    },
-    {
-      id: 68,
-      name: 'Strawberry Matcha',
-      category: 'Wing Cafe',
-      subcategory: 'Matcha Lattes',
-      image: '/order-strawberry-matcha.jpg',
-      flavors: ['Hot', 'Iced'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-      flavorLabel: 'Temperature',
-    },
-    {
-      id: 69,
-      name: 'Vanilla Honey Matcha',
-      category: 'Wing Cafe',
-      subcategory: 'Matcha Lattes',
-      image: '/order-vanilla-honey-matcha.jpg',
-      flavors: ['Hot', 'Iced'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-      flavorLabel: 'Temperature',
-    },
-    {
-      id: 70,
-      name: 'Coconut Lavender Matcha',
-      category: 'Wing Cafe',
-      subcategory: 'Matcha Lattes',
-      image: '/order-coconut-lavender-matcha.jpg',
-      flavors: ['Hot', 'Iced'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-      flavorLabel: 'Temperature',
-    },
-    {
-      id: 71,
-      name: 'Blueberry Matcha',
-      category: 'Wing Cafe',
-      subcategory: 'Matcha Lattes',
-      image: '/order-blueberry-matcha.jpg',
-      flavors: ['Hot', 'Iced'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-      flavorLabel: 'Temperature',
-    },
-    // Chai Lattes - Additional
-    {
-      id: 72,
-      name: 'Dirty Chai',
-      category: 'Wing Cafe',
-      subcategory: 'Chai Lattes',
-      image: '/order-dirty-chai.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    // Hot Smelts - Additional
-    {
-      id: 73,
-      name: 'Hot White Chocolate',
-      category: 'Wing Cafe',
-      subcategory: 'Hot Smelts',
-      image: '/order-hot-white-chocolate.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    // Teas
-    {
-      id: 74,
-      name: 'Teas',
-      category: 'Wing Cafe',
-      subcategory: 'Teas',
-      image: '/order-teas.jpg',
-      flavors: ['Black', 'Green', 'Herbal'],
-      sizes: [
-        { name: 'Regular', price: 5000 },
-      ],
-      flavorLabel: 'Tea Type',
-    },
-    // Wingfreshers
-    {
-      id: 75,
-      name: 'Peach Wingfresher',
-      category: 'Wing Cafe',
-      subcategory: 'Wingfreshers',
-      image: '/order-peach-wingfresher.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 76,
-      name: 'Coconut Wingfresher',
-      category: 'Wing Cafe',
-      subcategory: 'Wingfreshers',
-      image: '/order-coconut-wingfresher.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 77,
-      name: 'Strawberry Wingfresher',
-      category: 'Wing Cafe',
-      subcategory: 'Wingfreshers',
-      image: '/order-strawberry-wingfresher.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    // Signature Pairings
-    {
-      id: 78,
-      name: 'Tiramisu + White Chocolate',
-      category: 'Wing Cafe',
-      subcategory: 'Signature Pairings',
-      image: '/order-tiramisu-white-chocolate.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 79,
-      name: 'Irish Cream + Chocolate',
-      category: 'Wing Cafe',
-      subcategory: 'Signature Pairings',
-      image: '/order-irish-cream-chocolate.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 80,
-      name: 'Popcorn + Salted Caramel',
-      category: 'Wing Cafe',
-      subcategory: 'Signature Pairings',
-      image: '/order-popcorn-salted-caramel.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 81,
-      name: 'Pistachio + Vanilla',
-      category: 'Wing Cafe',
-      subcategory: 'Signature Pairings',
-      image: '/order-pistachio-vanilla.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 82,
-      name: 'Gingerbread + Caramelized Peanut',
-      category: 'Wing Cafe',
-      subcategory: 'Signature Pairings',
-      image: '/order-gingerbread-caramelized-peanut.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 83,
-      name: 'Pumpkin Spice + White Chocolate',
-      category: 'Wing Cafe',
-      subcategory: 'Signature Pairings',
-      image: '/order-pumpkin-spice-white-chocolate.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 84,
-      name: 'Tiramisu + Irish Cream',
-      category: 'Wing Cafe',
-      subcategory: 'Signature Pairings',
-      image: '/order-tiramisu-irish-cream.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 28,
-      name: 'Banana Cake Slice',
-      category: 'Pastries',
-      image: '/order-banana-cake-slice.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 2000 },
-      ],
-    },
-    {
-      id: 29,
-      name: 'Chocolate Cake Slice',
-      category: 'Pastries',
-      image: '/order-chocolate-cake-slice.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 2000 },
-      ],
-    },
-    {
-      id: 30,
-      name: 'Vanilla Cake Slice',
-      category: 'Pastries',
-      image: '/order-vanilla-cake-slice.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 2000 },
-      ],
-    },
-    {
-      id: 31,
-      name: 'Scones',
-      category: 'Pastries',
-      image: '/order-scones.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 2000 },
-      ],
-    },
-    {
-      id: 32,
-      name: 'Hot Cross Bun x6',
-      category: 'Pastries',
-      image: '/order-hot-cross-bun-x6.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 12500 },
-      ],
-    },
-    {
-      id: 48,
-      name: 'Hot Cross Bun',
-      category: 'Pastries',
-      image: '/order-hot-cross-bun.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 1250 },
-      ],
-    },
-    {
-      id: 33,
-      name: 'Fried Chicken Sandwich',
-      category: 'Wingside Special',
-      image: '/order-fried-chicken-sandwich.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 7500 },
-      ],
-    },
-    {
-      id: 34,
-      name: 'Loaded Fries',
-      category: 'Wingside Special',
-      image: '/order-loaded-fries.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 12000 },
-      ],
-    },
-    {
-      id: 35,
-      name: 'Hunger Games',
-      category: 'Wings',
-      image: '/order-hunger-games.jpg',
-      flavors: [
-        'BBQ Fire',
-        'BBQ Rush',
-        'Braveheart',
-        'Cameroon Rub',
-        'Caribbean Jerk',
-        'Dragon Breath',
-        'Gustavo',
-        'Hot Nuts',
-        'The Italian',
-        'Lemon Pepper',
-        'Mango Heat',
-        'Sweet Dreams',
-        'Tequila Wingrise',
-        'The Slayer',
-        'Tokyo',
-        'Wing of the North',
-        'Wingferno',
-        'Whiskey Vibes',
-        'Yaji',
-        'Yellow Gold'
-      ],
-      sizes: [
-        { name: 'Regular', price: 50000 },
-      ],
-      wingCount: '60 Wings',
-      flavorCount: 6,
-    },
-    {
-      id: 36,
-      name: 'Lord of the Wings',
-      category: 'Wings',
-      image: '/order-lord-of-the-wings.jpg',
-      flavors: [
-        'BBQ Fire',
-        'BBQ Rush',
-        'Braveheart',
-        'Cameroon Rub',
-        'Caribbean Jerk',
-        'Dragon Breath',
-        'Gustavo',
-        'Hot Nuts',
-        'The Italian',
-        'Lemon Pepper',
-        'Mango Heat',
-        'Sweet Dreams',
-        'Tequila Wingrise',
-        'The Slayer',
-        'Tokyo',
-        'Wing of the North',
-        'Wingferno',
-        'Whiskey Vibes',
-        'Yaji',
-        'Yellow Gold'
-      ],
-      sizes: [
-        { name: 'Regular', price: 80000 },
-      ],
-      wingCount: '100 Wings',
-      flavorCount: 8,
-    },
-    {
-      id: 39,
-      name: 'Water',
-      category: 'Drinks',
-      image: '/order-water.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 750 },
-      ],
-    },
-    {
-      id: 40,
-      name: 'Soft Drinks',
-      category: 'Drinks',
-      image: '/order-soft-drinks.jpg',
-      flavors: ['Coke', 'Fanta', 'Sprite'],
-      sizes: [
-        { name: 'Regular', price: 1250 },
-      ],
-      flavorLabel: 'Drink Option',
-    },
-    {
-      id: 41,
-      name: 'Prime (Hydrated drink)',
-      category: 'Drinks',
-      image: '/order-prime-hydrated-drink.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 4000 },
-      ],
-    },
-    {
-      id: 42,
-      name: 'Beer',
-      category: 'Drinks',
-      image: '/order-beer.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 2500 },
-      ],
-    },
-    {
-      id: 43,
-      name: 'Lone Ranger',
-      category: 'Meal Deals',
-      image: '/order-lone-ranger.jpg',
-      flavors: [
-        'BBQ Fire',
-        'BBQ Rush',
-        'Braveheart',
-        'Cameroon Rub',
-        'Caribbean Jerk',
-        'Dragon Breath',
-        'Gustavo',
-        'Hot Nuts',
-        'The Italian',
-        'Lemon Pepper',
-        'Mango Heat',
-        'Sweet Dreams',
-        'Tequila Wingrise',
-        'The Slayer',
-        'Tokyo',
-        'Wing of the North',
-        'Wingferno',
-        'Whiskey Vibes',
-        'Yaji',
-        'Yellow Gold'
-      ],
-      sizes: [
-        { name: 'Regular', price: 7000 },
-      ],
-      wingCount: '3 Wings, Rice, Drink',
-      flavorCount: 1,
-      riceOptions: [
-        { name: 'Jollof Rice', price: 0 },
-        { name: 'Fiesta Rice', price: 0 },
-        { name: 'Bacon Coconut Rice', price: 500 },
-      ],
-      drinkOptions: ['Coke', 'Fanta', 'Sprite', 'Water'],
-    },
-    {
-      id: 44,
-      name: 'Pairfect Combo',
-      category: 'Meal Deals',
-      image: '/order-pairfect-combo.jpg',
-      flavors: [
-        'BBQ Fire',
-        'BBQ Rush',
-        'Braveheart',
-        'Cameroon Rub',
-        'Caribbean Jerk',
-        'Dragon Breath',
-        'Gustavo',
-        'Hot Nuts',
-        'The Italian',
-        'Lemon Pepper',
-        'Mango Heat',
-        'Sweet Dreams',
-        'Tequila Wingrise',
-        'The Slayer',
-        'Tokyo',
-        'Wing of the North',
-        'Wingferno',
-        'Whiskey Vibes',
-        'Yaji',
-        'Yellow Gold'
-      ],
-      sizes: [
-        { name: 'Regular', price: 15000 },
-      ],
-      wingCount: '6 Wings, Milkshake',
-      flavorCount: 1,
-      milkshakeOptions: ['Cookie Shake', 'Malted Shake', 'Strawberry Shake', 'Vanilla Shake'],
-    },
-    {
-      id: 46,
-      name: 'Value Pack',
-      category: 'Meal Deals',
-      image: '/order-value-pack.jpg',
-      flavors: [
-        'BBQ Fire',
-        'BBQ Rush',
-        'Braveheart',
-        'Cameroon Rub',
-        'Caribbean Jerk',
-        'Dragon Breath',
-        'Gustavo',
-        'Hot Nuts',
-        'The Italian',
-        'Lemon Pepper',
-        'Mango Heat',
-        'Sweet Dreams',
-        'Tequila Wingrise',
-        'The Slayer',
-        'Tokyo',
-        'Wing of the North',
-        'Wingferno',
-        'Whiskey Vibes',
-        'Yaji',
-        'Yellow Gold'
-      ],
-      sizes: [
-        { name: 'Regular', price: 15000 },
-      ],
-      wingCount: 'Fried chicken sandwich, 4 Wings, Fries, Drink',
-      flavorCount: 1,
-      drinkOptions: ['Coke', 'Fanta', 'Sprite', 'Water'],
-    },
-    {
-      id: 47,
-      name: 'Family Pack',
-      category: 'Meal Deals',
-      image: '/order-family-pack.jpg',
-      flavors: [
-        'BBQ Fire',
-        'BBQ Rush',
-        'Braveheart',
-        'Cameroon Rub',
-        'Caribbean Jerk',
-        'Dragon Breath',
-        'Gustavo',
-        'Hot Nuts',
-        'The Italian',
-        'Lemon Pepper',
-        'Mango Heat',
-        'Sweet Dreams',
-        'Tequila Wingrise',
-        'The Slayer',
-        'Tokyo',
-        'Wing of the North',
-        'Wingferno',
-        'Whiskey Vibes',
-        'Yaji',
-        'Yellow Gold'
-      ],
-      sizes: [
-        { name: 'Regular', price: 25000 },
-      ],
-      wingCount: '36 Wings, 4 Rice, 4 Fried Plantain, 4 Drinks',
-      flavorCount: 6,
-      riceOptions: [
-        { name: 'Jollof Rice', price: 0 },
-        { name: 'Fiesta Rice', price: 0 },
-      ],
-      riceCount: 4,
-      drinkOptions: ['Coke', 'Fanta', 'Sprite', 'Water'],
-      drinkCount: 4,
-    },
-    {
-      id: 13,
-      name: 'Grilled Chicken Salad',
-      category: 'Salads',
-      image: '/order-grilled-chicken-salad.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 4000 },
-      ],
-    },
-    {
-      id: 14,
-      name: 'Coleslaw',
-      category: 'Salads',
-      image: '/order-coleslaw.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 1500 },
-      ],
-    },
-    {
-      id: 15,
-      name: 'Bell Chicken Wrap',
-      category: 'Wraps',
-      image: '/order-bell-chicken-wrap.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 16,
-      name: 'Breakfast Wrap',
-      category: 'Wraps',
-      image: '/order-breakfast-wrap.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6500 },
-      ],
-    },
-    {
-      id: 17,
-      name: 'Chicken & Bacon Wrap',
-      category: 'Wraps',
-      image: '/order-chicken-bacon-wrap.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 18,
-      name: 'Chicken Shawarma Wrap',
-      category: 'Wraps',
-      image: '/order-chicken-shawarma-wrap.jpg',
-      flavors: ['Regular'],
-      sizes: [
-        { name: 'Regular', price: 6000 },
-      ],
-    },
-    {
-      id: 19,
-      name: 'The Genius',
-      category: 'Kids',
-      image: '/kids-the-genius.jpg',
-      flavors: [
-        'BBQ Fire',
-        'BBQ Rush',
-        'Braveheart',
-        'Cameroon Rub',
-        'Caribbean Jerk',
-        'Dragon Breath',
-        'Gustavo',
-        'Hot Nuts',
-        'The Italian',
-        'Lemon Pepper',
-        'Mango Heat',
-        'Sweet Dreams',
-        'Tequila Wingrise',
-        'The Slayer',
-        'Tokyo',
-        'Wing of the North',
-        'Wingferno',
-        'Whiskey Vibes',
-        'Yaji',
-        'Yellow Gold'
-      ],
-      sizes: [
-        { name: 'Kids Meal', price: 5000 },
-      ],
-      flavorCount: 1,
-      description: '3 Wings, French Fries, 1 Juice Box and 1 Cake Slice',
-      cakeOptions: [
-        'Banana Cake Slice',
-        'Chocolate Cake Slice',
-        'Vanilla Cake Slice'
-      ],
-    },
-  ];
 
   const filteredProducts = products.filter(product => {
     if (product.category !== activeCategory) return false;
@@ -1421,7 +282,7 @@ export default function OrderPage() {
   };
 
   const getProductPrice = (product: Product): number => {
-    const selectedSize = selectedSizes[product.id] || product.sizes[0].name;
+    const selectedSize = selectedSizes[product.id] || product.sizes[0]?.name;
     const size = product.sizes.find(s => s.name === selectedSize);
     let basePrice = size?.price || product.sizes[0].price;
 
@@ -1587,8 +448,17 @@ export default function OrderPage() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Products Grid */}
           <div className="flex-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredProducts.map((product) => (
+            {loading ? (
+              <div className="text-center py-12">
+                <p className="text-gray-600">Loading products...</p>
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-600">No products found in this category.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredProducts.map((product) => (
                 <div key={product.id} className="order-product-card">
                   {/* Product Image */}
                   <div className="relative mb-4">
@@ -1615,8 +485,8 @@ export default function OrderPage() {
                   {/* Select Flavor */}
                   {(product.flavors.length > 1 || (product.flavorCount && product.flavorCount > 1)) && (
                     <div className="mb-4">
-                      {/* Category-based selection for Rookie Pack and Pro Pack */}
-                      {(product.id === 1 || product.id === 3) ? (
+                      {/* Category-based selection for products with many flavor options */}
+                      {product.flavors.length >= 10 ? (
                         <>
                           <div className="mb-2">
                             <p className="text-sm font-semibold text-gray-700">
@@ -1634,10 +504,27 @@ export default function OrderPage() {
                                 <button
                                   key={category}
                                   onClick={() => handleFlavorCategorySelect(product.id, category)}
-                                  className={`order-flavor-btn ${isOpen ? 'active' : ''}`}
+                                  className={`order-flavor-btn ${isOpen ? 'active' : ''} flex items-center gap-1`}
                                   style={hasSelectedFlavors && !isOpen ? { backgroundColor: '#FEF3C7' } : undefined}
                                 >
-                                  {category}
+                                  <span>{category}</span>
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    style={{
+                                      transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                      transition: 'transform 0.2s ease'
+                                    }}
+                                  >
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                  </svg>
                                 </button>
                               );
                             })}
@@ -1923,6 +810,7 @@ export default function OrderPage() {
                 </div>
               ))}
             </div>
+          )}
           </div>
 
           {/* Cart Sidebar */}
