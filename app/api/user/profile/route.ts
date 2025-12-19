@@ -9,10 +9,17 @@ export async function GET() {
     // Get authenticated user
     const {
       data: { user },
+      error: authError
     } = await supabase.auth.getUser()
 
+    if (authError) {
+      console.error('Auth error in profile API:', authError)
+      return NextResponse.json({ error: 'Authentication failed', details: authError.message }, { status: 401 })
+    }
+
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      console.log('No user found in profile API')
+      return NextResponse.json({ error: 'Unauthorized - No user session found' }, { status: 401 })
     }
 
     // Fetch user's profile data
