@@ -1,0 +1,37 @@
+
+> wingside@0.1.0 build
+> next build
+
+   ▲ Next.js 16.0.7 (Turbopack)
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 2 errors:
+./app/order/page.tsx:58:2
+Parsing ecmascript source code failed
+[0m [90m 56 |[39m   [36mconst[39m [products[33m,[39m setProducts] [33m=[39m useState[33m<[39m[33mProduct[39m[][33m>[39m([])[33m;[39m
+ [90m 57 |[39m   [36mconst[39m [loading[33m,[39m setLoading] [33m=[39m useState([36mtrue[39m)[33m;[39m
+[31m[1m>[22m[39m[90m 58 |[39m })
+ [90m    |[39m  [31m[1m^[22m[39m
+ [90m 59 |[39m[0m
+
+Expression expected
+
+
+./proxy.ts:35:6
+Parsing ecmascript source code failed
+[0m [90m 33 |[39m           }[33m,[39m
+ [90m 34 |[39m        }[33m,[39m
+[31m[1m>[22m[39m[90m 35 |[39m      }
+ [90m    |[39m      [31m[1m^[22m[39m
+ [90m 36 |[39m    )
+ [90m 37 |[39m
+ [90m 38 |[39m    [90m// Refresh session if expired - required for Server Components[39m[0m
+
+Expression expected
+
+
+    at <unknown> (./app/order/page.tsx:58:2)
+    at <unknown> (./proxy.ts:35:6)
