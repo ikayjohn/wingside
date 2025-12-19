@@ -65,17 +65,27 @@ export default function WingclubDashboard() {
         // Fetch user profile
         const profileResponse = await fetch('/api/user/profile');
         if (!profileResponse.ok) {
-          throw new Error('Failed to fetch profile');
+          const errorText = await profileResponse.text();
+          console.error('Profile API error:', errorText);
+          throw new Error(`Failed to fetch profile: ${profileResponse.status}`);
         }
         const profileData = await profileResponse.json();
 
         // Fetch wallet transactions
         const transactionsResponse = await fetch('/api/user/wallet-history');
+        if (!transactionsResponse.ok) {
+          console.error('Transactions API error:', transactionsResponse.status);
+        }
         const transactionsData = await transactionsResponse.json();
 
         setUserData(profileData.profile);
         setRecentTransactions(transactionsData.transactions || []);
       } catch (err) {
+        console.error('Dashboard data fetch error:', err);
+        if (err instanceof Error) {
+          console.error('Error message:', err.message);
+          console.error('Error stack:', err.stack);
+        }
         setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
       } finally {
         setLoading(false);

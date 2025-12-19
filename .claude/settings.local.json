@@ -39,7 +39,8 @@
       "Bash(node scripts/test-order.js:*)",
       "Bash(node scripts/add-sample-customer.js:*)",
       "Bash(start http://localhost:3000/admin/customers)",
-      "Bash(del nul)"
+      "Bash(del nul)",
+      "Bash(tee:*)"
     ],
     "deny": [],
     "ask": []

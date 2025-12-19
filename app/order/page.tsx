@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 // Types
@@ -60,8 +60,8 @@ export default function OrderPage() {
   const [selectedFlavors, setSelectedFlavors] = useState<Record<string, string[]>>({});
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [selectedRice, setSelectedRice] = useState<Record<string, string | string[]>>({});
-  const [selectedDrinks, setSelectedDrinks] = useState<Record<string, string | string[]>>({});
+  const [selectedRice, setSelectedRice] = useState<Record<string, string[]>>({});
+  const [selectedDrinks, setSelectedDrinks] = useState<Record<string, string[]>>({});
   const [selectedMilkshakes, setSelectedMilkshakes] = useState<Record<string, string>>({});
   const [selectedCakes, setSelectedCakes] = useState<Record<string, string>>({});
   const [selectedFlavorCategory, setSelectedFlavorCategory] = useState<Record<string, string>>({});
@@ -656,7 +656,7 @@ export default function OrderPage() {
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {product.riceOptions.map((rice) => {
-                          const current: string[] = Array.isArray(selectedRice[product.id]) ? selectedRice[product.id] : (selectedRice[product.id] ? [selectedRice[product.id]] : []);
+                          const current: string[] = Array.isArray(selectedRice[product.id]) ? selectedRice[product.id] : ((selectedRice[product.id]) ? [selectedRice[product.id]] : []);
                           const selectedCount = current.filter((r: string) => r === rice.name).length;
                           const isSelected = selectedCount > 0;
                           const isSingleSelect = !product.riceCount || product.riceCount === 1;
