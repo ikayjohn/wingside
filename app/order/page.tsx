@@ -57,14 +57,14 @@ export default function OrderPage() {
   const [activeCategory, setActiveCategory] = useState('Wings');
   const [activeSubcategory, setActiveSubcategory] = useState<string>('');
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [selectedFlavors, setSelectedFlavors] = useState<{ [key: string]: string[] }>({});
-  const [selectedSizes, setSelectedSizes] = useState<{ [key: string]: string }>({});
-  const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
-  const [selectedRice, setSelectedRice] = useState<{ [key: string]: string | string[] }>({});
-  const [selectedDrinks, setSelectedDrinks] = useState<{ [key: string]: string | string[] }>({});
-  const [selectedMilkshakes, setSelectedMilkshakes] = useState<{ [key: string]: string }>({});
-  const [selectedCakes, setSelectedCakes] = useState<{ [key: string]: string }>({});
-  const [selectedFlavorCategory, setSelectedFlavorCategory] = useState<{ [key: string]: string }>({});
+  const [selectedFlavors, setSelectedFlavors] = useState<Record<string, string[]>>({});
+  const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [selectedRice, setSelectedRice] = useState<Record<string, string | string[]>>({});
+  const [selectedDrinks, setSelectedDrinks] = useState<Record<string, string | string[]>>({});
+  const [selectedMilkshakes, setSelectedMilkshakes] = useState<Record<string, string>>({});
+  const [selectedCakes, setSelectedCakes] = useState<Record<string, string>>({});
+  const [selectedFlavorCategory, setSelectedFlavorCategory] = useState<Record<string, string>>({});
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -282,9 +282,9 @@ export default function OrderPage() {
   };
 
   const getProductPrice = (product: Product): number => {
-    const selectedSize = selectedSizes[product.id] || product.sizes[0]?.name;
+    const selectedSize = selectedSizes[product.id] || product.sizes[0]?.name || '';
     const size = product.sizes.find(s => s.name === selectedSize);
-    let basePrice = size?.price || product.sizes[0].price;
+    let basePrice = size?.price || product.sizes[0]?.price || 0;
 
     // Add rice price if applicable
     if (product.riceOptions) {
@@ -320,7 +320,7 @@ export default function OrderPage() {
     }
 
     const flavor = flavorCount === 1 ? selectedFlavorArray[0] : selectedFlavorArray;
-    const size = selectedSizes[product.id] || product.sizes[0].name;
+    const size = selectedSizes[product.id] || product.sizes[0]?.name || '';
     const quantity = quantities[product.id] || 1;
     const price = getProductPrice(product);
     const rice = product.riceOptions ? selectedRice[product.id] : undefined;
@@ -634,7 +634,7 @@ export default function OrderPage() {
                           <button
                             key={size.name}
                             onClick={() => handleSizeSelect(product.id, size.name)}
-                            className={`order-size-btn ${selectedSizes[product.id] === size.name ? 'active' : ''}`}
+                            className={`order-size-btn ${(selectedSizes[product.id]) === size.name ? 'active' : ''}`}
                           >
                             {size.name}
                           </button>
@@ -656,7 +656,7 @@ export default function OrderPage() {
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {product.riceOptions.map((rice) => {
-                          const current: string[] = Array.isArray(selectedRice[product.id]) ? selectedRice[product.id] as string[] : (selectedRice[product.id] ? [selectedRice[product.id] as string] : []);
+                          const current: string[] = Array.isArray(selectedRice[product.id]) ? selectedRice[product.id] : (selectedRice[product.id] ? [selectedRice[product.id]] : []);
                           const selectedCount = current.filter((r: string) => r === rice.name).length;
                           const isSelected = selectedCount > 0;
                           const isSingleSelect = !product.riceCount || product.riceCount === 1;
@@ -665,7 +665,7 @@ export default function OrderPage() {
                             <div key={rice.name} className="relative inline-flex items-center gap-1">
                               <button
                                 onClick={() => handleRiceSelect(product.id, rice.name, product.riceCount || 1)}
-                                className={`order-size-btn ${isSingleSelect ? (selectedRice[product.id] === rice.name ? 'active' : '') : (isSelected ? 'active' : '')}`}
+                                className={`order-size-btn ${isSingleSelect ? ((selectedRice[product.id]) === rice.name ? 'active' : '') : (isSelected ? 'active' : '')}`}
                               >
                                 {rice.name}
                                 {rice.price > 0 && <span className="text-xs ml-1">(+₦{rice.price})</span>}
