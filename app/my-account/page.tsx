@@ -1,11 +1,30 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
 export default function MyAccountPage() {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        // User is already logged in, redirect to dashboard
+        router.push('/my-account/dashboard');
+      } else {
+        // User is not logged in, show login/signup forms
+        setLoading(false);
+      }
+    };
+
+    checkAuthStatus();
+  }, [router]);
   const [activeTab, setActiveTab] = useState<'signup' | 'login'>('signup');
   const [showPassword, setShowPassword] = useState(false);
 
@@ -42,19 +61,85 @@ export default function MyAccountPage() {
     }));
   };
 
-  const handleSignupSubmit = (e: React.FormEvent) => {
+  const supabase = createClient();
+
+  const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Signup submitted:', signupData);
-    // Redirect to dashboard (authentication will be added later)
-    router.push('/my-account/dashboard');
+    
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: signupData.email,
+        password: signupData.password,
+        options: {
+          data: {
+            full_name: `${signupData.firstName} ${signupData.lastName}`,
+            phone: `${signupData.countryCode}${signupData.phone}`,
+          },
+        },
+      });
+
+      if (error) {
+        alert(`Signup failed: ${error.message}`);
+        return;
+      }
+
+      if (data.user) {
+        // Create profile
+        const { error: profileError } = await supabase.from('profiles').insert({
+          id: data.user.id,
+          email: data.user.email || signupData.email,
+          full_name: `${signupData.firstName} ${signupData.lastName}`,
+          phone: `${signupData.countryCode}${signupData.phone}`,
+          role: 'customer',
+        });
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+        }
+
+        alert('Account created successfully! Please check your email to verify your account.');
+        router.push('/my-account/dashboard');
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      alert('An error occurred during signup. Please try again.');
+    }
   };
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login submitted:', loginData);
-    // Redirect to dashboard (authentication will be added later)
-    router.push('/my-account/dashboard');
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginData.email,
+        password: loginData.password,
+      });
+
+      if (error) {
+        alert(`Login failed: ${error.message}`);
+        return;
+      }
+
+      if (data.session) {
+        router.push('/my-account/dashboard');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('An error occurred during login. Please try again.');
+    }
   };
+
+  // Show loading while checking auth status
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
+          <p className="mt-4 text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
