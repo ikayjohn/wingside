@@ -55,4 +55,25 @@ export default function OrderPage() {
   const [selectedFlavorCategory, setSelectedFlavorCategory] = useState<{ [key: string]: string }>({});
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-})
+
+  // Add missing functions (simplified versions to be implemented later)
+  const handleFlavorSelect = (_productId: string, _flavor: string, _maxCount?: number) => {
+    console.log('Flavor selection to be implemented');
+  };
+
+  const handleSizeSelect = (_productId: string, _size: string) => {
+    console.log('Size selection to be implemented');
+  };
+
+  const handleQuantityChange = (productId: string, quantity: number) => {
+    setQuantities(prev => ({ ...prev, [productId]: quantity }));
+  };
+
+  const addToCart = (product: Product) => {
+    console.log('Add to cart to be implemented');
+  };
+
+  const removeFromCart = (productId: string) => {
+    console.log('Remove from cart to be implemented');
+  };
+};
