@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
-export default function PaymentCallbackPage() {
+function PaymentCallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const reference = searchParams.get('reference');
@@ -156,5 +156,21 @@ export default function PaymentCallbackPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function PaymentCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#F7C400] mx-auto mb-6"></div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Verifying Payment</h1>
+          <p className="text-gray-600">Please wait while we confirm your payment...</p>
+        </div>
+      </div>
+    }>
+      <PaymentCallbackContent />
+    </Suspense>
   );
 }

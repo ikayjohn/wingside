@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 // Types
 interface CartItem {
-  id: string | number; // Support both UUID and number for backwards compatibility
+  id: string;
   name: string;
   flavor: string | string[];
   size: string;
@@ -19,7 +19,7 @@ interface CartItem {
 }
 
 interface Product {
-  id: string | number; // Support both UUID and number for backwards compatibility
+  id: string;
   name: string;
   category: string;
   subcategory?: string;
@@ -57,14 +57,14 @@ export default function OrderPage() {
   const [activeCategory, setActiveCategory] = useState('Wings');
   const [activeSubcategory, setActiveSubcategory] = useState<string>('');
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [selectedFlavors, setSelectedFlavors] = useState<{ [key: number]: string[] }>({});
-  const [selectedSizes, setSelectedSizes] = useState<{ [key: number]: string }>({});
-  const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
-  const [selectedRice, setSelectedRice] = useState<{ [key: number]: string | string[] }>({});
-  const [selectedDrinks, setSelectedDrinks] = useState<{ [key: number]: string | string[] }>({});
-  const [selectedMilkshakes, setSelectedMilkshakes] = useState<{ [key: number]: string }>({});
-  const [selectedCakes, setSelectedCakes] = useState<{ [key: number]: string }>({});
-  const [selectedFlavorCategory, setSelectedFlavorCategory] = useState<{ [key: number]: string }>({});
+  const [selectedFlavors, setSelectedFlavors] = useState<{ [key: string]: string[] }>({});
+  const [selectedSizes, setSelectedSizes] = useState<{ [key: string]: string }>({});
+  const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
+  const [selectedRice, setSelectedRice] = useState<{ [key: string]: string | string[] }>({});
+  const [selectedDrinks, setSelectedDrinks] = useState<{ [key: string]: string | string[] }>({});
+  const [selectedMilkshakes, setSelectedMilkshakes] = useState<{ [key: string]: string }>({});
+  const [selectedCakes, setSelectedCakes] = useState<{ [key: string]: string }>({});
+  const [selectedFlavorCategory, setSelectedFlavorCategory] = useState<{ [key: string]: string }>({});
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -144,20 +144,20 @@ export default function OrderPage() {
     }
   }, [activeCategory, activeSubcategory]);
 
-  const handleFlavorCategorySelect = (productId: number, category: string) => {
+  const handleFlavorCategorySelect = (productId: string, category: string) => {
     setSelectedFlavorCategory(prev => ({
       ...prev,
       [productId]: prev[productId] === category ? '' : category
     }));
   };
 
-  const categoryHasSelectedFlavors = (productId: number, category: string): boolean => {
+  const categoryHasSelectedFlavors = (productId: string, category: string): boolean => {
     const selectedFlavorsList = selectedFlavors[productId] || [];
     const categoryFlavors = flavorCategories[category as keyof typeof flavorCategories] || [];
     return selectedFlavorsList.some(flavor => categoryFlavors.includes(flavor));
   };
 
-  const handleFlavorSelect = (productId: number, flavor: string, maxCount: number = 1) => {
+  const handleFlavorSelect = (productId: string, flavor: string, maxCount: number = 1) => {
     setSelectedFlavors(prev => {
       const current = prev[productId] || [];
 
@@ -183,7 +183,7 @@ export default function OrderPage() {
     });
   };
 
-  const handleFlavorRemove = (productId: number, flavor: string) => {
+  const handleFlavorRemove = (productId: string, flavor: string) => {
     setSelectedFlavors(prev => {
       const current = prev[productId] || [];
       const index = current.indexOf(flavor);
@@ -198,11 +198,11 @@ export default function OrderPage() {
     });
   };
 
-  const handleSizeSelect = (productId: number, size: string) => {
+  const handleSizeSelect = (productId: string, size: string) => {
     setSelectedSizes(prev => ({ ...prev, [productId]: size }));
   };
 
-  const handleRiceSelect = (productId: number, rice: string, maxCount: number = 1) => {
+  const handleRiceSelect = (productId: string, rice: string, maxCount: number = 1) => {
     setSelectedRice(prev => {
       const current = Array.isArray(prev[productId]) ? prev[productId] : (prev[productId] ? [prev[productId] as string] : []);
 
@@ -220,7 +220,7 @@ export default function OrderPage() {
     });
   };
 
-  const handleRiceRemove = (productId: number, rice: string) => {
+  const handleRiceRemove = (productId: string, rice: string) => {
     setSelectedRice(prev => {
       const current = Array.isArray(prev[productId]) ? prev[productId] : [];
       const index = current.indexOf(rice);
@@ -234,7 +234,7 @@ export default function OrderPage() {
     });
   };
 
-  const handleDrinkSelect = (productId: number, drink: string, maxCount: number = 1) => {
+  const handleDrinkSelect = (productId: string, drink: string, maxCount: number = 1) => {
     setSelectedDrinks(prev => {
       const current = Array.isArray(prev[productId]) ? prev[productId] : (prev[productId] ? [prev[productId] as string] : []);
 
@@ -252,7 +252,7 @@ export default function OrderPage() {
     });
   };
 
-  const handleDrinkRemove = (productId: number, drink: string) => {
+  const handleDrinkRemove = (productId: string, drink: string) => {
     setSelectedDrinks(prev => {
       const current = Array.isArray(prev[productId]) ? prev[productId] : [];
       const index = current.indexOf(drink);
@@ -266,15 +266,15 @@ export default function OrderPage() {
     });
   };
 
-  const handleMilkshakeSelect = (productId: number, milkshake: string) => {
+  const handleMilkshakeSelect = (productId: string, milkshake: string) => {
     setSelectedMilkshakes(prev => ({ ...prev, [productId]: milkshake }));
   };
 
-  const handleCakeSelect = (productId: number, cake: string) => {
+  const handleCakeSelect = (productId: string, cake: string) => {
     setSelectedCakes(prev => ({ ...prev, [productId]: cake }));
   };
 
-  const handleQuantityChange = (productId: number, delta: number) => {
+  const handleQuantityChange = (productId: string, delta: number) => {
     setQuantities(prev => ({
       ...prev,
       [productId]: Math.max(1, (prev[productId] || 1) + delta),
