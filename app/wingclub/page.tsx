@@ -35,7 +35,7 @@ export default function WingclubPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Slider Section */}
-      <div className="relative h-[750px] overflow-hidden">
+      <div className="relative h-[700px] md:h-[800px] lg:h-[900px] overflow-hidden">
         {slides.map((slide, index) => (
           <div
             key={index}
@@ -52,26 +52,27 @@ export default function WingclubPage() {
             <div className="absolute inset-0 bg-black/20"></div>
 
             {/* Content */}
-            <div className="relative h-full w-[90%] mx-auto flex flex-col justify-center">
-              {/* Wingclub Badge */}
-              <div className="mb-6">
-                <span className="inline-block bg-white text-gray-900 px-4 py-2 rounded-full text-sm font-medium">
+            <div className="relative h-full w-[90%] mx-auto flex flex-col justify-between px-4 md:px-8 lg:px-16 py-10 md:py-22">
+              {/* Wingclub Badge at Top */}
+              <div>
+                <span className="inline-block bg-[#FDEDB2] text-gray-900 px-4 py-2 rounded-full text-sm font-medium">
                   Wingclub
                 </span>
               </div>
 
-              {/* Heading */}
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 lg:whitespace-nowrap">
-                {slide.title}
-              </h1>
+              {/* Text Content at Bottom */}
+              <div className="w-full max-w-6xl">
+                {/* Heading */}
+                <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 leading-tight">
+                  {slide.title}
+                </h1>
 
-              {/* Description */}
-              <p className="text-white text-lg md:text-xl mb-8 max-w-full md:max-w-3xl lg:max-w-4xl">
-                {slide.description}
-              </p>
+                {/* Description */}
+                <p className="text-sm md:text-base lg:text-lg text-white mb-8 max-w-3xl leading-relaxed">
+                  {slide.description}
+                </p>
 
-              {/* CTA Button */}
-              <div>
+                {/* CTA Button */}
                 <Link
                   href="/my-account"
                   className="inline-block bg-[#F7C400] text-gray-900 px-8 py-4 rounded-full font-semibold text-lg hover:bg-[#e5b500] transition-colors"
