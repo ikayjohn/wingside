@@ -4,8 +4,8 @@ require('dotenv').config({ path: '.env.local' });
 
 // Initialize admin client with service role key
 const adminSupabase = createClient(
-  'https://cxbqochxrhokdscgijxe.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4YnFvY2h4cmhva2RzY2dpanhlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjA1MTUzNCwiZXhwIjoyMDgxNjI3NTM0fQ.NkuvWwmfalPWiIc_hRBFHIrzAyP3Shbv9sw167ITXFQ',
+  process.env.SUPABASE_URL || 'https://cxbqochxrhokdscgijxe.supabase.co',
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
   {
     auth: {
       autoRefreshToken: false,
