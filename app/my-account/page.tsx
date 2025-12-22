@@ -3,7 +3,36 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createBrowserClient } from '@supabase/ssr';
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+// Generate referral code based on name and user ID
+function generateReferralCode(fullName: string, userId: string): string {
+  // Extract first part of name and clean it
+  const namePart = fullName
+    .split(' ')[0]
+    .replace(/[^a-zA-Z]/g, '')
+    .toLowerCase()
+    .slice(0, 8);
+
+  // Get last 4 characters of user ID and encode them
+  const idPart = userId.slice(-4).replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+
+  // Combine and ensure uniqueness
+  let code = `${namePart}${idPart}`;
+
+  // Add random suffix if too short
+  if (code.length < 6) {
+    const randomSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
+    code = `${namePart}${randomSuffix}`;
+  }
+
+  return code;
+}
 
 export default function MyAccountPage() {
   const router = useRouter();
@@ -32,7 +61,6 @@ export default function MyAccountPage() {
     firstName: '',
     lastName: '',
     email: '',
-    countryCode: 'NG',
     phone: '',
     password: '',
     referralId: '',
@@ -47,10 +75,27 @@ export default function MyAccountPage() {
 
   const handleSignupChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    setSignupData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-    }));
+
+    if (name === 'phone') {
+      // Handle phone number formatting for Nigerian numbers
+      let phoneValue = value.replace(/\D/g, '');
+      // Remove leading 0 if present (common mistake: 0801 -> 801)
+      if (phoneValue.startsWith('0')) {
+        phoneValue = phoneValue.slice(1);
+      }
+      // Limit to 10 digits
+      phoneValue = phoneValue.slice(0, 10);
+
+      setSignupData(prev => ({
+        ...prev,
+        [name]: phoneValue
+      }));
+    } else {
+      setSignupData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      }));
+    }
   };
 
   const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,19 +106,59 @@ export default function MyAccountPage() {
     }));
   };
 
-  const supabase = createClient();
+  // Format phone number to ensure it's always in correct Nigerian format
+  const formatPhoneNumber = (phone: string) => {
+    if (!phone) return phone;
+
+    // Remove all non-numeric characters
+    let cleaned = phone.replace(/\D/g, '');
+
+    // Remove leading 0 if present (common mistake: 0801 -> 801)
+    if (cleaned.startsWith('0')) {
+      cleaned = cleaned.slice(1);
+    }
+
+    // Limit to 10 digits (Nigerian mobile numbers without country code)
+    cleaned = cleaned.slice(0, 10);
+
+    return cleaned;
+  };
 
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    // Validate phone number
+    const formattedPhone = formatPhoneNumber(signupData.phone);
+    if (formattedPhone.length < 10) {
+      alert('Please enter a valid Nigerian phone number');
+      return;
+    }
+
     try {
+      // Process referral ID if provided
+      let referredByUserId = null;
+      if (signupData.referralId.trim()) {
+        const { data: referrerData, error: referrerError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('referral_code', signupData.referralId.trim().toUpperCase())
+          .single();
+
+        if (!referrerError && referrerData) {
+          referredByUserId = referrerData.id;
+        } else {
+          alert('Invalid referral ID. Please check and try again, or leave blank if you don\'t have one.');
+          return;
+        }
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email: signupData.email,
         password: signupData.password,
         options: {
           data: {
             full_name: `${signupData.firstName} ${signupData.lastName}`,
-            phone: `${signupData.countryCode}${signupData.phone}`,
+            phone: `+234${formattedPhone}`,
           },
         },
       });
@@ -84,17 +169,61 @@ export default function MyAccountPage() {
       }
 
       if (data.user) {
+        // Generate unique referral code for new user
+        const referralCode = generateReferralCode(`${signupData.firstName} ${signupData.lastName}`, data.user.id);
+
         // Create profile
         const { error: profileError } = await supabase.from('profiles').insert({
           id: data.user.id,
           email: data.user.email || signupData.email,
           full_name: `${signupData.firstName} ${signupData.lastName}`,
-          phone: `${signupData.countryCode}${signupData.phone}`,
+          phone: `+234${formattedPhone}`,
           role: 'customer',
+          referral_code: referralCode,
+          referred_by: referredByUserId,
         });
 
         if (profileError) {
           console.error('Profile creation error:', profileError);
+        }
+
+        // If user was referred, create referral record
+        if (referredByUserId) {
+          const { error: referralError } = await supabase.from('referrals').insert({
+            referrer_id: referredByUserId,
+            referred_user_id: data.user.id,
+            referral_code_used: signupData.referralId.trim().toUpperCase(),
+            status: 'pending_signup',
+            reward_amount: 500, // ₦500 reward for both referrer and referred
+            referred_email: signupData.email,
+          });
+
+          if (referralError) {
+            console.error('Referral creation error:', referralError);
+          }
+        }
+
+        // Auto-create Embedly customer and wallet
+        try {
+          const embedlyResponse = await fetch('/api/embedly/auto-wallet', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          const embedlyResult = await embedlyResponse.json();
+
+          if (embedlyResult.success && embedlyResult.wallet) {
+            console.log('Embedly wallet created automatically:', embedlyResult.wallet.virtualAccount.accountNumber);
+          } else if (embedlyResult.needsManualWalletCreation) {
+            console.log('Embedly customer created, wallet needs manual creation');
+          } else {
+            console.log('Embedly wallet creation deferred:', embedlyResult.message || 'No immediate response');
+          }
+        } catch (embedlyError) {
+          console.error('Embedly auto-wallet creation failed:', embedlyError);
+          // Don't fail signup if Embedly wallet creation fails
         }
 
         alert('Account created successfully! Please check your email to verify your account.');
@@ -143,69 +272,6 @@ export default function MyAccountPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* How it works Section */}
-      <div className="wingclub-how-it-works">
-        <div className="max-w-[1200px] mx-auto px-4 py-16 md:px-6 lg:px-8">
-          <div className="wingclub-how-header">
-            <h2 className="wingclub-how-title">How it works</h2>
-            <p className="wingclub-how-subtitle">
-              It's basically turning your cravings into currency, best part, this currency is valid across our entire store. The Wingside universal currency we call it.
-            </p>
-          </div>
-
-          <div className="wingclub-how-steps">
-            <div className="wingclub-how-step">
-              <div className="wingclub-how-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="9" cy="21" r="1"></circle>
-                  <circle cx="20" cy="21" r="1"></circle>
-                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                </svg>
-              </div>
-              <h3 className="wingclub-how-step-title">Order</h3>
-              <p className="wingclub-how-step-text">Place your wing order online or in-store</p>
-            </div>
-
-            <div className="wingclub-how-step">
-              <div className="wingclub-how-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <text x="12" y="16" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#552627">₦</text>
-                </svg>
-              </div>
-              <h3 className="wingclub-how-step-title">Earn Points</h3>
-              <p className="wingclub-how-step-text">Get 1 point for every ₦100 spent</p>
-            </div>
-
-            <div className="wingclub-how-step">
-              <div className="wingclub-how-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 12 20 22 4 22 4 12"></polyline>
-                  <rect x="2" y="7" width="20" height="5"></rect>
-                  <line x1="12" y1="22" x2="12" y2="7"></line>
-                  <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
-                  <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
-                </svg>
-              </div>
-              <h3 className="wingclub-how-step-title">Unlock Perks</h3>
-              <p className="wingclub-how-step-text">Redeem points for rewards & discounts</p>
-            </div>
-
-            <div className="wingclub-how-step">
-              <div className="wingclub-how-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="23 4 23 10 17 10"></polyline>
-                  <polyline points="1 20 1 14 7 14"></polyline>
-                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                </svg>
-              </div>
-              <h3 className="wingclub-how-step-title">Keep Earning</h3>
-              <p className="wingclub-how-step-text">Keep earning, keep enjoying!</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="wingclub-container">
 
         {/* Left Side - Image */}
@@ -290,26 +356,19 @@ export default function MyAccountPage() {
                 <div className="wingclub-field">
                   <label className="wingclub-label">Phone number</label>
                   <div className="wingclub-phone-wrapper">
-                    <select
-                      name="countryCode"
-                      value={signupData.countryCode}
-                      onChange={handleSignupChange}
-                      className="wingclub-country-select"
-                    >
-                      <option value="NG">NG</option>
-                      <option value="US">US</option>
-                      <option value="UK">UK</option>
-                      <option value="GH">GH</option>
-                    </select>
+                    <div className="flex items-center px-3 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-gray-600">
+                      +234
+                    </div>
                     <input
                       type="tel"
                       name="phone"
                       value={signupData.phone}
                       onChange={handleSignupChange}
-                      placeholder="+1 (555) 000-0000"
-                      className="wingclub-phone-input"
+                      placeholder="801 234 5678"
+                      className="wingclub-phone-input rounded-l-none flex-1"
                     />
                   </div>
+                  <p className="text-xs text-gray-400 mt-1">Enter Nigerian number without the leading 0</p>
                 </div>
 
                 {/* Password */}
@@ -479,84 +538,6 @@ export default function MyAccountPage() {
               </p>
             </>
           )}
-        </div>
-      </div>
-
-      {/* Reward Tiers Section */}
-      <div className="wingclub-reward-tiers">
-        <div className="max-w-[1200px] mx-auto px-4 py-16 md:px-6 lg:px-8">
-          <h2 className="wingclub-tiers-title">Reward Tiers</h2>
-
-          <div className="wingclub-tiers-grid">
-            {/* Wing Member */}
-            <div className="wingclub-tier-card blue">
-              <div className="wingclub-tier-header">
-                <h3 className="wingclub-tier-name">Wing Member</h3>
-                <div className="wingclub-tier-stars">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#F7C400" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                  </svg>
-                </div>
-              </div>
-              <ul className="wingclub-tier-benefits">
-                <li>10% off first order</li>
-                <li>1 point for every ₦100 spent</li>
-                <li>₦3000 off your 10th purchase</li>
-                <li>Redeem ₦3000 for every 500 points earned</li>
-              </ul>
-              <div className="wingclub-tier-footer">
-                <span className="wingclub-tier-range">(0-1000 points)</span>
-              </div>
-            </div>
-
-            {/* Wing Leader */}
-            <div className="wingclub-tier-card yellow">
-              <div className="wingclub-tier-header">
-                <h3 className="wingclub-tier-name">Wing Leader</h3>
-                <div className="wingclub-tier-stars">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#F7C400" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                  </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#F7C400" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                  </svg>
-                </div>
-              </div>
-              <ul className="wingclub-tier-benefits">
-                <li>All Freshman perks</li>
-                <li>Birthday Wings - because cake is overrated.</li>
-              </ul>
-              <div className="wingclub-tier-footer">
-                <span className="wingclub-tier-range">(1001- 2000 points)</span>
-              </div>
-            </div>
-
-            {/* Wingzard */}
-            <div className="wingclub-tier-card purple">
-              <div className="wingclub-tier-header">
-                <h3 className="wingclub-tier-name">Wingzard</h3>
-                <div className="wingclub-tier-stars">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#F7C400" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                  </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#F7C400" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                  </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#F7C400" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                  </svg>
-                </div>
-              </div>
-              <ul className="wingclub-tier-benefits">
-                <li>All Pro perks</li>
-                <li>Free delivery (your wallet says thanks)</li>
-                <li>VIP access to exclusive events</li>
-              </ul>
-              <div className="wingclub-tier-footer">
-                <span className="wingclub-tier-range">(2500+ points)</span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

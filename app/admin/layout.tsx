@@ -97,6 +97,36 @@ export default function AdminLayout({
           >
             Customers
           </Link>
+          <Link
+            href="/admin/users"
+            className="block px-6 py-3 hover:bg-[#6d3132] transition-colors"
+          >
+            Manage Users
+          </Link>
+          <Link
+            href="/admin/delivery-areas"
+            className="block px-6 py-3 hover:bg-[#6d3132] transition-colors"
+          >
+            Delivery Areas
+          </Link>
+          <Link
+            href="/admin/promo-codes"
+            className="block px-6 py-3 hover:bg-[#6d3132] transition-colors"
+          >
+            Promo Codes
+          </Link>
+          <Link
+            href="/admin/stores"
+            className="block px-6 py-3 hover:bg-[#6d3132] transition-colors"
+          >
+            Stores
+          </Link>
+          <Link
+            href="/admin/settings"
+            className="block px-6 py-3 hover:bg-[#6d3132] transition-colors"
+          >
+            Settings
+          </Link>
         </nav>
 
         <div className="absolute bottom-0 w-full p-6 border-t border-[#6d3132]">

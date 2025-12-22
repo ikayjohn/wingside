@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     const amountInKobo = Math.round(amount * 100)
 
     // Build callback URL
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.wingside.ng'
     const callbackUrl = `${appUrl}/payment/callback?order_id=${order_id}`
 
     const paystackResponse = await fetch(

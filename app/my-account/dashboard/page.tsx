@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ConvertPointsModal from '@/components/ConvertPointsModal';
 import FundWalletModal from '@/components/FundWalletModal';
+import ReferralSection from '@/components/ReferralSection';
 
 interface UserProfile {
   id: string;
@@ -15,6 +16,7 @@ interface UserProfile {
   bankAccount: string;
   bankName: string;
   refId: string;
+  referralCode: string;
   totalPoints: number;
   pointsThisMonth: number;
   currentTier: string;
@@ -46,12 +48,27 @@ interface Transaction {
   orderNumber?: string;
 }
 
+interface EmbedlyWallet {
+  id: string;
+  availableBalance: number;
+  ledgerBalance: number;
+  name: string;
+  virtualAccount: {
+    accountNumber: string;
+    bankCode: string;
+    bankName: string;
+  };
+  isDefault: boolean;
+}
+
 export default function WingclubDashboard() {
-  const [copied, setCopied] = useState<'card' | 'ref' | null>(null);
+  const [copied, setCopied] = useState<'card' | 'ref' | 'account' | null>(null);
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [showFundModal, setShowFundModal] = useState(false);
   const [userData, setUserData] = useState<UserProfile | null>(null);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
+  const [embedlyWallet, setEmbedlyWallet] = useState<EmbedlyWallet | null>(null);
+  const [loadingWallet, setLoadingWallet] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -95,7 +112,28 @@ export default function WingclubDashboard() {
     fetchUserData();
   }, []);
 
-  const copyToClipboard = (text: string, type: 'card' | 'ref') => {
+  // Fetch Embedly wallet data
+  useEffect(() => {
+    const fetchEmbedlyWallet = async () => {
+      try {
+        setLoadingWallet(true);
+        const walletResponse = await fetch('/api/embedly/wallets');
+        const walletData = await walletResponse.json();
+
+        if (walletData.success && walletData.hasWallet && walletData.wallet) {
+          setEmbedlyWallet(walletData.wallet);
+        }
+      } catch (err) {
+        console.error('Failed to fetch Embedly wallet:', err);
+      } finally {
+        setLoadingWallet(false);
+      }
+    };
+
+    fetchEmbedlyWallet();
+  }, []);
+
+  const copyToClipboard = (text: string, type: 'card' | 'ref' | 'account' = 'card') => {
     navigator.clipboard.writeText(text);
     setCopied(type);
     setTimeout(() => setCopied(null), 2000);
@@ -156,23 +194,58 @@ export default function WingclubDashboard() {
           <div className="dashboard-wallet-top">
             <div className="dashboard-wallet-left">
               <p className="dashboard-wallet-label">Wallet Balance</p>
-              <h2 className="dashboard-wallet-balance">₦{userData.walletBalance.toLocaleString()}</h2>
-              <p className="dashboard-wallet-card-number">Card: {userData.cardNumber}</p>
+              {embedlyWallet ? (
+                <>
+                  <h2 className="dashboard-wallet-balance">₦{embedlyWallet.availableBalance.toLocaleString()}</h2>
+                  <p className="dashboard-wallet-card-number">
+                    Your Wingside Account: {embedlyWallet.virtualAccount.accountNumber}
+                  </p>
 
-              <div className="dashboard-wallet-actions">
-                <button className="dashboard-fund-btn" onClick={() => setShowFundModal(true)}>
-                  Fund wallet
-                </button>
-                <div className="dashboard-bank-info">
-                  <span>{userData.bankName}: {userData.bankAccount}</span>
-                  <button
-                    className="dashboard-copy-btn"
-                    onClick={() => copyToClipboard(userData.bankAccount, 'card')}
-                  >
-                    {copied === 'card' ? '✓' : 'Copy'}
-                  </button>
-                </div>
-              </div>
+                  <div className="dashboard-wallet-actions">
+                    <button className="dashboard-fund-btn" onClick={() => setShowFundModal(true)}>
+                      Fund wallet
+                    </button>
+                    <div className="dashboard-bank-info">
+                      <span>{embedlyWallet.virtualAccount.bankName}</span>
+                      <button
+                        className="dashboard-copy-btn-icon"
+                        onClick={() => copyToClipboard(embedlyWallet.virtualAccount.accountNumber, 'account')}
+                      >
+                        {copied === 'account' ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2 className="dashboard-wallet-balance">₦{userData.walletBalance.toLocaleString()}</h2>
+                  <p className="dashboard-wallet-card-number">Card: {userData.cardNumber}</p>
+
+                  <div className="dashboard-wallet-actions">
+                    <button className="dashboard-fund-btn" onClick={() => setShowFundModal(true)}>
+                      Fund wallet
+                    </button>
+                    <div className="dashboard-bank-info">
+                      <span>{userData.bankName}: {userData.bankAccount}</span>
+                      <button
+                        className="dashboard-copy-btn"
+                        onClick={() => copyToClipboard(userData.bankAccount, 'card')}
+                      >
+                        {copied === 'card' ? '✓' : 'Copy'}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="dashboard-wallet-right">
@@ -185,10 +258,10 @@ export default function WingclubDashboard() {
               </button>
 
               <div className="dashboard-ref-id-inline">
-                <span>Ref ID: {userData.refId}</span>
+                <span>Referral Code: {userData.referralCode || userData.refId}</span>
                 <button
                   className="dashboard-copy-btn-dark"
-                  onClick={() => copyToClipboard(userData.refId, 'ref')}
+                  onClick={() => copyToClipboard(userData.referralCode || userData.refId, 'ref')}
                 >
                   {copied === 'ref' ? '✓ Copied' : 'Copy'}
                 </button>
@@ -199,7 +272,7 @@ export default function WingclubDashboard() {
 
         {/* Quick Actions */}
         <p className="dashboard-section-title">How can we improve your wing experience today?</p>
-        
+
         <div className="dashboard-quick-actions">
           <button
             className="dashboard-action-card dashboard-action-active"
@@ -214,7 +287,7 @@ export default function WingclubDashboard() {
             </div>
             <span>Convert Points</span>
           </button>
-          
+
           <Link href="/my-account/earn-rewards" className="dashboard-action-card">
             <div className="dashboard-action-icon yellow">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -242,6 +315,17 @@ export default function WingclubDashboard() {
               </svg>
             </div>
             <span>Wallet History</span>
+          </Link>
+
+          <Link href="/my-account/referrals" className="dashboard-action-card">
+            <div className="dashboard-action-icon purple">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="m22 21-3.5-3.5M19 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6"></path>
+              </svg>
+            </div>
+            <span>Referrals</span>
           </Link>
         </div>
 
@@ -414,6 +498,9 @@ export default function WingclubDashboard() {
           </div>
         </div>
 
+{/* Referral Section */}
+        <ReferralSection />
+
       </div>
 
       {/* Convert Points Modal */}
@@ -428,9 +515,9 @@ export default function WingclubDashboard() {
       <FundWalletModal
         isOpen={showFundModal}
         onClose={() => setShowFundModal(false)}
-        accountNumber={userData.bankAccount}
-        accountName={`Wingclub / ${userData.name}`}
-        bankName={userData.bankName}
+        accountNumber={embedlyWallet?.virtualAccount.accountNumber || userData.bankAccount}
+        accountName={embedlyWallet?.name || `Wingclub / ${userData.name}`}
+        bankName={embedlyWallet?.virtualAccount.bankName || userData.bankName}
       />
     </div>
   );

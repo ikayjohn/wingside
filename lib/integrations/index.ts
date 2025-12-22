@@ -7,7 +7,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 export interface SyncResult {
   zoho?: { contact_id: string; action: 'created' | 'updated' };
-  embedly?: { customer_id: string; wallet_id: string };
+  embedly?: { customer_id: string; wallet_id: string; isNewCustomer: boolean };
   error?: string;
 }
 
@@ -54,6 +54,7 @@ export async function syncNewCustomer(customer: {
       result.embedly = {
         customer_id: embedlyResult.customerId,
         wallet_id: embedlyResult.walletId,
+        isNewCustomer: embedlyResult.isNewCustomer,
       };
     }
   }
@@ -61,14 +62,20 @@ export async function syncNewCustomer(customer: {
   // Update profile with integration IDs
   if (result.zoho || result.embedly) {
     const admin = createAdminClient();
+    const updateData: any = {
+      zoho_contact_id: result.zoho?.contact_id,
+      embedly_customer_id: result.embedly?.customer_id,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Only update wallet_id if we have one (non-empty string)
+    if (result.embedly?.wallet_id) {
+      updateData.embedly_wallet_id = result.embedly.wallet_id;
+    }
+
     await admin
       .from('profiles')
-      .update({
-        zoho_contact_id: result.zoho?.contact_id,
-        embedly_customer_id: result.embedly?.customer_id,
-        embedly_wallet_id: result.embedly?.wallet_id,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', customer.id);
   }
 

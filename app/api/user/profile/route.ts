@@ -117,6 +117,7 @@ export async function GET() {
       bankAccount: '9012345678', // This would come from payment system
       bankName: 'Wingside Bank',
       refId: `Wingman${profile.full_name?.replace(/\s+/g, '') || 'Customer'}`,
+      referralCode: profile.referral_code, // Add the actual referral code from database
       totalPoints,
       pointsThisMonth,
       currentTier,

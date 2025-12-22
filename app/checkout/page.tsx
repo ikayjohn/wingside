@@ -38,6 +38,7 @@ export default function CheckoutPage() {
     password: '',
     confirmPassword: '',
     agreeTerms: false,
+    referralCode: '',
   });
 
   const supabase = createClient();
@@ -46,6 +47,12 @@ export default function CheckoutPage() {
   const [appliedPromo, setAppliedPromo] = useState<any>(null);
   const [promoError, setPromoError] = useState('');
   const [applyingPromo, setApplyingPromo] = useState(false);
+
+  // Referral code states
+  const [referralValidated, setReferralValidated] = useState(false);
+  const [referralError, setReferralError] = useState('');
+  const [referralInfo, setReferralInfo] = useState<any>(null);
+  const [validatingReferral, setValidatingReferral] = useState(false);
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('delivery');
   const [deliveryAreas, setDeliveryAreas] = useState<DeliveryArea[]>([]);
@@ -54,6 +61,36 @@ export default function CheckoutPage() {
   const [loadingPickup, setLoadingPickup] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('new');
+
+  // Wallet payment states
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet'>('card');
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [wallet, setWallet] = useState<any>(null);
+  const [loadingWallet, setLoadingWallet] = useState(false);
+  const [settings, setSettings] = useState<any>({
+    tax_rate: '7.5',
+    currency_symbol: '₦',
+    min_order_amount: '2000',
+  });
+
+  // Load settings from API
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch('/api/settings');
+        if (response.ok) {
+          const data = await response.json();
+          setSettings(data.settings);
+        }
+      } catch (error) {
+        console.error('Error fetching settings:', error);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -67,9 +104,10 @@ export default function CheckoutPage() {
   useEffect(() => {
     const checkExistingUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (user) {
         // User is already logged in, prefill form and hide account creation
+        setIsLoggedIn(true);
         const { data: profile } = await supabase
           .from('profiles')
           .select('full_name, phone')
@@ -81,9 +119,47 @@ export default function CheckoutPage() {
           email: user.email || '',
           firstName: profile?.full_name?.split(' ')[0] || '',
           lastName: profile?.full_name?.split(' ').slice(1).join(' ') || '',
-          phone: profile?.phone || '',
+          phone: profile?.phone?.replace('+234', '') || '',
           createAccount: false, // Hide account creation for existing users
         }));
+
+        // Fetch saved addresses
+        try {
+          const response = await fetch('/api/user/addresses');
+          if (response.ok) {
+            const data = await response.json();
+            setSavedAddresses(data.addresses || []);
+
+            // Auto-select default address if available
+            const defaultAddress = data.addresses?.find((addr: any) => addr.is_default);
+            if (defaultAddress) {
+              setSelectedAddressId(defaultAddress.id);
+              populateAddressFields(defaultAddress);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching addresses:', error);
+        }
+
+        // Fetch wallet information for payment option
+        setLoadingWallet(true);
+        try {
+          const walletResponse = await fetch('/api/embedly/wallets');
+          const walletData = await walletResponse.json();
+
+          if (walletData.success && walletData.hasWallet && walletData.wallet) {
+            setWallet(walletData.wallet);
+            setWalletBalance(walletData.wallet.availableBalance);
+          } else {
+            // User doesn't have a wallet, keep card payment as default
+            setPaymentMethod('card');
+          }
+        } catch (error) {
+          console.error('Error fetching wallet:', error);
+          setPaymentMethod('card');
+        } finally {
+          setLoadingWallet(false);
+        }
       }
     };
 
@@ -161,15 +237,66 @@ export default function CheckoutPage() {
     return formData.deliveryArea;
   };
 
+  // Populate form fields with selected address
+  const populateAddressFields = (address: any) => {
+    setFormData(prev => ({
+      ...prev,
+      streetAddress: address.street_address || '',
+      streetAddress2: '',
+      city: address.city || '',
+    }));
+  };
+
+  // Handle address selection change
+  const handleAddressSelect = (addressId: string) => {
+    setSelectedAddressId(addressId);
+
+    if (addressId === 'new') {
+      // Clear address fields for new address entry
+      setFormData(prev => ({
+        ...prev,
+        streetAddress: '',
+        streetAddress2: '',
+        city: 'Port Harcourt',
+      }));
+    } else {
+      // Populate with selected address
+      const address = savedAddresses.find(addr => addr.id === addressId);
+      if (address) {
+        populateAddressFields(address);
+      }
+    }
+  };
+
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const taxRate = 0.075;
+  const taxRate = parseFloat(settings.tax_rate || '0') / 100;
   const tax = subtotal * taxRate;
   const deliveryFee = getDeliveryFee();
   const discount = appliedPromo ? appliedPromo.discountAmount : 0;
-  const total = subtotal + tax + deliveryFee - discount;
+  const referralDiscount = referralValidated && subtotal + tax + deliveryFee >= 1000 ? (referralInfo?.rewards?.referredReward || 500) : 0;
+  const total = subtotal + tax + deliveryFee - discount - referralDiscount;
 
   const formatPrice = (price: number) => {
-    return '₦' + price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const symbol = settings.currency_symbol || '₦';
+    return symbol + price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  // Format phone number to ensure it's always in correct Nigerian format
+  const formatPhoneNumber = (phone: string) => {
+    if (!phone) return phone;
+
+    // Remove all non-numeric characters
+    let cleaned = phone.replace(/\D/g, '');
+
+    // Remove leading 0 if present (common mistake: 0801 -> 801)
+    if (cleaned.startsWith('0')) {
+      cleaned = cleaned.slice(1);
+    }
+
+    // Limit to 10 digits (Nigerian mobile numbers without country code)
+    cleaned = cleaned.slice(0, 10);
+
+    return cleaned;
   };
 
   const applyPromoCode = async () => {
@@ -212,6 +339,51 @@ export default function CheckoutPage() {
     setAppliedPromo(null);
     setPromoCode('');
     setPromoError('');
+  };
+
+  const validateReferralCode = async () => {
+    if (!formData.referralCode.trim()) {
+      setReferralError('Please enter a referral code');
+      return;
+    }
+
+    setValidatingReferral(true);
+    setReferralError('');
+
+    try {
+      const response = await fetch('/api/referrals/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ referralCode: formData.referralCode }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setReferralValidated(true);
+        setReferralInfo(data);
+        setReferralError('');
+        console.log('Referral code validated:', data.message);
+      } else {
+        setReferralError(data.error || 'Invalid referral code');
+        setReferralValidated(false);
+        setReferralInfo(null);
+      }
+    } catch (error) {
+      console.error('Error validating referral code:', error);
+      setReferralError('Error validating referral code');
+      setReferralValidated(false);
+      setReferralInfo(null);
+    } finally {
+      setValidatingReferral(false);
+    }
+  };
+
+  const clearReferralCode = () => {
+    setReferralValidated(false);
+    setFormData(prev => ({ ...prev, referralCode: '' }));
+    setReferralError('');
+    setReferralInfo(null);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -267,6 +439,13 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Format phone number before submission
+    const formattedPhone = formatPhoneNumber(formData.phone);
+    if (formattedPhone.length < 10) {
+      setSubmitError('Please enter a valid Nigerian phone number');
+      return;
+    }
+
     if (!formData.email) {
       setSubmitError('Please enter your email address');
       return;
@@ -310,7 +489,7 @@ export default function CheckoutPage() {
           options: {
             data: {
               full_name: `${formData.firstName} ${formData.lastName}`,
-              phone: formData.phone,
+              phone: `+234${formattedPhone}`,
             },
           },
         });
@@ -333,7 +512,7 @@ export default function CheckoutPage() {
             id: signUpData.user.id,
             email: formData.email,
             full_name: `${formData.firstName} ${formData.lastName}`,
-            phone: formData.phone,
+            phone: `+234${formattedPhone}`,
             role: 'customer',
           });
 
@@ -350,7 +529,7 @@ export default function CheckoutPage() {
               id: signUpData.user.id,
               email: formData.email,
               full_name: `${formData.firstName} ${formData.lastName}`,
-              phone: formData.phone,
+              phone: `+234${formattedPhone}`,
               address: formData.streetAddress,
               city: formData.city,
               state: 'Rivers',
@@ -421,16 +600,18 @@ export default function CheckoutPage() {
       const orderData = {
         customer_name: `${formData.firstName} ${formData.lastName}`,
         customer_email: formData.email,
-        customer_phone: formData.phone,
+        customer_phone: `+234${formattedPhone}`,
         user_id: userId, // Link order to user if account was created
         delivery_address_id: null,
         delivery_address_text: deliveryAddressText,
-        payment_method: 'card', // Default to card, will be updated when payment integration is added
+        payment_method: paymentMethod, // Use selected payment method
         delivery_fee: deliveryFee,
         tax: tax,
         notes: '',
         promo_code_id: appliedPromo?.promoCode?.id || null,
         discount_amount: discount,
+        referral_code: referralValidated ? formData.referralCode : null,
+        referral_discount: referralValidated && total >= 1000 ? (referralInfo?.rewards?.referredReward || 500) : 0,
         items: orderItems,
       };
 
@@ -456,33 +637,63 @@ export default function CheckoutPage() {
         });
       }
 
-      // Initialize payment with Paystack
-      const paymentResponse = await fetch('/api/payment/initialize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          order_id: data.order.id,
-          amount: total,
-          email: formData.email,
-          metadata: {
-            customer_name: `${formData.firstName} ${formData.lastName}`,
-            phone: formData.phone,
-          },
-        }),
-      });
+      if (paymentMethod === 'wallet') {
+        // Process wallet payment
+        if (!wallet || walletBalance < total) {
+          throw new Error('Insufficient wallet balance for this order');
+        }
 
-      const paymentData = await paymentResponse.json();
+        const walletPaymentResponse = await fetch('/api/embedly/wallet-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            order_id: data.order.id,
+            amount: total,
+            remarks: `Payment for Wingside order #${data.order.id}`,
+          }),
+        });
 
-      if (!paymentResponse.ok) {
-        throw new Error(paymentData.error || 'Failed to initialize payment');
+        const walletPaymentData = await walletPaymentResponse.json();
+
+        if (!walletPaymentResponse.ok) {
+          throw new Error(walletPaymentData.error || 'Wallet payment failed');
+        }
+
+        // Clear cart and show success
+        localStorage.removeItem('wingside-cart');
+        setCartItems([]);
+
+        // Redirect to success page
+        window.location.href = `/order-success?order_id=${data.order.id}&payment_method=wallet`;
+      } else {
+        // Initialize payment with Paystack for card payments
+        const paymentResponse = await fetch('/api/payment/initialize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            order_id: data.order.id,
+            amount: total,
+            email: formData.email,
+            metadata: {
+              customer_name: `${formData.firstName} ${formData.lastName}`,
+              phone: `+234${formattedPhone}`,
+            },
+          }),
+        });
+
+        const paymentData = await paymentResponse.json();
+
+        if (!paymentResponse.ok) {
+          throw new Error(paymentData.error || 'Failed to initialize payment');
+        }
+
+        // Clear cart (will be restored if payment fails)
+        localStorage.removeItem('wingside-cart');
+        setCartItems([]);
+
+        // Redirect to Paystack payment page
+        window.location.href = paymentData.authorization_url;
       }
-
-      // Clear cart (will be restored if payment fails)
-      localStorage.removeItem('wingside-cart');
-      setCartItems([]);
-
-      // Redirect to Paystack payment page
-      window.location.href = paymentData.authorization_url;
     } catch (error: any) {
       console.error('Error submitting order:', error);
       setSubmitError(error.message || 'Failed to submit order. Please try again.');
@@ -550,10 +761,7 @@ export default function CheckoutPage() {
                       <div className={`radio-dot ${orderType === 'pickup' ? 'active' : ''}`}></div>
                     </div>
                     <div className="delivery-pickup-icon pickup-icon">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                        <circle cx="12" cy="10" r="3"></circle>
-                      </svg>
+                      <img src="/pickup.svg" alt="Pickup" width="28" height="28" />
                     </div>
                     <h3 className="delivery-pickup-title">Pick Up</h3>
                     <p className="delivery-pickup-desc">Collect from our store</p>
@@ -652,15 +860,50 @@ export default function CheckoutPage() {
                   {/* Phone */}
                   <div className="mb-4">
                     <label className="checkout-label">Contact Phone Number</label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      placeholder="+234 XXX XXX XXXX"
-                      className="checkout-input"
-                    />
+                    <div className="flex">
+                      <div className="inline-flex items-center px-3 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-gray-600">
+                        +234
+                      </div>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={(e) => {
+                          // Only allow numbers and limit to 10 digits (Nigerian format without leading 0)
+                          let value = e.target.value.replace(/\D/g, '');
+                          // Remove leading 0 if present (common mistake: 0801 -> 801)
+                          if (value.startsWith('0')) {
+                            value = value.slice(1);
+                          }
+                          // Limit to 10 digits
+                          value = value.slice(0, 10);
+                          setFormData(prev => ({ ...prev, phone: value }));
+                        }}
+                        placeholder="801 234 5678"
+                        className="checkout-input rounded-l-none flex-1"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">Enter Nigerian number without the leading 0</p>
                   </div>
+
+                  {/* Address Selector - Only for logged-in users with saved addresses */}
+                  {isLoggedIn && savedAddresses.length > 0 && orderType === 'delivery' && (
+                    <div className="mb-4">
+                      <label className="checkout-label">Select Address</label>
+                      <select
+                        value={selectedAddressId}
+                        onChange={(e) => handleAddressSelect(e.target.value)}
+                        className="checkout-input"
+                      >
+                        <option value="new">+ Add New Address</option>
+                        {savedAddresses.map((address) => (
+                          <option key={address.id} value={address.id}>
+                            {address.label || 'Address'} - {address.street_address}, {address.city}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   {/* Street Address */}
                   <div className="mb-4">
@@ -672,6 +915,7 @@ export default function CheckoutPage() {
                       onChange={handleInputChange}
                       placeholder="House number and street address"
                       className="checkout-input"
+                      disabled={isLoggedIn && selectedAddressId !== 'new'}
                     />
                   </div>
 
@@ -685,6 +929,7 @@ export default function CheckoutPage() {
                         value={formData.city}
                         readOnly
                         className="checkout-input bg-gray-100 cursor-not-allowed"
+                        disabled={isLoggedIn && selectedAddressId !== 'new'}
                       />
                     </div>
                     <div>
@@ -700,59 +945,61 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  {/* Create Account Checkbox */}
-                  <div className="mt-6">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        name="createAccount"
-                        id="createAccount"
-                        checked={formData.createAccount}
-                        onChange={handleInputChange}
-                        className="checkout-checkbox"
-                      />
-                      <label htmlFor="createAccount" className="text-sm text-gray-700">
-                        Create an account to track orders and earn rewards
-                      </label>
-                    </div>
+                  {/* Create Account Checkbox - Only show for non-logged-in users */}
+                  {!isLoggedIn && (
+                    <div className="mt-6">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          name="createAccount"
+                          id="createAccount"
+                          checked={formData.createAccount}
+                          onChange={handleInputChange}
+                          className="checkout-checkbox"
+                        />
+                        <label htmlFor="createAccount" className="text-sm text-gray-700">
+                          Create an account to track orders and earn rewards
+                        </label>
+                      </div>
 
-                    {/* Password fields - shown when createAccount is checked */}
-                    {formData.createAccount && (
-                      <div className="mt-4 p-4 bg-[#FDF5E5] rounded-lg border border-[#F7C400]/30">
-                        <p className="text-sm text-[#552627] font-medium mb-3">
-                          Create your password to complete registration
-                        </p>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="checkout-label">Password</label>
-                            <input
-                              type="password"
-                              name="password"
-                              value={formData.password}
-                              onChange={handleInputChange}
-                              placeholder="Min. 6 characters"
-                              className="checkout-input"
-                              minLength={6}
-                            />
+                      {/* Password fields - shown when createAccount is checked */}
+                      {formData.createAccount && (
+                        <div className="mt-4 p-4 bg-[#FDF5E5] rounded-lg border border-[#F7C400]/30">
+                          <p className="text-sm text-[#552627] font-medium mb-3">
+                            Create your password to complete registration
+                          </p>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="checkout-label">Password</label>
+                              <input
+                                type="password"
+                                name="password"
+                                value={formData.password}
+                                onChange={handleInputChange}
+                                placeholder="Min. 6 characters"
+                                className="checkout-input"
+                                minLength={6}
+                              />
+                            </div>
+                            <div>
+                              <label className="checkout-label">Confirm Password</label>
+                              <input
+                                type="password"
+                                name="confirmPassword"
+                                value={formData.confirmPassword}
+                                onChange={handleInputChange}
+                                placeholder="Re-enter password"
+                                className="checkout-input"
+                              />
+                            </div>
                           </div>
-                          <div>
-                            <label className="checkout-label">Confirm Password</label>
-                            <input
-                              type="password"
-                              name="confirmPassword"
-                              value={formData.confirmPassword}
-                              onChange={handleInputChange}
-                              placeholder="Re-enter password"
-                              className="checkout-input"
-                            />
-                          </div>
-                        </div>
                         <p className="text-xs text-gray-500 mt-2">
                           Your account will be created with the email: <strong>{formData.email || 'Enter email above'}</strong>
                         </p>
                       </div>
                     )}
                   </div>
+                  )}
                 </div>
               </div>
 
@@ -850,19 +1097,34 @@ export default function CheckoutPage() {
 
                   {/* Tax */}
                   <div className="flex justify-between mb-2">
-                    <span className="text-sm text-gray-600">Tax (7.5%)</span>
+                    <span className="text-sm text-gray-600">Tax ({settings.tax_rate || '0'}%)</span>
                     <span className="text-sm font-medium">{formatPrice(tax)}</span>
                   </div>
 
-                  {/* Delivery Fee */}
+                  {/* Delivery Fee / Pickup */}
                   <div className="mb-4">
                     <div className="flex justify-between">
                       <div className="flex items-center gap-2">
-                        <img src="/delivery.svg" alt="Delivery" width="16" height="16" className="text-gray-400" />
-                        <span className="text-sm text-gray-600">Delivery Fee</span>
+                        <img
+                          src={orderType === 'pickup' ? '/pickup.svg' : '/delivery.svg'}
+                          alt={orderType === 'pickup' ? 'Pickup' : 'Delivery'}
+                          width="16"
+                          height="16"
+                          className="text-gray-400"
+                        />
+                        <span className="text-sm text-gray-600">
+                          {orderType === 'pickup' ? 'Pickup' : 'Delivery Fee'}
+                        </span>
                       </div>
                       <span className={`text-sm font-medium ${deliveryFee === 0 ? 'text-green-600' : ''}`}>
-                        {deliveryFee === 0 ? 'FREE' : formatPrice(deliveryFee)}
+                        {orderType === 'pickup'
+                          ? 'FREE'
+                          : deliveryFee === 0
+                            ? 'FREE'
+                            : formData.deliveryArea
+                              ? formatPrice(deliveryFee)
+                              : 'Pending'
+                        }
                       </span>
                     </div>
                     {formData.deliveryArea && (
@@ -936,6 +1198,7 @@ export default function CheckoutPage() {
                     )}
                   </div>
 
+  
                   {/* Divider */}
                   <div className="border-t border-gray-200 my-4"></div>
 
@@ -947,11 +1210,118 @@ export default function CheckoutPage() {
                     </div>
                   )}
 
+                  {/* Referral Discount */}
+                  {referralDiscount > 0 && (
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm text-yellow-600 font-medium">Referral Discount</span>
+                      <span className="text-sm font-medium text-yellow-600">-{formatPrice(referralDiscount)}</span>
+                    </div>
+                  )}
+
                   {/* Total */}
                   <div className="flex justify-between mb-6">
                     <span className="font-bold">Total</span>
                     <span className="font-bold text-lg">{formatPrice(total)}</span>
                   </div>
+
+                  {/* Payment Method Selection - Only show for logged in users with wallet */}
+                  {isLoggedIn && !loadingWallet && (
+                    <div className="mb-6">
+                      <div className="flex items-center gap-2 mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+                          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                          <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                        <span className="text-sm text-gray-600">Payment Method</span>
+                      </div>
+
+                      <div className="space-y-3">
+                        {/* Card Payment Option */}
+                        <label
+                          className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                            paymentMethod === 'card'
+                              ? 'border-yellow-400 bg-yellow-50'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="radio"
+                              name="paymentMethod"
+                              value="card"
+                              checked={paymentMethod === 'card'}
+                              onChange={(e) => setPaymentMethod(e.target.value as 'card' | 'wallet')}
+                              className="w-4 h-4 text-yellow-400 focus:ring-yellow-400"
+                            />
+                            <div>
+                              <span className="font-medium text-gray-900">Pay with Card</span>
+                              <p className="text-xs text-gray-500">Pay securely with your debit/credit card</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                              <line x1="1" y1="10" x2="23" y2="10"></line>
+                            </svg>
+                          </div>
+                        </label>
+
+                        {/* Wallet Payment Option - Only show if user has wallet */}
+                        {wallet && walletBalance > 0 && (
+                          <label
+                            className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                              paymentMethod === 'wallet'
+                                ? 'border-yellow-400 bg-yellow-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                            } ${walletBalance < total ? 'opacity-60 cursor-not-allowed' : ''}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="radio"
+                                name="paymentMethod"
+                                value="wallet"
+                                checked={paymentMethod === 'wallet'}
+                                onChange={(e) => setPaymentMethod(e.target.value as 'card' | 'wallet')}
+                                disabled={walletBalance < total}
+                                className="w-4 h-4 text-yellow-400 focus:ring-yellow-400"
+                              />
+                              <div>
+                                <span className="font-medium text-gray-900">Pay with Wallet</span>
+                                <p className="text-xs text-gray-500">
+                                  {walletBalance >= total
+                                    ? `Available balance: ₦${walletBalance.toLocaleString()}`
+                                    : `Insufficient balance (₦${walletBalance.toLocaleString()})`}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
+                                <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+                                <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+                                <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
+                              </svg>
+                            </div>
+                          </label>
+                        )}
+
+                        {/* Insufficient Balance Warning */}
+                        {paymentMethod === 'wallet' && wallet && walletBalance < total && (
+                          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <p className="text-xs text-yellow-800">
+                              ⚠️ Insufficient wallet balance. Please add funds to your wallet or pay with card.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => window.location.href = '/my-account/dashboard'}
+                              className="text-xs text-yellow-700 underline hover:no-underline mt-1"
+                            >
+                              Add funds to wallet
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Error Message */}
                   {submitError && (

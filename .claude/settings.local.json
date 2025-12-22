@@ -40,7 +40,20 @@
       "Bash(node scripts/add-sample-customer.js:*)",
       "Bash(start http://localhost:3000/admin/customers)",
       "Bash(del nul)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(timeout /t 2 /nobreak)",
+      "Bash(powershell:*)",
+      "Bash(npx tsc:*)",
+      "Bash(timeout:*)",
+      "Bash(npx next build:*)",
+      "Bash(node scripts/debug-application:*)",
+      "Bash(node scripts/test-referral-system:*)",
+      "Bash(ls:*)",
+      "Bash(node:*)",
+      "Bash(start \"C:\\\\Users\\\\ikayj\\\\Documents\\\\wingside\\\\scripts\\\\test-referral-generation.html\")",
+      "Bash(start http://localhost:3000/my-account/dashboard)",
+      "Bash(start http://localhost:3003/my-account/dashboard)",
+      "Bash(git pull:*)"
     ],
     "deny": [],
     "ask": []

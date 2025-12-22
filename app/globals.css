@@ -1667,21 +1667,28 @@ body {
 }
 
 .dashboard-wallet-balance {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 0.25rem;
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
 }
 
 @media (min-width: 768px) {
   .dashboard-wallet-balance {
-    font-size: 2.5rem;
+    font-size: 3rem;
   }
 }
 
 .dashboard-wallet-card-number {
-  font-size: 0.875rem;
-  color: #9ca3af;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f9fafb;
   margin-bottom: 1rem;
+}
+
+@media (min-width: 768px) {
+  .dashboard-wallet-card-number {
+    font-size: 1.125rem;
+  }
 }
 
 .dashboard-wallet-actions-row {
@@ -1725,8 +1732,9 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.875rem;
-  color: #d1d5db;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f9fafb;
 }
 
 .dashboard-copy-btn {
@@ -1743,6 +1751,23 @@ body {
 .dashboard-copy-btn:hover {
   background-color: #4b5563;
   color: white;
+}
+
+.dashboard-copy-btn-icon {
+  background: transparent;
+  color: #f9fafb;
+  padding: 0.25rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dashboard-copy-btn-icon:hover {
+  color: #ffffff;
+  transform: scale(1.1);
 }
 
 .dashboard-wallet-right {
@@ -1831,7 +1856,7 @@ body {
 
 @media (min-width: 768px) {
   .dashboard-quick-actions {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 1rem;
   }
 }
@@ -1859,8 +1884,8 @@ body {
 }
 
 .dashboard-action-card span {
-  font-size: 0.75rem;
-  font-weight: 500;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: #374151;
   text-align: center;
 }
@@ -1870,8 +1895,8 @@ body {
 }
 
 .dashboard-action-icon {
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   display: flex;
   align-items: center;

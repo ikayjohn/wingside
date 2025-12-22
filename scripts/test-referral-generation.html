@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Referral Code Generation</title>
+</head>
+<body>
+    <h1>Test Referral Code Generation</h1>
+    <button onclick="generateCodes()">Generate Referral Codes for All Users</button>
+    <div id="result"></div>
+
+    <script>
+        async function generateCodes() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Generating...';
+
+            try {
+                const response = await fetch('/api/admin/referrals/generate-codes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        generateForAll: true
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <h3>Success!</h3>
+                        <p><strong>Total Updated:</strong> ${data.totalUpdated}</p>
+                        <p><strong>Message:</strong> ${data.message}</p>
+                        ${data.users ? `<pre>${JSON.stringify(data.users, null, 2)}</pre>` : ''}
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <h3>Error (${response.status})</h3>
+                        <p>${data.error || 'Unknown error'}</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3>Network Error</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

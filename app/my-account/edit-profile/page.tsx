@@ -7,7 +7,7 @@ export default function EditProfilePage() {
   const [formData, setFormData] = useState({
     firstName: 'Fortune',
     lastName: 'Wingside',
-    phone: '03214667890',
+    phone: '3214667890',
   });
 
   const [passwordData, setPasswordData] = useState({

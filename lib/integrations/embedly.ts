@@ -42,6 +42,8 @@ export interface EmbedlyCustomer {
   lastName: string;
   phone?: string;
   organisationId?: string;
+  emailAddress?: string; // Alternative field name from API
+  walletId?: string; // If customer has a default wallet
 }
 
 // Create customer
@@ -59,6 +61,27 @@ export async function getCustomer(customerId: string): Promise<EmbedlyCustomer |
     const result = await embedlyRequest(`/customer/${customerId}`);
     return result.data || result;
   } catch {
+    return null;
+  }
+}
+
+// Get customer by email (checks all customers)
+export async function getCustomerByEmail(email: string): Promise<EmbedlyCustomer | null> {
+  try {
+    const result = await embedlyRequest('/customers/get/all', 'GET');
+    const customers = result.data || result;
+
+    // Handle both array and non-array responses
+    const customerArray = Array.isArray(customers) ? customers : [];
+
+    const found = customerArray.find((c: any) => {
+      const customerEmail = (c.emailAddress || c.email || '').toLowerCase();
+      return customerEmail === email.toLowerCase();
+    });
+
+    return found || null;
+  } catch (error) {
+    console.error('Error finding customer by email:', error);
     return null;
   }
 }
@@ -146,11 +169,12 @@ export function isEmbedlyConfigured(): boolean {
 }
 
 // Create customer and wallet in one call
+// Also handles linking to existing Embedly customers created offline/at store
 export async function setupCustomerWithWallet(customer: {
   email: string;
   full_name: string;
   phone?: string;
-}): Promise<{ customerId: string; walletId: string } | null> {
+}): Promise<{ customerId: string; walletId: string; isNewCustomer: boolean } | null> {
   if (!isEmbedlyConfigured()) {
     console.warn('Embedly not configured, skipping setup');
     return null;
@@ -161,19 +185,43 @@ export async function setupCustomerWithWallet(customer: {
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || firstName;
 
-    // Create customer
-    const customerId = await createCustomer({
-      email: customer.email,
-      firstName,
-      lastName,
-      phone: customer.phone,
-    });
+    let customerId: string;
+    let isNewCustomer = false;
 
-    // Create wallet
-    const walletId = await createWallet(customerId);
+    // Check if customer already exists in Embedly (e.g., created at store)
+    const existingCustomer = await getCustomerByEmail(customer.email);
 
-    console.log(`Embedly: Customer & wallet created - ${customer.email}`);
-    return { customerId, walletId };
+    if (existingCustomer?.id) {
+      // Customer exists - link to existing account
+      customerId = existingCustomer.id;
+      console.log(`Embedly: Found existing customer ${customerId} for ${customer.email} - linking account`);
+    } else {
+      // Create new customer
+      customerId = await createCustomer({
+        email: customer.email,
+        firstName,
+        lastName,
+        phone: customer.phone,
+      });
+      isNewCustomer = true;
+      console.log(`Embedly: Created new customer ${customerId} for ${customer.email}`);
+    }
+
+    // Try to get existing wallet for the customer
+    let walletId: string;
+
+    // Try to create wallet (will use existing if customer has one, or create new)
+    try {
+      walletId = await createWallet(customerId);
+      console.log(`Embedly: Wallet ${walletId} ready for customer ${customerId}`);
+    } catch (walletError: any) {
+      // Wallet creation failed - customer might already have max wallets
+      console.error(`Embedly: Could not create wallet for customer ${customerId}:`, walletError.message);
+      // Return customer ID without wallet - user may need to select existing wallet
+      return { customerId, walletId: '', isNewCustomer };
+    }
+
+    return { customerId, walletId, isNewCustomer };
   } catch (error) {
     console.error('Embedly setup error:', error);
     return null;

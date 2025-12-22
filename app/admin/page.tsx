@@ -119,10 +119,22 @@ export default function AdminDashboard() {
             <p className="font-semibold text-[#552627]">View Customers</p>
           </a>
           <a
-            href="/admin/pickup-locations"
+            href="/admin/users"
             className="block p-4 border-2 border-[#F7C400] rounded-lg hover:bg-[#FDF5E5] transition-colors text-center"
           >
-            <p className="font-semibold text-[#552627]">Stores List</p>
+            <p className="font-semibold text-[#552627]">Manage Users</p>
+          </a>
+          <a
+            href="/admin/stores"
+            className="block p-4 border-2 border-[#F7C400] rounded-lg hover:bg-[#FDF5E5] transition-colors text-center"
+          >
+            <p className="font-semibold text-[#552627]">Manage Stores</p>
+          </a>
+          <a
+            href="/admin/settings"
+            className="block p-4 border-2 border-[#F7C400] rounded-lg hover:bg-[#FDF5E5] transition-colors text-center"
+          >
+            <p className="font-semibold text-[#552627]">Site Settings</p>
           </a>
         </div>
       </div>

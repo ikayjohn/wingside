@@ -160,7 +160,77 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ order }, { status: 201 })
+    // Process referral rewards if user is logged in and this is their first order
+    if (user?.id && total >= 1000) { // Minimum order amount for referral rewards
+      try {
+        // Call the referral reward processing function
+        const { data: rewardProcessed, error: rewardError } = await supabase.rpc(
+          'process_referral_reward_after_first_order',
+          {
+            user_id: user.id,
+            order_amount: total
+          }
+        )
+
+        if (rewardError) {
+          console.error('Error processing referral reward:', rewardError)
+          // Don't fail the order, just log the error
+        } else if (rewardProcessed) {
+          console.log('Referral rewards processed successfully for user:', user.id)
+
+          // Get referral reward details for response
+          const { data: rewardDetails } = await supabase
+            .from('referral_rewards')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false })
+            .limit(2)
+
+          if (rewardDetails && rewardDetails.length > 0) {
+            // Auto-credit the rewards to user's wallet
+            for (const reward of rewardDetails) {
+              try {
+                // Credit to wallet (assuming you have a wallet system)
+                await supabase
+                  .from('wallet_transactions')
+                  .insert({
+                    user_id: reward.user_id,
+                    amount: reward.amount,
+                    type: 'credit',
+                    description: reward.description,
+                    status: 'completed',
+                    referral_reward_id: reward.id
+                  })
+
+                // Update reward status to credited
+                await supabase
+                  .from('referral_rewards')
+                  .update({
+                    status: 'credited',
+                    credited_at: new Date().toISOString(),
+                    credited_to_wallet: true
+                  })
+                  .eq('id', reward.id)
+
+                console.log(`Credited ₦${reward.amount} to user ${reward.user_id}'s wallet`)
+              } catch (walletError) {
+                console.error('Error crediting wallet:', walletError)
+                // Don't fail the order, just log the error
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error in referral processing:', error)
+        // Don't fail the order, just log the error
+      }
+    }
+
+    return NextResponse.json({
+      order,
+      referralRewardsProcessed: user?.id ? true : false
+    }, { status: 201 })
   } catch (error) {
     console.error('Unexpected error:', error)
     return NextResponse.json(

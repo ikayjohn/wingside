@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -12,9 +13,43 @@ export default function Header() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const router = useRouter();
+  const supabase = createClient();
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Check if user is on dashboard or any my-account page (logged in)
-  const isLoggedIn = pathname?.startsWith('/my-account/') && pathname !== '/my-account';
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUser({
+          name: user.user_metadata.full_name || 'User',
+          email: user.email || '',
+        });
+        setIsLoggedIn(true);
+      } else {
+        setUser(null);
+        setIsLoggedIn(false);
+      }
+    };
+
+    fetchUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setUser({
+          name: session.user.user_metadata.full_name || 'User',
+          email: session.user.email || '',
+        });
+        setIsLoggedIn(true);
+      } else {
+        setUser(null);
+        setIsLoggedIn(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase.auth]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -30,9 +65,10 @@ export default function Header() {
     }
   }, [dashboardDropdownOpen]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setDashboardDropdownOpen(false);
-    router.push('/wingclub');
+    await supabase.auth.signOut();
+    router.push('/');
   };
 
   const handleClose = () => {
@@ -50,7 +86,7 @@ export default function Header() {
         <div className="w-full gutter-x">
           <div className="flex justify-between items-center h-34">
             {/* Menu Button */}
-            <button 
+            <button
               onClick={() => setMenuOpen(true)}
               className="flex items-center gap-2 text-gray-800 hover:text-gray-600"
             >
@@ -61,7 +97,7 @@ export default function Header() {
               </svg>
               <span className="text-sm font-medium">Menu</span>
             </button>
-            
+
             {/* Logo - Centered */}
             <Link href="/" className="absolute left-1/2 transform -translate-x-1/2 hover:opacity-80">
               <img
@@ -116,8 +152,8 @@ export default function Header() {
                           <div className="dashboard-dropdown-status"></div>
                         </div>
                         <div>
-                          <p className="dashboard-dropdown-name">Fortune Wingside</p>
-                          <p className="dashboard-dropdown-email">fortune.@gmail.com</p>
+                          <p className="dashboard-dropdown-name">{user?.name}</p>
+                          <p className="dashboard-dropdown-email">{user?.email}</p>
                         </div>
                       </div>
 
@@ -201,11 +237,11 @@ export default function Header() {
 
       {/* Mobile Menu Overlay */}
       {menuOpen && (
-        <div 
-          className={`fixed inset-0 bg-black/50 z-40 sidebar-overlay ${isClosing ? 'closing' : ''}`} 
+        <div
+          className={`fixed inset-0 bg-black/50 z-40 sidebar-overlay ${isClosing ? 'closing' : ''}`}
           onClick={handleClose}
         >
-          <div 
+          <div
             className={`fixed left-0 top-0 bottom-0 w-80 bg-white shadow-xl overflow-y-auto sidebar-panel ${isClosing ? 'closing' : ''}`}
             onClick={(e) => e.stopPropagation()}
           >
@@ -219,7 +255,7 @@ export default function Header() {
                   loading="lazy"
                 />
               </div>
-              <button 
+              <button
                 onClick={handleClose}
                 className="text-gray-800 hover:text-gray-600 p-1"
               >
@@ -231,8 +267,8 @@ export default function Header() {
             <nav className="px-10 py-4">
               <ul className="space-y-4">
                 <li>
-                  <Link 
-                    href="/business" 
+                  <Link
+                    href="/business"
                     className="sidebar-link"
                     onClick={handleClose}
                   >
@@ -240,8 +276,8 @@ export default function Header() {
                   </Link>
                 </li>
                 <li>
-                  <Link 
-                    href="/wingcafe" 
+                  <Link
+                    href="/wingcafe"
                     className="sidebar-link"
                     onClick={handleClose}
                   >
@@ -249,8 +285,8 @@ export default function Header() {
                   </Link>
                 </li>
                 <li>
-                  <Link 
-                    href="/gifts" 
+                  <Link
+                    href="/gifts"
                     className="sidebar-link"
                     onClick={handleClose}
                   >
@@ -258,8 +294,8 @@ export default function Header() {
                   </Link>
                 </li>
                 <li>
-                  <Link 
-                    href="/connect" 
+                  <Link
+                    href="/connect"
                     className="sidebar-link"
                     onClick={handleClose}
                   >
@@ -267,8 +303,8 @@ export default function Header() {
                   </Link>
                 </li>
                 <li>
-                  <Link 
-                    href="/hotspots" 
+                  <Link
+                    href="/hotspots"
                     className="sidebar-link"
                     onClick={handleClose}
                   >
@@ -276,8 +312,8 @@ export default function Header() {
                   </Link>
                 </li>
                 <li>
-                  <Link 
-                    href="/kids" 
+                  <Link
+                    href="/kids"
                     className="sidebar-link"
                     onClick={handleClose}
                   >
@@ -285,8 +321,8 @@ export default function Header() {
                   </Link>
                 </li>
                 <li>
-                  <Link 
-                    href="/sports" 
+                  <Link
+                    href="/sports"
                     className="sidebar-link"
                     onClick={handleClose}
                   >
@@ -302,15 +338,76 @@ export default function Header() {
                     Join the Wingclub
                   </Link>
                 </li>
-                <li>
-                  <Link
-                    href="/my-account"
-                    className="sidebar-link"
-                    onClick={handleClose}
-                  >
-                    My Account
-                  </Link>
-                </li>
+                {isLoggedIn ? (
+                  <>
+                    <li>
+                      <Link
+                        href="/my-account/dashboard"
+                        className="sidebar-link"
+                        onClick={handleClose}
+                      >
+                        Dashboard
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        href="/my-account/orders"
+                        className="sidebar-link"
+                        onClick={handleClose}
+                      >
+                        Orders
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        href="/my-account/wallet-history"
+                        className="sidebar-link"
+                        onClick={handleClose}
+                      >
+                        Wallet History
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        href="/my-account/edit-profile"
+                        className="sidebar-link"
+                        onClick={handleClose}
+                      >
+                        Edit Profile
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        href="/my-account/my-addresses"
+                        className="sidebar-link"
+                        onClick={handleClose}
+                      >
+                        My Addresses
+                      </Link>
+                    </li>
+                    <li>
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          handleClose();
+                        }}
+                        className="sidebar-link text-left w-full"
+                      >
+                        Log out
+                      </button>
+                    </li>
+                  </>
+                ) : (
+                  <li>
+                    <Link
+                      href="/my-account"
+                      className="sidebar-link"
+                      onClick={handleClose}
+                    >
+                      My Account
+                    </Link>
+                  </li>
+                )}
               </ul>
 
               {/* Order Button */}

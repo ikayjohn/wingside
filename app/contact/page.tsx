@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 interface Location {
-  id: number;
+  id: string;
   name: string;
   badge?: string;
   address: string;
@@ -26,50 +26,52 @@ export default function ContactPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedState, setSelectedState] = useState('');
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const locations: Location[] = [
-    {
-      id: 1,
-      name: 'WINGSIDE Port Harcourt',
-      badge: 'Headquarters',
-      address: '24 King Perekule Street, GRA',
-      city: 'Port Harcourt',
-      state: 'Rivers State',
-      rating: 4.8,
-      reviews: 324,
-      thumbnail: '/contact-location-1-thumb.jpg',
-      image: '/contact-location-1.jpg',
-      phone: '08090191999',
-      email: 'reachus@wingside.ng',
-      hours: '8:00 AM - 10:00 PM Daily',
-      services: ['Dine in', 'Takeout', 'Delivery', 'Catering'],
-      features: ['dine thru', 'outdoor seating', 'wifi', 'wheelchair accessible'],
-      mapsUrl: 'https://www.google.com/maps/search/?api=1&query=24+King+Perekule+Street+GRA+Port+Harcourt',
-    },
-    {
-      id: 2,
-      name: 'WINGSIDE Sani Abacha',
-      address: '30/33 Sani Abacha Road, The Autograph Mall',
-      city: 'Port Harcourt',
-      state: 'Rivers State',
-      rating: 4.8,
-      reviews: 324,
-      thumbnail: '/contact-location-2-thumb.jpg',
-      image: '/contact-location-2.jpg',
-      phone: '08090191999',
-      email: 'reachus@wingside.ng',
-      hours: '8:00 AM - 10:00 PM Daily',
-      services: ['Dine in', 'Takeout', 'Delivery', 'Catering'],
-      features: ['outdoor seating', 'wifi', 'wheelchair accessible'],
-      mapsUrl: 'https://www.google.com/maps/search/?api=1&query=30+33+Sani+Abacha+Road+The+Autograph+Mall+Port+Harcourt',
-    },
-  ];
+  // Fetch stores from API
+  useEffect(() => {
+    async function fetchStores() {
+      try {
+        const response = await fetch('/api/stores');
+        const data = await response.json();
 
-  // Auto-select first location on mount
-  React.useEffect(() => {
-    if (locations.length > 0 && !selectedLocation) {
-      setSelectedLocation(locations[0]);
+        if (data.stores) {
+          // Transform API data to match Location interface
+          const transformedStores = data.stores.map((store: any) => ({
+            id: store.id,
+            name: store.name,
+            badge: store.is_headquarters ? 'Headquarters' : undefined,
+            address: store.address,
+            city: store.city,
+            state: store.state,
+            rating: store.rating || 0,
+            reviews: store.review_count || 0,
+            thumbnail: store.thumbnail_url || '/contact-location-thumb.jpg',
+            image: store.image_url || '/contact-location.jpg',
+            phone: store.phone || '',
+            email: store.email || '',
+            hours: store.opening_hours || 'Hours not available',
+            services: store.services || [],
+            features: store.features || [],
+            mapsUrl: store.maps_url || '',
+          }));
+
+          setLocations(transformedStores);
+
+          // Auto-select first location
+          if (transformedStores.length > 0 && !selectedLocation) {
+            setSelectedLocation(transformedStores[0]);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching stores:', error);
+      } finally {
+        setLoading(false);
+      }
     }
+
+    fetchStores();
   }, []);
 
   const filteredLocations = locations.filter(location => {
@@ -85,13 +87,37 @@ export default function ContactPage() {
 
   const states = Array.from(new Set(locations.map(loc => loc.state)));
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-[1400px] mx-auto px-4 py-8 md:px-8 lg:px-16">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl md:text-5xl font-bold text-black mb-3">Contact us</h1>
+            <p className="text-gray-600 text-lg">Loading locations...</p>
+          </div>
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#F7C400]"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const locationCount = locations.length;
+  const uniqueStates = Array.from(new Set(locations.map(loc => loc.state)));
+  const stateText = uniqueStates.length === 1
+    ? uniqueStates[0]
+    : `${uniqueStates.length} states`;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-[1400px] mx-auto px-4 py-8 md:px-8 lg:px-16">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-black mb-3">Contact us</h1>
-          <p className="text-gray-600 text-lg">We are available in 2 locations in Rivers State</p>
+          <p className="text-gray-600 text-lg">
+            We are available in {locationCount} {locationCount === 1 ? 'location' : 'locations'} in {stateText}
+          </p>
         </div>
 
         {/* Search and Filter */}
