@@ -49,7 +49,7 @@ export default function WingclubPage() {
             }}
           >
             {/* Overlay */}
-            <div className="absolute inset-0 bg-black/10"></div>
+            <div className="absolute inset-0 bg-black/40"></div>
 
             {/* Content */}
             <div className="relative h-full w-[90%] mx-auto flex flex-col justify-between px-4 md:px-8 lg:px-16 py-10 md:py-22">
