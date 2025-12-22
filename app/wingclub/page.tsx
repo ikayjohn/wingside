@@ -202,7 +202,7 @@ export default function WingclubPage() {
               </div>
               {/* Decorative Shape */}
               <div className="absolute bottom-0 right-0 w-64 h-64 translate-x-12 translate-y-12">
-                <img src="/ellipse.png" alt="" className="w-full h-full object-contain" />
+                <img src="/Ellipse.png" alt="" className="w-full h-full object-contain" />
               </div>
             </div>
 
@@ -257,7 +257,7 @@ export default function WingclubPage() {
               </div>
               {/* Decorative Shape */}
               <div className="absolute bottom-0 right-0 w-64 h-64 translate-x-12 translate-y-12">
-                <img src="/subtract.png" alt="" className="w-full h-full object-contain" />
+                <img src="/Subtract.png" alt="" className="w-full h-full object-contain" />
               </div>
             </div>
           </div>
