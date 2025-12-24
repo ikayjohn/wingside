@@ -66,7 +66,8 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<string>('new');
 
   // Wallet payment states
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet'>('card');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet' | 'split'>('card');
+  const [walletAmount, setWalletAmount] = useState(0); // For split payments
   const [walletBalance, setWalletBalance] = useState(0);
   const [wallet, setWallet] = useState<any>(null);
   const [loadingWallet, setLoadingWallet] = useState(false);
@@ -638,7 +639,7 @@ export default function CheckoutPage() {
       }
 
       if (paymentMethod === 'wallet') {
-        // Process wallet payment
+        // Process full wallet payment
         if (!wallet || walletBalance < total) {
           throw new Error('Insufficient wallet balance for this order');
         }
@@ -665,8 +666,70 @@ export default function CheckoutPage() {
 
         // Redirect to success page
         window.location.href = `/order-success?order_id=${data.order.id}&payment_method=wallet`;
+      } else if (paymentMethod === 'split') {
+        // Split payment: wallet first, then card for the rest
+
+        // Step 1: Process wallet payment
+        if (!wallet || walletAmount <= 0) {
+          throw new Error('Invalid wallet amount for split payment');
+        }
+
+        const walletPaymentResponse = await fetch('/api/embedly/wallet-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            order_id: data.order.id,
+            amount: walletAmount,
+            remarks: `Partial payment for Wingside order #${data.order.id} (Split payment)`,
+          }),
+        });
+
+        const walletPaymentData = await walletPaymentResponse.json();
+
+        if (!walletPaymentResponse.ok) {
+          throw new Error(walletPaymentData.error || 'Wallet payment failed');
+        }
+
+        // Step 2: Initialize Paystack payment for remaining amount
+        const cardAmount = total - walletAmount;
+
+        if (cardAmount > 0) {
+          const paymentResponse = await fetch('/api/payment/initialize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              order_id: data.order.id,
+              amount: cardAmount,
+              email: formData.email,
+              metadata: {
+                customer_name: `${formData.firstName} ${formData.lastName}`,
+                phone: `+234${formattedPhone}`,
+                split_payment: true,
+                wallet_amount: walletAmount,
+              },
+            }),
+          });
+
+          const paymentData = await paymentResponse.json();
+
+          if (!paymentResponse.ok) {
+            throw new Error(paymentData.error || 'Failed to initialize card payment');
+          }
+
+          // Clear cart before redirecting
+          localStorage.removeItem('wingside-cart');
+          setCartItems([]);
+
+          // Redirect to Paystack for the remaining amount
+          window.location.href = paymentData.authorization_url;
+        } else {
+          // Full amount paid with wallet, redirect to success
+          localStorage.removeItem('wingside-cart');
+          setCartItems([]);
+          window.location.href = `/order-success?order_id=${data.order.id}&payment_method=split`;
+        }
       } else {
-        // Initialize payment with Paystack for card payments
+        // Initialize payment with Paystack for full card payment
         const paymentResponse = await fetch('/api/payment/initialize', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1281,7 +1344,7 @@ export default function CheckoutPage() {
                                 name="paymentMethod"
                                 value="wallet"
                                 checked={paymentMethod === 'wallet'}
-                                onChange={(e) => setPaymentMethod(e.target.value as 'card' | 'wallet')}
+                                onChange={(e) => setPaymentMethod(e.target.value as 'card' | 'wallet' | 'split')}
                                 disabled={walletBalance < total}
                                 className="w-4 h-4 text-yellow-400 focus:ring-yellow-400"
                               />
@@ -1302,6 +1365,84 @@ export default function CheckoutPage() {
                               </svg>
                             </div>
                           </label>
+                        )}
+
+                        {/* Split Payment Option - Only show if user has wallet but insufficient balance */}
+                        {wallet && walletBalance > 0 && walletBalance < total && (
+                          <label
+                            className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                              paymentMethod === 'split'
+                                ? 'border-yellow-400 bg-yellow-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="radio"
+                                name="paymentMethod"
+                                value="split"
+                                checked={paymentMethod === 'split'}
+                                onChange={(e) => {
+                                  setPaymentMethod('split');
+                                  // Default to using all wallet balance
+                                  setWalletAmount(walletBalance);
+                                }}
+                                className="w-4 h-4 text-yellow-400 focus:ring-yellow-400"
+                              />
+                              <div>
+                                <span className="font-medium text-gray-900">Split Payment</span>
+                                <p className="text-xs text-gray-500">
+                                  Use wallet (₦{walletBalance.toLocaleString()}) + card for the rest
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="flex -space-x-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500 bg-white rounded-full">
+                                  <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+                                  <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+                                  <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
+                                </svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500 bg-white rounded-full">
+                                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                  <line x1="1" y1="10" x2="23" y2="10"></line>
+                                </svg>
+                              </div>
+                            </div>
+                          </label>
+                        )}
+
+                        {/* Split Payment Amount Slider - Show when split is selected */}
+                        {paymentMethod === 'split' && wallet && walletBalance > 0 && (
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div className="mb-3">
+                              <label className="text-sm font-medium text-gray-900 mb-1 block">
+                                Amount from Wallet
+                              </label>
+                              <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
+                                <span>₦0</span>
+                                <span className="font-semibold">₦{walletAmount.toLocaleString()}</span>
+                                <span>₦{Math.min(walletBalance, total).toLocaleString()}</span>
+                              </div>
+                              <input
+                                type="range"
+                                min="0"
+                                max={Math.min(walletBalance, total)}
+                                step="100"
+                                value={walletAmount}
+                                onChange={(e) => setWalletAmount(Number(e.target.value))}
+                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-yellow-400"
+                              />
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">
+                                <span className="font-medium">Wallet:</span> ₦{walletAmount.toLocaleString()}
+                              </span>
+                              <span className="text-gray-600">
+                                <span className="font-medium">Card:</span> ₦{(total - walletAmount).toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
                         )}
 
                         {/* Insufficient Balance Warning */}
