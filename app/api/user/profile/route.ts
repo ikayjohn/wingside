@@ -97,12 +97,12 @@ export async function GET() {
 
     // Generate mock data for points and wallet (since these aren't fully implemented yet)
     // TODO: Replace with real wallet/loyalty data when available
-    const totalPoints = Math.floor(totalSpent / 100) // 1 point per ₦100 spent
+    const totalPoints = profile.points || Math.floor(totalSpent / 100) // 1 point per ₦100 spent
     const pointsThisMonth = Math.floor(
       (orders?.filter(order => {
         const orderDate = new Date(order.created_at)
         const now = new Date()
-        return orderDate.getMonth() === now.getMonth() && 
+        return orderDate.getMonth() === now.getMonth() &&
                orderDate.getFullYear() === now.getFullYear()
       })?.reduce((sum, order) => sum + Number(order.total), 0) || 0) / 100
     )
@@ -116,6 +116,7 @@ export async function GET() {
       phone: profile.phone,
       birthdayDay: profile.birthday_day,
       birthdayMonth: profile.birthday_month,
+      points: profile.points || totalPoints, // Add points field
       walletBalance: profile.wallet_balance || 0,
       cardNumber: `WC${profile.id.slice(0, 8).toUpperCase()}`,
       bankAccount: '9012345678', // This would come from payment system
