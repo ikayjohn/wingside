@@ -110,8 +110,12 @@ export async function GET() {
     const userData = {
       id: profile.id,
       name: profile.full_name || 'Customer',
+      firstName: profile.first_name || profile.full_name?.split(' ')[0] || 'Customer',
+      lastName: profile.last_name || profile.full_name?.split(' ').slice(1).join(' ') || '',
       email: profile.email,
       phone: profile.phone,
+      birthdayDay: profile.birthday_day,
+      birthdayMonth: profile.birthday_month,
       walletBalance: profile.wallet_balance || 0,
       cardNumber: `WC${profile.id.slice(0, 8).toUpperCase()}`,
       bankAccount: '9012345678', // This would come from payment system
@@ -139,6 +143,72 @@ export async function GET() {
     }
 
     return NextResponse.json({ profile: userData })
+  } catch (error) {
+    console.error('Unexpected error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH /api/user/profile - Update authenticated user's profile
+export async function PATCH(request: Request) {
+  try {
+    const supabase = await createClient()
+
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { firstName, lastName, phone, birthdayDay, birthdayMonth } = body
+
+    // Prepare update data
+    const updateData: any = {}
+
+    if (firstName !== undefined) updateData.first_name = firstName
+    if (lastName !== undefined) updateData.last_name = lastName
+    if (phone !== undefined) updateData.phone = phone
+    if (birthdayDay !== undefined) updateData.birthday_day = birthdayDay
+    if (birthdayMonth !== undefined) updateData.birthday_month = birthdayMonth
+
+    // Update full_name if first or last name changed
+    if (firstName !== undefined || lastName !== undefined) {
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', user.id)
+        .single()
+
+      const newFirstName = firstName ?? currentProfile?.first_name
+      const newLastName = lastName ?? currentProfile?.last_name
+      updateData.full_name = `${newFirstName} ${newLastName}`.trim()
+    }
+
+    // Update profile
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .update(updateData)
+      .eq('id', user.id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error updating profile:', error)
+      return NextResponse.json(
+        { error: 'Failed to update profile' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ profile, success: true })
   } catch (error) {
     console.error('Unexpected error:', error)
     return NextResponse.json(
