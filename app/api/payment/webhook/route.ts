@@ -165,6 +165,53 @@ export async function POST(request: NextRequest) {
             if (syncResult.zoho_deal_id) {
               console.log(`✅ Created Zoho deal: ${syncResult.zoho_deal_id}`)
             }
+
+            // 3. Award purchase points (₦100 = 1 point)
+            const purchasePoints = Math.floor(Number(order.total) / 100);
+
+            if (purchasePoints > 0 && profileId) {
+              const { error: pointsError } = await admin.rpc('award_points', {
+                p_user_id: profileId,
+                p_reward_type: 'purchase',
+                p_points: purchasePoints,
+                p_amount_spent: Number(order.total),
+                p_description: `Points earned from order #${order.order_number}`,
+                p_metadata: { order_id: order.id, order_number: order.order_number }
+              });
+
+              if (!pointsError) {
+                console.log(`✅ Awarded ${purchasePoints} points for ₦${order.total} spent`)
+              } else {
+                console.error('Error awarding points:', pointsError)
+              }
+            }
+
+            // 4. Check and award first order bonus
+            if (profileId) {
+              const { data: existingClaim } = await admin
+                .from('reward_claims')
+                .select('id')
+                .eq('user_id', profileId)
+                .eq('reward_type', 'first_order')
+                .maybeSingle();
+
+              if (!existingClaim) {
+                // Award first order bonus (15 points)
+                const { error: firstOrderError } = await admin.rpc('claim_reward', {
+                  p_user_id: profileId,
+                  p_reward_type: 'first_order',
+                  p_points: 15,
+                  p_description: 'First order bonus',
+                  p_metadata: { order_id: order.id, order_number: order.order_number }
+                });
+
+                if (!firstOrderError) {
+                  console.log(`✅ Awarded 15 points for first order`)
+                } else {
+                  console.error('Error awarding first order bonus:', firstOrderError)
+                }
+              }
+            }
           }
         }
 

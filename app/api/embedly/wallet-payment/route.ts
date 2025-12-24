@@ -81,19 +81,68 @@ export async function POST(request: NextRequest) {
       // }
 
       // Update order status to paid
-      await supabase
+      const { data: order } = await supabase
         .from('orders')
         .update({
-          status: 'paid',
-          updated_at: new Date().toISOString()
+          payment_status: 'paid',
+          status: 'confirmed',
+          paid_at: new Date().toISOString()
         })
-        .eq('id', order_id);
+        .eq('id', order_id)
+        .select()
+        .single();
+
+      // Award purchase points (₦100 = 1 point)
+      const purchasePoints = Math.floor(amount / 100);
+
+      if (purchasePoints > 0) {
+        const { error: pointsError } = await supabase.rpc('award_points', {
+          p_user_id: user.id,
+          p_reward_type: 'purchase',
+          p_points: purchasePoints,
+          p_amount_spent: amount,
+          p_description: `Points earned from order #${order?.order_number}`,
+          p_metadata: { order_id, order_number: order?.order_number }
+        });
+
+        if (!pointsError) {
+          console.log(`✅ Awarded ${purchasePoints} points for ₦${amount} spent (wallet payment)`)
+        } else {
+          console.error('Error awarding points:', pointsError)
+        }
+      }
+
+      // Check and award first order bonus
+      const { data: existingClaim } = await supabase
+        .from('reward_claims')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('reward_type', 'first_order')
+        .maybeSingle();
+
+      if (!existingClaim) {
+        // Award first order bonus (15 points)
+        const { error: firstOrderError } = await supabase.rpc('claim_reward', {
+          p_user_id: user.id,
+          p_reward_type: 'first_order',
+          p_points: 15,
+          p_description: 'First order bonus',
+          p_metadata: { order_id, order_number: order?.order_number }
+        });
+
+        if (!firstOrderError) {
+          console.log(`✅ Awarded 15 points for first order (wallet payment)`)
+        } else {
+          console.error('Error awarding first order bonus:', firstOrderError)
+        }
+      }
 
       return NextResponse.json({
         success: true,
         message: 'Payment processed successfully',
         transactionReference: `ORDER-${order_id}-${Date.now()}`,
-        newBalance: wallet.availableBalance - amount
+        newBalance: wallet.availableBalance - amount,
+        pointsAwarded: purchasePoints
       });
 
     } catch (embedlyError) {
