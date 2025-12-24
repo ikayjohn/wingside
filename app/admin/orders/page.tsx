@@ -183,6 +183,8 @@ export default function AdminOrdersPage() {
         return 'bg-blue-100 text-blue-800';
       case 'preparing':
         return 'bg-purple-100 text-purple-800';
+      case 'ready':
+        return 'bg-indigo-100 text-indigo-800';
       case 'out_for_delivery':
         return 'bg-orange-100 text-orange-800';
       case 'delivered':
@@ -245,6 +247,16 @@ export default function AdminOrdersPage() {
           }`}
         >
           Preparing
+        </button>
+        <button
+          onClick={() => setFilter('ready')}
+          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+            filter === 'ready'
+              ? 'bg-[#F7C400] text-black'
+              : 'bg-white text-gray-600 border border-gray-200'
+          }`}
+        >
+          Ready
         </button>
         <button
           onClick={() => setFilter('out_for_delivery')}
@@ -358,6 +370,7 @@ export default function AdminOrdersPage() {
                         <option value="pending">Pending</option>
                         <option value="confirmed">Confirmed</option>
                         <option value="preparing">Preparing</option>
+                        <option value="ready">Ready</option>
                         <option value="out_for_delivery">Out for Delivery</option>
                         <option value="delivered">Delivered</option>
                         <option value="cancelled">Cancelled</option>
