@@ -7,6 +7,7 @@ export default function EditProfilePage() {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    email: '',
     phone: '',
     birthdayDay: '',
     birthdayMonth: '',
@@ -45,6 +46,7 @@ export default function EditProfilePage() {
         setFormData({
           firstName: profile.firstName || '',
           lastName: profile.lastName || '',
+          email: profile.email || '',
           phone: profile.phone || '',
           birthdayDay: profile.birthdayDay || '',
           birthdayMonth: profile.birthdayMonth || '',
@@ -174,6 +176,23 @@ export default function EditProfilePage() {
             {/* Form */}
             <form onSubmit={handleSubmit}>
               <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    disabled
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                    title="Email cannot be changed"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Contact support to change your email address
+                  </p>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     First Name
