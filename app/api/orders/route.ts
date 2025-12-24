@@ -7,8 +7,9 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient()
     const { searchParams } = new URL(request.url)
     const orderNumber = searchParams.get('orderNumber')
+    const orderId = searchParams.get('orderId')
 
-    // If orderNumber is provided, fetch that specific order (no auth required for confirmation)
+    // If orderNumber is provided, fetch that specific order (no auth required for confirmation/tracking)
     if (orderNumber) {
       const { data: orders, error } = await supabase
         .from('orders')
@@ -17,6 +18,27 @@ export async function GET(request: NextRequest) {
           items:order_items(*)
         `)
         .eq('order_number', orderNumber)
+
+      if (error) {
+        console.error('Error fetching order:', error)
+        return NextResponse.json(
+          { error: 'Failed to fetch order' },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json({ orders })
+    }
+
+    // If orderId is provided, fetch that specific order (no auth required for tracking)
+    if (orderId) {
+      const { data: orders, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          items:order_items(*)
+        `)
+        .eq('id', orderId)
 
       if (error) {
         console.error('Error fetching order:', error)
