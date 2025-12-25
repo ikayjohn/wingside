@@ -369,7 +369,7 @@ export default function WingclubDashboard() {
                 <p className="dashboard-tier-points">
                   {userData.currentTier === 'Wingzard'
                     ? 'Max tier reached!'
-                    : `${userData.tierProgress.pointsToNext} more points needed`}
+                    : `${userData.tierProgress.target - userData.tierProgress.current} more points needed`}
                 </p>
               </div>
               <div className="dashboard-tier-percentage">
@@ -388,7 +388,7 @@ export default function WingclubDashboard() {
             <p className="dashboard-tier-hint">
               {userData.currentTier === 'Wingzard'
                 ? 'You are a Wingzard! Enjoy exclusive VIP benefits.'
-                : `Earn ${userData.tierProgress.pointsToNext} more points to reach ${userData.tierProgress.nextTier}`
+                : `Earn ${userData.tierProgress.target - userData.tierProgress.current} more points to reach ${userData.tierProgress.nextTier}`
               }
             </p>
           </div>
