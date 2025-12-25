@@ -3,6 +3,12 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('event-images', 'event-images', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Public Access Event Images" ON storage.objects;
+DROP POLICY IF EXISTS "Admins Can Upload Event Images" ON storage.objects;
+DROP POLICY IF EXISTS "Admins Can Delete Event Images" ON storage.objects;
+DROP POLICY IF EXISTS "Admins Can Update Event Images" ON storage.objects;
+
 -- Create policies for the bucket
 -- Allow public access to view images
 CREATE POLICY "Public Access Event Images"
@@ -48,3 +54,4 @@ CREATE POLICY "Admins Can Update Event Images"
       AND profiles.role = 'admin'
     )
   );
+# Updated 25 Dec 2025 17:34:53
