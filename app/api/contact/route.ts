@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Check if contact_submissions table exists, if not create it
     const { error: checkError } = await supabase.rpc('check_table_exists', {
