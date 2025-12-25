@@ -335,15 +335,6 @@ export default function EarnRewardsPage() {
                     >
                       Verify & Claim
                     </button>
-                  ) : task.actionUrl ? (
-                    <a
-                      href={task.actionUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-primary text-sm py-2 px-4 inline-block"
-                    >
-                      Follow
-                    </a>
                   ) : claimed ? (
                     <span className="text-gray-500 text-sm py-2 px-4">Claimed</span>
                   ) : (
