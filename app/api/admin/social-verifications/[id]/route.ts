@@ -5,9 +5,10 @@ import { createAdminClient } from '@/lib/supabase/admin';
 // PATCH /api/admin/social-verifications/[id] - Approve or reject verification
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
 
     // Get authenticated user
@@ -47,7 +48,7 @@ export async function PATCH(
     const { data: verification } = await admin
       .from('social_verifications')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
 
     if (!verification) {
@@ -74,7 +75,7 @@ export async function PATCH(
         verified_at: new Date().toISOString(),
         verified_by: user.id,
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single();
 
@@ -111,7 +112,7 @@ export async function PATCH(
         await admin
           .from('social_verifications')
           .update({ reward_claimed: true })
-          .eq('id', params.id);
+          .eq('id', id);
 
         console.log(`✅ Awarded ${verification.reward_points} points to user ${verification.user_id} for ${verification.platform} follow`);
       }
@@ -134,9 +135,10 @@ export async function PATCH(
 // DELETE /api/admin/social-verifications/[id] - Delete a verification (admin only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
 
     // Get authenticated user
@@ -166,7 +168,7 @@ export async function DELETE(
     const { error } = await admin
       .from('social_verifications')
       .delete()
-      .eq('id', params.id);
+      .eq('id', id);
 
     if (error) {
       console.error('Error deleting verification:', error);
