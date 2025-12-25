@@ -1,24 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { cachedJson, generateETag, etagMatches } from '@/lib/cache-utils'
+import {
+  getFromCache,
+  setCache,
+  CACHE_KEYS,
+  CACHE_TTL,
+  memoryCache,
+  CacheInvalidation
+} from '@/lib/redis'
 
 // GET /api/products - Fetch all active products
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
+    const cacheKey = category
+      ? CACHE_KEYS.PRODUCTS_BY_CATEGORY(category)
+      : CACHE_KEYS.PRODUCTS
+
+    // Check client's ETag for conditional request
+    const clientETag = request.headers.get('if-none-match')
+
+    // Try to get from Redis cache first
+    const cachedData = await getFromCache<any>(cacheKey)
+    if (cachedData) {
+      const etag = generateETag(cachedData)
+      if (clientETag && etagMatches(clientETag, etag)) {
+        return new Response(null, { status: 304 })
+      }
+      return cachedJson(cachedData, CACHE_TTL.MEDIUM, {
+        headers: {
+          'ETag': etag,
+          'X-Cache': 'HIT',
+        },
+      })
+    }
+
+    // Check memory cache fallback
+    const memoryCached = memoryCache.get(cacheKey)
+    if (memoryCached) {
+      const etag = generateETag(memoryCached)
+      if (clientETag && etagMatches(clientETag, etag)) {
+        return new Response(null, { status: 304 })
+      }
+      return cachedJson(memoryCached, CACHE_TTL.MEDIUM, {
+        headers: {
+          'ETag': etag,
+          'X-Cache': 'MEMORY',
+        },
+      })
+    }
+
+    // Cache miss - fetch from database
+    const supabase = await createClient()
 
     let query = supabase
       .from('products')
       .select(`
         *,
         category:categories(id, name, slug),
-        sizes:product_sizes(*),
-        flavors:product_flavors(
-          flavor:flavors(*)
-        ),
-        simple_flavors,
-        flavor_label
+        sizes:product_sizes(*)
       `)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
@@ -46,23 +88,80 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // If no products, return empty array
+    if (!products || products.length === 0) {
+      return NextResponse.json({ products: [] })
+    }
+
+    // Get all product IDs to fetch their flavors
+    const productIds = products.map(p => p.id)
+
+    // Fetch flavors for all products in one query
+    const { data: productFlavors } = await supabase
+      .from('product_flavors')
+      .select('product_id, flavor_id')
+      .in('product_id', productIds)
+
+    // Fetch all flavor details
+    const flavorIds = productFlavors?.map(pf => pf.flavor_id) || []
+    const { data: flavors } = await supabase
+      .from('flavors')
+      .select('*')
+      .in('id', flavorIds)
+      .eq('is_active', true)
+      .eq('available_for_products', true)
+
+    // Create a map of product_id -> array of flavor names
+    const flavorMap: Record<string, string[]> = {}
+    productFlavors?.forEach(pf => {
+      const flavor = flavors?.find(f => f.id === pf.flavor_id)
+      if (flavor) {
+        if (!flavorMap[pf.product_id]) {
+          flavorMap[pf.product_id] = []
+        }
+        flavorMap[pf.product_id].push(flavor.name)
+      }
+    })
+
     // Transform the data to match the frontend format
-    const transformedProducts = products?.map((product) => {
+    const transformedProducts = products.map((product) => {
       // Use simple_flavors if available (for products like "Regular", "Hot", "Iced")
       // Otherwise use wing flavors from the flavors table
-      const flavors = product.simple_flavors && product.simple_flavors.length > 0
+      const productFlavors = product.simple_flavors && product.simple_flavors.length > 0
         ? product.simple_flavors
-        : product.flavors?.map((pf: any) => pf.flavor.name) || []
+        : (flavorMap[product.id] || [])
 
       return {
         ...product,
-        flavors,
+        flavors: productFlavors,
         flavorLabel: product.flavor_label || undefined,
         sizes: product.sizes || [],
       }
     })
 
-    return NextResponse.json({ products: transformedProducts })
+    const responseData = { products: transformedProducts }
+
+    // Generate ETag for cache validation
+    const etag = generateETag(responseData)
+
+    // Check if client's cached version is still valid
+    if (clientETag && etagMatches(clientETag, etag)) {
+      return new Response(null, { status: 304 })
+    }
+
+    // Store in Redis cache (30 minutes)
+    await setCache(cacheKey, responseData, CACHE_TTL.MEDIUM)
+
+    // Store in memory cache as fallback (5 minutes)
+    memoryCache.set(cacheKey, responseData, CACHE_TTL.SHORT)
+
+    // Return response with caching headers
+    return cachedJson(responseData, CACHE_TTL.MEDIUM, {
+      headers: {
+        'ETag': etag,
+        'X-Cache': 'MISS',
+      },
+    })
   } catch (error) {
     console.error('Unexpected error:', error)
     return NextResponse.json(
@@ -156,6 +255,9 @@ export async function POST(request: NextRequest) {
         console.error('Error linking flavors:', flavorsError)
       }
     }
+
+    // Invalidate all product-related caches
+    await CacheInvalidation.products()
 
     return NextResponse.json({ product }, { status: 201 })
   } catch (error) {

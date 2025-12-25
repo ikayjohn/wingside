@@ -1,0 +1,55 @@
+{
+  "name": "Wingside - Best Chicken Wings in Port Harcourt",
+  "short_name": "Wingside",
+  "description": "Order delicious chicken wings with 20 unique flavors. Fast delivery and pickup available in Port Harcourt, Nigeria.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDF5E5",
+  "theme_color": "#F7C400",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["food", "restaurant", "delivery"],
+  "screenshots": [
+    {
+      "src": "/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/screenshot-narrow.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Order Now",
+      "short_name": "Order",
+      "description": "Skip the line and order your favorite wings",
+      "url": "/order",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "View Flavors",
+      "short_name": "Flavors",
+      "description": "Explore our 20 unique wing flavors",
+      "url": "/#flavors",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

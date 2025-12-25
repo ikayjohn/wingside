@@ -1,12 +1,56 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+
+interface Flavor {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  image_url: string;
+  spice_level: number;
+  is_active: boolean;
+  display_order: number;
+  show_on_homepage: boolean;
+  available_for_products: boolean;
+}
 
 export default function WingsideLanding() {
   const [activeCategory, setActiveCategory] = useState('HOT');
+  const [flavors, setFlavors] = useState<Flavor[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const categories = ['HOT', 'BBQ', 'DRY RUB', 'BOLD & FUN', 'SWEET', 'BOOZY'];
+
+  // Fetch flavors from database on mount
+  useEffect(() => {
+    fetchFlavors();
+  }, []);
+
+  async function fetchFlavors() {
+    try {
+      const response = await fetch('/api/flavors');
+      const data = await response.json();
+      if (response.ok) {
+        setFlavors(data.flavors || []);
+      }
+    } catch (error) {
+      console.error('Error fetching flavors:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Helper function to parse description into two parts
+  const parseDescription = (description: string) => {
+    if (!description) return { description1: '', description2: '' };
+    const parts = description.split('. ');
+    return {
+      description1: parts[0] || '',
+      description2: parts.slice(1).join('. ') || ''
+    };
+  };
 
   // Helper function to render flavor name with smaller iOS-style emojis
   const renderFlavorName = (name: string) => {
@@ -32,178 +76,15 @@ export default function WingsideLanding() {
     });
   };
 
-  // Flavors data
-  const flavors = [
-    // HOT
-    {
-      id: 1,
-      name: 'WINGFERNO 🌶️🌶️🌶️🌶️',
-      category: 'HOT',
-      description1: 'Piping hot peppers',
-      description2: 'Something special for the insane…',
-      image: '/flavor-wingferno.png'
-    },
-    {
-      id: 2,
-      name: 'DRAGON BREATH 🌶️🌶️🌶️',
-      category: 'HOT',
-      description1: 'Hot peppers & more hot peppers',
-      description2: 'Draaaagon!!! Your mushroom clouds will come for all of us…',
-      image: '/flavor-dragon.png'
-    },
-    {
-      id: 3,
-      name: 'BRAVEHEART 🌶️🌶️',
-      category: 'HOT',
-      description1: 'Habaneros & hot chili',
-      description2: 'Feel the heat, feel the burn.',
-      image: '/flavor-brave.png'
-    },
-    {
-      id: 4,
-      name: 'MANGO HEAT 🌶️',
-      category: 'HOT',
-      description1: 'Mango purée & hot peppers',
-      description2: 'All sweet, all heat…',
-      image: '/flavor-mango.png'
-    },
-    // BOLD & FUN
-    {
-      id: 5,
-      name: 'THE ITALIAN',
-      category: 'BOLD & FUN',
-      description1: 'Garlic & cheese',
-      description2: 'The ideal choice for sophisticated palates',
-      image: '/flavor-italian.png'
-    },
-    {
-      id: 6,
-      name: 'WING OF THE NORTH',
-      category: 'BOLD & FUN',
-      description1: 'Spicy dates & dates',
-      description2: 'Dont ask, dont tell',
-      image: '/flavor-wingnorth.png'
-    },
-    {
-      id: 7,
-      name: 'TOKYO',
-      category: 'BOLD & FUN',
-      description1: 'Soy sauce & sweet chili',
-      description2: 'From Asia with love',
-      image: '/flavor-tokyo.png'
-    },
-    {
-      id: 8,
-      name: 'HOT NUTS',
-      category: 'BOLD & FUN',
-      description1: 'Peanuts & hot chili',
-      description2: 'Delicious amazingness',
-      image: '/flavor-hotnuts.png'
-    },
-    {
-      id: 9,
-      name: 'YAJI',
-      category: 'DRY RUB',
-      description1: 'Its in the name',
-      description2: 'Born and raised in Nigeria',
-      image: '/flavor-yaji.png'
-    },
-    {
-      id: 10,
-      name: 'THE SLAYER',
-      category: 'BOLD & FUN',
-      description1: 'Garlic & herbs',
-      description2: 'Keeps the vampires away…',
-      image: '/flavor-slayer.png'
-    },
-    // BBQ
-    {
-      id: 11,
-      name: 'BBQ RUSH',
-      category: 'BBQ',
-      description1: 'BBQ sauce & honey',
-      description2: 'Sweet ol BBQ',
-      image: '/flavor-bbqrush.png'
-    },
-    {
-      id: 12,
-      name: 'BBQ FIRE 🌶️',
-      category: 'BBQ',
-      description1: 'BBQ sauce & hot peppers',
-      description2: 'A flavorful hot fire mix of sweet & spicy',
-      image: '/flavor-bbqfire.png'
-    },
-    // SPICY DRY
-    {
-      id: 13,
-      name: 'LEMON PEPPER',
-      category: 'DRY RUB',
-      description1: 'Its all in the name',
-      description2: 'Tangy deliciousness',
-      image: '/flavor-lemon.png'
-    },
-    {
-      id: 14,
-      name: 'CAMEROON RUB',
-      category: 'DRY RUB',
-      description1: 'Cameroon pepper & herbs',
-      description2: 'Part dry, part spicy, whole lotta good',
-      image: '/flavor-cameroon.png'
-    },
-    {
-      id: 15,
-      name: 'CARIBBEAN JERK',
-      category: 'DRY RUB',
-      description1: 'Tropical spice mix',
-      description2: 'Mild peppers you love…',
-      image: '/flavor-caribbean.png'
-    },
-    // SWEET
-    {
-      id: 16,
-      name: 'SWEET DREAMS',
-      category: 'SWEET',
-      description1: 'Cola & garlic sauce',
-      description2: 'Sweet with heat on heat',
-      image: '/flavor-sweetdreams.png'
-    },
-    {
-      id: 17,
-      name: 'YELLOW GOLD',
-      category: 'SWEET',
-      description1: 'Honey & mustard',
-      description2: 'Sweet & sassy with soothing buttery flavour',
-      image: '/flavor-yellowgold.png'
-    },
-    // BOOZY
-    {
-      id: 18,
-      name: 'WHISKEY VIBES',
-      category: 'BOOZY',
-      description1: 'Whiskey & hot sauce',
-      description2: 'Booze is intellectual',
-      image: '/flavor-whiskeyvibes.png'
-    },
-    {
-      id: 19,
-      name: 'TEQUILA WINGRISE',
-      category: 'BOOZY',
-      description1: 'Tequila & citrus',
-      description2: 'Now you can eat your tequila too',
-      image: '/flavor-tequila.png'
-    },
-    {
-      id: 20,
-      name: 'GUSTAVO',
-      category: 'BOOZY',
-      description1: 'Beer & barbecue sauce',
-      description2: 'Hot wings, cold dings',
-      image: '/flavor-gustavo.png'
-    }
-  ];
+  // Filter flavors based on active category and homepage visibility
+  const filteredFlavors = flavors.filter(flavor =>
+    flavor.category === activeCategory &&
+    flavor.show_on_homepage &&
+    flavor.image_url
+  );
 
-  // Filter flavors based on active category
-  const filteredFlavors = flavors.filter(flavor => flavor.category === activeCategory);
+  // Keep empty array - no more hardcoded flavors
+  const fallbackFlavors: never[] = [];
 
   return (
     <div className="min-h-screen bg-white">
@@ -217,13 +98,14 @@ export default function WingsideLanding() {
           loop
           playsInline
           className="hero-video"
+          onError={(e) => console.error('Video error:', e)}
         >
           <source src="/wingbanner.mp4" type="video/mp4" />
         </video>
-        
+
         {/* Dark Overlay */}
         <div className="hero-overlay"></div>
-        
+
         {/* Hero Content */}
         <div className="hero-content">
           <h1 className="hero-video-title">
@@ -370,31 +252,41 @@ export default function WingsideLanding() {
 
           {/* Flavor Cards */}
           <div className="space-y-6 md:space-y-10">
-            {filteredFlavors.length > 0 ? (
-              filteredFlavors.map((flavor) => (
-                <div key={flavor.id} className="grid md:grid-cols-2 gap-4 md:gap-8 items-center">
-                  <div className="order-2 md:order-1">
-                    <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 md:mb-4">{renderFlavorName(flavor.name)}</h3>
-                    <p className="text-gray-600 text-sm md:text-lg mb-1 font-semibold">
-                      {flavor.description1}
-                    </p>
-                    <p className="text-gray-600 text-sm md:text-lg mb-4 md:mb-6">
-                      {flavor.description2}
-                    </p>
-                    <Link href="/order" className="btn-outline inline-block">
-                      Order Now
-                    </Link>
-                  </div>
-                  <div className="order-1 md:order-2">
-                    <img
-                      src={flavor.image}
-                      alt={flavor.name}
-                      className="w-auto h-[200px] md:h-[300px] lg:h-[400px] flavor-image"
-                      loading="lazy"
-                    />
-                  </div>
+            {loading ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#552627] mx-auto mb-4"></div>
+                  <div className="text-gray-600">Loading flavors...</div>
                 </div>
-              ))
+              </div>
+            ) : filteredFlavors.length > 0 ? (
+              filteredFlavors.map((flavor) => {
+                const { description1, description2 } = parseDescription(flavor.description);
+                return (
+                  <div key={flavor.id} className="grid md:grid-cols-2 gap-4 md:gap-8 items-center">
+                    <div className="order-2 md:order-1">
+                      <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 md:mb-4">{renderFlavorName(flavor.name)}</h3>
+                      <p className="text-gray-600 text-sm md:text-lg mb-1 font-semibold">
+                        {description1}
+                      </p>
+                      <p className="text-gray-600 text-sm md:text-lg mb-4 md:mb-6">
+                        {description2}
+                      </p>
+                      <Link href="/order" className="btn-outline inline-block">
+                        Order Now
+                      </Link>
+                    </div>
+                    <div className="order-1 md:order-2">
+                      <img
+                        src={flavor.image_url}
+                        alt={flavor.name}
+                        className="w-auto h-[200px] md:h-[300px] lg:h-[400px] flavor-image"
+                        loading="lazy"
+                      />
+                    </div>
+                  </div>
+                );
+              })
             ) : (
               <div className="text-center py-8">
                 <p className="text-gray-500 text-base">No flavors available in this category yet.</p>

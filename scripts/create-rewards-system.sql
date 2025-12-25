@@ -12,10 +12,12 @@ CREATE TABLE IF NOT EXISTS rewards (
   metadata JSONB, -- Store additional data (order_id, referral_code, social_platform, etc.)
   status TEXT DEFAULT 'earned', -- 'earned', 'pending', 'expired'
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  expires_at TIMESTAMPTZ, -- Points could expire after some time
-  INDEX idx_rewards_user_id (user_id),
-  INDEX idx_rewards_status (status)
+  expires_at TIMESTAMPTZ -- Points could expire after some time
 );
+
+-- Create indexes for rewards
+CREATE INDEX IF NOT EXISTS idx_rewards_user_id ON rewards(user_id);
+CREATE INDEX IF NOT EXISTS idx_rewards_status ON rewards(status);
 
 -- Create reward_claims table for one-time rewards
 CREATE TABLE IF NOT EXISTS reward_claims (
@@ -24,9 +26,11 @@ CREATE TABLE IF NOT EXISTS reward_claims (
   reward_type TEXT NOT NULL, -- 'first_order', 'instagram_follow', 'review', 'birthday'
   claimed_at TIMESTAMPTZ DEFAULT NOW(),
   metadata JSONB,
-  UNIQUE(user_id, reward_type),
-  INDEX idx_reward_claims_user_reward (user_id, reward_type)
+  UNIQUE(user_id, reward_type)
 );
+
+-- Create index for reward_claims
+CREATE INDEX IF NOT EXISTS idx_reward_claims_user_reward ON reward_claims(user_id, reward_type);
 
 -- Add points column to profiles if it doesn't exist
 ALTER TABLE profiles 

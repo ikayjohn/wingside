@@ -241,7 +241,9 @@ export default function EditProfilePage() {
                       Birthday 🎂
                     </label>
                     <p className="text-xs text-gray-500">
-                      Add your birthday to get a special surprise on your special day!
+                      {formData.birthdayDay && formData.birthdayMonth
+                        ? 'Your birthday is set and cannot be changed for security reasons.'
+                        : 'Add your birthday to get a special surprise on your special day! (Can only be set once)'}
                     </p>
                   </div>
 
@@ -254,7 +256,12 @@ export default function EditProfilePage() {
                         name="birthdayDay"
                         value={formData.birthdayDay}
                         onChange={handleChange}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent bg-white"
+                        disabled={!!formData.birthdayDay && !!formData.birthdayMonth}
+                        className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent ${
+                          formData.birthdayDay && formData.birthdayMonth
+                            ? 'bg-gray-100 text-gray-600 cursor-not-allowed'
+                            : 'bg-white'
+                        }`}
                       >
                         <option value="">Select day</option>
                         {Array.from({ length: 31 }, (_, i) => (
@@ -273,7 +280,12 @@ export default function EditProfilePage() {
                         name="birthdayMonth"
                         value={formData.birthdayMonth}
                         onChange={handleChange}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent bg-white"
+                        disabled={!!formData.birthdayDay && !!formData.birthdayMonth}
+                        className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent ${
+                          formData.birthdayDay && formData.birthdayMonth
+                            ? 'bg-gray-100 text-gray-600 cursor-not-allowed'
+                            : 'bg-white'
+                        }`}
                       >
                         <option value="">Select month</option>
                         <option value="1">January</option>
@@ -291,6 +303,12 @@ export default function EditProfilePage() {
                       </select>
                     </div>
                   </div>
+
+                  {formData.birthdayDay && formData.birthdayMonth && (
+                    <p className="text-xs text-amber-600 mt-2">
+                      Contact customer support if you need to update your birthday.
+                    </p>
+                  )}
                 </div>
               </div>
 

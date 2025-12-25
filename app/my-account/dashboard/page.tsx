@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import ConvertPointsModal from '@/components/ConvertPointsModal';
 import FundWalletModal from '@/components/FundWalletModal';
 import ReferralSection from '@/components/ReferralSection';
@@ -62,6 +63,7 @@ interface EmbedlyWallet {
 }
 
 export default function WingclubDashboard() {
+  const router = useRouter();
   const [copied, setCopied] = useState<'card' | 'ref' | 'account' | null>(null);
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [showFundModal, setShowFundModal] = useState(false);
@@ -97,6 +99,12 @@ export default function WingclubDashboard() {
 
         setUserData(profileData.profile);
         setRecentTransactions(transactionsData.transactions || []);
+
+        // Redirect admins to admin panel
+        if (profileData.profile?.role === 'admin') {
+          router.push('/admin');
+          return;
+        }
       } catch (err) {
         console.error('Dashboard data fetch error:', err);
         if (err instanceof Error) {
@@ -353,28 +361,35 @@ export default function WingclubDashboard() {
         {/* Tier Progress */}
         <div className="dashboard-tier-section">
           <h3 className="dashboard-tier-title">Tier Progress</h3>
-          
+
           <div className="dashboard-tier-card">
             <div className="dashboard-tier-header">
               <div>
                 <p className="dashboard-tier-progress-label">Progress to {userData.tierProgress.nextTier}</p>
-                <p className="dashboard-tier-points">{userData.tierProgress.current} points to go</p>
+                <p className="dashboard-tier-points">
+                  {userData.currentTier === 'Wingzard'
+                    ? 'Max tier reached!'
+                    : `${userData.tierProgress.pointsToNext} more points needed`}
+                </p>
               </div>
               <div className="dashboard-tier-percentage">
                 <span className="dashboard-tier-percent-value">{userData.tierProgress.percentage}%</span>
                 <span className="dashboard-tier-percent-label">Complete</span>
               </div>
             </div>
-            
+
             <div className="dashboard-progress-bar">
-              <div 
+              <div
                 className="dashboard-progress-fill"
                 style={{ width: `${userData.tierProgress.percentage}%` }}
               ></div>
             </div>
-            
+
             <p className="dashboard-tier-hint">
-              Buy {userData.tierProgress.target - (userData.tierProgress.target * userData.tierProgress.percentage / 100)} more wings to reach {userData.tierProgress.nextTier}
+              {userData.currentTier === 'Wingzard'
+                ? 'You are a Wingzard! Enjoy exclusive VIP benefits.'
+                : `Earn ${userData.tierProgress.pointsToNext} more points to reach ${userData.tierProgress.nextTier}`
+              }
             </p>
           </div>
         </div>

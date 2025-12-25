@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import SocialVerifyModal from '@/components/SocialVerifyModal';
 
 interface ClaimedReward {
   id: string;
@@ -32,6 +33,19 @@ export default function EarnRewardsPage() {
   const [rewardsData, setRewardsData] = useState<RewardsData | null>(null);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [socialVerifyModal, setSocialVerifyModal] = useState<{
+    open: boolean;
+    platform: 'instagram' | 'twitter';
+    platformName: string;
+    platformUrl: string;
+    points: number;
+  }>({
+    open: false,
+    platform: 'instagram',
+    platformName: '',
+    platformUrl: '',
+    points: 0
+  });
 
   // Fetch rewards data
   useEffect(() => {
@@ -198,8 +212,10 @@ export default function EarnRewardsPage() {
       points: 100,
       icon: 'instagram',
       iconColor: 'pink',
-      type: 'one-time',
-      actionUrl: 'https://instagram.com/mywingside'
+      type: 'social-verify',
+      platform: 'instagram' as const,
+      platformName: 'Instagram',
+      platformUrl: 'https://instagram.com/mywingside'
     },
     {
       id: 'purchase',
@@ -306,6 +322,19 @@ export default function EarnRewardsPage() {
                       <div className="text-2xl font-bold text-gray-900">+{task.points}</div>
                       <div className="text-xs text-gray-500">points earned</div>
                     </div>
+                  ) : task.type === 'social-verify' ? (
+                    <button
+                      onClick={() => setSocialVerifyModal({
+                        open: true,
+                        platform: task.platform,
+                        platformName: task.platformName,
+                        platformUrl: task.platformUrl,
+                        points: task.points
+                      })}
+                      className="bg-[#F7C400] text-gray-900 py-2 px-4 rounded-full font-medium text-sm hover:bg-[#e5b500] transition-colors"
+                    >
+                      Verify & Claim
+                    </button>
                   ) : task.actionUrl ? (
                     <a
                       href={task.actionUrl}
@@ -355,6 +384,20 @@ export default function EarnRewardsPage() {
             </div>
           </div>
         )}
+
+        {/* Social Verification Modal */}
+        <SocialVerifyModal
+          isOpen={socialVerifyModal.open}
+          onClose={() => setSocialVerifyModal({ ...socialVerifyModal, open: false })}
+          platform={socialVerifyModal.platform}
+          platformName={socialVerifyModal.platformName}
+          platformUrl={socialVerifyModal.platformUrl}
+          points={socialVerifyModal.points}
+          onSuccess={() => {
+            setSuccessMessage('Verification submitted! We will review it shortly.');
+            setTimeout(() => setSuccessMessage(''), 3000);
+          }}
+        />
 
       </div>
     </div>
