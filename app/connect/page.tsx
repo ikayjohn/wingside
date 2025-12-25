@@ -1,9 +1,23 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 
+interface Event {
+  id: string;
+  title: string;
+  description: string | null;
+  event_date: string;
+  event_time: string | null;
+  location: string;
+  image_url: string | null;
+  is_active: boolean;
+  display_order: number;
+}
+
 export default function WingsideConnectPage() {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -21,29 +35,34 @@ export default function WingsideConnectPage() {
     console.log('Form submitted:', formData);
   };
 
-  const events = [
-    {
-      id: 1,
-      image: '/event1.jpg',
-      date: 'April 27, 2026',
-      title: 'Wingside Run Club',
-      location: 'Lagos Mainland',
-    },
-    {
-      id: 2,
-      image: '/event2.jpg',
-      date: 'May 3, 2026',
-      title: 'FIFA & Wings Game Night',
-      location: 'Unilag Hostel Lounge',
-    },
-    {
-      id: 3,
-      image: '/event3.jpg',
-      date: 'May 10, 2026',
-      title: 'WingTalks: Creators Edition',
-      location: 'Wingside HQ',
-    },
-  ];
+  // Fetch events from database
+  useEffect(() => {
+    async function fetchEvents() {
+      try {
+        const response = await fetch('/api/events');
+        const data = await response.json();
+        if (data.events) {
+          setEvents(data.events);
+        }
+      } catch (error) {
+        console.error('Error fetching events:', error);
+      } finally {
+        setEventsLoading(false);
+      }
+    }
+
+    fetchEvents();
+  }, []);
+
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -142,36 +161,60 @@ export default function WingsideConnectPage() {
           <span className="connect-events-badge">Upcoming events</span>
           <h2 className="connect-events-title">What's Popping Soon?</h2>
 
-          <div className="connect-events-grid">
-            {events.map((event) => (
-              <div key={event.id} className="connect-event-card">
-                <div className="connect-event-image">
-                  <img src={event.image} alt={event.title} />
-                </div>
-                <div className="connect-event-info">
-                  <div className="connect-event-date">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                      <line x1="16" y1="2" x2="16" y2="6"></line>
-                      <line x1="8" y1="2" x2="8" y2="6"></line>
-                      <line x1="3" y1="10" x2="21" y2="10"></line>
-                    </svg>
-                    {event.date}
+          {eventsLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400"></div>
+            </div>
+          ) : events.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-400">No upcoming events yet. Stay tuned!</p>
+            </div>
+          ) : (
+            <>
+              <div className="connect-events-grid">
+                {events.map((event) => (
+                  <div key={event.id} className="connect-event-card">
+                    <div className="connect-event-image">
+                      {event.image_url ? (
+                        <img src={event.image_url} alt={event.title} />
+                      ) : (
+                        <div className="w-full h-48 bg-gray-700 flex items-center justify-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <div className="connect-event-info">
+                      <div className="connect-event-date">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                          <line x1="16" y1="2" x2="16" y2="6"></line>
+                          <line x1="8" y1="2" x2="8" y2="6"></line>
+                          <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        {formatDate(event.event_date)}
+                        {event.event_time && <span> at {event.event_time}</span>}
+                      </div>
+                      <h3 className="connect-event-title">{event.title}</h3>
+                      <div className="connect-event-location">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                          <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        {event.location}
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="connect-event-title">{event.title}</h3>
-                  <div className="connect-event-location">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                      <circle cx="12" cy="10" r="3"></circle>
-                    </svg>
-                    {event.location}
-                  </div>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          <button className="connect-calendar-btn">See full calendar</button>
+              <button className="connect-calendar-btn">See full calendar</button>
+            </>
+          )}
         </div>
       </section>
 

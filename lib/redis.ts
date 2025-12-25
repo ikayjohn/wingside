@@ -3,17 +3,27 @@
  * Provides caching layer for frequently accessed data
  */
 
-import { Redis } from 'ioredis';
+let Redis: any;
+try {
+  Redis = require('ioredis');
+} catch (e) {
+  // ioredis not available, caching will be disabled
+  console.warn('ioredis package not found. Caching disabled.');
+}
 
 // Get Redis connection URL from environment
 const REDIS_URL = process.env.REDIS_URL || process.env.REDIS_LOCAL_URL;
 
 // Create Redis client singleton
-let redis: Redis | null = null;
+let redis: any = null;
 
-export function getRedisClient(): Redis | null {
-  if (!REDIS_URL) {
-    console.warn('Redis URL not configured. Caching disabled.');
+export function getRedisClient(): any {
+  if (!REDIS_URL || !Redis) {
+    if (!Redis) {
+      console.warn('Redis package not available. Caching disabled.');
+    } else {
+      console.warn('Redis URL not configured. Caching disabled.');
+    }
     return null;
   }
 
