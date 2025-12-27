@@ -2,15 +2,35 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const supabase = createClient();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Password reset requested for:', email);
-    setSubmitted(true);
+    setLoading(true);
+    setError('');
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        setError(error.message);
+      } else {
+        setSubmitted(true);
+      }
+    } catch (err: any) {
+      setError(err.message || 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -40,6 +60,12 @@ export default function ForgotPasswordPage() {
                 Enter your email address and we'll send you a link to reset your password.
               </p>
 
+              {error && (
+                <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm mb-4">
+                  {error}
+                </div>
+              )}
+
               <form onSubmit={handleSubmit}>
                 {/* Email */}
                 <div className="wingclub-field">
@@ -56,8 +82,8 @@ export default function ForgotPasswordPage() {
                 </div>
 
                 {/* Submit Button */}
-                <button type="submit" className="wingclub-submit-btn">
-                  Send Reset Link
+                <button type="submit" className="wingclub-submit-btn" disabled={loading}>
+                  {loading ? 'Sending...' : 'Send Reset Link'}
                 </button>
               </form>
 

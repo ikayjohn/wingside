@@ -14,43 +14,62 @@ export default function OfficeLunchPage() {
     needs: ''
   });
 
+  const [submitting, setSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitting(true);
+    setSubmitMessage(null);
 
-    const emailBody = `
-Wingside Office Lunch Request
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'office-lunch',
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          company: formData.companyName,
+          message: `
+Team Size: ${formData.teamSize}
+Preferred Start Date: ${formData.startDate}
 
-Contact Information:
-- Name: ${formData.name}
-- Email: ${formData.email}
-- Phone: ${formData.phone}
-- Company Name: ${formData.companyName}
-
-Plan Details:
-- Team Size: ${formData.teamSize}
-- Preferred Start Date: ${formData.startDate}
-
-Additional Information:
+Needs:
 ${formData.needs}
+          `.trim(),
+          formData: {
+            teamSize: formData.teamSize,
+            startDate: formData.startDate,
+            needs: formData.needs,
+          },
+        }),
+      });
 
----
-This request was submitted through the Wingside Office Lunch page.
-    `;
+      const data = await response.json();
 
-    const mailtoLink = `mailto:reachus@wingside.ng?subject=Office Lunch Request - ${formData.companyName}&body=${encodeURIComponent(emailBody)}&cc=${formData.email}`;
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit form');
+      }
 
-    window.location.href = mailtoLink;
+      setSubmitMessage({ type: 'success', text: data.message });
 
-    // Reset form
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      companyName: '',
-      teamSize: '',
-      startDate: '',
-      needs: ''
-    });
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        companyName: '',
+        teamSize: '',
+        startDate: '',
+        needs: ''
+      });
+    } catch (error: any) {
+      setSubmitMessage({ type: 'error', text: error.message || 'Failed to submit. Please try again.' });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -210,6 +229,16 @@ This request was submitted through the Wingside Office Lunch page.
             <p className="text-gray-700 text-base md:text-lg leading-relaxed">
               Let's build your personalized office lunch plan. No commitment, just conversation.
             </p>
+
+            {submitMessage && (
+              <div className={`px-6 py-4 rounded-lg ${
+                submitMessage.type === 'success'
+                  ? 'bg-green-50 text-green-800 border border-green-200'
+                  : 'bg-red-50 text-red-800 border border-red-200'
+              }`}>
+                {submitMessage.text}
+              </div>
+            )}
           </div>
 
           {/* Form */}
@@ -328,9 +357,10 @@ This request was submitted through the Wingside Office Lunch page.
             <div className="text-center mb-4">
               <button
                 type="submit"
-                className="w-full bg-[#5D4037] text-white px-10 py-4 rounded-full font-semibold text-lg hover:bg-[#4a332b] transition-colors"
+                disabled={submitting}
+                className="w-full bg-[#5D4037] text-white px-10 py-4 rounded-full font-semibold text-lg hover:bg-[#4a332b] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Send Request
+                {submitting ? 'Sending...' : 'Send Request'}
               </button>
             </div>
 

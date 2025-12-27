@@ -478,6 +478,7 @@ export default function OrderPage() {
                       src={product.image}
                       alt={product.name}
                       className="w-full aspect-[2/1] object-cover rounded-lg"
+                      style={{ contentVisibility: 'auto' }}
                     />
                   </div>
 
@@ -879,7 +880,14 @@ export default function OrderPage() {
               )}
 
               <div className="border-t pt-4 mb-6">
-                <div className="flex justify-between font-bold text-lg">
+                {/* Subtotal */}
+                <div className="flex justify-between mb-2">
+                  <span>Subtotal</span>
+                  <span>{formatPrice(cartTotal)}</span>
+                </div>
+
+                {/* Total */}
+                <div className="flex justify-between font-bold text-lg border-t pt-2">
                   <span>Total</span>
                   <span>{formatPrice(cartTotal)}</span>
                 </div>

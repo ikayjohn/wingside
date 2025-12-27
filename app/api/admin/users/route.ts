@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 // GET /api/admin/users - Get all users (admin only)
 export async function GET() {
@@ -49,8 +50,9 @@ export async function GET() {
       );
     }
 
-    // Get all users with their profile data
-    const { data: users, error } = await supabase
+    // Get all users with their profile data using admin client to bypass RLS
+    const admin = createAdminClient();
+    const { data: users, error } = await admin
       .from('profiles')
       .select(`
         id,
@@ -59,10 +61,7 @@ export async function GET() {
         phone,
         role,
         wallet_balance,
-        embedly_customer_id,
-        embedly_wallet_id,
-        card_serial,
-        card_status,
+        points,
         created_at
       `)
       .order('created_at', { ascending: false });
@@ -75,22 +74,35 @@ export async function GET() {
       );
     }
 
-    // Get order counts for each user
+    // Get order counts for each user using admin client
     const usersWithStats = await Promise.all(
-      users.map(async (userData) => {
-        const { data: orders } = await supabase
-          .from('orders')
-          .select('id, total')
-          .eq('user_id', userData.id);
+      (users || []).map(async (userData) => {
+        try {
+          const { data: orders, error: ordersError } = await admin
+            .from('orders')
+            .select('id, total')
+            .eq('user_id', userData.id);
 
-        const totalOrders = orders?.length || 0;
-        const totalSpent = orders?.reduce((sum, order) => sum + Number(order.total), 0) || 0;
+          if (ordersError) {
+            console.error(`Error fetching orders for user ${userData.id}:`, ordersError);
+          }
 
-        return {
-          ...userData,
-          totalOrders,
-          totalSpent
-        };
+          const totalOrders = orders?.length || 0;
+          const totalSpent = orders?.reduce((sum, order) => sum + Number(order.total || 0), 0) || 0;
+
+          return {
+            ...userData,
+            totalOrders,
+            totalSpent
+          };
+        } catch (err) {
+          console.error(`Error processing user ${userData.id}:`, err);
+          return {
+            ...userData,
+            totalOrders: 0,
+            totalSpent: 0
+          };
+        }
       })
     );
 

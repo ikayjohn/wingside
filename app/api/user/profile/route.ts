@@ -43,7 +43,7 @@ export async function GET() {
     // Fetch user's order statistics
     const { data: orders } = await supabase
       .from('orders')
-      .select('total, created_at, status')
+      .select('id, order_number, total, created_at, status')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
 
@@ -61,43 +61,44 @@ export async function GET() {
         }).replace(/\//g, '/')
       : 'N/A'
 
-    // Calculate tier based on total spent (you can adjust these thresholds)
-    let currentTier = 'Wing Newcomer'
+    // Calculate tier based on total points
+    // Tier Structure:
+    // - Wing Member: 0 - 1000 Points
+    // - Wing Leader: 1001 - 2000 Points
+    // - Wingzard: 2000+ Points
+    let currentTier = 'Wing Member'
     let nextTier = 'Wing Leader'
     let tierProgress = 0
-    let tierThreshold = 0
+    let tierThreshold = 1000
+    let tierStart = 0
 
-    if (totalSpent >= 50000) {
+    const totalPoints = profile.points || 0
+
+    if (totalPoints >= 2000) {
       currentTier = 'Wingzard'
-      nextTier = 'Wing Legend'
-      tierThreshold = 100000
-    } else if (totalSpent >= 20000) {
+      nextTier = 'Wingzard' // Max tier
+      tierThreshold = 2000
+      tierStart = 2000
+      tierProgress = 100 // At max tier
+    } else if (totalPoints >= 1001) {
       currentTier = 'Wing Leader'
       nextTier = 'Wingzard'
-      tierThreshold = 50000
-    } else if (totalSpent >= 10000) {
-      currentTier = 'Wing Enthusiast'
-      nextTier = 'Wing Leader'
-      tierThreshold = 20000
-    } else if (totalSpent >= 5000) {
-      currentTier = 'Wing Fan'
-      nextTier = 'Wing Enthusiast'
-      tierThreshold = 10000
+      tierThreshold = 2000
+      tierStart = 1000
+      tierProgress = ((totalPoints - tierStart) / (tierThreshold - tierStart)) * 100
     } else {
-      currentTier = 'Wing Newcomer'
-      nextTier = 'Wing Fan'
-      tierThreshold = 5000
+      currentTier = 'Wing Member'
+      nextTier = 'Wing Leader'
+      tierThreshold = 1000
+      tierStart = 0
+      tierProgress = ((totalPoints - tierStart) / (tierThreshold - tierStart)) * 100
     }
 
-    // Calculate progress to next tier
-    const previousThreshold = tierThreshold * 0.5
-    tierProgress = ((totalSpent - previousThreshold) / (tierThreshold - previousThreshold)) * 100
+    // Clamp progress between 0 and 100
     if (tierProgress < 0) tierProgress = 0
     if (tierProgress > 100) tierProgress = 100
 
-    // Generate mock data for points and wallet (since these aren't fully implemented yet)
-    // TODO: Replace with real wallet/loyalty data when available
-    const totalPoints = profile.points || Math.floor(totalSpent / 100) // 1 point per ₦100 spent
+    // Calculate points this month
     const pointsThisMonth = Math.floor(
       (orders?.filter(order => {
         const orderDate = new Date(order.created_at)
@@ -116,7 +117,7 @@ export async function GET() {
       phone: profile.phone,
       birthdayDay: profile.birthday_day,
       birthdayMonth: profile.birthday_month,
-      points: profile.points || totalPoints, // Add points field
+      points: profile.points || 0, // Add points field
       walletBalance: profile.wallet_balance || 0,
       cardNumber: `WC${profile.id.slice(0, 8).toUpperCase()}`,
       bankAccount: '9012345678', // This would come from payment system
@@ -131,10 +132,12 @@ export async function GET() {
       convertiblePoints: Math.floor(totalPoints * 0.5), // Convertible points
       minConversion: 100,
       tierProgress: {
-        current: Math.max(0, tierThreshold - (totalSpent - previousThreshold)),
+        current: totalPoints,
+        start: tierStart,
         target: tierThreshold,
         nextTier,
         percentage: Math.round(tierProgress),
+        pointsToNext: Math.max(0, tierThreshold - totalPoints),
       },
       addresses: profile.addresses || [],
       recentOrders,
@@ -171,23 +174,35 @@ export async function PATCH(request: Request) {
     const body = await request.json()
     const { firstName, lastName, phone, birthdayDay, birthdayMonth } = body
 
+    // Get current profile to check if birthday is already set
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('first_name, last_name, birthday_day, birthday_month')
+      .eq('id', user.id)
+      .single()
+
     // Prepare update data
     const updateData: any = {}
 
     if (firstName !== undefined) updateData.first_name = firstName
     if (lastName !== undefined) updateData.last_name = lastName
     if (phone !== undefined) updateData.phone = phone
-    if (birthdayDay !== undefined) updateData.birthday_day = birthdayDay
-    if (birthdayMonth !== undefined) updateData.birthday_month = birthdayMonth
+
+    // Birthday can only be set if not already set
+    if (birthdayDay !== undefined && birthdayMonth !== undefined) {
+      if (currentProfile?.birthday_day && currentProfile?.birthday_month) {
+        // Birthday already set, prevent changes
+        return NextResponse.json(
+          { error: 'Birthday cannot be changed once set. Please contact customer support.' },
+          { status: 400 }
+        )
+      }
+      updateData.birthday_day = birthdayDay
+      updateData.birthday_month = birthdayMonth
+    }
 
     // Update full_name if first or last name changed
     if (firstName !== undefined || lastName !== undefined) {
-      const { data: currentProfile } = await supabase
-        .from('profiles')
-        .select('first_name, last_name')
-        .eq('id', user.id)
-        .single()
-
       const newFirstName = firstName ?? currentProfile?.first_name
       const newLastName = lastName ?? currentProfile?.last_name
       updateData.full_name = `${newFirstName} ${newLastName}`.trim()

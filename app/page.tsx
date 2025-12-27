@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import HeroSlideshow from '@/components/HeroSlideshow';
 
 interface Flavor {
   id: string;
@@ -89,39 +90,8 @@ export default function WingsideLanding() {
   return (
     <div className="min-h-screen bg-white">
 
-      {/* Hero Section with Video Background */}
-      <section className="hero-video-section">
-        {/* Video Background */}
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="hero-video"
-          onError={(e) => console.error('Video error:', e)}
-        >
-          <source src="/wingbanner.mp4" type="video/mp4" />
-        </video>
-
-        {/* Dark Overlay */}
-        <div className="hero-overlay"></div>
-
-        {/* Hero Content */}
-        <div className="hero-content">
-          <h1 className="hero-video-title">
-            <span className="text-white">Where </span>
-            <span className="text-yellow-400">Flavor</span>
-            <span className="text-white"> takes </span>
-            <span className="text-yellow-400">Flight</span>
-          </h1>
-          <p className="hero-video-subtitle">
-            Your <span className="italic">wings</span>, Your <span className="italic">way</span>
-          </p>
-          <p className="hero-video-description">
-            20 bold flavors, endless cravings. Ready to take off?
-          </p>
-        </div>
-      </section>
+      {/* Hero Section with Slideshow */}
+      <HeroSlideshow />
 
 
       {/* Think Inside The Box */}

@@ -42,10 +42,21 @@ export default function MyAccountPage() {
   useEffect(() => {
     const checkAuthStatus = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (user) {
-        // User is already logged in, redirect to dashboard
-        router.push('/my-account/dashboard');
+        // Check if user is admin
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+
+        // Redirect based on role
+        if (profile?.role === 'admin') {
+          router.push('/admin');
+        } else {
+          router.push('/my-account/dashboard');
+        }
       } else {
         // User is not logged in, show login/signup forms
         setLoading(false);

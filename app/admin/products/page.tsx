@@ -160,6 +160,7 @@ export default function AdminProductsPage() {
     try {
       const uploadFormData = new FormData()
       uploadFormData.append('file', file)
+      uploadFormData.append('folder', 'product-images') // Specify folder
 
       const response = await fetch('/api/upload', {
         method: 'POST',
@@ -168,8 +169,26 @@ export default function AdminProductsPage() {
 
       const data = await response.json()
 
+      console.log('[Product Upload] Upload response:', data)
+      console.log('[Product Upload] Response OK:', response.ok)
+      console.log('[Product Upload] Has URL:', !!data.url)
+
       if (response.ok && data.url) {
-        setFormData({ ...formData, image_url: data.url })
+        console.log('[Product Upload] Setting image URL:', data.url)
+        console.log('[Product Upload] Current formData before update:', formData)
+
+        // Force re-render by clearing preview first
+        setImagePreview(null);
+        setTimeout(() => {
+          setFormData(prev => {
+            const updated = { ...prev, image_url: data.url };
+            console.log('[Product Upload] New formData:', updated);
+            return updated;
+          });
+          setImagePreview(data.url + '?t=' + Date.now()); // Add timestamp to bypass cache
+          console.log('[Product Upload] Image preview set to:', data.url)
+        }, 50);
+
         alert('Image uploaded successfully!')
       } else {
         alert('Failed to upload image: ' + (data.error || 'Unknown error'))

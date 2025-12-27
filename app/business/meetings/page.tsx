@@ -5,6 +5,8 @@ import Link from 'next/link';
 
 export default function MeetingsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -19,46 +21,68 @@ export default function MeetingsPage() {
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitting(true);
+    setSubmitMessage(null);
 
-    const emailBody = `
-Wingside Meetings Quote Request
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'meetings',
+          name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          message: `
+Event Type: ${formData.eventType}
+Number of People: ${formData.numberOfPeople}
+Event Date: ${formData.eventDate}
+Service Type: ${formData.serviceType}
+Meal Preference: ${formData.mealPreference}
 
-Contact Information:
-- Full Name: ${formData.fullName}
-- Email: ${formData.email}
-- Phone: ${formData.phone}
-
-Event Details:
-- Type of Event: ${formData.eventType}
-- Number of People: ${formData.numberOfPeople}
-- Event Date: ${formData.eventDate}
-- Service Type: ${formData.serviceType}
-- Meal Preference: ${formData.mealPreference}
-
-More Details:
+Details:
 ${formData.moreDetails}
+          `.trim(),
+          formData: {
+            eventType: formData.eventType,
+            numberOfPeople: formData.numberOfPeople,
+            eventDate: formData.eventDate,
+            serviceType: formData.serviceType,
+            mealPreference: formData.mealPreference,
+            moreDetails: formData.moreDetails,
+          },
+        }),
+      });
 
----
-This request was submitted through the Wingside Meetings page.
-    `;
+      const data = await response.json();
 
-    const mailtoLink = `mailto:reachus@wingside.ng?subject=Wingside Meetings Quote Request - ${formData.fullName}&body=${encodeURIComponent(emailBody)}&cc=${formData.email}`;
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit form');
+      }
 
-    window.location.href = mailtoLink;
+      setSubmitMessage({ type: 'success', text: data.message });
 
-    // Reset form
-    setFormData({
-      fullName: '',
-      email: '',
-      phone: '',
-      eventType: '',
-      numberOfPeople: '',
-      eventDate: '',
-      serviceType: '',
-      mealPreference: '',
-      moreDetails: ''
-    });
-    setIsFormOpen(false);
+      // Close modal and reset form after delay
+      setTimeout(() => {
+        setIsFormOpen(false);
+        setFormData({
+          fullName: '',
+          email: '',
+          phone: '',
+          eventType: '',
+          numberOfPeople: '',
+          eventDate: '',
+          serviceType: '',
+          mealPreference: '',
+          moreDetails: ''
+        });
+        setSubmitMessage(null);
+      }, 2000);
+    } catch (error: any) {
+      setSubmitMessage({ type: 'error', text: error.message || 'Failed to submit. Please try again.' });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -265,6 +289,16 @@ This request was submitted through the Wingside Meetings page.
                 Fill the form below, so we can reach you with your quote
               </p>
 
+              {submitMessage && (
+                <div className={`mb-6 px-6 py-4 rounded-lg ${
+                  submitMessage.type === 'success'
+                    ? 'bg-green-50 text-green-800 border border-green-200'
+                    : 'bg-red-50 text-red-800 border border-red-200'
+                }`}>
+                  {submitMessage.text}
+                </div>
+              )}
+
               {/* Form */}
               <form onSubmit={handleFormSubmit}>
                 {/* Row 1: Full Name | Email */}
@@ -426,9 +460,10 @@ This request was submitted through the Wingside Meetings page.
                 <div className="text-center">
                   <button
                     type="submit"
-                    className="bg-[#F7C400] text-black px-16 py-4 rounded-full font-semibold text-lg hover:bg-[#e5b500] transition-colors"
+                    disabled={submitting}
+                    className="bg-[#F7C400] text-black px-16 py-4 rounded-full font-semibold text-lg hover:bg-[#e5b500] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Submit
+                    {submitting ? 'Submitting...' : 'Submit'}
                   </button>
                 </div>
               </form>

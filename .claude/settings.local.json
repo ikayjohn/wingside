@@ -53,7 +53,14 @@
       "Bash(start \"C:\\\\Users\\\\ikayj\\\\Documents\\\\wingside\\\\scripts\\\\test-referral-generation.html\")",
       "Bash(start http://localhost:3000/my-account/dashboard)",
       "Bash(start http://localhost:3003/my-account/dashboard)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "WebSearch",
+      "Bash(dir:*)",
+      "Bash(git rm:*)",
+      "Bash(npm ls:*)",
+      "Bash(grep:*)",
+      "Bash(start http://localhost:3000/hotspots)",
+      "Bash(start:*)"
     ],
     "deny": [],
     "ask": []

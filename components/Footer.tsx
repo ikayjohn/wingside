@@ -128,6 +128,7 @@ export default function Footer() {
             <span className="font-bold text-xs uppercase tracking-wide text-gray-900">GET IN TOUCH</span>
             <Link href="/about" className="footer-link">About Us</Link>
             <Link href="/careers" className="footer-link">Careers</Link>
+            <Link href="/support" className="footer-link">Support</Link>
             <Link href="/contact" className="footer-link">Contact Us</Link>
           </div>
 

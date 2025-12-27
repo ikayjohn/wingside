@@ -101,6 +101,18 @@ export default function CheckoutPage() {
     }
   }, []);
 
+  // Load promo code from localStorage on mount
+  useEffect(() => {
+    const savedPromo = localStorage.getItem('wingside-promo');
+    if (savedPromo) {
+      try {
+        setAppliedPromo(JSON.parse(savedPromo));
+      } catch (e) {
+        console.error('Error loading promo code:', e);
+      }
+    }
+  }, []);
+
   // Check for existing authenticated user and prefill form
   useEffect(() => {
     const checkExistingUser = async () => {
@@ -341,6 +353,15 @@ export default function CheckoutPage() {
     setPromoCode('');
     setPromoError('');
   };
+
+  // Save promo code to localStorage whenever it changes
+  useEffect(() => {
+    if (appliedPromo) {
+      localStorage.setItem('wingside-promo', JSON.stringify(appliedPromo));
+    } else {
+      localStorage.removeItem('wingside-promo');
+    }
+  }, [appliedPromo]);
 
   const validateReferralCode = async () => {
     if (!formData.referralCode.trim()) {

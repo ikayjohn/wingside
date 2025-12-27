@@ -175,17 +175,24 @@ export const CacheInvalidation = {
   // Invalidate all product-related caches
   async products() {
     await deleteCachePattern('wingside:products*');
+    // Also clear memory cache
+    memoryCache.deletePattern('wingside:products*');
   },
 
   // Invalidate all flavor-related caches
   async flavors() {
     await deleteCachePattern('wingside:flavors*');
+    // Also clear memory cache
+    memoryCache.deletePattern('wingside:flavors*');
   },
 
   // Invalidate user-specific caches
   async user(userId: string) {
     await deleteFromCache(CACHE_KEYS.USER_PROFILE(userId));
     await deleteFromCache(CACHE_KEYS.USER_WALLET(userId));
+    // Also clear memory cache
+    memoryCache.delete(CACHE_KEYS.USER_PROFILE(userId));
+    memoryCache.delete(CACHE_KEYS.USER_WALLET(userId));
   },
 
   // Invalidate all location caches
@@ -193,11 +200,17 @@ export const CacheInvalidation = {
     await deleteFromCache(CACHE_KEYS.DELIVERY_AREAS);
     await deleteFromCache(CACHE_KEYS.PICKUP_LOCATIONS);
     await deleteFromCache(CACHE_KEYS.STORES);
+    // Also clear memory cache
+    memoryCache.delete(CACHE_KEYS.DELIVERY_AREAS);
+    memoryCache.delete(CACHE_KEYS.PICKUP_LOCATIONS);
+    memoryCache.delete(CACHE_KEYS.STORES);
   },
 
   // Invalidate settings cache
   async settings() {
     await deleteFromCache(CACHE_KEYS.SETTINGS);
+    // Also clear memory cache
+    memoryCache.delete(CACHE_KEYS.SETTINGS);
   },
 };
 
@@ -232,6 +245,16 @@ class MemoryCache {
 
   clear(): void {
     this.cache.clear();
+  }
+
+  // Delete all keys matching a pattern
+  deletePattern(pattern: string): void {
+    const regex = new RegExp(pattern.replace('*', '.*'));
+    for (const key of this.cache.keys()) {
+      if (regex.test(key)) {
+        this.cache.delete(key);
+      }
+    }
   }
 }
 

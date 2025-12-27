@@ -166,7 +166,34 @@ export async function POST(request: NextRequest) {
               console.log(`✅ Created Zoho deal: ${syncResult.zoho_deal_id}`)
             }
 
-            // 3. Award purchase points (₦100 = 1 point)
+            // 3. Increment promo code usage if a promo code was used
+            if (order.promo_code_id) {
+              try {
+                // Get current used_count
+                const { data: promoCode } = await admin
+                  .from('promo_codes')
+                  .select('used_count')
+                  .eq('id', order.promo_code_id)
+                  .single();
+
+                if (promoCode) {
+                  const { error: promoError } = await admin
+                    .from('promo_codes')
+                    .update({ used_count: (promoCode.used_count || 0) + 1 })
+                    .eq('id', order.promo_code_id);
+
+                  if (!promoError) {
+                    console.log(`✅ Incremented promo code usage for: ${order.promo_code_id}`)
+                  } else {
+                    console.error('Error incrementing promo code usage:', promoError)
+                  }
+                }
+              } catch (promoError) {
+                console.error('Error incrementing promo code usage:', promoError)
+              }
+            }
+
+            // 4. Award purchase points (₦100 = 1 point)
             const purchasePoints = Math.floor(Number(order.total) / 100);
 
             if (purchasePoints > 0 && profileId) {

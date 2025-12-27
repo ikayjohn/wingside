@@ -28,9 +28,19 @@ export async function POST(request: NextRequest) {
     // Get the file from form data
     const formData = await request.formData()
     const file = formData.get('file') as File
+    const folder = formData.get('folder') as string || 'product-images' // Default to product-images
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+    }
+
+    // Validate folder
+    const validFolders = ['product-images', 'hero-images']
+    if (!validFolders.includes(folder)) {
+      return NextResponse.json(
+        { error: 'Invalid folder. Must be one of: ' + validFolders.join(', ') },
+        { status: 400 }
+      )
     }
 
     // Validate file type
@@ -55,7 +65,8 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now()
     const randomString = Math.random().toString(36).substring(2, 15)
     const fileExtension = file.name.split('.').pop()
-    const fileName = `product-${timestamp}-${randomString}.${fileExtension}`
+    const prefix = folder === 'hero-images' ? 'hero' : 'product'
+    const fileName = `${prefix}-${timestamp}-${randomString}.${fileExtension}`
 
     // Convert file to buffer
     const bytes = await file.arrayBuffer()
@@ -63,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     // Upload to Supabase Storage
     const { data, error } = await supabase.storage
-      .from('product-images')
+      .from(folder)
       .upload(fileName, buffer, {
         contentType: file.type,
         cacheControl: '3600',
@@ -81,7 +92,7 @@ export async function POST(request: NextRequest) {
     // Get public URL
     const {
       data: { publicUrl },
-    } = supabase.storage.from('product-images').getPublicUrl(fileName)
+    } = supabase.storage.from(folder).getPublicUrl(fileName)
 
     return NextResponse.json({
       success: true,

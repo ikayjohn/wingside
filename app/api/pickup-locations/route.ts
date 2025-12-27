@@ -1,10 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { cachedJson, generateETag, etagMatches } from '@/lib/cache-utils'
+import {
+  getFromCache,
+  setCache,
+  deleteFromCache,
+  CACHE_KEYS,
+  CACHE_TTL,
+  memoryCache
+} from '@/lib/redis'
 
 // GET /api/pickup-locations - Fetch all active pickup locations (public)
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const cacheKey = CACHE_KEYS.PICKUP_LOCATIONS
+    const clientETag = request.headers.get('if-none-match')
+
+    // Try to get from Redis cache first
+    const cachedData = await getFromCache<any>(cacheKey)
+    if (cachedData) {
+      const etag = generateETag(cachedData)
+      if (clientETag && etagMatches(clientETag, etag)) {
+        return new Response(null, { status: 304 })
+      }
+      return cachedJson(cachedData, CACHE_TTL.MEDIUM, {
+        headers: {
+          'ETag': etag,
+          'X-Cache': 'HIT',
+        },
+      })
+    }
+
+    // Check memory cache fallback
+    const memoryCached = memoryCache.get(cacheKey)
+    if (memoryCached) {
+      const etag = generateETag(memoryCached)
+      if (clientETag && etagMatches(clientETag, etag)) {
+        return new Response(null, { status: 304 })
+      }
+      return cachedJson(memoryCached, CACHE_TTL.MEDIUM, {
+        headers: {
+          'ETag': etag,
+          'X-Cache': 'MEMORY',
+        },
+      })
+    }
+
+    // Cache miss - fetch from database
     const supabase = await createClient()
 
     const { data: pickupLocations, error } = await supabase
@@ -21,7 +64,29 @@ export async function GET() {
       )
     }
 
-    return NextResponse.json({ pickupLocations })
+    const responseData = { pickupLocations }
+
+    // Generate ETag for cache validation
+    const etag = generateETag(responseData)
+
+    // Check if client's cached version is still valid
+    if (clientETag && etagMatches(clientETag, etag)) {
+      return new Response(null, { status: 304 })
+    }
+
+    // Store in Redis cache (30 minutes)
+    await setCache(cacheKey, responseData, CACHE_TTL.MEDIUM)
+
+    // Store in memory cache as fallback (5 minutes)
+    memoryCache.set(cacheKey, responseData, CACHE_TTL.SHORT)
+
+    // Return response with caching headers
+    return cachedJson(responseData, CACHE_TTL.MEDIUM, {
+      headers: {
+        'ETag': etag,
+        'X-Cache': 'MISS',
+      },
+    })
   } catch (error) {
     console.error('Unexpected error:', error)
     return NextResponse.json(
@@ -81,6 +146,10 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    // Invalidate cache after creating pickup location
+    await deleteFromCache(CACHE_KEYS.PICKUP_LOCATIONS)
+    memoryCache.delete(CACHE_KEYS.PICKUP_LOCATIONS)
 
     return NextResponse.json({ pickupLocation }, { status: 201 })
   } catch (error) {

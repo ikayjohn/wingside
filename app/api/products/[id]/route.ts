@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { CacheInvalidation } from '@/lib/redis'
 
 // GET /api/products/[id] - Fetch single product
 export async function GET(
@@ -116,6 +117,9 @@ export async function PUT(
       )
     }
 
+    // Invalidate cache so the updated product is fetched
+    await CacheInvalidation.products()
+
     return NextResponse.json({ product })
   } catch (error) {
     console.error('Error:', error)
@@ -166,6 +170,9 @@ export async function DELETE(
         { status: 500 }
       )
     }
+
+    // Invalidate cache so the deleted product is removed
+    await CacheInvalidation.products()
 
     return NextResponse.json({ success: true })
   } catch (error) {

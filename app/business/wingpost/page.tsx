@@ -23,6 +23,8 @@ export default function WingpostPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [isPartnerFormOpen, setIsPartnerFormOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [formData, setFormData] = useState({
     companyName: '',
     contactName: '',
@@ -130,39 +132,61 @@ export default function WingpostPage() {
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitting(true);
+    setSubmitMessage(null);
 
-    // Create email content
-    const emailBody = `
-New Wingpost Partnership Request
-
-Company Name: ${formData.companyName}
-Contact Person: ${formData.contactName}
-Email: ${formData.email}
-Phone: ${formData.phone}
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'wingpost',
+          name: formData.contactName,
+          email: formData.email,
+          phone: formData.phone,
+          company: formData.companyName,
+          message: `
 Address: ${formData.address}
 Space Type: ${formData.spaceType}
-Message: ${formData.message}
-    `.trim();
 
-    // Create mailto link
-    const mailtoLink = `mailto:reachus@wingside.ng?subject=Wingpost Partnership Request - ${formData.companyName}&body=${encodeURIComponent(emailBody)}&cc=${formData.email}`;
-
-    // Open default email client
-    window.location.href = mailtoLink;
-
-    // Close modal and reset form
-    setTimeout(() => {
-      setIsPartnerFormOpen(false);
-      setFormData({
-        companyName: '',
-        contactName: '',
-        email: '',
-        phone: '',
-        address: '',
-        spaceType: '',
-        message: '',
+Message:
+${formData.message}
+          `.trim(),
+          formData: {
+            address: formData.address,
+            spaceType: formData.spaceType,
+            message: formData.message,
+          },
+        }),
       });
-    }, 500);
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit form');
+      }
+
+      setSubmitMessage({ type: 'success', text: data.message });
+
+      // Close modal and reset form after delay
+      setTimeout(() => {
+        setIsPartnerFormOpen(false);
+        setFormData({
+          companyName: '',
+          contactName: '',
+          email: '',
+          phone: '',
+          address: '',
+          spaceType: '',
+          message: '',
+        });
+        setSubmitMessage(null);
+      }, 2000);
+    } catch (error: any) {
+      setSubmitMessage({ type: 'error', text: error.message || 'Failed to submit. Please try again.' });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -527,6 +551,16 @@ Message: ${formData.message}
                 <div>
                   <h2 className="text-2xl md:text-3xl font-bold text-black mb-2">Partner with Wingpost</h2>
                   <p className="text-gray-600">Fill out the form below and we'll get back to you shortly.</p>
+
+                  {submitMessage && (
+                    <div className={`mt-4 px-4 py-3 rounded-lg ${
+                      submitMessage.type === 'success'
+                        ? 'bg-green-50 text-green-800 border border-green-200'
+                        : 'bg-red-50 text-red-800 border border-red-200'
+                    }`}>
+                      {submitMessage.text}
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => setIsPartnerFormOpen(false)}
@@ -679,9 +713,10 @@ Message: ${formData.message}
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-6 py-3 bg-[#F7C400] text-black font-semibold rounded-full hover:bg-[#e5b500] transition-colors"
+                    disabled={submitting}
+                    className="flex-1 px-6 py-3 bg-[#F7C400] text-black font-semibold rounded-full hover:bg-[#e5b500] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Submit Request
+                    {submitting ? 'Submitting...' : 'Submit Request'}
                   </button>
                 </div>
               </form>

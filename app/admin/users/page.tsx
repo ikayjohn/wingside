@@ -10,10 +10,7 @@ interface User {
   phone: string;
   role: string;
   wallet_balance: number;
-  embedly_customer_id: string | null;
-  embedly_wallet_id: string | null;
-  card_serial: string | null;
-  card_status: string | null;
+  points: number;
   created_at: string;
   totalOrders: number;
   totalSpent: number;
@@ -37,6 +34,8 @@ export default function AdminUsersPage() {
       setError('');
       const response = await fetch('/api/admin/users');
 
+      console.log('Response status:', response.status);
+
       if (response.status === 401) {
         router.push('/signin');
         return;
@@ -49,12 +48,14 @@ export default function AdminUsersPage() {
       }
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to fetch users');
+        const data = await response.json().catch(e => ({ error: 'Unknown error' }));
+        console.error('API Error:', data);
+        throw new Error(data.error || data.details || 'Failed to fetch users');
       }
 
       const data = await response.json();
-      setUsers(data.users);
+      console.log('Users data:', data);
+      setUsers(data.users || []);
     } catch (err: any) {
       console.error('Error fetching users:', err);
       setError(err.message || 'Failed to load users');
@@ -194,7 +195,7 @@ export default function AdminUsersPage() {
                         {formatCurrency(user.wallet_balance || 0)}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {user.embedly_wallet_id ? '✓ Embedly' : '—'}
+                        {user.points || 0} pts
                       </div>
                     </div>
                   </td>
