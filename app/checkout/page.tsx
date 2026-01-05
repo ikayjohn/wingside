@@ -1452,7 +1452,7 @@ export default function CheckoutPage() {
                                 name="paymentMethod"
                                 value="wallet"
                                 checked={paymentMethod === 'wallet'}
-                                onChange={(e) => setPaymentMethod(e.target.value as 'card' | 'wallet' | 'split')}
+                                onChange={(e) => setPaymentMethod(e.target.value as 'paystack' | 'nomba' | 'wallet' | 'split')}
                                 disabled={walletBalance < total}
                                 className="w-4 h-4 text-yellow-400 focus:ring-yellow-400"
                               />
