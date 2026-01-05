@@ -238,11 +238,11 @@ export default function Header() {
       {/* Mobile Menu Overlay */}
       {menuOpen && (
         <div
-          className={`fixed inset-0 bg-black/50 z-40 sidebar-overlay ${isClosing ? 'closing' : ''}`}
+          className={`fixed inset-0 bg-black/50 z-50 sidebar-overlay ${isClosing ? 'closing' : ''}`}
           onClick={handleClose}
         >
           <div
-            className={`fixed left-0 top-0 bottom-0 w-80 bg-white shadow-xl overflow-y-auto sidebar-panel ${isClosing ? 'closing' : ''}`}
+            className={`fixed left-0 top-0 bottom-0 w-80 bg-white shadow-xl overflow-y-auto sidebar-panel z-50 ${isClosing ? 'closing' : ''}`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Sidebar Header */}

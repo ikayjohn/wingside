@@ -66,7 +66,7 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<string>('new');
 
   // Wallet payment states
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet' | 'split'>('card');
+  const [paymentMethod, setPaymentMethod] = useState<'paystack' | 'nomba' | 'wallet' | 'split'>('paystack');
   const [walletAmount, setWalletAmount] = useState(0); // For split payments
   const [walletBalance, setWalletBalance] = useState(0);
   const [wallet, setWallet] = useState<any>(null);
@@ -77,6 +77,13 @@ export default function CheckoutPage() {
     min_order_amount: '2000',
   });
 
+  // Payment gateway enable/disable states
+  const [enabledGateways, setEnabledGateways] = useState({
+    paystack: true,
+    nomba: true,
+    wallet: true,
+  });
+
   // Load settings from API
   useEffect(() => {
     const fetchSettings = async () => {
@@ -85,6 +92,23 @@ export default function CheckoutPage() {
         if (response.ok) {
           const data = await response.json();
           setSettings(data.settings);
+
+          // Extract payment gateway settings
+          const gateways = {
+            paystack: data.settings.payment_gateway_paystack_enabled === 'true',
+            nomba: data.settings.payment_gateway_nomba_enabled === 'true',
+            wallet: data.settings.payment_gateway_wallet_enabled === 'true',
+          };
+          setEnabledGateways(gateways);
+
+          // Auto-select first available payment method if current is disabled
+          const availableMethods = Object.entries(gateways)
+            .filter(([_, enabled]) => enabled)
+            .map(([method]) => method);
+
+          if (!availableMethods.includes(paymentMethod)) {
+            setPaymentMethod(availableMethods[0] as 'paystack' | 'nomba' | 'wallet' | 'split');
+          }
         }
       } catch (error) {
         console.error('Error fetching settings:', error);
@@ -164,12 +188,12 @@ export default function CheckoutPage() {
             setWallet(walletData.wallet);
             setWalletBalance(walletData.wallet.availableBalance);
           } else {
-            // User doesn't have a wallet, keep card payment as default
-            setPaymentMethod('card');
+            // User doesn't have a wallet, keep paystack payment as default
+            setPaymentMethod('paystack');
           }
         } catch (error) {
           console.error('Error fetching wallet:', error);
-          setPaymentMethod('card');
+          setPaymentMethod('paystack');
         } finally {
           setLoadingWallet(false);
         }
@@ -749,8 +773,36 @@ export default function CheckoutPage() {
           setCartItems([]);
           window.location.href = `/order-success?order_id=${data.order.id}&payment_method=split`;
         }
+      } else if (paymentMethod === 'nomba') {
+        // Initialize payment with Nomba
+        const paymentResponse = await fetch('/api/payment/nomba/initialize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            order_id: data.order.id,
+            amount: total,
+            email: formData.email,
+            metadata: {
+              customer_name: `${formData.firstName} ${formData.lastName}`,
+              phone: `+234${formattedPhone}`,
+            },
+          }),
+        });
+
+        const paymentData = await paymentResponse.json();
+
+        if (!paymentResponse.ok) {
+          throw new Error(paymentData.error || 'Failed to initialize payment');
+        }
+
+        // Clear cart (will be restored if payment fails)
+        localStorage.removeItem('wingside-cart');
+        setCartItems([]);
+
+        // Redirect to Nomba checkout page
+        window.location.href = paymentData.checkout_url;
       } else {
-        // Initialize payment with Paystack for full card payment
+        // Initialize payment with Paystack (default)
         const paymentResponse = await fetch('/api/payment/initialize', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -795,7 +847,7 @@ export default function CheckoutPage() {
           alt="Wings and more"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-black/30" />
+        <div className="absolute inset-0 bg-black/50" />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-4 pt-12 md:pt-20">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
             CHECKOUT
@@ -1308,8 +1360,8 @@ export default function CheckoutPage() {
                     <span className="font-bold text-lg">{formatPrice(total)}</span>
                   </div>
 
-                  {/* Payment Method Selection - Only show for logged in users with wallet */}
-                  {isLoggedIn && !loadingWallet && (
+                  {/* Payment Method Selection - Show for all users */}
+                  {!loadingWallet && (
                     <div className="mb-6">
                       <div className="flex items-center gap-2 mb-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
@@ -1320,38 +1372,73 @@ export default function CheckoutPage() {
                       </div>
 
                       <div className="space-y-3">
-                        {/* Card Payment Option */}
-                        <label
-                          className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
-                            paymentMethod === 'card'
-                              ? 'border-yellow-400 bg-yellow-50'
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="radio"
-                              name="paymentMethod"
-                              value="card"
-                              checked={paymentMethod === 'card'}
-                              onChange={(e) => setPaymentMethod(e.target.value as 'card' | 'wallet')}
-                              className="w-4 h-4 text-yellow-400 focus:ring-yellow-400"
-                            />
-                            <div>
-                              <span className="font-medium text-gray-900">Pay with Card</span>
-                              <p className="text-xs text-gray-500">Pay securely with your debit/credit card</p>
+                        {/* Paystack Card Payment Option */}
+                        {enabledGateways.paystack && (
+                          <label
+                            className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                              paymentMethod === 'paystack'
+                                ? 'border-yellow-400 bg-yellow-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="radio"
+                                name="paymentMethod"
+                                value="paystack"
+                                checked={paymentMethod === 'paystack'}
+                                onChange={(e) => setPaymentMethod(e.target.value as 'paystack' | 'nomba')}
+                                className="w-4 h-4 text-yellow-400 focus:ring-yellow-400"
+                              />
+                              <div>
+                                <span className="font-medium text-gray-900">Pay with Card (Paystack)</span>
+                                <p className="text-xs text-gray-500">Pay securely with Visa, Mastercard, or Verve</p>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
-                              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                              <line x1="1" y1="10" x2="23" y2="10"></line>
-                            </svg>
-                          </div>
-                        </label>
+                            <div className="flex items-center gap-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                <line x1="1" y1="10" x2="23" y2="10"></line>
+                              </svg>
+                            </div>
+                          </label>
+                        )}
 
-                        {/* Wallet Payment Option - Only show if user has wallet */}
-                        {wallet && walletBalance > 0 && (
+                        {/* Nomba Payment Option */}
+                        {enabledGateways.nomba && (
+                          <label
+                            className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                              paymentMethod === 'nomba'
+                                ? 'border-yellow-400 bg-yellow-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="radio"
+                                name="paymentMethod"
+                                value="nomba"
+                                checked={paymentMethod === 'nomba'}
+                                onChange={(e) => setPaymentMethod(e.target.value as 'paystack' | 'nomba')}
+                                className="w-4 h-4 text-yellow-400 focus:ring-yellow-400"
+                              />
+                              <div>
+                                <span className="font-medium text-gray-900">Pay with Nomba</span>
+                                <p className="text-xs text-gray-500">Pay with card or bank transfer</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <img
+                                src="/nomba.png"
+                                alt="Nomba"
+                                className="h-6 w-auto"
+                              />
+                            </div>
+                          </label>
+                        )}
+
+                        {/* Wallet Payment Option - Only show if user has wallet and wallet is enabled */}
+                        {isLoggedIn && enabledGateways.wallet && wallet && walletBalance > 0 && (
                           <label
                             className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
                               paymentMethod === 'wallet'
@@ -1389,7 +1476,7 @@ export default function CheckoutPage() {
                         )}
 
                         {/* Split Payment Option - Only show if user has wallet but insufficient balance */}
-                        {wallet && walletBalance > 0 && walletBalance < total && (
+                        {isLoggedIn && enabledGateways.wallet && wallet && walletBalance > 0 && walletBalance < total && (
                           <label
                             className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
                               paymentMethod === 'split'

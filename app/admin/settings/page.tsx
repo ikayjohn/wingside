@@ -114,6 +114,7 @@ export default function AdminSettingsPage() {
       business: 'Business Hours',
       delivery: 'Delivery Settings',
       payment: 'Payment Settings',
+      order_availability: 'Order Availability',
     };
     return titles[category] || category.charAt(0).toUpperCase() + category.slice(1);
   };
@@ -128,11 +129,11 @@ export default function AdminSettingsPage() {
     return 'text';
   };
 
-  const renderInput = (item: SettingItem) => {
+  const renderInput = (item: SettingItem, category: string) => {
     const inputType = getInputType(item.key);
 
-    // Boolean settings (accept_cash, accept_card, accept_wallet)
-    if (item.key.startsWith('accept_')) {
+    // Boolean settings (accept_cash, accept_card, accept_wallet, auto_close_outside_hours, payment_gateway_*_enabled)
+    if (item.key.startsWith('accept_') || item.key === 'auto_close_outside_hours' || item.key.startsWith('payment_gateway_')) {
       return (
         <div className="flex items-center gap-2">
           <input
@@ -200,7 +201,10 @@ export default function AdminSettingsPage() {
       )}
 
       <form onSubmit={handleSave} className="space-y-8">
-        {Object.entries(settingsByCategory).map(([category, items]) => (
+        {/* Render all categories except order_availability */}
+        {Object.entries(settingsByCategory)
+          .filter(([category]) => category !== 'order_availability')
+          .map(([category, items]) => (
           <div key={category} className="bg-white shadow-md rounded-lg p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-6">
               {getCategoryTitle(category)}
@@ -221,12 +225,123 @@ export default function AdminSettingsPage() {
                       </span>
                     )}
                   </label>
-                  {renderInput(item)}
+                  {renderInput(item, category)}
                 </div>
               ))}
             </div>
           </div>
         ))}
+
+        {/* Order Availability Section - Always Last */}
+        {settingsByCategory['order_availability'] && (
+          <div className="bg-gradient-to-br from-orange-50 to-yellow-50 shadow-md rounded-lg p-6 border-2 border-orange-200">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                ⏰ Order Availability Settings
+              </h2>
+              <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-semibold">
+                Auto-Close Feature
+              </span>
+            </div>
+
+            <div className="bg-white rounded-lg p-4 mb-6 border border-orange-200">
+              <h3 className="font-semibold text-gray-900 mb-2">How it works:</h3>
+              <p className="text-sm text-gray-600">
+                When enabled, orders will automatically be disabled outside your configured business hours.
+                Customers will see a countdown timer showing when you'll reopen. This feature works in
+                combination with the manual "Accept Orders" toggle in General Settings.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {(() => {
+                // Define day order: Monday to Sunday
+                const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+                const timezoneSetting = settingsByCategory['order_availability'].find(i => i.key === 'business_timezone');
+                const autoCloseSetting = settingsByCategory['order_availability'].find(i => i.key === 'auto_close_outside_hours');
+
+                return (
+                  <>
+                    {/* Auto-close toggle - show first and full width */}
+                    {autoCloseSetting && (
+                      <div key={autoCloseSetting.key} className="md:col-span-2 bg-gradient-to-r from-orange-100 to-yellow-100 rounded-lg p-4 border border-orange-300">
+                        <label className="block text-base font-semibold text-gray-900 mb-3">
+                          {getFieldLabel(autoCloseSetting.key)}
+                          {autoCloseSetting.description && (
+                            <span className="ml-2 text-sm text-gray-600 font-normal">
+                              ({autoCloseSetting.description})
+                            </span>
+                          )}
+                        </label>
+                        {renderInput(autoCloseSetting, 'order_availability')}
+                      </div>
+                    )}
+
+                    {/* Day-specific settings in order: Monday to Sunday */}
+                    {dayOrder.map(dayName => {
+                      const openTimeKey = `${dayName}_open`;
+                      const closeTimeKey = `${dayName}_close`;
+                      const openItem = settingsByCategory['order_availability'].find(i => i.key === openTimeKey);
+
+                      if (!openItem) return null;
+
+                      return (
+                        <div key={dayName} className="md:col-span-2 lg:col-span-1 bg-white rounded-lg p-4 border border-gray-200">
+                          <label className="block text-sm font-semibold text-gray-900 mb-3 capitalize">
+                            {dayName} Hours
+                          </label>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">Opens</label>
+                              <input
+                                type="time"
+                                value={settings[openTimeKey] || ''}
+                                onChange={(e) => handleChange(openTimeKey, e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">Closes</label>
+                              <input
+                                type="time"
+                                value={settings[closeTimeKey] || ''}
+                                onChange={(e) => handleChange(closeTimeKey, e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Timezone setting - full width */}
+                    {timezoneSetting && (
+                      <div key={timezoneSetting.key} className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          {getFieldLabel(timezoneSetting.key)}
+                          {timezoneSetting.description && (
+                            <span className="ml-2 text-xs text-gray-500">
+                              ({timezoneSetting.description})
+                            </span>
+                          )}
+                        </label>
+                        <select
+                          value={settings[timezoneSetting.key] || 'Africa/Lagos'}
+                          onChange={(e) => handleChange(timezoneSetting.key, e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
+                        >
+                          <option value="Africa/Lagos">Africa/Lagos (WAT)</option>
+                          <option value="Africa/Lagos">Africa/Lagos</option>
+                          <option value="UTC">UTC</option>
+                        </select>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        )}
 
         {/* Save Buttons */}
         <div className="flex justify-end gap-4">
@@ -256,6 +371,7 @@ export default function AdminSettingsPage() {
           <li>• Contact and business hour settings appear on the Contact page</li>
           <li>• Payment settings control available payment methods at checkout</li>
           <li>• Social media links appear in the footer</li>
+          <li>• <strong>Order Availability</strong>: Configure auto-close based on business hours at the bottom of this page</li>
         </ul>
       </div>
     </div>

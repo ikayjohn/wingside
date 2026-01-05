@@ -168,7 +168,7 @@ export default function HeroSlideshow() {
 
       {/* Slide Indicators */}
       {slides.length > 1 && (
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-3 z-30">
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-3 z-30 pb-5">
           {slides.map((_, index) => (
             <button
               key={index}
@@ -191,7 +191,7 @@ export default function HeroSlideshow() {
             onClick={() =>
               setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length)
             }
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-sm flex items-center justify-center transition-all duration-300 hover:scale-110"
+            className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-sm items-center justify-center transition-all duration-300 hover:scale-110"
             aria-label="Previous slide"
           >
             <svg
@@ -210,7 +210,7 @@ export default function HeroSlideshow() {
           </button>
           <button
             onClick={() => setCurrentIndex((prev) => (prev + 1) % slides.length)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-sm flex items-center justify-center transition-all duration-300 hover:scale-110"
+            className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-sm items-center justify-center transition-all duration-300 hover:scale-110"
             aria-label="Next slide"
           >
             <svg

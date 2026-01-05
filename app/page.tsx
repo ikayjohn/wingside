@@ -95,9 +95,9 @@ export default function WingsideLanding() {
 
 
       {/* Think Inside The Box */}
-      <section className="relative py-0 -mt-[80px]">
+      <section className="relative z-40 py-0 -mt-[50px] sm:-mt-[60px] md:-mt-[80px]">
         {/* Yellow Background */}
-        <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 bg-gradient-to-br from-yellow-100 to-yellow-100 h-[180px] sm:h-[250px] md:h-[300px] lg:h-[400px] overflow-hidden">
+        <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 bg-gradient-to-br from-yellow-100 to-yellow-100 h-[160px] sm:h-[200px] md:h-[250px] lg:h-[400px] overflow-hidden">
           <img
             src="/yellowpattern.png"
             alt=""
@@ -180,7 +180,7 @@ export default function WingsideLanding() {
               <img
                 src="/thinkbox.png"
                 alt="Wingside Box"
-                className="w-full max-w-[150px] h-auto float-hover"
+                className="w-full max-w-[220px] h-auto float-hover"
                 loading="eager"
               />
             </div>
@@ -221,48 +221,57 @@ export default function WingsideLanding() {
           </div>
 
           {/* Flavor Cards */}
-          <div className="space-y-6 md:space-y-10">
-            {loading ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#552627] mx-auto mb-4"></div>
-                  <div className="text-gray-600">Loading flavors...</div>
-                </div>
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#552627] mx-auto mb-4"></div>
+                <div className="text-gray-600">Loading flavors...</div>
               </div>
-            ) : filteredFlavors.length > 0 ? (
-              filteredFlavors.map((flavor) => {
-                const { description1, description2 } = parseDescription(flavor.description);
-                return (
-                  <div key={flavor.id} className="grid md:grid-cols-2 gap-4 md:gap-8 items-center">
-                    <div className="order-2 md:order-1">
-                      <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 md:mb-4">{renderFlavorName(flavor.name)}</h3>
-                      <p className="text-gray-600 text-sm md:text-lg mb-1 font-semibold">
-                        {description1}
-                      </p>
-                      <p className="text-gray-600 text-sm md:text-lg mb-4 md:mb-6">
-                        {description2}
-                      </p>
-                      <Link href="/order" className="btn-outline inline-block">
-                        Order Now
-                      </Link>
+            </div>
+          ) : filteredFlavors.length > 0 ? (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-1 gap-4 md:gap-10">
+                {filteredFlavors.map((flavor) => {
+                  const { description1, description2 } = parseDescription(flavor.description);
+                  return (
+                    <div key={flavor.id} className="flex flex-col gap-2 md:gap-4 md:grid md:grid-cols-2 md:items-center">
+                      <div className="order-2 md:order-1">
+                        <h3 className="text-lg sm:text-xl md:text-4xl lg:text-5xl font-bold mb-1 md:mb-4">{renderFlavorName(flavor.name)}</h3>
+                        <p className="text-gray-600 text-xs md:text-lg mb-1 md:mb-1 font-semibold">
+                          {description1}
+                        </p>
+                        <p className="text-gray-600 text-xs md:text-lg mb-2 md:mb-6">
+                          {description2}
+                        </p>
+                        <Link href="/order" className="btn-outline text-xs md:text-sm hidden md:block">
+                          Order Now
+                        </Link>
+                      </div>
+                      <div className="order-1 md:order-2 flex justify-center md:block">
+                        <img
+                          src={flavor.image_url}
+                          alt={flavor.name}
+                          className="w-auto h-[120px] sm:h-[140px] md:h-[300px] lg:h-[400px] flavor-image"
+                          loading="lazy"
+                        />
+                      </div>
                     </div>
-                    <div className="order-1 md:order-2">
-                      <img
-                        src={flavor.image_url}
-                        alt={flavor.name}
-                        className="w-auto h-[200px] md:h-[300px] lg:h-[400px] flavor-image"
-                        loading="lazy"
-                      />
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500 text-base">No flavors available in this category yet.</p>
+                  );
+                })}
               </div>
-            )}
-          </div>
+
+              {/* Mobile Order Now Button */}
+              <div className="mt-8 md:hidden">
+                <Link href="/order" className="btn-primary w-full text-center py-4 text-lg inline-block">
+                  Order Now
+                </Link>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500 text-base">No flavors available in this category yet.</p>
+            </div>
+          )}
         </div>
       </section>
 
