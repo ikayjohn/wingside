@@ -36,6 +36,10 @@ interface UserProfile {
   totalOrders: number;
   totalSpent: number;
   role: string;
+  avatar_url?: string;
+  current_streak?: number;
+  longest_streak?: number;
+  streak_start_date?: string;
 }
 
 interface Transaction {
@@ -73,6 +77,10 @@ export default function WingclubDashboard() {
   const [loadingWallet, setLoadingWallet] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [greeting, setGreeting] = useState('');
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(true);
 
   // Fetch user data on component mount
   useEffect(() => {
@@ -141,6 +149,65 @@ export default function WingclubDashboard() {
     fetchEmbedlyWallet();
   }, []);
 
+  // Set greeting based on time of day
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) {
+      setGreeting('Good Morning');
+    } else if (hour >= 12 && hour < 18) {
+      setGreeting('Good Afternoon');
+    } else {
+      setGreeting('Good Evening');
+    }
+  }, []);
+
+  // Fetch notifications on component mount
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        setLoadingNotifications(true);
+        const response = await fetch('/api/notifications');
+        const data = await response.json();
+
+        if (response.ok) {
+          setNotifications(data.notifications || []);
+        } else {
+          console.error('Failed to fetch notifications:', data.error);
+        }
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      } finally {
+        setLoadingNotifications(false);
+      }
+    };
+
+    fetchNotifications();
+  }, []);
+
+  // Mark all notifications as read
+  const markAllAsRead = async () => {
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ markAllAsRead: true }),
+      });
+
+      if (response.ok) {
+        // Update local state to mark all as read
+        setNotifications((prev) =>
+          prev.map((notif) => ({ ...notif, read: true }))
+        );
+      } else {
+        console.error('Failed to mark notifications as read');
+      }
+    } catch (error) {
+      console.error('Error marking notifications as read:', error);
+    }
+  };
+
   const copyToClipboard = (text: string, type: 'card' | 'ref' | 'account' = 'card') => {
     navigator.clipboard.writeText(text);
     setCopied(type);
@@ -193,9 +260,153 @@ export default function WingclubDashboard() {
       <div className="max-w-[1200px] mx-auto px-4 py-8 md:px-6 lg:px-8">
         
         {/* Welcome Header */}
-        <h1 className="dashboard-welcome">
-          Welcome, {userData.name}
-        </h1>
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-4">
+            {/* Avatar */}
+            <div className="relative">
+              {userData.avatar_url ? (
+                <img
+                  src={userData.avatar_url}
+                  alt={userData.name}
+                  className="w-16 h-16 rounded-full object-cover border-4 border-[#F7C400] shadow-lg"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#F7C400] to-[#e5b000] flex items-center justify-center border-4 border-[#F7C400] shadow-lg">
+                  <span className="text-2xl font-bold text-white">
+                    {userData.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+              {/* Online indicator */}
+              <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+            </div>
+
+            {/* Greeting */}
+            <div>
+              <h1 className="dashboard-welcome !mb-0">
+                {greeting}, {userData.name}!
+              </h1>
+              <p className="text-gray-600 text-sm mt-1">
+                {userData.currentTier} • {userData.totalPoints.toLocaleString()} points
+              </p>
+            </div>
+          </div>
+
+          {/* Notification Bell */}
+          <div className="relative">
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative p-3 rounded-full bg-white border-2 border-gray-200 hover:border-[#F7C400] hover:bg-yellow-50 transition-all shadow-md hover:shadow-lg"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h4"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+
+              {/* Notification Badge */}
+              {notifications.filter(n => !n.read).length > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 w-5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-5 w-5 bg-red-500 text-white text-xs font-bold items-center justify-center">
+                    {notifications.filter(n => !n.read).length}
+                  </span>
+                </span>
+              )}
+            </button>
+
+            {/* Notifications Dropdown */}
+            {showNotifications && (
+              <>
+                {/* Backdrop */}
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setShowNotifications(false)}
+                ></div>
+
+                {/* Dropdown Content */}
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 z-20 max-h-96 overflow-hidden">
+                  {/* Header */}
+                  <div className="bg-gradient-to-r from-[#552627] to-[#3a1a1b] px-4 py-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-white font-semibold">Notifications</h3>
+                      <span className="bg-[#F7C400] text-gray-900 text-xs font-bold px-2 py-1 rounded-full">
+                        {notifications.filter(n => !n.read).length} new
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Notifications List */}
+                  <div className="overflow-y-auto max-h-80">
+                    {loadingNotifications ? (
+                      <div className="p-8 text-center text-gray-500">
+                        <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-yellow-400 mx-auto mb-2"></div>
+                        <p className="text-sm">Loading notifications...</p>
+                      </div>
+                    ) : notifications.length === 0 ? (
+                      <div className="p-8 text-center text-gray-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2 opacity-50">
+                          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h4"></path>
+                          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                        <p>No notifications yet</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-gray-100">
+                        {notifications.map((notification) => (
+                          <div
+                            key={notification.id}
+                            className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${
+                              !notification.read ? 'bg-yellow-50' : ''
+                            }`}
+                          >
+                            <div className="flex gap-3">
+                              {/* Icon */}
+                              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xl">
+                                {notification.icon}
+                              </div>
+
+                              {/* Content */}
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-sm font-semibold ${!notification.read ? 'text-gray-900' : 'text-gray-600'}`}>
+                                  {notification.title}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                                  {notification.message}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-1">
+                                  {notification.time}
+                                </p>
+                              </div>
+
+                              {/* Unread indicator */}
+                              {!notification.read && (
+                                <div className="flex-shrink-0">
+                                  <div className="w-2 h-2 rounded-full bg-[#F7C400]"></div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  {notifications.length > 0 && (
+                    <div className="border-t border-gray-200 p-3 bg-gray-50">
+                      <button
+                        onClick={markAllAsRead}
+                        className="w-full text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors"
+                      >
+                        Mark all as read
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
 
         {/* Wallet Card */}
         <div className="dashboard-wallet-card">
@@ -344,19 +555,69 @@ export default function WingclubDashboard() {
             <h3 className="dashboard-stat-value">{userData.totalPoints.toLocaleString()}</h3>
             <p className="dashboard-stat-sub">+{userData.pointsThisMonth} this month</p>
           </div>
-          
+
           <div className="dashboard-stat-card">
             <p className="dashboard-stat-label">Current Tier</p>
             <h3 className="dashboard-stat-value">{userData.currentTier}</h3>
             <p className="dashboard-stat-sub">Member since {userData.memberSince}</p>
           </div>
-          
+
           <div className="dashboard-stat-card">
             <p className="dashboard-stat-label">Available to Convert</p>
             <h3 className="dashboard-stat-value">₦{userData.availableToConvert.toLocaleString()}</h3>
             <p className="dashboard-stat-sub">{userData.convertiblePoints.toLocaleString()} points &nbsp;&nbsp; Minimum Conversion: {userData.minConversion} points</p>
           </div>
         </div>
+
+        {/* Streak Counter */}
+        {(userData.current_streak ?? 0) > 0 ? (
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 p-6 mb-8 shadow-lg">
+            <div className="absolute inset-0 bg-black/10"></div>
+            <div className="relative flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="absolute inset-0 blur-xl bg-yellow-400 opacity-50 animate-pulse"></div>
+                  <div className="relative flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full border-2 border-white/40">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="currentColor" className="text-white drop-shadow-lg">
+                      <path d="M12 2c.5 0 .4.6.4.9-.2 2.2-1 4.4-1 6.6 0 1.8.5 3.5 1.5 5 1-1.5 1.5-3.2 1.5-5 0-2.2-.8-4.4-1-6.6 0-.3-.1-.9.4-.9 1.6 0 3 1.4 3 3v1c0 3.3-2.7 6-6 6s-6-2.7-6-6v-1c0-1.6 1.4-3 3-3z"/>
+                      <path d="M12 22c-1.7 0-3-1.3-3-3 0-.7.2-1.4.6-2l.4-.6c.5-.8 1-1.7 1-2.7 0-1-.5-1.9-1-2.7l-.4-.6c-.4-.6-.6-1.3-.6-2 0-1.7 1.3-3 3-3s3 1.3 3 3c0 .7-.2 1.4-.6 2l-.4.6c-.5.8-1 1.7-1 2.7 0 1 .5 1.9 1 2.7l.4.6c.4.6.6 1.3.6 2 0 1.7-1.3 3-3 3z"/>
+                    </svg>
+                  </div>
+                </div>
+                <div>
+                  <h2 className="text-4xl font-bold text-white drop-shadow-lg">
+                    {userData.current_streak} Day{userData.current_streak !== 1 ? 's' : ''} in a Row!
+                  </h2>
+                  <p className="text-white/90 text-lg drop-shadow mt-1">
+                    {userData.current_streak >= 7
+                      ? '🔥 You\'re on fire! Keep it up!'
+                      : userData.current_streak >= 3
+                      ? 'Great streak! Keep ordering!'
+                      : 'Start building your streak!'}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-white/80 text-sm">Best Streak</p>
+                <p className="text-3xl font-bold text-white drop-shadow-lg">{userData.longest_streak ?? 0}</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl bg-gradient-to-r from-gray-100 to-gray-200 p-6 mb-8 border-2 border-dashed border-gray-300">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center w-16 h-16 bg-gray-300 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+                  <path d="M12 2c.5 0 .4.6.4.9-.2 2.2-1 4.4-1 6.6 0 1.8.5 3.5 1.5 5 1-1.5 1.5-3.2 1.5-5 0-2.2-.8-4.4-1-6.6 0-.3-.1-.9.4-.9 1.6 0 3 1.4 3 3v1c0 3.3-2.7 6-6 6s-6-2.7-6-6v-1c0-1.6 1.4-3 3-3z"/>
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-gray-700">Start Your Streak Today!</h3>
+                <p className="text-gray-600">Place an order to begin your consecutive days streak</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tier Progress */}
         <div className="dashboard-tier-section">
@@ -513,8 +774,10 @@ export default function WingclubDashboard() {
           </div>
         </div>
 
-{/* Referral Section */}
-        <ReferralSection />
+        {/* Referral Section */}
+        <div className="mt-8">
+          <ReferralSection />
+        </div>
 
       </div>
 

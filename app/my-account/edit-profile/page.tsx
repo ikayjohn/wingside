@@ -26,6 +26,11 @@ export default function EditProfilePage() {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [memberSince, setMemberSince] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Fetch user profile on mount
   useEffect(() => {
@@ -42,6 +47,7 @@ export default function EditProfilePage() {
         const profile = data.profile;
 
         setMemberSince(profile.memberSince || '');
+        setAvatarUrl(profile.avatar_url || '');
 
         setFormData({
           firstName: profile.firstName || '',
@@ -110,6 +116,100 @@ export default function EditProfilePage() {
     });
   };
 
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('File size must be less than 5MB');
+      return;
+    }
+
+    setAvatarFile(file);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAvatarUpload = async () => {
+    if (!avatarFile) return;
+
+    setUploadingAvatar(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const formData = new FormData();
+      formData.append('avatar', avatarFile);
+
+      const response = await fetch('/api/user/upload-avatar', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Upload failed:', data);
+        const errorMsg = data.details ? `${data.error}: ${data.details}` : data.error || 'Failed to upload avatar';
+        throw new Error(errorMsg);
+      }
+
+      setAvatarUrl(data.avatar_url);
+      setAvatarPreview('');
+      setAvatarFile(null);
+      setSuccess('Avatar updated successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      console.error('Avatar upload error:', err);
+      setError(err.message || 'Failed to upload avatar');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    setUploadingAvatar(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/user/remove-avatar', {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to remove avatar');
+      }
+
+      setAvatarUrl('');
+      setAvatarPreview('');
+      setAvatarFile(null);
+      setSuccess('Avatar removed successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to remove avatar');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -145,18 +245,91 @@ export default function EditProfilePage() {
           {/* Profile Info Section */}
           <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
             {/* Profile Header */}
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
+            <div className="flex items-start gap-4 mb-8">
+              <div className="relative flex-shrink-0">
+                {/* Avatar Display */}
+                <div
+                  onClick={handleAvatarClick}
+                  className="relative cursor-pointer group"
+                >
+                  {(avatarPreview || avatarUrl) ? (
+                    <img
+                      src={avatarPreview || avatarUrl}
+                      alt="Profile avatar"
+                      className="w-24 h-24 rounded-full object-cover border-4 border-[#F7C400] shadow-lg"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#F7C400] to-[#e5b000] flex items-center justify-center border-4 border-[#F7C400] shadow-lg">
+                      <span className="text-3xl font-bold text-white">
+                        {formData.firstName.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Upload Overlay */}
+                  <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                      <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                  </div>
+
+                  {/* Edit Badge */}
+                  <div className="absolute bottom-0 right-0 w-8 h-8 bg-[#F7C400] rounded-full flex items-center justify-center border-2 border-white shadow-lg group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 20h9"></path>
+                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Hidden File Input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
               </div>
-              <div>
+
+              <div className="flex-1">
                 <h2 className="text-lg font-semibold text-gray-900">
                   {formData.firstName} {formData.lastName}
                 </h2>
                 <span className="text-sm text-gray-500">Member since {memberSince}</span>
+
+                {/* Avatar Actions */}
+                {avatarPreview && (
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={handleAvatarUpload}
+                      disabled={uploadingAvatar}
+                      className="px-4 py-2 bg-[#F7C400] text-gray-900 text-sm font-medium rounded-full hover:bg-[#e5b000] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {uploadingAvatar ? 'Uploading...' : 'Save Photo'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setAvatarPreview('');
+                        setAvatarFile(null);
+                      }}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-full hover:bg-gray-300 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+
+                {avatarUrl && !avatarPreview && (
+                  <button
+                    onClick={handleAvatarRemove}
+                    disabled={uploadingAvatar}
+                    className="mt-3 px-4 py-2 text-red-600 text-sm font-medium hover:bg-red-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {uploadingAvatar ? 'Removing...' : 'Remove Photo'}
+                  </button>
+                )}
               </div>
             </div>
 

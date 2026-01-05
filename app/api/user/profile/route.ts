@@ -144,6 +144,10 @@ export async function GET() {
       totalOrders,
       totalSpent,
       role: profile.role,
+      avatar_url: profile.avatar_url,
+      current_streak: profile.current_streak || 0,
+      longest_streak: profile.longest_streak || 0,
+      streak_start_date: profile.streak_start_date,
     }
 
     return NextResponse.json({ profile: userData })

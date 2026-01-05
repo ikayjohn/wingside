@@ -67,6 +67,10 @@ export default function OrderPage() {
   const [selectedFlavorCategory, setSelectedFlavorCategory] = useState<Record<string, string>>({});
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [acceptingOrders, setAcceptingOrders] = useState(true);
+  const [orderStatusMessage, setOrderStatusMessage] = useState('');
+  const [countdown, setCountdown] = useState<{ hours: number; minutes: number } | null>(null);
+  const [autoCloseEnabled, setAutoCloseEnabled] = useState(false);
 
   const categories = ['Wings', 'Sides', 'Sandwiches', 'Wraps', 'Salads', 'Wing Cafe', 'Pastries', 'Wingside Special', 'Drinks', 'Meal Deals', 'Kids'];
 
@@ -126,6 +130,33 @@ export default function OrderPage() {
     }
 
     fetchProducts();
+  }, []);
+
+  // Check if orders are currently accepted
+  useEffect(() => {
+    async function checkOrderStatus() {
+      try {
+        const response = await fetch('/api/orders/status');
+        const data = await response.json();
+        setAcceptingOrders(data.acceptingOrders);
+        setOrderStatusMessage(data.message);
+        setCountdown(data.countdown || null);
+        setAutoCloseEnabled(data.autoCloseEnabled || false);
+      } catch (error) {
+        console.error('Error checking order status:', error);
+        // Default to accepting orders on error
+        setAcceptingOrders(true);
+      }
+    }
+
+    checkOrderStatus();
+
+    // If auto-close is enabled, refresh every minute
+    const interval = setInterval(() => {
+      checkOrderStatus();
+    }, 60000); // Refresh every 60 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
 
@@ -393,29 +424,37 @@ export default function OrderPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Order Status Banner */}
+      {!acceptingOrders && (
+        <div className={`${autoCloseEnabled ? 'bg-orange-600' : 'bg-red-600'} text-white py-4 px-4 text-center`}>
+          <div className="max-w-7xl mx-auto flex items-center justify-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <p className="text-lg font-semibold">
+              {autoCloseEnabled && countdown
+                ? `We're currently closed. We'll be back in ${countdown.hours > 0 ? `${countdown.hours} hour${countdown.hours !== 1 ? 's' : ''} ` : ''}${countdown.minutes} minute${countdown.minutes !== 1 ? 's' : ''}.`
+                : orderStatusMessage || 'Orders are currently disabled'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Hero Section */}
-      <section className="relative h-[400px] md:h-[900px] overflow-hidden">
-        <img 
-          src="/order-hero.png" 
-          alt="Wings and more" 
+      <section className="relative h-[400px] overflow-hidden mb-[50px]">
+        <img
+          src="/order-hero.png"
+          alt="Wings and more"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-black/30" />
-        <div className="absolute inset-0 flex flex-col items-center justify-start text-center text-white px-4 pt-12 md:pt-20">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
-            <span className="text-yellow-400">WINGS</span> and so<br />
-            "<span className="italic">munch</span>" more.
+        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-4">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-2">
+            <span className="text-yellow-400">WINGS</span> and so "<span className="italic">munch</span>" more.
           </h1>
         </div>
-      </section>
-
-      {/* Description */}
-      <section className="py-12 md:py-18 px-4 text-center">
-        <p className="text-lg md:text-3xl text-gray-700 max-w-5xl mx-auto leading-relaxed">
-          From expertly crafted espresso drinks and specialty lattes to<br className="hidden md:block" />
-          refreshing iced teas, nutritious smoothies, and light café snacks.<br className="hidden md:block" />
-          Every item is made fresh with premium ingredients.
-        </p>
       </section>
 
       {/* Category Tabs */}
@@ -893,11 +932,21 @@ export default function OrderPage() {
                 </div>
               </div>
 
-              <Link href="/checkout">
-                <button className="order-checkout-btn">
-                  Continue to Checkout
+              {acceptingOrders ? (
+                <Link href="/checkout">
+                  <button className="order-checkout-btn">
+                    Continue to Checkout
+                  </button>
+                </Link>
+              ) : (
+                <button
+                  className="order-checkout-btn opacity-50 cursor-not-allowed"
+                  disabled
+                  title={autoCloseEnabled ? "We're currently closed" : "Orders are currently disabled"}
+                >
+                  {autoCloseEnabled ? "We're Currently Closed" : "Orders Currently Disabled"}
                 </button>
-              </Link>
+              )}
 
               {/* Icons */}
               <div className="flex justify-center gap-8 mt-6 pt-6 border-t">

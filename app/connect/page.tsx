@@ -296,7 +296,7 @@ export default function WingsideConnectPage() {
 
           <div className="connect-footer">
             <p>
-              Follow us <a href="https://instagram.com/wingsideng" className="connect-footer-link">@wingsideng</a> |
+              Follow us <a href="https://instagram.com/mywingside" className="connect-footer-link">@mywingside</a> |
               Contact: <a href="mailto:connect@wingside.ng" className="connect-footer-link">connect@wingside.ng</a> |
               Powered by <a href="/" className="connect-footer-link highlight">Wingside</a>
             </p>
