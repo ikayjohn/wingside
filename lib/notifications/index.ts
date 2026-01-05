@@ -88,10 +88,10 @@ export async function sendNotification(options: NotificationOptions): Promise<{
 
         results.email = {
           sent: emailResult.success,
-          error: emailResult.error,
+          ...(emailResult.error ? { error: emailResult.error } : {}),
         };
       } catch (error: any) {
-        results.email = { sent: false, error: error.message };
+        results.email = { sent: false, ...(error.message ? { error: error.message } : {}) };
       }
     }
   }
@@ -108,23 +108,23 @@ export async function sendNotification(options: NotificationOptions): Promise<{
 
         switch (options.type) {
           case 'order_confirmation':
-            pushResult = await sendOrderConfirmationPush(options.userId, options.data);
+            pushResult = await sendOrderConfirmationPush(options.userId, options.data as any);
             break;
 
           case 'order_status':
             pushResult = await sendOrderStatusPush(
               options.userId,
               options.data.status || 'ready',
-              options.data
+              options.data as any
             );
             break;
 
           case 'promotion':
-            pushResult = await sendPromotionPush(options.userId, options.data);
+            pushResult = await sendPromotionPush(options.userId, options.data as any);
             break;
 
           case 'reward':
-            pushResult = await sendRewardPush(options.userId, options.data);
+            pushResult = await sendRewardPush(options.userId, options.data as any);
             break;
 
           default:
@@ -138,10 +138,10 @@ export async function sendNotification(options: NotificationOptions): Promise<{
         results.push = {
           sent: pushResult.success,
           failed: pushResult.failed || 0,
-          error: pushResult.error,
+          ...(pushResult.error ? { error: pushResult.error } : {}),
         };
       } catch (error: any) {
-        results.push = { sent: false, failed: 0, error: error.message };
+        results.push = { sent: false, failed: 0, ...(error.message ? { error: error.message } : {}) };
       }
     }
   }
@@ -149,7 +149,7 @@ export async function sendNotification(options: NotificationOptions): Promise<{
   // SMS (placeholder for future implementation)
   if (options.channels.includes('sms')) {
     // TODO: Implement SMS notifications
-    results.sms = { sent: false, error: 'SMS not implemented yet' };
+    results.sms = { sent: false, ...(true ? { error: 'SMS not implemented yet' } : {}) };
   }
 
   return results;

@@ -60,7 +60,9 @@
       "Bash(npm ls:*)",
       "Bash(grep:*)",
       "Bash(start http://localhost:3000/hotspots)",
-      "Bash(start:*)"
+      "Bash(start:*)",
+      "Bash(test:*)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": []

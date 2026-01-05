@@ -113,7 +113,7 @@ export async function onOrderStatusChanged(
 
       const pointsEarned = Math.floor(order.total_amount * 0.01); // 1% rewards
       notificationData.pointsEarned = pointsEarned;
-      notificationData.totalPoints = (profile?.reward_points || 0) + pointsEarn;
+      notificationData.totalPoints = (profile?.reward_points || 0) + pointsEarned;
     }
 
     // Send order status notification
