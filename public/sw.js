@@ -113,3 +113,114 @@ async function syncOrders() {
   // This would integrate with your order submission logic
   console.log('Syncing orders...');
 }
+
+// Push notification event
+self.addEventListener('push', (event) => {
+  try {
+    let data = {
+      title: 'Wingside Notification',
+      body: 'You have a new notification',
+      icon: '/logo.png',
+      badge: '/badge-icon.png',
+      data: {},
+    };
+
+    if (event.data) {
+      try {
+        data = { ...data, ...event.data.json() };
+      } catch (e) {
+        console.error('Error parsing push data:', e);
+      }
+    }
+
+    const options = {
+      body: data.body,
+      icon: data.icon || '/logo.png',
+      badge: data.badge || '/badge-icon.png',
+      image: data.image,
+      data: data.data || {},
+      actions: data.actions || [],
+      requireInteraction: data.requireInteraction || false,
+      tag: data.tag || 'general-notification',
+      timestamp: data.timestamp || Date.now(),
+      vibrate: data.vibrate || [200, 100, 200],
+    };
+
+    // Add URL if provided
+    if (data.url) {
+      options.data.url = data.url;
+    }
+
+    event.waitUntil(
+      self.registration.showNotification(data.title, options)
+    );
+  } catch (error) {
+    console.error('Push event error:', error);
+  }
+});
+
+// Notification click event
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const notification = event.notification;
+  const data = notification.data || {};
+
+  // Handle action clicks
+  if (event.action) {
+    if (event.action === 'copy' && data.discountCode) {
+      // Copy discount code to clipboard
+      event.waitUntil(
+        self.clients.matchAll({ type: 'window' }).then((clients) => {
+          // Focus or open a window and copy the code
+          if (clients.length > 0) {
+            return clients[0].focus().then((client) => {
+              // Send message to client to copy code
+              client.postMessage({
+                type: 'COPY_CODE',
+                code: data.discountCode,
+              });
+              return client;
+            });
+          } else {
+            return self.clients.openWindow('/');
+          }
+        })
+      );
+      return;
+    }
+  }
+
+  // Default behavior: open the URL or focus the app
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      const url = data.url || '/';
+
+      // If there's an existing window, focus it and navigate
+      for (const client of clients) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          return client.focus().then((focusedClient) => {
+            if (url !== '/') {
+              focusedClient.navigate(url);
+            }
+            return focusedClient;
+          });
+        }
+      }
+
+      // If no existing window, open a new one
+      if ('openWindow' in self.clients) {
+        return self.clients.openWindow(url);
+      }
+
+      return Promise.resolve();
+    })
+  );
+});
+
+// Handle messages from clients
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});

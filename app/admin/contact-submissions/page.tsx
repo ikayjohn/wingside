@@ -130,6 +130,10 @@ export default function ContactSubmissionsPage() {
       case 'office-lunch': return 'bg-blue-100 text-blue-800';
       case 'meetings': return 'bg-purple-100 text-purple-800';
       case 'wingpost': return 'bg-green-100 text-green-800';
+      case 'sports-community': return 'bg-[#F7C400] text-[#552627]';
+      case 'newsletter': return 'bg-pink-100 text-pink-800';
+      case 'connect': return 'bg-indigo-100 text-indigo-800';
+      case 'hotspot': return 'bg-amber-100 text-amber-800';
       case 'general': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -152,6 +156,10 @@ export default function ContactSubmissionsPage() {
       case 'office-lunch': return 'Office Lunch';
       case 'meetings': return 'Meetings';
       case 'wingpost': return 'Wingpost';
+      case 'sports-community': return 'Sports Community';
+      case 'newsletter': return 'Newsletter';
+      case 'connect': return 'Wingside Connect';
+      case 'hotspot': return 'Hotspot Partner';
       case 'general': return 'General';
       default: return type;
     }
@@ -177,6 +185,10 @@ export default function ContactSubmissionsPage() {
             <option value="office-lunch">Office Lunch</option>
             <option value="meetings">Meetings</option>
             <option value="wingpost">Wingpost</option>
+            <option value="sports-community">Sports Community</option>
+            <option value="newsletter">Newsletter</option>
+            <option value="connect">Wingside Connect</option>
+            <option value="hotspot">Hotspot Partner</option>
             <option value="general">General</option>
           </select>
         </div>

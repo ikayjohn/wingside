@@ -130,6 +130,8 @@ export default function Footer() {
             <Link href="/careers" className="footer-link">Careers</Link>
             <Link href="/support" className="footer-link">Support</Link>
             <Link href="/contact" className="footer-link">Contact Us</Link>
+            <Link href="/terms" className="footer-link">Terms of Use</Link>
+            <Link href="/privacy" className="footer-link">Privacy Policy</Link>
           </div>
 
           {/* Copyright */}

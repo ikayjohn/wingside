@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 export async function GET() {
   try {
     const supabase = await createClient()
-    
+
     // Get authenticated user
     const {
       data: { user },
@@ -15,24 +15,25 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // TODO: Replace with actual wallet transaction table when implemented
-    // For now, return recent order payments as wallet transactions
-    const { data: orders, error } = await supabase
-      .from('orders')
-      .select(`
-        order_number,
-        total,
-        payment_status,
-        payment_method,
-        created_at,
-        status
-      `)
+    // Fetch actual wallet transactions
+    const { data: transactions, error } = await supabase
+      .from('wallet_transactions')
+      .select('*')
       .eq('user_id', user.id)
-      .eq('payment_status', 'paid')
       .order('created_at', { ascending: false })
-      .limit(10)
+      .limit(50)
 
     if (error) {
+      // If table doesn't exist yet, return empty array with a warning
+      if (error.code === '42P01') {
+        console.warn('wallet_transactions table not found - returning empty history')
+        return NextResponse.json({
+          transactions: [],
+          balance: 0,
+          message: 'Wallet system will be available soon'
+        })
+      }
+
       console.error('Error fetching wallet history:', error)
       return NextResponse.json(
         { error: 'Failed to fetch wallet history' },
@@ -40,19 +41,15 @@ export async function GET() {
       )
     }
 
-    // Transform orders into wallet transaction format
-    const transactions = orders?.map(order => ({
-      id: order.order_number,
-      type: 'payment', // payment, refund, funding, etc.
-      amount: -Number(order.total), // Negative for outgoing payments
-      description: `Order Payment - ${order.order_number}`,
-      status: order.status === 'delivered' ? 'completed' : 'pending',
-      paymentMethod: order.payment_method,
-      createdAt: order.created_at,
-      orderNumber: order.order_number,
-    })) || []
+    // Get current balance from the latest transaction
+    const currentBalance = transactions && transactions.length > 0
+      ? transactions[0].balance_after
+      : 0
 
-    return NextResponse.json({ transactions })
+    return NextResponse.json({
+      transactions: transactions || [],
+      balance: currentBalance
+    })
   } catch (error) {
     console.error('Unexpected error:', error)
     return NextResponse.json(

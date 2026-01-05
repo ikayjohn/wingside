@@ -161,9 +161,14 @@ export default function WingsideHotspotsPage() {
   ];
 
   const [showForm, setShowForm] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [submitMessage, setSubmitMessage] = React.useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLoading(true);
+    setSubmitMessage(null);
+
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
 
@@ -172,20 +177,38 @@ export default function WingsideHotspotsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...data,
-          subject: 'Hotspot Partnership Application',
+          type: 'hotspot',
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          company: data.businessName,
+          message: data.message || undefined,
+          formData: {
+            businessType: data.businessType,
+            source: 'hotspots_page'
+          }
         }),
       });
 
-      if (response.ok) {
-        alert('Application submitted successfully! We\'ll contact you soon.');
-        setShowForm(false);
-      } else {
-        alert('Failed to submit application. Please try again.');
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to submit application');
       }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Failed to submit application. Please try again.');
+
+      setSubmitMessage({ type: 'success', text: result.message || 'Application submitted successfully! We\'ll contact you within 48 hours.' });
+
+      // Reset form and close modal after delay
+      setTimeout(() => {
+        setShowForm(false);
+        setSubmitMessage(null);
+        (e.target as HTMLFormElement).reset();
+      }, 2000);
+
+    } catch (error: any) {
+      setSubmitMessage({ type: 'error', text: error.message || 'Failed to submit application. Please try again.' });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -450,11 +473,24 @@ export default function WingsideHotspotsPage() {
                   />
                 </div>
 
+                {submitMessage && (
+                  <div
+                    className={`text-center py-3 px-4 rounded ${
+                      submitMessage.type === 'success'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}
+                  >
+                    {submitMessage.text}
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  className="w-full px-8 py-4 bg-[#F7C400] text-gray-900 font-semibold text-base rounded-full hover:bg-[#EAB308] transition-colors"
+                  disabled={loading}
+                  className="w-full px-8 py-4 bg-[#F7C400] text-gray-900 font-semibold text-base rounded-full hover:bg-[#EAB308] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Submit Application
+                  {loading ? 'Submitting...' : 'Submit Application'}
                 </button>
               </form>
             </div>

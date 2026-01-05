@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { sendOrderConfirmation, sendOrderNotification } from '@/lib/emails/service'
 
 // GET /api/orders - Fetch user's orders or all orders (admin)
 export async function GET(request: NextRequest) {
@@ -247,6 +248,63 @@ export async function POST(request: NextRequest) {
         console.error('Error in referral processing:', error)
         // Don't fail the order, just log the error
       }
+    }
+
+    // Send order confirmation email to customer
+    try {
+      const emailResult = await sendOrderConfirmation({
+        orderNumber: order.order_number,
+        customerName: order.customer_name,
+        customerEmail: order.customer_email,
+        items: body.items.map((item: any) => ({
+          product_name: item.product_name,
+          product_size: item.size,
+          flavors: item.flavors,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+        })),
+        subtotal,
+        deliveryFee,
+        tax,
+        total,
+        deliveryAddress: body.delivery_address_text,
+        status: order.status,
+      });
+
+      if (!emailResult.success) {
+        console.error('Failed to send order confirmation email:', emailResult.error);
+        // Don't fail the order if email fails
+      } else {
+        console.log('Order confirmation email sent successfully to', order.customer_email);
+      }
+    } catch (emailError) {
+      console.error('Error sending order confirmation email:', emailError);
+      // Don't fail the order if email fails
+    }
+
+    // Send order notification email to admin
+    try {
+      const notificationResult = await sendOrderNotification({
+        orderNumber: order.order_number,
+        customerName: order.customer_name,
+        customerEmail: order.customer_email,
+        customerPhone: order.customer_phone,
+        items: body.items,
+        total,
+        deliveryAddress: body.delivery_address_text,
+        paymentMethod: body.payment_method || 'card',
+      });
+
+      if (!notificationResult.success) {
+        console.error('Failed to send order notification email:', notificationResult.error);
+        // Don't fail the order if email fails
+      } else {
+        console.log('Order notification email sent successfully to admin');
+      }
+    } catch (emailError) {
+      console.error('Error sending order notification email:', emailError);
+      // Don't fail the order if email fails
     }
 
     return NextResponse.json({

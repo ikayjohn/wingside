@@ -392,16 +392,22 @@ export default function WingclubDashboard() {
                   </div>
 
                   {/* Footer */}
-                  {notifications.length > 0 && (
-                    <div className="border-t border-gray-200 p-3 bg-gray-50">
+                  <div className="border-t border-gray-200 p-3 bg-gray-50 space-y-2">
+                    {notifications.length > 0 && (
                       <button
                         onClick={markAllAsRead}
                         className="w-full text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors"
                       >
                         Mark all as read
                       </button>
-                    </div>
-                  )}
+                    )}
+                    <Link
+                      href="/my-account/notifications"
+                      className="block w-full text-sm text-center text-yellow-600 hover:text-yellow-700 font-medium transition-colors"
+                    >
+                      ⚙️ Notification Settings
+                    </Link>
+                  </div>
                 </div>
               </>
             )}

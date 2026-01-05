@@ -243,7 +243,7 @@ export default function WingsideLanding() {
                         <p className="text-gray-600 text-xs md:text-lg mb-2 md:mb-6">
                           {description2}
                         </p>
-                        <Link href="/order" className="btn-outline text-xs md:text-sm hidden md:block">
+                        <Link href="/order" className="btn-outline text-xs md:text-sm hidden md:block" style={{ padding: '0.5rem 0.8rem', width: 'fit-content' }}>
                           Order Now
                         </Link>
                       </div>

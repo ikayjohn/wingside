@@ -24,15 +24,51 @@ export default function WingsideConnectPage() {
     phone: '',
     interest: '',
   });
+  const [loading, setLoading] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    setLoading(true);
+    setSubmitMessage(null);
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'connect',
+          name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          message: `Interest: ${formData.interest}`,
+          formData: {
+            interest: formData.interest,
+            source: 'connect_page'
+          }
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit form');
+      }
+
+      setSubmitMessage({ type: 'success', text: data.message || 'Welcome to the WingFam! We\'ll be in touch soon.' });
+      setFormData({ fullName: '', email: '', phone: '', interest: '' });
+
+      setTimeout(() => setSubmitMessage(null), 5000);
+    } catch (error: any) {
+      setSubmitMessage({ type: 'error', text: error.message || 'Something went wrong. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Fetch events from database
@@ -289,7 +325,26 @@ export default function WingsideConnectPage() {
               </div>
             </div>
 
-            <button type="submit" className="connect-submit-btn">Join Now</button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="connect-submit-btn"
+              style={{ opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
+            >
+              {loading ? 'Joining...' : 'Join Now'}
+            </button>
+
+            {submitMessage && (
+              <div
+                className={`text-center py-3 px-4 rounded ${
+                  submitMessage.type === 'success'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-800'
+                }`}
+              >
+                {submitMessage.text}
+              </div>
+            )}
 
             <p className="connect-form-note">No spam. Only vibes & wings.</p>
           </form>

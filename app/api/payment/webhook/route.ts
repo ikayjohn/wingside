@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { syncNewCustomer, syncOrderCompletion } from '@/lib/integrations'
+import { sendPaymentConfirmation, sendOrderNotification } from '@/lib/emails/service'
 import crypto from 'crypto'
 
 // POST /api/payment/webhook - Handle Paystack webhook events
@@ -240,10 +241,51 @@ export async function POST(request: NextRequest) {
               }
             }
           }
+
+        // Send payment confirmation email to customer
+        try {
+          const emailResult = await sendPaymentConfirmation({
+            orderNumber: order.order_number,
+            customerName: order.customer_name,
+            customerEmail: order.customer_email,
+            amount: data.amount / 100, // Convert from kobo to naira
+            paymentMethod: 'paystack',
+            transactionReference: data.reference,
+          });
+
+          if (!emailResult.success) {
+            console.error('Failed to send payment confirmation email:', emailResult.error);
+          } else {
+            console.log('✅ Payment confirmation email sent to', order.customer_email);
+          }
+        } catch (emailError) {
+          console.error('Error sending payment confirmation email:', emailError);
         }
 
-        // TODO: Send email confirmation to customer
-        // TODO: Send SMS notification
+        // Send order notification email to admin
+        try {
+          const notificationResult = await sendOrderNotification({
+            orderNumber: order.order_number,
+            customerName: order.customer_name,
+            customerEmail: order.customer_email,
+            customerPhone: order.customer_phone,
+            items: order.order_items || [],
+            total: order.total,
+            deliveryAddress: order.delivery_address_text,
+            paymentMethod: 'paystack',
+          });
+
+          if (!notificationResult.success) {
+            console.error('Failed to send order notification email:', notificationResult.error);
+          } else {
+            console.log('✅ Order notification email sent to admin');
+          }
+        } catch (emailError) {
+          console.error('Error sending order notification email:', emailError);
+        }
+
+        // TODO: Send SMS notification to customer
+        // Note: SMS integration requires a service like Twilio, AfricasTalking, or Termii
       }
     } else if (event.event === 'charge.failed') {
       console.log('Payment failed:', event.data.reference)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/client'
+import { sendPaymentConfirmation } from '@/lib/emails/service'
 
 interface NombaVerifyResponse {
   code: string
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
     // Find order by payment reference
     const { data: order } = await supabase
       .from('orders')
-      .select('id')
+      .select('*')
       .eq('payment_reference', transactionRef)
       .single()
 
@@ -129,6 +130,28 @@ export async function POST(request: NextRequest) {
 
       if (updateError) {
         console.error('Error updating order payment status:', updateError)
+      }
+
+      // Send payment confirmation email to customer
+      try {
+        const emailResult = await sendPaymentConfirmation({
+          orderNumber: order.order_number,
+          customerName: order.customer_name,
+          customerEmail: order.customer_email,
+          amount: transaction.amount,
+          paymentMethod: order.payment_method || 'nomba',
+          transactionReference: transactionRef,
+        });
+
+        if (!emailResult.success) {
+          console.error('Failed to send payment confirmation email:', emailResult.error);
+          // Don't fail the request if email fails
+        } else {
+          console.log('Payment confirmation email sent successfully to', order.customer_email);
+        }
+      } catch (emailError) {
+        console.error('Error sending payment confirmation email:', emailError);
+        // Don't fail the request if email fails
       }
     }
 

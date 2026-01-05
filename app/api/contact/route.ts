@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { sendContactNotification } from '@/lib/emails/service';
 
 // POST /api/contact - Handle contact form submissions
 export async function POST(request: NextRequest) {
@@ -53,33 +54,28 @@ export async function POST(request: NextRequest) {
       console.error('Database insert error:', insertError);
     }
 
-    // TODO: Send email notification using Resend, SendGrid, or Supabase Edge Function
-    // For now, we'll just log it
-    console.log('Contact form submission:', {
-      type,
-      name,
-      email,
-      phone,
-      company,
-      message,
-      formData,
-    });
+    // Send email notification to admin
+    try {
+      const emailResult = await sendContactNotification({
+        type: type || 'general',
+        name,
+        email,
+        phone,
+        company,
+        message,
+        formData,
+      });
 
-    // Send notification email (you can integrate Resend/SendGrid here)
-    // Example with Resend:
-    // await fetch('https://api.resend.com/emails', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     from: 'Wingside <noreply@wingside.ng>',
-    //     to: 'reachus@wingside.ng',
-    //     subject: `${type} - Contact from ${name}`,
-    //     html: `<p>Contact form submission...</p>`,
-    //   }),
-    // });
+      if (!emailResult.success) {
+        console.error('Failed to send email notification:', emailResult.error);
+        // Don't fail the request if email fails
+      } else {
+        console.log('Contact notification email sent successfully');
+      }
+    } catch (emailError) {
+      console.error('Error sending contact email:', emailError);
+      // Don't fail the request if email fails
+    }
 
     return NextResponse.json({
       success: true,

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/client'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { syncNewCustomer, syncOrderCompletion } from '@/lib/integrations'
+import { sendPaymentConfirmation, sendOrderNotification } from '@/lib/emails/service'
+import crypto from 'crypto'
 
 interface NombaWebhookEvent {
   event_type: string
@@ -33,18 +35,44 @@ interface NombaWebhookEvent {
 // POST /api/payment/nomba/webhook - Handle Nomba webhook events
 export async function POST(request: NextRequest) {
   try {
-    const event: NombaWebhookEvent = await request.json()
+    // Get raw body first for signature verification
+    const rawBody = await request.text()
+    const event: NombaWebhookEvent = JSON.parse(rawBody)
 
     console.log('Nomba webhook event:', event.event_type)
 
-    // Validate webhook secret (optional but recommended)
+    // Validate webhook signature (if configured)
     const webhookSecret = process.env.NOMBA_WEBHOOK_SECRET
     const signature = request.headers.get('x-nomba-signature')
 
-    if (webhookSecret && signature) {
-      // Verify signature if you have webhook secret configured
-      // You'll need to implement HMAC verification similar to Paystack
-      // For now, we'll skip this but it's recommended for production
+    if (webhookSecret) {
+      if (!signature) {
+        console.error('Missing Nomba webhook signature')
+        return NextResponse.json(
+          { error: 'Missing signature' },
+          { status: 401 }
+        )
+      }
+
+      // Verify HMAC signature
+      // Nomba uses HMAC-SHA512 with the webhook secret
+      const expectedSignature = crypto
+        .createHmac('sha512', webhookSecret)
+        .update(rawBody)
+        .digest('hex')
+
+      // Compare signatures securely
+      if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+        console.error('Invalid Nomba webhook signature')
+        return NextResponse.json(
+          { error: 'Invalid signature' },
+          { status: 401 }
+        )
+      }
+
+      console.log('✅ Nomba webhook signature verified')
+    } else {
+      console.warn('⚠️  NOMBA_WEBHOOK_SECRET not set - skipping signature verification (recommended for production)')
     }
 
     // Handle successful payment
@@ -249,8 +277,50 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // TODO: Send email confirmation to customer
-      // TODO: Send SMS notification
+      // Send payment confirmation email to customer
+      try {
+        const emailResult = await sendPaymentConfirmation({
+          orderNumber: order.order_number,
+          customerName: order.customer_name,
+          customerEmail: order.customer_email,
+          amount: data.transaction.transactionAmount,
+          paymentMethod: 'nomba',
+          transactionReference: transactionId,
+        });
+
+        if (!emailResult.success) {
+          console.error('Failed to send payment confirmation email:', emailResult.error);
+        } else {
+          console.log('✅ Payment confirmation email sent to', order.customer_email);
+        }
+      } catch (emailError) {
+        console.error('Error sending payment confirmation email:', emailError);
+      }
+
+      // Send order notification email to admin
+      try {
+        const notificationResult = await sendOrderNotification({
+          orderNumber: order.order_number,
+          customerName: order.customer_name,
+          customerEmail: order.customer_email,
+          customerPhone: order.customer_phone,
+          items: order.order_items || [],
+          total: order.total,
+          deliveryAddress: order.delivery_address_text,
+          paymentMethod: 'nomba',
+        });
+
+        if (!notificationResult.success) {
+          console.error('Failed to send order notification email:', notificationResult.error);
+        } else {
+          console.log('✅ Order notification email sent to admin');
+        }
+      } catch (emailError) {
+        console.error('Error sending order notification email:', emailError);
+      }
+
+      // TODO: Send SMS notification to customer
+      // Note: SMS integration requires a service like Twilio, AfricasTalking, or Termii
     }
 
     return NextResponse.json({ received: true })
