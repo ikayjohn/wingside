@@ -83,7 +83,7 @@ body {
 
 @media (min-width: 768px) {
   .btn-outline {
-    padding: 0.75rem 2rem;
+    padding: 0.75rem 1.5rem;
     font-size: 1rem;
   }
 }
