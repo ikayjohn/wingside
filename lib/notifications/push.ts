@@ -1,18 +1,36 @@
 import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
 
-// Initialize Supabase
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let vapidConfigured = false;
 
-// Configure Web Push
-webpush.setVapidDetails(
-  process.env.NEXT_PUBLIC_VAPID_SUBJECT || 'mailto:admin@wingside.ng',
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+/**
+ * Configure Web Push (lazy-loaded)
+ */
+function configureWebPush() {
+  if (vapidConfigured) return;
+
+  const subject = process.env.NEXT_PUBLIC_VAPID_SUBJECT || 'mailto:admin@wingside.ng';
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+
+  if (!publicKey || !privateKey) {
+    console.warn('VAPID keys not configured. Push notifications will not work.');
+    return;
+  }
+
+  webpush.setVapidDetails(subject, publicKey, privateKey);
+  vapidConfigured = true;
+}
+
+/**
+ * Get Supabase client
+ */
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export interface PushSubscription {
   endpoint: string;
@@ -48,6 +66,8 @@ export async function subscribeToPush(
   userAgent?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const supabase = getSupabaseClient();
+
     // Check if subscription already exists
     const { data: existing } = await supabase
       .from('push_subscriptions')
@@ -99,6 +119,7 @@ export async function unsubscribeFromPush(
   endpoint: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const supabase = getSupabaseClient();
     const { error } = await supabase
       .from('push_subscriptions')
       .update({ is_active: false })
@@ -122,6 +143,9 @@ export async function sendPushNotification(
   payload: PushNotificationPayload
 ): Promise<{ success: boolean; failed: number; error?: string }> {
   try {
+    configureWebPush();
+    const supabase = getSupabaseClient();
+
     // Get user's active push subscriptions
     const { data: subscriptions, error } = await supabase
       .from('push_subscriptions')
@@ -311,6 +335,9 @@ export async function sendBroadcastPush(
   }
 ): Promise<{ success: number; failed: number }> {
   try {
+    configureWebPush();
+    const supabase = getSupabaseClient();
+
     let query = supabase
       .from('push_subscriptions')
       .select('user_id, endpoint, p256dh_key, auth_key')
@@ -368,6 +395,7 @@ export async function canSendPushToUser(
   type: 'order_confirmations' | 'order_status' | 'promotions' | 'rewards'
 ): Promise<boolean> {
   try {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('notification_preferences')
       .select('push_enabled')
@@ -409,6 +437,7 @@ async function logNotification(data: {
   metadata?: Record<string, any>;
 }) {
   try {
+    const supabase = getSupabaseClient();
     await supabase.from('notification_logs').insert({
       ...data,
       sent_at: data.status === 'sent' ? new Date().toISOString() : null,

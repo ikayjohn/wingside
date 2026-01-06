@@ -1,10 +1,5 @@
 import { Resend } from 'resend';
 
-// Initialize Resend client
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null;
-
 // Email configuration
 const FROM_EMAIL = process.env.FROM_EMAIL || 'Wingside <noreply@wingside.ng>';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'reachus@wingside.ng';
@@ -17,9 +12,22 @@ interface EmailParams {
 }
 
 /**
+ * Get Resend client (lazy-loaded)
+ */
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+  return new Resend(apiKey);
+}
+
+/**
  * Send email using Resend
  */
 export async function sendEmail({ to, subject, html, replyTo }: EmailParams) {
+  const resend = getResendClient();
+
   if (!resend) {
     console.error('Resend not configured. Please set RESEND_API_KEY environment variable.');
     return { success: false, error: 'Email service not configured' };

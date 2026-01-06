@@ -1,14 +1,26 @@
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY!);
+/**
+ * Get Resend client (lazy-loaded)
+ */
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+  return new Resend(apiKey);
+}
 
-// Initialize Supabase for admin operations
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+/**
+ * Get Supabase client (lazy-loaded)
+ */
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export interface EmailTemplate {
   template_key: string;
@@ -34,6 +46,11 @@ export interface SendEmailOptions {
  */
 export async function sendEmail(options: SendEmailOptions): Promise<{ success: boolean; error?: string; messageId?: string }> {
   try {
+    const resend = getResendClient();
+    if (!resend) {
+      return { success: false, error: 'Email service not configured' };
+    }
+
     let html = options.html;
     let text = options.text;
     let subject = options.subject;
@@ -236,6 +253,7 @@ export async function sendPasswordResetEmail(
  */
 async function loadTemplate(templateKey: string): Promise<EmailTemplate | null> {
   try {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('email_templates')
       .select('*')
@@ -276,6 +294,7 @@ async function logNotification(data: {
   metadata?: Record<string, any>;
 }) {
   try {
+    const supabase = getSupabaseClient();
     await supabase.from('notification_logs').insert({
       ...data,
       channel: data.template_key,
@@ -295,6 +314,7 @@ export async function canSendEmailToUser(
   type: 'order_confirmations' | 'order_status' | 'promotions' | 'newsletter' | 'rewards' | 'reminders'
 ): Promise<boolean> {
   try {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('notification_preferences')
       .select('email_enabled')
@@ -361,6 +381,8 @@ export async function sendNewsletter(
   textContent?: string
 ): Promise<{ success: number; failed: number }> {
   try {
+    const supabase = getSupabaseClient();
+
     // Get all users who have newsletter enabled
     const { data: profiles } = await supabase
       .from('profiles')
