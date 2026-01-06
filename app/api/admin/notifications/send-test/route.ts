@@ -4,14 +4,26 @@ import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
 
-const resend = new Resend(process.env.RESEND_API_KEY!);
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+  return new Resend(apiKey);
+}
+
+function getSupabaseAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function POST(request: Request) {
   try {
+    const resend = getResendClient();
+    const supabaseAdmin = getSupabaseAdminClient();
+
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -74,6 +86,13 @@ export async function POST(request: Request) {
       const subject = template.subject;
 
       // Send email via Resend
+      if (!resend) {
+        return NextResponse.json(
+          { error: 'Email service not configured. Please set RESEND_API_KEY.' },
+          { status: 500 }
+        );
+      }
+
       try {
         const result = await resend.emails.send({
           from: 'Wingside <notifications@wingside.ng>',
