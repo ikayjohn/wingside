@@ -100,18 +100,57 @@ export const defaultSettings: SiteSettings = {
 export async function fetchSettings(): Promise<SiteSettings> {
   try {
     const response = await fetch('/api/settings', {
-      cache: 'no-store', // Always get fresh settings
+      cache: 'no-store',
+      // Add a timeout to prevent hanging
+      signal: AbortSignal.timeout(5000)
     });
 
     if (!response.ok) {
-      console.error('Failed to fetch settings, using defaults');
+      console.warn('[Settings] API returned status:', response.status, '- using defaults');
       return defaultSettings;
     }
 
-    const data = await response.json();
+    // Handle 304 Not Modified
+    if (response.status === 304) {
+      return defaultSettings;
+    }
+
+    const contentType = response.headers.get('content-type');
+    if (!contentType?.includes('application/json')) {
+      console.warn('[Settings] Unexpected content type:', contentType, '- using defaults');
+      return defaultSettings;
+    }
+
+    const rawText = await response.text();
+
+    // Handle empty response
+    if (!rawText?.trim()) {
+      console.warn('[Settings] Empty response - using defaults');
+      return defaultSettings;
+    }
+
+    // Check for HTML error page
+    if (rawText.trim().startsWith('<')) {
+      console.warn('[Settings] Received HTML instead of JSON - using defaults');
+      return defaultSettings;
+    }
+
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch (parseError) {
+      console.warn('[Settings] JSON parse failed - using defaults');
+      return defaultSettings;
+    }
+
     return { ...defaultSettings, ...data.settings };
   } catch (error) {
-    console.error('Error fetching settings:', error);
+    // Network errors, timeouts, etc.
+    if (error.name === 'AbortError') {
+      console.warn('[Settings] API timeout - using defaults');
+    } else {
+      console.warn('[Settings] Fetch error:', error.message, '- using defaults');
+    }
     return defaultSettings;
   }
 }
