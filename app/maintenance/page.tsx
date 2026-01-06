@@ -66,13 +66,7 @@ export default function MaintenancePage() {
       const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))
       const seconds = Math.floor((distance % (1000 * 60)) / 1000)
 
-      let timeString = ''
-      if (days > 0) {
-        timeString += `${days}d `
-      }
-      timeString += `${hours}h ${minutes}m ${seconds}s`
-
-      setTimeRemaining(timeString)
+      setTimeRemaining(JSON.stringify({ days, hours, minutes, seconds }))
     }
 
     updateCountdown()
@@ -184,13 +178,77 @@ export default function MaintenancePage() {
           {/* Container */}
           <div className="w-[80%] max-w-6xl mx-auto flex flex-col">
             {/* Logo - Centered at top */}
-            <div className="flex justify-center mb-8">
+            <div className="flex justify-center mb-20">
               <img
                 src="/logo.png"
                 alt="Wingside Logo"
                 className="h-24 w-auto"
               />
             </div>
+
+            {/* Title - Centered under logo */}
+            <div className="text-center mb-6">
+              <h1 className="text-7xl font-bold text-[#552627]">
+                {settings?.title || 'New Website in Progress'}
+              </h1>
+            </div>
+
+            {/* Chicken GIF Animation - Centered under title */}
+            <div className="flex justify-center mb-6">
+              <img
+                src="/chicken.gif"
+                alt="Chicken animation"
+                className="w-80 h-auto"
+              />
+            </div>
+
+            {/* Countdown Timer - Centered under rocket */}
+            {timeRemaining && timeRemaining !== 'Coming soon!' && (() => {
+              try {
+                const { days, hours, minutes, seconds } = JSON.parse(timeRemaining)
+                return (
+                  <div className="flex justify-center gap-6 mb-12">
+                    {/* Days */}
+                    {(days > 0 || hours > 0 || minutes > 0 || seconds > 0) && (
+                      <>
+                        {days > 0 && (
+                          <div className="flex flex-col items-center">
+                            <span className="text-6xl font-black text-black" style={{ fontFamily: '"Courier New", monospace' }}>
+                              {String(days).padStart(2, '0')}
+                            </span>
+                            <span className="text-xs text-[#552627] mt-2 font-bold uppercase tracking-wider">Days</span>
+                          </div>
+                        )}
+                        {hours > 0 && (
+                          <div className="flex flex-col items-center">
+                            <span className="text-6xl font-black text-black" style={{ fontFamily: '"Courier New", monospace' }}>
+                              {String(hours).padStart(2, '0')}
+                            </span>
+                            <span className="text-xs text-[#552627] mt-2 font-bold uppercase tracking-wider">Hours</span>
+                          </div>
+                        )}
+                        {minutes > 0 && (
+                          <div className="flex flex-col items-center">
+                            <span className="text-6xl font-black text-black" style={{ fontFamily: '"Courier New", monospace' }}>
+                              {String(minutes).padStart(2, '0')}
+                            </span>
+                            <span className="text-xs text-[#552627] mt-2 font-bold uppercase tracking-wider">Mins</span>
+                          </div>
+                        )}
+                        <div className="flex flex-col items-center">
+                          <span className="text-6xl font-black text-black" style={{ fontFamily: '"Courier New", monospace' }}>
+                            {String(seconds).padStart(2, '0')}
+                          </span>
+                          <span className="text-xs text-[#552627] mt-2 font-bold uppercase tracking-wider">Secs</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )
+              } catch (e) {
+                return null
+              }
+            })()}
 
             {/* Two-column section for content */}
             <div className="flex flex-col md:flex-row gap-8 md:gap-0 relative flex-1">
@@ -200,53 +258,8 @@ export default function MaintenancePage() {
               {/* Left side - Maintenance Card */}
               <div className="flex-1 md:pr-8">
                 <div className="bg-white rounded-2xl overflow-hidden h-full flex flex-col">
-                {/* Header with White Background */}
-                <div className="bg-white p-6 text-center border-b border-gray-200">
-                  {/* Hourglass Icon */}
-                  <div className="mb-3">
-                    <svg
-                      className="w-16 h-16 mx-auto text-[#F7C400]"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M5 2h14v4l-5 5 5 5v4H5v-4l5-5-5-5V2z" />
-                      <path d="M6 12h12" className="opacity-50" />
-                      <path d="M8 6h8" className="opacity-50">
-                        <animate
-                          attributeName="y1"
-                          values="6;16;6"
-                          dur="2s"
-                          repeatCount="indefinite"
-                        />
-                        <animate
-                          attributeName="y2"
-                          values="6;16;6"
-                          dur="2s"
-                          repeatCount="indefinite"
-                        />
-                      </path>
-                      <circle cx="12" cy="12" r="1.5" fill="currentColor">
-                        <animate
-                          attributeName="cy"
-                          values="7;12;17;12"
-                          dur="2s"
-                          repeatCount="indefinite"
-                        />
-                        <animate
-                          attributeName="opacity"
-                          values="1;0.5;0;0.5;1"
-                          dur="2s"
-                          repeatCount="indefinite"
-                        />
-                      </circle>
-                    </svg>
-                  </div>
-
-                  <h1 className="text-5xl font-bold text-[#552627]">
-                    {settings?.title || 'New Website in Progress'}
-                  </h1>
+                {/* Header */}
+                <div className="bg-white p-6 text-center">
                 </div>
 
                 {/* Content */}
@@ -260,15 +273,6 @@ export default function MaintenancePage() {
 
                   {/* Access Code Form */}
                   <div className="mt-6">
-                    <div className="flex items-center justify-center gap-2 mb-4">
-                      <svg className="w-5 h-5 text-[#552627]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
-                      <h3 className="text-base font-semibold text-[#552627]">
-                        Authorized Access
-                      </h3>
-                    </div>
-
                     <form onSubmit={handleSubmitCode} className="space-y-3">
                       <input
                         type="text"
@@ -308,24 +312,8 @@ export default function MaintenancePage() {
 
             {/* Right side - Info Cards */}
             <div className="flex-1 md:pl-8 flex flex-col">
-              {/* Countdown Timer */}
-              {timeRemaining && (
-                <div className="p-6 text-center flex-shrink-0 border-b border-gray-300">
-                  <p className="text-sm font-bold text-[#552627] mb-2">We'll be back in</p>
-                  <p className="text-4xl font-bold text-[#F7C400]">{timeRemaining}</p>
-                </div>
-              )}
-
-              {/* What We're Working On */}
+              {/* What We're Working On - No header */}
               <div className="p-5 flex-1 border-b border-gray-300">
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <svg className="w-5 h-5 text-[#F7C400]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  <h2 className="text-2xl font-bold text-[#552627]">
-                    What's Coming
-                  </h2>
-                </div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                   <div className="flex items-center space-x-2 text-sm">
                     <svg className="w-4 h-4 text-[#F7C400] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
