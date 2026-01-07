@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   console.log('[Upload API] Request received')
@@ -107,13 +107,14 @@ export async function POST(request: NextRequest) {
 
     console.log('[Upload API] Starting upload to Supabase Storage...')
 
-    // Upload to Supabase Storage
-    const { data, error } = await supabase.storage
+    // Use service client for upload (bypasses RLS, auth check already done above)
+    const serviceClient = createServiceClient()
+    const { data, error } = await serviceClient.storage
       .from(folder)
       .upload(fileName, buffer, {
         contentType: file.type,
         cacheControl: '3600',
-        upsert: false,
+        upsert: true, // Allow overwriting if file exists
       })
 
     if (error) {
