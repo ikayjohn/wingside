@@ -62,7 +62,10 @@
       "Bash(start http://localhost:3000/hotspots)",
       "Bash(start:*)",
       "Bash(test:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(if exist:*)",
+      "Bash(del:*)",
+      "Bash(chmod:*)"
     ],
     "deny": [],
     "ask": []
