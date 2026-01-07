@@ -178,7 +178,19 @@ export default function HeroSlidesPage() {
         body: formData,
       });
 
-      const data = await response.json();
+      // Get response as text first to debug
+      const responseText = await response.text();
+      console.log('Upload response status:', response.status);
+      console.log('Upload response text:', responseText.substring(0, 500));
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse JSON:', parseError);
+        alert(`Server returned non-JSON response. Status: ${response.status}\nResponse: ${responseText.substring(0, 200)}`);
+        return;
+      }
 
       if (response.ok) {
         setFormData(prev => ({ ...prev, image_url: data.url }));
@@ -187,7 +199,7 @@ export default function HeroSlidesPage() {
       }
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Failed to upload image');
+      alert(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setUploading(false);
       // Reset file input
