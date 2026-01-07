@@ -516,7 +516,7 @@ export default function OrderPage() {
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="w-full aspect-[2/1] object-cover rounded-lg"
+                      className="w-full aspect-[4/3] object-cover rounded-lg"
                       style={{ contentVisibility: 'auto' }}
                     />
                   </div>
