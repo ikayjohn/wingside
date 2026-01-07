@@ -126,6 +126,10 @@ export default function AdminProductsPage() {
   }
 
   const handleEdit = (product: Product) => {
+    console.log('[Product Edit] Loading product:', product.name)
+    console.log('[Product Edit] Product subcategory:', product.subcategory)
+    console.log('[Product Edit] Category:', product.category.name)
+
     setEditingProduct(product)
     setFormData({
       name: product.name,
@@ -140,6 +144,9 @@ export default function AdminProductsPage() {
       flavor_label: product.flavor_label || '',
       is_active: product.is_active,
     })
+
+    console.log('[Product Edit] formData.subcategory set to:', product.subcategory || '')
+
     setImagePreview(product.image_url)
     setShowForm(true)
   }
@@ -532,6 +539,11 @@ export default function AdminProductsPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Subcategory
+                      {formData.subcategory && (
+                        <span className="ml-2 text-xs text-green-600">
+                          (Selected: {formData.subcategory})
+                        </span>
+                      )}
                     </label>
                     {getSubcategoryOptions().length > 0 ? (
                       <select
