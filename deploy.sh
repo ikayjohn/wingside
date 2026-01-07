@@ -16,18 +16,26 @@ APP_DIR="/var/www/wingside"
 REPO_URL="https://github.com/ikayjohn/wingside.git"
 BRANCH="main"
 
-echo -e "${YELLOW}📦 Pulling latest code...${NC}"
+echo -e "${YELLOW}📦 Stopping PM2 process...${NC}"
 cd $APP_DIR
+pm2 stop wingside || true
+pm2 delete wingside || true
+
+echo -e "${YELLOW}📥 Pulling latest code...${NC}"
 git pull origin $BRANCH
 
-echo -e "${YELLOW}📥 Installing dependencies...${NC}"
-npm install --production=false
+echo -e "${YELLOW}🧹 Cleaning old build...${NC}"
+rm -rf .next
+
+echo -e "${YELLOW}📦 Installing dependencies...${NC}"
+npm install
 
 echo -e "${YELLOW}🔨 Building application...${NC}"
-npm run build
+NODE_ENV=production npm run build
 
-echo -e "${YELLOW}🔄 Restarting application...${NC}"
-pm2 restart wingside || pm2 start npm --name "wingside" -- start
+echo -e "${YELLOW}🔄 Starting application...${NC}"
+NODE_ENV=production pm2 start npm --name "wingside" -- start
+pm2 save
 
 echo -e "${GREEN}✅ Deployment complete!${NC}"
 echo ""
