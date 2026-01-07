@@ -88,7 +88,7 @@ export default function Header() {
             {/* Menu Button */}
             <button
               onClick={() => setMenuOpen(true)}
-              className="flex items-center gap-2 text-gray-800 hover:text-gray-600"
+              className="flex items-center gap-2 text-gray-800 hover:text-gray-600 cursor-pointer"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -304,15 +304,6 @@ export default function Header() {
                 </li>
                 <li>
                   <Link
-                    href="/hotspots"
-                    className="sidebar-link"
-                    onClick={handleClose}
-                  >
-                    Wingside Hotspots
-                  </Link>
-                </li>
-                <li>
-                  <Link
                     href="/kids"
                     className="sidebar-link"
                     onClick={handleClose}
@@ -335,68 +326,19 @@ export default function Header() {
                     className="sidebar-link"
                     onClick={handleClose}
                   >
-                    Join the Wingclub
+                    Wingclub
                   </Link>
                 </li>
                 {isLoggedIn ? (
-                  <>
-                    <li>
-                      <Link
-                        href="/my-account/dashboard"
-                        className="sidebar-link"
-                        onClick={handleClose}
-                      >
-                        Dashboard
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href="/my-account/orders"
-                        className="sidebar-link"
-                        onClick={handleClose}
-                      >
-                        Orders
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href="/my-account/wallet-history"
-                        className="sidebar-link"
-                        onClick={handleClose}
-                      >
-                        Wallet History
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href="/my-account/edit-profile"
-                        className="sidebar-link"
-                        onClick={handleClose}
-                      >
-                        Edit Profile
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href="/my-account/my-addresses"
-                        className="sidebar-link"
-                        onClick={handleClose}
-                      >
-                        My Addresses
-                      </Link>
-                    </li>
-                    <li>
-                      <button
-                        onClick={() => {
-                          handleLogout();
-                          handleClose();
-                        }}
-                        className="sidebar-link text-left w-full"
-                      >
-                        Log out
-                      </button>
-                    </li>
-                  </>
+                  <li>
+                    <Link
+                      href="/my-account/dashboard"
+                      className="sidebar-link"
+                      onClick={handleClose}
+                    >
+                      My Dashboard
+                    </Link>
+                  </li>
                 ) : (
                   <li>
                     <Link

@@ -40,15 +40,22 @@ export default function WebPPicture({
   const defaultHeight = height || 400
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div
+      style={{
+        position: 'relative',
+        width: style?.width || 'auto',
+        height: style?.height || 'auto',
+        display: 'inline-block',
+      }}
+    >
       {/* Placeholder */}
       {!isLoaded && (
         <div
           style={{
             ...style,
-            width: style?.width || '100%',
-            height: style?.height || (width && height ? height : width || 400),
-            aspectRatio: style?.aspectRatio || (width && height ? `${width}/${height}` : '1/1'),
+            width: style?.width || (width && height ? width : undefined),
+            height: style?.height || (width && height ? height : undefined),
+            aspectRatio: style?.aspectRatio || (width && height ? `${width}/${height}` : undefined),
             backgroundColor: '#f3f4f6',
             display: 'block',
           }}
@@ -70,14 +77,12 @@ export default function WebPPicture({
           decoding="async"
           style={{
             ...style,
-            position: isLoaded ? 'relative' : 'absolute',
-            top: 0,
-            left: 0,
+            display: isLoaded ? 'inline-block' : 'none',
             opacity: isLoaded ? 1 : 0,
             transition: 'opacity 0.3s ease-in',
-            contentVisibility: 'auto',
           }}
           onLoad={() => setIsLoaded(true)}
+          onError={() => setIsLoaded(true)}
           {...props}
         />
       </picture>

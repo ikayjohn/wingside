@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { SiteSettings, fetchSettings } from '@/lib/settings';
-import WebPPicture from '@/components/WebPPicture';
 
 export default function Footer() {
   const [settings, setSettings] = useState<Partial<SiteSettings>>({});
@@ -21,13 +21,10 @@ export default function Footer() {
             {/* Left: Logo */}
             <div className="flex justify-center md:justify-start">
               <div className="text-center md:text-left">
-                <WebPPicture
+                <img
                   src="/logo.png"
                   alt="Wingside Logo"
                   className="h-40 md:h-60 w-auto mb-3 md:mb-4 mx-auto md:mx-0"
-                  width={240}
-                  height={240}
-                  priority={true}
                 />
               </div>
             </div>
@@ -122,32 +119,35 @@ export default function Footer() {
             {/* Company Section */}
             <div className="flex flex-wrap justify-center gap-x-4 md:gap-x-6 gap-y-2">
               <span className="font-bold text-xs uppercase tracking-wide text-gray-900">COMPANY</span>
-              <Link href="/order" className="footer-link">Order Now</Link>
-              <Link href="/business" className="footer-link">Wingside Business</Link>
-              <Link href="/wingcafe" className="footer-link">Wingcafé</Link>
-              <Link href="/gifts" className="footer-link">Wingside Gifts</Link>
-              <Link href="/connect" className="footer-link">Wingside Connect</Link>
+              <Link href="/about" className="footer-link">About Us</Link>
               <Link href="/hotspots" className="footer-link">Wingside Hotspots</Link>
-              <Link href="/kids" className="footer-link">Wingside Kids</Link>
-              <Link href="/sports" className="footer-link">Wingside Sports</Link>
-              <Link href="/wingclub" className="footer-link">Wingclub</Link>
+              <Link href="/support" className="footer-link">Support</Link>
+              <Link href="/gift-card-balance" className="footer-link">Gift Card Balance</Link>
+              <Link href="/blog" className="footer-link">Blog</Link>
+              <Link href="/flavors" className="footer-link">Flavors</Link>
             </div>
           </div>
 
-          {/* Get in Touch Section */}
+          {/* Get Involved Section */}
           <div className="flex flex-wrap justify-center gap-x-4 md:gap-x-8 gap-y-2 mb-6 md:mb-8">
-            <span className="font-bold text-xs uppercase tracking-wide text-gray-900">GET IN TOUCH</span>
-            <Link href="/about" className="footer-link">About Us</Link>
+            <span className="font-bold text-xs uppercase tracking-wide text-gray-900">GET INVOLVED</span>
             <Link href="/careers" className="footer-link">Careers</Link>
-            <Link href="/support" className="footer-link">Support</Link>
             <Link href="/contact" className="footer-link">Contact Us</Link>
-            <Link href="/terms" className="footer-link">Terms of Use</Link>
-            <Link href="/privacy" className="footer-link">Privacy Policy</Link>
+            <Link href="/partnership" className="footer-link">Partnership</Link>
+            <Link href="/franchising" className="footer-link">Franchising</Link>
+            <Link href="/wingside-cares" className="footer-link">Wingside Cares</Link>
           </div>
 
           {/* Copyright */}
           <div className="text-center text-xs text-gray-500 pt-4 md:pt-6">
-            © 2026 All rights reserved. Wingside Foods.
+            © 2026 All rights reserved. Wingside Foods Limited.
+          </div>
+
+          {/* Legal Links */}
+          <div className="flex flex-wrap justify-center gap-x-4 md:gap-x-6 gap-y-2 mt-4 text-xs">
+            <Link href="/cookie-preferences" className="text-gray-500 hover:text-gray-700 transition-colors">Cookie Preferences</Link>
+            <Link href="/terms" className="text-gray-500 hover:text-gray-700 transition-colors">Terms & Conditions</Link>
+            <Link href="/privacy" className="text-gray-500 hover:text-gray-700 transition-colors">Privacy Policy</Link>
           </div>
         </div>
       </footer>

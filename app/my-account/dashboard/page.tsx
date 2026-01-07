@@ -284,7 +284,7 @@ export default function WingclubDashboard() {
             {/* Greeting */}
             <div>
               <h1 className="dashboard-welcome !mb-0">
-                {greeting}, {userData.name}!
+                {greeting}, {userData.name.split(' ')[0]}!
               </h1>
               <p className="text-gray-600 text-sm mt-1">
                 {userData.currentTier} • {userData.totalPoints.toLocaleString()} points
