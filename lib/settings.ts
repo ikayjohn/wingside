@@ -22,6 +22,7 @@ export interface SiteSettings {
   social_twitter: string;
   social_linkedin: string;
   social_youtube: string;
+  social_tiktok: string;
   social_whatsapp: string;
 
   // Business Hours
@@ -70,6 +71,7 @@ export const defaultSettings: SiteSettings = {
   social_twitter: 'https://x.com/mywingside',
   social_linkedin: 'https://www.linkedin.com/company/wingside',
   social_youtube: 'https://www.youtube.com/@mywingside',
+  social_tiktok: 'https://www.tiktok.com/@mywingside',
   social_whatsapp: '+2348090191999',
 
   // Business Hours

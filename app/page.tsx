@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import HeroSlideshow from '@/components/HeroSlideshow';
+import WebPPicture from '@/components/WebPPicture';
 
 interface Flavor {
   id: string;
@@ -114,11 +115,14 @@ export default function WingsideLanding() {
       <section className="relative z-40 py-0 -mt-[50px] sm:-mt-[60px] md:-mt-[80px]">
         {/* Yellow Background */}
         <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 bg-gradient-to-br from-yellow-100 to-yellow-100 h-[160px] sm:h-[200px] md:h-[250px] lg:h-[400px] overflow-hidden">
-          <img
+          <WebPPicture
             src="/yellowpattern.png"
             alt=""
             className="absolute inset-0 w-full h-full object-cover opacity-90"
-            loading="eager"
+            width={1920}
+            height={400}
+            priority={true}
+            style={{ height: '100%' }}
           />
         </div>
         
@@ -134,20 +138,24 @@ export default function WingsideLanding() {
             </div>
             
             <div className="pr-4 xl:pr-8">
-              <img
+              <WebPPicture
                 src="/thinkarrow.png"
                 alt="Arrow"
                 className="w-24 xl:w-32 h-auto"
-                loading="eager"
+                width={128}
+                height={128}
+                priority={true}
               />
             </div>
-            
+
             <div className="flex-1 flex justify-end">
-              <img
+              <WebPPicture
                 src="/thinkbox.png"
                 alt="Wingside Box"
                 className="w-full max-w-md xl:max-w-xl h-auto float-hover"
-                loading="eager"
+                width={500}
+                height={400}
+                priority={true}
               />
             </div>
           </div>
@@ -159,20 +167,24 @@ export default function WingsideLanding() {
                 Think Inside<br />
                 <span>THE BOX</span>
               </h2>
-              <img
+              <WebPPicture
                 src="/thinkarrow.png"
                 alt="Arrow"
                 className="w-32 h-auto"
-                loading="eager"
+                width={128}
+                height={128}
+                priority={true}
               />
             </div>
-            
+
             <div className="flex-1 flex justify-end">
-              <img
+              <WebPPicture
                 src="/thinkbox.png"
                 alt="Wingside Box"
                 className="w-full max-w-xs h-auto float-hover"
-                loading="eager"
+                width={400}
+                height={320}
+                priority={true}
               />
             </div>
           </div>
@@ -184,20 +196,24 @@ export default function WingsideLanding() {
                 Think Inside<br />
                 <span>THE BOX</span>
               </h2>
-              <img
+              <WebPPicture
                 src="/thinkarrow.png"
                 alt="Arrow"
                 className="w-20 h-auto"
-                loading="eager"
+                width={80}
+                height={80}
+                priority={true}
               />
             </div>
-            
+
             <div className="flex-1 flex justify-end">
-              <img
+              <WebPPicture
                 src="/thinkbox.png"
                 alt="Wingside Box"
                 className="w-full max-w-[220px] h-auto float-hover"
-                loading="eager"
+                width={220}
+                height={176}
+                priority={true}
               />
             </div>
           </div>
@@ -310,11 +326,12 @@ export default function WingsideLanding() {
               <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center">
                 {/* Left: Delivery Image */}
                 <div className="flex justify-center md:justify-start">
-                  <img
+                  <WebPPicture
                     src="/bikewingside1.png"
                     alt="Wingside Delivery"
                     className="w-full max-w-xs md:max-w-md h-auto"
-                    loading="lazy"
+                    width={400}
+                    height={300}
                   />
                 </div>
 
@@ -343,11 +360,12 @@ export default function WingsideLanding() {
               <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center">
                 {/* Left: Hotspot QR Image */}
                 <div className="flex justify-center md:justify-start">
-                  <img
+                  <WebPPicture
                     src="/hotspot-qr.png"
                     alt="Wingside Hotspot QR Code"
                     className="w-full max-w-xs md:max-w-md h-auto"
-                    loading="lazy"
+                    width={400}
+                    height={400}
                   />
                 </div>
 
@@ -375,11 +393,12 @@ export default function WingsideLanding() {
               <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center">
                 {/* Left: Kids Hero Image */}
                 <div className="flex justify-center md:justify-start">
-                  <img
+                  <WebPPicture
                     src="/kids-hero.png"
                     alt="Wingside Kids"
                     className="w-full max-w-xs md:max-w-md h-auto"
-                    loading="lazy"
+                    width={400}
+                    height={400}
                   />
                 </div>
 
@@ -407,11 +426,12 @@ export default function WingsideLanding() {
               <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center">
                 {/* Left: Delivery Image */}
                 <div className="flex justify-center md:justify-start">
-                  <img
+                  <WebPPicture
                     src="/bikewingside1.png"
                     alt="Wingside Delivery"
                     className="w-full max-w-xs md:max-w-md h-auto"
-                    loading="lazy"
+                    width={400}
+                    height={300}
                   />
                 </div>
 
@@ -514,16 +534,16 @@ export default function WingsideLanding() {
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
             <div className="wc-card-img">
-              <img src="/wc1.png" alt="Members Discount" loading="lazy" />
+              <WebPPicture src="/wc1.png" alt="Members Discount" width={300} height={300} />
             </div>
             <div className="wc-card-img">
-              <img src="/wc2.png" alt="Points" loading="lazy" />
+              <WebPPicture src="/wc2.png" alt="Points" width={300} height={300} />
             </div>
             <div className="wc-card-img">
-              <img src="/wc3.png" alt="Gift" loading="lazy" />
+              <WebPPicture src="/wc3.png" alt="Gift" width={300} height={300} />
             </div>
             <div className="wc-card-img">
-              <img src="/wc4.png" alt="Birthday Wings" loading="lazy" />
+              <WebPPicture src="/wc4.png" alt="Birthday Wings" width={300} height={300} />
             </div>
           </div>
         </div>

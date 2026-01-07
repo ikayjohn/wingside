@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import WebPPicture from '@/components/WebPPicture';
 
 // Types
 interface CartItem {
@@ -444,10 +445,14 @@ export default function OrderPage() {
 
       {/* Hero Section */}
       <section className="relative h-[400px] overflow-hidden mb-[50px]">
-        <img
+        <WebPPicture
           src="/order-hero.png"
           alt="Wings and more"
           className="w-full h-full object-cover"
+          width={1920}
+          height={400}
+          priority={true}
+          style={{ height: '100%' }}
         />
         <div className="absolute inset-0 bg-black/50" />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-4">
@@ -513,11 +518,12 @@ export default function OrderPage() {
                         {product.badge}
                       </span>
                     )}
-                    <img
+                    <WebPPicture
                       src={product.image}
                       alt={product.name}
                       className="w-full aspect-[4/3] object-cover rounded-lg"
-                      style={{ contentVisibility: 'auto' }}
+                      width={400}
+                      height={300}
                     />
                   </div>
 
