@@ -50,20 +50,20 @@ export default function AdminProductsPage() {
   const [uploadingImage, setUploadingImage] = useState(false)
   const [imagePreview, setImagePreview] = useState<string>('')
 
-  // Subcategory options by category
+  // Subcategory options by category (must match order page)
   const subcategoryOptions: Record<string, string[]> = {
     'Wing Cafe': [
       'Coffee Classics',
-      'Tea Time',
-      'Specialty Drinks',
-      'Smoothies & Shakes',
-      'Frozen Delights',
-      'Fresh Juices',
-      'Refreshers',
-      'Hot Chocolate',
-      'Seasonal Specials',
-      'Add-ons',
-      'Pastries',
+      'Everyday Sips',
+      'Toasted & Spiced Lattes',
+      'Gourmet & Dessert-Inspired Lattes',
+      'Matcha Lattes',
+      'Chai Lattes',
+      'Hot Smelts',
+      'Teas',
+      'Wingfreshers',
+      'Milkshakes',
+      'Signature Pairings'
     ],
   }
 
@@ -177,17 +177,17 @@ export default function AdminProductsPage() {
         console.log('[Product Upload] Setting image URL:', data.url)
         console.log('[Product Upload] Current formData before update:', formData)
 
-        // Force re-render by clearing preview first
-        setImagePreview(null);
-        setTimeout(() => {
-          setFormData(prev => {
-            const updated = { ...prev, image_url: data.url };
-            console.log('[Product Upload] New formData:', updated);
-            return updated;
-          });
-          setImagePreview(data.url + '?t=' + Date.now()); // Add timestamp to bypass cache
-          console.log('[Product Upload] Image preview set to:', data.url)
-        }, 50);
+        // Update formData with new image URL
+        setFormData(prev => {
+          const updated = { ...prev, image_url: data.url };
+          console.log('[Product Upload] New formData:', updated);
+          console.log('[Product Upload] image_url in new formData:', updated.image_url);
+          return updated;
+        });
+
+        // Update preview with cache-busting timestamp
+        setImagePreview(data.url + '?t=' + Date.now());
+        console.log('[Product Upload] Image preview set to:', data.url + '?t=' + Date.now())
 
         alert('Image uploaded successfully!')
       } else {
@@ -205,6 +205,9 @@ export default function AdminProductsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    console.log('[Product Submit] Form data being submitted:', formData)
+    console.log('[Product Submit] image_url in formData:', formData.image_url)
 
     const productData = {
       name: formData.name,
@@ -228,6 +231,8 @@ export default function AdminProductsPage() {
       ],
     }
 
+    console.log('[Product Submit] productData being sent to API:', { ...productData, image_url: productData.image_url?.substring(0, 50) + '...' })
+
     try {
       const url = editingProduct
         ? `/api/products/${editingProduct.id}`
@@ -235,11 +240,15 @@ export default function AdminProductsPage() {
 
       const method = editingProduct ? 'PUT' : 'POST'
 
+      console.log('[Product Submit] Sending', method, 'request to', url)
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(productData),
       })
+
+      console.log('[Product Submit] Response status:', response.status)
 
       if (response.ok) {
         alert(`Product ${editingProduct ? 'updated' : 'created'} successfully`)

@@ -74,6 +74,9 @@ export async function PUT(
 
     const body = await request.json()
 
+    console.log('[Products API] Updating product:', id)
+    console.log('[Products API] Update data:', { ...body, image_url: body.image_url?.substring(0, 50) + '...' })
+
     // Update product
     const { data: product, error: updateError } = await supabase
       .from('products')
@@ -95,11 +98,14 @@ export async function PUT(
       .single()
 
     if (updateError) {
+      console.error('[Products API] Update error:', updateError)
       return NextResponse.json(
-        { error: 'Failed to update product' },
+        { error: 'Failed to update product: ' + updateError.message },
         { status: 500 }
       )
     }
+
+    console.log('[Products API] Product updated successfully:', product?.id)
 
     // Update sizes if provided
     if (body.sizes && body.sizes.length > 0) {
