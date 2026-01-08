@@ -25,6 +25,36 @@ export default function WingsideLanding() {
 
   const categories = ['HOT', 'BBQ', 'DRY RUB', 'BOLD & FUN', 'SWEET', 'BOOZY'];
 
+  // Slide data for delivery section
+  const deliverySlides = [
+    {
+      title: 'WINGSIDE\nONLINE DELIVERY',
+      description: 'Stay in. We\'ll bring the wings to you. Flavors that sing with every wing Delivered before you blink.',
+      ctaText: 'Order Now',
+      ctaLink: '/order',
+      image: '/bikewingside1.png',
+      alt: 'Wingside Delivery'
+    },
+    {
+      title: 'WINGSIDE\nHOTSPOT',
+      description: 'Any business with regular foot traffic can benefit from the Wingside Hotspot program.',
+      ctaText: 'Learn More',
+      ctaLink: '/hotspots',
+      image: '/post.png',
+      alt: 'Wingside Hotspot'
+    },
+    {
+      title: 'WINGSIDE\nKIDS',
+      description: 'Building early brand affinity and family loyalty through fun, food, and unforgettable experiences.',
+      ctaText: 'Learn More',
+      ctaLink: '/kids',
+      image: '/kids-hero.png',
+      alt: 'Wingside Kids'
+    }
+  ];
+
+  const currentSlide = deliverySlides[activeDeliverySection % deliverySlides.length];
+
   // Auto-slide delivery section every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
@@ -292,194 +322,151 @@ export default function WingsideLanding() {
           </div>
         </div>
 
-        {/* Carousel Container - Full width */}
-        <div className="relative">
-          <div
-            className={`flex ${activeDeliverySection <= 3 ? 'transition-transform duration-700 ease-in-out' : ''}`}
-            style={{ transform: `translateX(-${activeDeliverySection * 100}%)` }}
-          >
-            {/* Section 1: Online Delivery */}
-            <div className="w-full flex-shrink-0 px-4 sm:px-6 lg:px-8">
-              <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center">
-                {/* Left: Delivery Image */}
-                <div className="flex justify-center md:justify-start">
-                  <img
-                    src="/bikewingside1.png"
-                    alt="Wingside Delivery"
-                    className="w-full max-w-xs md:max-w-md h-auto"
-                  />
-                </div>
-
-                {/* Right: Content */}
-                <div>
-                  <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 leading-tight" style={{ color: '#552627' }}>
-                    WINGSIDE<br />
-                    ONLINE DELIVERY
-                  </h2>
-                  <p className="text-gray-600 text-sm md:text-lg mb-4 md:mb-6 leading-relaxed">
-                    Stay in. We&apos;ll bring the wings to you.<br />
-                    Flavors that sing with every wing Delivered before you blink.
-                  </p>
-                  <Link
-                    href="/order"
-                    className="delivery-btn"
-                  >
-                    Order Now
-                  </Link>
-                </div>
-              </div>
+        {/* Yellow rounded box - 80% width, centered */}
+        <div className="mx-auto px-4 sm:px-6 lg:px-8" style={{ width: '80%', maxWidth: '1200px' }}>
+          {/* Header section above yellow box */}
+          <div className="mb-2 grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+            {/* Left: Title */}
+            <div>
+              <h2
+                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold whitespace-pre-line"
+                style={{ color: '#552627', letterSpacing: '-1px', lineHeight: '1.1' }}
+              >
+                {currentSlide.title}
+              </h2>
             </div>
 
-            {/* Section 2: Hotspot */}
-            <div className="w-full flex-shrink-0 px-4 sm:px-6 lg:px-8">
-              <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center">
-                {/* Left: Hotspot QR Image */}
-                <div className="flex justify-center md:justify-start">
-                  <img
-                    src="/hotspot-qr.png"
-                    alt="Wingside Hotspot QR Code"
-                    className="w-full max-w-xs md:max-w-md h-auto"
-                  />
-                </div>
-
-                {/* Right: Content */}
-                <div>
-                  <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 leading-tight" style={{ color: '#552627' }}>
-                    WINGSIDE<br />
-                    HOTSPOT
-                  </h2>
-                  <p className="text-gray-600 text-sm md:text-lg mb-4 md:mb-6 leading-relaxed">
-                    Any business with regular foot traffic can benefit from the Wingside Hotspot program.
-                  </p>
-                  <Link
-                    href="/hotspots"
-                    className="delivery-btn"
-                  >
-                    Learn More
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 3: Kids */}
-            <div className="w-full flex-shrink-0 px-4 sm:px-6 lg:px-8">
-              <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center">
-                {/* Left: Kids Hero Image */}
-                <div className="flex justify-center md:justify-start">
-                  <img
-                    src="/kids-hero.png"
-                    alt="Wingside Kids"
-                    className="w-full max-w-xs md:max-w-md h-auto"
-                  />
-                </div>
-
-                {/* Right: Content */}
-                <div>
-                  <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 leading-tight" style={{ color: '#552627' }}>
-                    WINGSIDE<br />
-                    KIDS
-                  </h2>
-                  <p className="text-gray-600 text-sm md:text-lg mb-4 md:mb-6 leading-relaxed">
-                    Building early brand affinity and family loyalty through fun, food, and unforgettable experiences.
-                  </p>
-                  <Link
-                    href="/kids"
-                    className="delivery-btn"
-                  >
-                    Learn More
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Clone of Section 1 for infinite loop */}
-            <div className="w-full flex-shrink-0 px-4 sm:px-6 lg:px-8">
-              <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center">
-                {/* Left: Delivery Image */}
-                <div className="flex justify-center md:justify-start">
-                  <img
-                    src="/bikewingside1.png"
-                    alt="Wingside Delivery"
-                    className="w-full max-w-xs md:max-w-md h-auto"
-                  />
-                </div>
-
-                {/* Right: Content */}
-                <div>
-                  <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 leading-tight" style={{ color: '#552627' }}>
-                    WINGSIDE<br />
-                    ONLINE DELIVERY
-                  </h2>
-                  <p className="text-gray-600 text-sm md:text-lg mb-4 md:mb-6 leading-relaxed">
-                    Stay in. We&apos;ll bring the wings to you.<br />
-                    Flavors that sing with every wing Delivered before you blink.
-                  </p>
-                  <Link
-                    href="/order"
-                    className="delivery-btn"
-                  >
-                    Order Now
-                  </Link>
-                </div>
-              </div>
+            {/* Right: Description and CTA */}
+            <div className="text-left md:text-right">
+              <p className="text-sm md:text-base text-gray-700 mb-3 leading-relaxed" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.5' }}>
+                {currentSlide.description}
+              </p>
+              <Link
+                href={currentSlide.ctaLink}
+                className="inline-block text-white font-semibold rounded-full transition-all duration-300 hover:shadow-lg"
+                style={{
+                  backgroundColor: '#5D3131',
+                  padding: '12px 32px',
+                  borderRadius: '50px',
+                  fontSize: '15px',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4A2626'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#5D3131'}
+              >
+                {currentSlide.ctaText}
+              </Link>
             </div>
           </div>
 
-          {/* Navigation Arrows & Indicators */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center mt-8 md:mt-12">
-            {/* Dot Indicators */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setActiveDeliverySection(0)}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${activeDeliverySection === 0 || activeDeliverySection === 3 ? 'bg-[#F7C400] w-8' : 'bg-gray-300'}`}
-                aria-label="Go to delivery section"
-              />
-              <button
-                onClick={() => setActiveDeliverySection(1)}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${activeDeliverySection === 1 ? 'bg-[#F7C400] w-8' : 'bg-gray-300'}`}
-                aria-label="Go to hotspot section"
-              />
-              <button
-                onClick={() => setActiveDeliverySection(2)}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${activeDeliverySection === 2 ? 'bg-[#F7C400] w-8' : 'bg-gray-300'}`}
-                aria-label="Go to kids section"
+          <div
+            className="rounded-3xl relative"
+            style={{
+              backgroundColor: '#FFD700',
+              borderRadius: '24px',
+              height: '400px'
+            }}
+          >
+            {/* Carousel Container */}
+            <div className="relative" style={{ overflow: 'visible' }}>
+          <div
+            className={`flex ${activeDeliverySection <= 3 ? 'transition-transform duration-700 ease-in-out' : ''}`}
+            style={{ transform: `translateX(-${activeDeliverySection * 100}%)`, overflow: 'visible' }}
+          >
+            {/* Section 1: Online Delivery */}
+            <div className="w-full flex-shrink-0 flex items-center justify-center relative" style={{ zIndex: 10 }}>
+              <img
+                src={deliverySlides[0].image}
+                alt={deliverySlides[0].alt}
+                className="max-h-[600px] w-auto object-contain"
+                style={{ marginTop: '-150px', position: 'relative', zIndex: 10 }}
               />
             </div>
 
-            {/* Arrow Navigation */}
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  if (activeDeliverySection === 0) {
-                    setActiveDeliverySection(2);
-                  } else if (activeDeliverySection === 3) {
-                    setActiveDeliverySection(2);
-                  } else {
-                    setActiveDeliverySection(activeDeliverySection - 1);
-                  }
-                }}
-                className="arrow-nav-btn"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-              </button>
-              <button
-                onClick={() => {
-                  if (activeDeliverySection >= 2) {
-                    setActiveDeliverySection(3); // Go to clone
-                    setTimeout(() => setActiveDeliverySection(0), 700); // Then instantly jump back
-                  } else {
-                    setActiveDeliverySection(activeDeliverySection + 1);
-                  }
-                }}
-                className="arrow-nav-btn"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              </button>
+            {/* Section 2: Hotspot */}
+            <div className="w-full flex-shrink-0 flex items-center justify-center relative" style={{ zIndex: 10 }}>
+              <img
+                src={deliverySlides[1].image}
+                alt={deliverySlides[1].alt}
+                className="max-h-[600px] w-auto object-contain"
+                style={{ marginTop: '-150px', position: 'relative', zIndex: 10 }}
+              />
             </div>
+
+            {/* Section 3: Kids */}
+            <div className="w-full flex-shrink-0 flex items-center justify-center relative" style={{ zIndex: 10 }}>
+              <img
+                src={deliverySlides[2].image}
+                alt={deliverySlides[2].alt}
+                className="max-h-[600px] w-auto object-contain"
+                style={{ marginTop: '-150px', position: 'relative', zIndex: 10 }}
+              />
+            </div>
+
+            {/* Clone of Section 1 for infinite loop */}
+            <div className="w-full flex-shrink-0 flex items-center justify-center relative" style={{ zIndex: 10 }}>
+              <img
+                src={deliverySlides[0].image}
+                alt={deliverySlides[0].alt}
+                className="max-h-[600px] w-auto object-contain"
+                style={{ marginTop: '-150px', position: 'relative', zIndex: 10 }}
+              />
+            </div>
+          </div>
+
+          {/* Navigation Arrows - Inside yellow box at bottom right */}
+          <div className="absolute bottom-4 right-4 flex gap-2" style={{ zIndex: 20 }}>
+            <button
+              onClick={() => {
+                if (activeDeliverySection === 0) {
+                  setActiveDeliverySection(2);
+                } else if (activeDeliverySection === 3) {
+                  setActiveDeliverySection(2);
+                } else {
+                  setActiveDeliverySection(activeDeliverySection - 1);
+                }
+              }}
+              className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 bg-[#5D3131] text-white"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <button
+              onClick={() => {
+                if (activeDeliverySection >= 2) {
+                  setActiveDeliverySection(3);
+                  setTimeout(() => setActiveDeliverySection(0), 700);
+                } else {
+                  setActiveDeliverySection(activeDeliverySection + 1);
+                }
+              }}
+              className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 bg-[#5D3131] text-white"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+
+          {/* Dot Indicators - Centered below yellow box */}
+          <div className="flex justify-center gap-2 mt-4" style={{ position: 'relative', zIndex: 15 }}>
+            <button
+              onClick={() => setActiveDeliverySection(0)}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${activeDeliverySection === 0 || activeDeliverySection === 3 ? 'bg-[#5D3131] w-8' : 'bg-white/60'}`}
+              aria-label="Go to delivery section"
+            />
+            <button
+              onClick={() => setActiveDeliverySection(1)}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${activeDeliverySection === 1 ? 'bg-[#5D3131] w-8' : 'bg-white/60'}`}
+              aria-label="Go to hotspot section"
+            />
+            <button
+              onClick={() => setActiveDeliverySection(2)}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${activeDeliverySection === 2 ? 'bg-[#5D3131] w-8' : 'bg-white/60'}`}
+              aria-label="Go to kids section"
+            />
+          </div>
+        </div>
           </div>
         </div>
       </section>
