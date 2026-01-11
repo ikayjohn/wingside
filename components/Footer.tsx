@@ -122,9 +122,9 @@ export default function Footer() {
               <Link href="/about" className="footer-link">About Us</Link>
               <Link href="/hotspots" className="footer-link">Wingside Hotspots</Link>
               <Link href="/support" className="footer-link">Support</Link>
-              <Link href="/gift-card-balance" className="footer-link">Gift Card Balance</Link>
               <Link href="/blog" className="footer-link">Blog</Link>
               <Link href="/flavors" className="footer-link">Flavors</Link>
+              <Link href="/gift-balance" className="footer-link">Gift Card Balance</Link>
             </div>
           </div>
 
@@ -133,9 +133,9 @@ export default function Footer() {
             <span className="font-bold text-xs uppercase tracking-wide text-gray-900">GET INVOLVED</span>
             <Link href="/careers" className="footer-link">Careers</Link>
             <Link href="/contact" className="footer-link">Contact Us</Link>
-            <Link href="/partnership" className="footer-link">Partnership</Link>
             <Link href="/franchising" className="footer-link">Franchising</Link>
             <Link href="/wingside-cares" className="footer-link">Wingside Cares</Link>
+            <Link href="/partnership" className="footer-link">Partnership</Link>
           </div>
 
           {/* Copyright */}
