@@ -67,7 +67,11 @@
       "Bash(del:*)",
       "Bash(chmod:*)",
       "Bash(copy:*)",
-      "Bash(cwebp:*)"
+      "Bash(cwebp:*)",
+      "Bash(git checkout:*)",
+      "Bash(for:*)",
+      "Bash(do mv:*)",
+      "Bash(done:*)"
     ],
     "deny": [],
     "ask": []

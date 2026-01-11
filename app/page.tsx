@@ -23,7 +23,7 @@ export default function WingsideLanding() {
   const [loading, setLoading] = useState(true);
   const [activeDeliverySection, setActiveDeliverySection] = useState(0);
 
-  const categories = ['HOT', 'BBQ', 'DRY RUB', 'BOLD & FUN', 'SWEET', 'BOOZY'];
+  const categories = ['BBQ', 'BOLD & FUN', 'HOT', 'DRY RUB', 'SWEET', 'BOOZY'];
 
   // Slide data for delivery section
   const deliverySlides = [
@@ -37,7 +37,7 @@ export default function WingsideLanding() {
     },
     {
       title: 'WINGSIDE\nHOTSPOT',
-      description: 'Any business with regular foot traffic can benefit from the Wingside Hotspot program.',
+      description: 'Bring the wings to your customers. Any business with regular foot traffic can benefit from the Wingside Hotspot program.',
       ctaText: 'Learn More',
       ctaLink: '/hotspots',
       image: '/post.png',
@@ -315,17 +315,11 @@ export default function WingsideLanding() {
       </section>
 
       {/* Delivery Section */}
-      <section className="py-8 md:py-16 bg-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-6 md:mb-10">
-            <hr></hr>
-          </div>
-        </div>
-
+      <section className="bg-white overflow-hidden" style={{ paddingTop: '90px', paddingBottom: '100px' }}>
         {/* Yellow rounded box - 80% width, centered */}
         <div className="mx-auto px-4 sm:px-6 lg:px-8" style={{ width: '80%', maxWidth: '1200px' }}>
           {/* Header section above yellow box */}
-          <div className="mb-2 grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+          <div className="mb-5 grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             {/* Left: Title */}
             <div>
               <h2
@@ -337,8 +331,8 @@ export default function WingsideLanding() {
             </div>
 
             {/* Right: Description and CTA */}
-            <div className="text-left md:text-right">
-              <p className="text-sm md:text-base text-gray-700 mb-3 leading-relaxed" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.5' }}>
+            <div className="text-left md:text-right flex flex-col items-end">
+              <p className="text-sm md:text-base text-gray-700 mb-3 text-right" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.6', maxWidth: '350px', width: '100%' }}>
                 {currentSlide.description}
               </p>
               <Link
@@ -363,111 +357,134 @@ export default function WingsideLanding() {
             style={{
               backgroundColor: '#FFD700',
               borderRadius: '24px',
-              height: '400px'
+              height: '450px'
             }}
           >
             {/* Carousel Container */}
-            <div className="relative" style={{ overflow: 'visible' }}>
-          <div
-            className={`flex ${activeDeliverySection <= 3 ? 'transition-transform duration-700 ease-in-out' : ''}`}
-            style={{ transform: `translateX(-${activeDeliverySection * 100}%)`, overflow: 'visible' }}
-          >
+            <div className="relative" style={{ height: '450px', overflow: 'visible' }}>
             {/* Section 1: Online Delivery */}
-            <div className="w-full flex-shrink-0 flex items-center justify-center relative" style={{ zIndex: 10 }}>
+            <div
+              className="absolute inset-0 flex items-center justify-center transition-opacity duration-700 ease-in-out"
+              style={{
+                opacity: activeDeliverySection === 0 || activeDeliverySection === 3 ? 1 : 0,
+                zIndex: activeDeliverySection === 0 || activeDeliverySection === 3 ? 10 : 0
+              }}
+            >
               <img
                 src={deliverySlides[0].image}
                 alt={deliverySlides[0].alt}
                 className="max-h-[600px] w-auto object-contain"
-                style={{ marginTop: '-150px', position: 'relative', zIndex: 10 }}
+                style={{ marginTop: '-150px' }}
               />
             </div>
 
             {/* Section 2: Hotspot */}
-            <div className="w-full flex-shrink-0 flex items-center justify-center relative" style={{ zIndex: 10 }}>
+            <div
+              className="absolute inset-0 flex items-center justify-center transition-opacity duration-700 ease-in-out"
+              style={{
+                opacity: activeDeliverySection === 1 ? 1 : 0,
+                zIndex: activeDeliverySection === 1 ? 10 : 0
+              }}
+            >
               <img
                 src={deliverySlides[1].image}
                 alt={deliverySlides[1].alt}
                 className="max-h-[600px] w-auto object-contain"
-                style={{ marginTop: '-150px', position: 'relative', zIndex: 10 }}
+                style={{ marginTop: '-150px' }}
               />
             </div>
 
             {/* Section 3: Kids */}
-            <div className="w-full flex-shrink-0 flex items-center justify-center relative" style={{ zIndex: 10 }}>
+            <div
+              className="absolute inset-0 flex items-center justify-center transition-opacity duration-700 ease-in-out"
+              style={{
+                opacity: activeDeliverySection === 2 ? 1 : 0,
+                zIndex: activeDeliverySection === 2 ? 10 : 0
+              }}
+            >
               <img
                 src={deliverySlides[2].image}
                 alt={deliverySlides[2].alt}
                 className="max-h-[600px] w-auto object-contain"
-                style={{ marginTop: '-150px', position: 'relative', zIndex: 10 }}
+                style={{ marginTop: '-150px' }}
               />
             </div>
 
             {/* Clone of Section 1 for infinite loop */}
-            <div className="w-full flex-shrink-0 flex items-center justify-center relative" style={{ zIndex: 10 }}>
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{
+                opacity: activeDeliverySection === 3 ? 1 : 0,
+                zIndex: activeDeliverySection === 3 ? 10 : 0
+              }}
+            >
               <img
                 src={deliverySlides[0].image}
                 alt={deliverySlides[0].alt}
                 className="max-h-[600px] w-auto object-contain"
-                style={{ marginTop: '-150px', position: 'relative', zIndex: 10 }}
+                style={{ marginTop: '-150px' }}
               />
             </div>
           </div>
 
-          {/* Navigation Arrows - Inside yellow box at bottom right */}
-          <div className="absolute bottom-4 right-4 flex gap-2" style={{ zIndex: 20 }}>
-            <button
-              onClick={() => {
-                if (activeDeliverySection === 0) {
-                  setActiveDeliverySection(2);
-                } else if (activeDeliverySection === 3) {
-                  setActiveDeliverySection(2);
-                } else {
-                  setActiveDeliverySection(activeDeliverySection - 1);
-                }
-              }}
-              className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 bg-[#5D3131] text-white"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-            </button>
-            <button
-              onClick={() => {
-                if (activeDeliverySection >= 2) {
-                  setActiveDeliverySection(3);
-                  setTimeout(() => setActiveDeliverySection(0), 700);
-                } else {
-                  setActiveDeliverySection(activeDeliverySection + 1);
-                }
-              }}
-              className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 bg-[#5D3131] text-white"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-          </div>
+          {/* Navigation - Dots on left, Arrows on right */}
+          <div className="flex justify-between items-center mt-6" style={{ position: 'relative', zIndex: 25 }}>
+            {/* Dot Indicators - Left */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setActiveDeliverySection(0)}
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${activeDeliverySection === 0 || activeDeliverySection === 3 ? 'bg-[#5D3131] w-8' : 'bg-gray-300'}`}
+                aria-label="Go to delivery section"
+              />
+              <button
+                onClick={() => setActiveDeliverySection(1)}
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${activeDeliverySection === 1 ? 'bg-[#5D3131] w-8' : 'bg-gray-300'}`}
+                aria-label="Go to hotspot section"
+              />
+              <button
+                onClick={() => setActiveDeliverySection(2)}
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${activeDeliverySection === 2 ? 'bg-[#5D3131] w-8' : 'bg-gray-300'}`}
+                aria-label="Go to kids section"
+              />
+            </div>
 
-          {/* Dot Indicators - Centered below yellow box */}
-          <div className="flex justify-center gap-2 mt-4" style={{ position: 'relative', zIndex: 15 }}>
-            <button
-              onClick={() => setActiveDeliverySection(0)}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${activeDeliverySection === 0 || activeDeliverySection === 3 ? 'bg-[#5D3131] w-8' : 'bg-white/60'}`}
-              aria-label="Go to delivery section"
-            />
-            <button
-              onClick={() => setActiveDeliverySection(1)}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${activeDeliverySection === 1 ? 'bg-[#5D3131] w-8' : 'bg-white/60'}`}
-              aria-label="Go to hotspot section"
-            />
-            <button
-              onClick={() => setActiveDeliverySection(2)}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${activeDeliverySection === 2 ? 'bg-[#5D3131] w-8' : 'bg-white/60'}`}
-              aria-label="Go to kids section"
-            />
+            {/* Navigation Arrows - Right */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  if (activeDeliverySection >= 2) {
+                    setActiveDeliverySection(3);
+                    setTimeout(() => setActiveDeliverySection(0), 700);
+                  } else {
+                    setActiveDeliverySection(activeDeliverySection + 1);
+                  }
+                }}
+                className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg"
+                style={{ backgroundColor: '#5D3131' }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+              <button
+                onClick={() => {
+                  if (activeDeliverySection >= 2) {
+                    setActiveDeliverySection(3);
+                    setTimeout(() => setActiveDeliverySection(0), 700);
+                  } else {
+                    setActiveDeliverySection(activeDeliverySection + 1);
+                  }
+                }}
+                className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg"
+                style={{ backgroundColor: '#5D3131' }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
-          </div>
         </div>
       </section>
 

@@ -24,7 +24,7 @@ export default function HeroSlideshow() {
       try {
         const response = await fetch('/api/hero-slides/public');
         const data = await response.json();
-        if (response.ok && data.slides.length > 0) {
+        if (response.ok && data.slides && data.slides.length > 0) {
           setSlides(data.slides);
           // Trigger animation after slides load
           setTimeout(() => setShouldAnimate(true), 100);
@@ -63,12 +63,6 @@ export default function HeroSlideshow() {
     );
   }
 
-  if (slides.length === 0) {
-    return null;
-  }
-
-  const currentSlide = slides[currentIndex];
-
   // Ken Burns effect: simple zoom in from 100% to 120%
   const getKenBurnsStyle = (isActive: boolean) => {
     const scale = isActive ? 1.2 : 1;
@@ -101,6 +95,12 @@ export default function HeroSlideshow() {
       return part;
     });
   };
+
+  if (slides.length === 0) {
+    return null;
+  }
+
+  const currentSlide = slides[currentIndex];
 
   return (
     <section className="hero-video-section relative overflow-hidden">
@@ -178,6 +178,7 @@ export default function HeroSlideshow() {
                   ? 'w-8 h-2 bg-[#F7C400]'
                   : 'w-2 h-2 bg-white/50 hover:bg-white/75'
               }`}
+              style={{ cursor: 'pointer' }}
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}
@@ -192,6 +193,7 @@ export default function HeroSlideshow() {
               setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length)
             }
             className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-sm items-center justify-center transition-all duration-300 hover:scale-110"
+            style={{ cursor: 'pointer' }}
             aria-label="Previous slide"
           >
             <svg
@@ -211,6 +213,7 @@ export default function HeroSlideshow() {
           <button
             onClick={() => setCurrentIndex((prev) => (prev + 1) % slides.length)}
             className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-sm items-center justify-center transition-all duration-300 hover:scale-110"
+            style={{ cursor: 'pointer' }}
             aria-label="Next slide"
           >
             <svg
