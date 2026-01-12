@@ -1,4 +1,4 @@
-# Hostinger Optimization for Next.js Static Export
+# Hostinger Optimization for Next.js
 
 # Enable compression
 <IfModule mod_deflate.c>
@@ -21,25 +21,6 @@
   ExpiresByType font/woff2 "access plus 1 year"
 </IfModule>
 
-# Redirect all requests to index.html for SPA routing
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteBase /
-
-  # Remove index.html from URLs
-  RewriteRule ^index\.html$ / [L,R=301]
-
-  # Serve static files directly if they exist
-  RewriteCond %{REQUEST_FILENAME} -f
-  RewriteRule ^ - [L]
-
-  RewriteCond %{REQUEST_FILENAME} -d
-  RewriteRule ^ - [L]
-
-  # Redirect all other requests to index.html
-  RewriteRule ^ /index.html [L]
-</IfModule>
-
 # Security headers
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"
@@ -56,4 +37,5 @@ Options -Indexes
   Order allow,deny
   Deny from all
 </FilesMatch>
+
 

@@ -1,18 +1,11 @@
 import type { NextConfig } from 'next'
-import bundleAnalyzer from '@next/bundle-analyzer'
-
-const withBundleAnalyzer = bundleAnalyzer({
-  enabled: process.env.ANALYZE === 'true',
-})
 
 const nextConfig: NextConfig = {
-  // Static export for Hostinger and other static hosts
-  output: 'export',
+  // Standard Next.js build (for Vercel, Node.js, or Hostinger VPS)
   trailingSlash: true,
 
-  // Image optimization - unoptimized for static export
+  // Image optimization with Supabase storage
   images: {
-    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -30,20 +23,6 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },
-
-  // Build optimizations
-  webpack: (config, { isServer }) => {
-    // Optimize for static hosting
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-      };
-    }
-    return config;
-  },
 }
 
-export default withBundleAnalyzer(nextConfig)
+export default nextConfig
