@@ -6,10 +6,13 @@ const withBundleAnalyzer = bundleAnalyzer({
 })
 
 const nextConfig: NextConfig = {
-  // Removed static export - now supports server-side features
+  // Static export for Hostinger and other static hosts
+  output: 'export',
   trailingSlash: true,
+
+  // Image optimization - unoptimized for static export
   images: {
-    // Can now use Next.js image optimization
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -18,9 +21,28 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+
+  // Optimize for production
+  compress: true,
+  poweredByHeader: false,
+
   // Enable experimental features for better performance
   experimental: {
     optimizePackageImports: ['lucide-react'],
+  },
+
+  // Build optimizations
+  webpack: (config, { isServer }) => {
+    // Optimize for static hosting
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
+    }
+    return config;
   },
 }
 

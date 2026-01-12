@@ -4,6 +4,49 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import HeroSlideshow from '@/components/HeroSlideshow';
 
+// Structured data for SEO
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "Restaurant",
+  "name": "Wingside",
+  "description": "Experience 20 bold wing flavors across 6 categories at Wingside. Your wings, your way.",
+  "url": "https://wingside.com",
+  "telephone": "+234-XXX-XXX-XXXX",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Lagos",
+    "addressCountry": "NG"
+  },
+  "servesCuisine": "Chicken Wings",
+  "priceRange": "$$",
+  "openingHoursSpecification": {
+    "@type": "OpeningHoursSpecification",
+    "dayOfWeek": [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday"
+    ],
+    "opens": "10:00",
+    "closes": "22:00"
+  },
+  "menu": "https://wingside.com/order",
+  "potentialAction": {
+    "@type": "OrderAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "https://wingside.com/order"
+    },
+    "deliveryMethod": [
+      "http://purl.org/goodrelations/v1#DeliveryModePickUp",
+      "http://purl.org/goodrelations/v1#DeliveryModeOwnFleet"
+    ]
+  }
+};
+
 interface Flavor {
   id: string;
   name: string;
@@ -18,7 +61,7 @@ interface Flavor {
 }
 
 export default function WingsideLanding() {
-  const [activeCategory, setActiveCategory] = useState('HOT');
+  const [activeCategory, setActiveCategory] = useState('BBQ');
   const [flavors, setFlavors] = useState<Flavor[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeDeliverySection, setActiveDeliverySection] = useState(0);
@@ -135,9 +178,15 @@ export default function WingsideLanding() {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
 
       {/* Hero Section with Slideshow */}
-      <HeroSlideshow />
+      <div id="main-content" tabIndex={-1}>
+        <HeroSlideshow />
 
 
       {/* Think Inside The Box */}
@@ -522,6 +571,7 @@ export default function WingsideLanding() {
         </div>
       </section>
 
+      </div>
     </div>
   );
 }

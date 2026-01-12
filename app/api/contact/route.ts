@@ -1,47 +1,96 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { sendContactNotification } from '@/lib/emails/service';
+import { z } from 'zod';
+import {
+  sanitizeEmail,
+  sanitizePhone,
+  sanitizeTextInput,
+  detectSqlInjection,
+  detectNoSqlInjection,
+} from '@/lib/security';
+
+// Validation schema
+const contactSchema = z.object({
+  type: z.string().optional(),
+  name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must be less than 100 characters'),
+  email: z.string().email('Invalid email format'),
+  phone: z.string().min(10, 'Phone number must be at least 10 digits'),
+  company: z.string().max(200, 'Company name must be less than 200 characters').optional(),
+  message: z.string().max(2000, 'Message must be less than 2000 characters').optional(),
+  formData: z.record(z.any(), z.any()).optional(),
+});
 
 // POST /api/contact - Handle contact form submissions
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { type, name, email, phone, company, message, formData } = body;
-
-    // Validate required fields
-    if (!name || !email || !phone) {
+    // Parse request body
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
       return NextResponse.json(
-        { error: 'Name, email, and phone are required' },
+        {
+          error: 'Invalid JSON',
+          details: 'Request body must be valid JSON'
+        },
         { status: 400 }
       );
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    // Validate input using Zod schema
+    const validationResult = contactSchema.safeParse(body);
+    if (!validationResult.success) {
+      const errors = validationResult.error.issues.map(err => ({
+        field: err.path.join('.'),
+        message: err.message
+      }));
+
       return NextResponse.json(
-        { error: 'Invalid email format' },
+        {
+          error: 'Validation failed',
+          details: errors
+        },
         { status: 400 }
       );
     }
+
+    const { type, name, email, phone, company, message, formData } = validationResult.data;
+
+    // Security checks for injection attacks
+    const stringInputs = [name, email, phone, company, message].filter(Boolean);
+    for (const input of stringInputs) {
+      if (detectSqlInjection(input) || detectNoSqlInjection(input)) {
+        console.error('Potential injection attack detected:', { input });
+        return NextResponse.json(
+          {
+            error: 'Invalid input detected',
+            details: 'Your submission contains potentially malicious content'
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Sanitize inputs
+    const sanitizedName = sanitizeTextInput(name);
+    const sanitizedEmail = sanitizeEmail(email);
+    const sanitizedPhone = sanitizePhone(phone);
+    const sanitizedCompany = company ? sanitizeTextInput(company) : null;
+    const sanitizedMessage = message ? sanitizeTextInput(message) : null;
 
     const supabase = await createClient();
 
-    // Check if contact_submissions table exists, if not create it
-    const { error: checkError } = await supabase.rpc('check_table_exists', {
-      table_name: 'contact_submissions'
-    });
-
-    // Store in database (if table exists)
+    // Store in database
     const { data: submission, error: insertError } = await supabase
       .from('contact_submissions')
       .insert({
         submission_type: type || 'general',
-        name,
-        email,
-        phone,
-        company: company || null,
-        message: message || null,
+        name: sanitizedName,
+        email: sanitizedEmail,
+        phone: sanitizedPhone,
+        company: sanitizedCompany,
+        message: sanitizedMessage,
         form_data: formData || {},
         status: 'new',
         created_at: new Date().toISOString(),
@@ -50,19 +99,35 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError) {
-      // Log error but don't fail - we'll still send the email
       console.error('Database insert error:', insertError);
+
+      // Handle specific database errors
+      if (insertError.code === '23505') {
+        return NextResponse.json(
+          { error: 'Duplicate submission detected' },
+          { status: 409 }
+        );
+      }
+
+      if (insertError.code === '23502') {
+        return NextResponse.json(
+          { error: 'Missing required field in database' },
+          { status: 400 }
+        );
+      }
+
+      // Log error but don't fail - we'll still send the email
     }
 
     // Send email notification to admin
     try {
       const emailResult = await sendContactNotification({
         type: type || 'general',
-        name,
-        email,
-        phone,
-        company,
-        message,
+        name: sanitizedName,
+        email: sanitizedEmail,
+        phone: sanitizedPhone,
+        company: sanitizedCompany,
+        message: sanitizedMessage,
         formData,
       });
 
@@ -84,8 +149,13 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Contact form submission error:', error);
+
+    // Handle unknown errors
     return NextResponse.json(
-      { error: 'Failed to submit contact form' },
+      {
+        error: 'Internal server error',
+        details: 'An unexpected error occurred. Please try again later.'
+      },
       { status: 500 }
     );
   }

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { HoneypotField } from '@/components/HoneypotField';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -20,12 +21,18 @@ export default function LoginPage() {
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.toLowerCase().trim(),
         password,
       });
 
       if (error) {
-        setError(error.message);
+        // Check for rate limiting errors
+        if (error.message.includes('rate limit') ||
+            error.message.includes('too many requests')) {
+          setError('Too many login attempts. Please wait a few minutes before trying again.');
+        } else {
+          setError(error.message);
+        }
         return;
       }
 
@@ -45,6 +52,7 @@ export default function LoginPage() {
         }
       }
     } catch (err: any) {
+      console.error('Login error:', err);
       setError(err.message || 'An error occurred');
     } finally {
       setLoading(false);
@@ -63,6 +71,9 @@ export default function LoginPage() {
 
         <div className="bg-white border-2 border-gray-200 rounded-2xl p-8 shadow-sm">
           <form onSubmit={handleLogin} className="space-y-6">
+            {/* Hidden honeypot field to catch bots */}
+            <HoneypotField />
+
             {error && (
               <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm">
                 {error}

@@ -89,8 +89,10 @@ export default function Header() {
             <button
               onClick={() => setMenuOpen(true)}
               className="flex items-center gap-2 text-gray-800 hover:text-gray-600 cursor-pointer"
+              aria-label="Open navigation menu"
+              aria-expanded={menuOpen}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <line x1="3" y1="12" x2="21" y2="12"></line>
                 <line x1="3" y1="6" x2="21" y2="6"></line>
                 <line x1="3" y1="18" x2="21" y2="18"></line>
@@ -115,9 +117,12 @@ export default function Header() {
                   <button
                     onClick={() => setDashboardDropdownOpen(!dashboardDropdownOpen)}
                     className="header-dashboard-btn"
+                    aria-label="Toggle dashboard menu"
+                    aria-expanded={dashboardDropdownOpen}
+                    aria-haspopup="true"
                   >
                     <div className="header-avatar">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                       </svg>
@@ -134,6 +139,7 @@ export default function Header() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       className={`ml-1 transition-transform ${dashboardDropdownOpen ? 'rotate-180' : ''}`}
+                      aria-hidden="true"
                     >
                       <polyline points="6 9 12 15 18 9"></polyline>
                     </svg>
@@ -141,7 +147,7 @@ export default function Header() {
 
                   {/* Dropdown Menu */}
                   {dashboardDropdownOpen && (
-                    <div className="dashboard-dropdown">
+                    <div className="dashboard-dropdown" role="menu" aria-label="User dashboard menu">
                       {/* User Info */}
                       <div className="dashboard-dropdown-user">
                         <div className="dashboard-dropdown-avatar">
@@ -160,8 +166,8 @@ export default function Header() {
                       {/* Menu Items */}
                       <div className="dashboard-dropdown-divider"></div>
 
-                      <Link href="/my-account/dashboard" className="dashboard-dropdown-item" onClick={() => setDashboardDropdownOpen(false)}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <Link href="/my-account/dashboard" className="dashboard-dropdown-item" onClick={() => setDashboardDropdownOpen(false)} role="menuitem" tabIndex={0}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <rect x="3" y="3" width="7" height="7"></rect>
                           <rect x="14" y="3" width="7" height="7"></rect>
                           <rect x="14" y="14" width="7" height="7"></rect>
@@ -170,8 +176,8 @@ export default function Header() {
                         Dashboard
                       </Link>
 
-                      <Link href="/my-account/orders" className="dashboard-dropdown-item" onClick={() => setDashboardDropdownOpen(false)}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <Link href="/my-account/orders" className="dashboard-dropdown-item" onClick={() => setDashboardDropdownOpen(false)} role="menuitem" tabIndex={0}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <circle cx="9" cy="21" r="1"></circle>
                           <circle cx="20" cy="21" r="1"></circle>
                           <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
@@ -179,24 +185,24 @@ export default function Header() {
                         Orders
                       </Link>
 
-                      <Link href="/my-account/wallet-history" className="dashboard-dropdown-item" onClick={() => setDashboardDropdownOpen(false)}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <Link href="/my-account/wallet-history" className="dashboard-dropdown-item" onClick={() => setDashboardDropdownOpen(false)} role="menuitem" tabIndex={0}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
                           <line x1="1" y1="10" x2="23" y2="10"></line>
                         </svg>
                         Wallet History
                       </Link>
 
-                      <Link href="/my-account/edit-profile" className="dashboard-dropdown-item" onClick={() => setDashboardDropdownOpen(false)}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <Link href="/my-account/edit-profile" className="dashboard-dropdown-item" onClick={() => setDashboardDropdownOpen(false)} role="menuitem" tabIndex={0}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                           <circle cx="12" cy="7" r="4"></circle>
                         </svg>
                         Edit Profile
                       </Link>
 
-                      <Link href="/my-account/my-addresses" className="dashboard-dropdown-item" onClick={() => setDashboardDropdownOpen(false)}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <Link href="/my-account/my-addresses" className="dashboard-dropdown-item" onClick={() => setDashboardDropdownOpen(false)} role="menuitem" tabIndex={0}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
                           <circle cx="12" cy="10" r="3"></circle>
                         </svg>
@@ -205,8 +211,8 @@ export default function Header() {
 
                       <div className="dashboard-dropdown-divider"></div>
 
-                      <button onClick={handleLogout} className="dashboard-dropdown-item dashboard-dropdown-logout">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <button onClick={handleLogout} className="dashboard-dropdown-item dashboard-dropdown-logout" role="menuitem" tabIndex={0}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                           <polyline points="16 17 21 12 16 7"></polyline>
                           <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -240,10 +246,15 @@ export default function Header() {
         <div
           className={`fixed inset-0 bg-black/50 z-50 sidebar-overlay ${isClosing ? 'closing' : ''}`}
           onClick={handleClose}
+          role="presentation"
+          aria-hidden="true"
         >
           <div
             className={`fixed left-0 top-0 bottom-0 w-80 bg-white shadow-xl overflow-y-auto sidebar-panel z-50 ${isClosing ? 'closing' : ''}`}
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation menu"
           >
             {/* Sidebar Header */}
             <div className="flex justify-between items-start px-10 py-10">
@@ -258,93 +269,103 @@ export default function Header() {
               <button
                 onClick={handleClose}
                 className="text-gray-800 hover:text-gray-600 p-1"
+                aria-label="Close navigation menu"
               >
                 <X size={24} />
               </button>
             </div>
 
             {/* Sidebar Links */}
-            <nav className="px-10 py-4">
-              <ul className="space-y-4">
-                <li>
+            <nav className="px-10 py-4" aria-label="Main navigation">
+              <ul className="space-y-4" role="menu">
+                <li role="none">
                   <Link
                     href="/business"
                     className="sidebar-link"
                     onClick={handleClose}
+                    role="menuitem"
                   >
                     Wingside Business
                   </Link>
                 </li>
-                <li>
+                <li role="none">
                   <Link
                     href="/wingcafe"
                     className="sidebar-link"
                     onClick={handleClose}
+                    role="menuitem"
                   >
                     Wingcafé
                   </Link>
                 </li>
-                <li>
+                <li role="none">
                   <Link
                     href="/gifts"
                     className="sidebar-link"
                     onClick={handleClose}
+                    role="menuitem"
                   >
                     Wingside Gifts
                   </Link>
                 </li>
-                <li>
+                <li role="none">
                   <Link
                     href="/connect"
                     className="sidebar-link"
                     onClick={handleClose}
+                    role="menuitem"
                   >
                     Wingside Connect
                   </Link>
                 </li>
-                <li>
+                <li role="none">
                   <Link
                     href="/kids"
                     className="sidebar-link"
                     onClick={handleClose}
+                    role="menuitem"
                   >
                     Wingside Kids
                   </Link>
                 </li>
-                <li>
+                <li role="none">
                   <Link
                     href="/sports"
                     className="sidebar-link"
                     onClick={handleClose}
+                    role="menuitem"
                   >
                     Wingside Sports
                   </Link>
                 </li>
-                <li>
+                <li role="none">
                   <Link
                     href="/wingclub"
                     className="sidebar-link"
                     onClick={handleClose}
+                    role="menuitem"
                   >
                     Wingclub
                   </Link>
                 </li>
                 {isLoggedIn ? (
-                  <li>
+                  <li role="none">
                     <Link
                       href="/my-account/dashboard"
                       className="sidebar-link"
                       onClick={handleClose}
+                      role="menuitem"
                     >
                       My Dashboard
                     </Link>
                   </li>
                 ) : (
-                  <li>
+                  <li role="none">
                     <Link
                       href="/my-account"
                       className="sidebar-link"
                       onClick={handleClose}
+                      role="menuitem"
                     >
                       My Account
                     </Link>

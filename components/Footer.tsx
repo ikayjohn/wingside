@@ -31,10 +31,10 @@ export default function Footer() {
 
             {/* Right: Subscribe Form */}
             <div>
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-1 md:mb-2" style={{ color: '#552627' }}>
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-0 md:mb-1 leading-none" style={{ color: '#552627' }}>
                 Subscribe for more
               </h2>
-              <p className="text-2xl md:text-3xl lg:text-4xl font-bold mb-1 md:mb-2" style={{ color: '#F7C400' }}>
+              <p className="text-2xl md:text-3xl lg:text-4xl font-bold mb-1 md:mb-2 leading-none" style={{ color: '#F7C400' }}>
                 DELICIOUSNESS
               </p>
               <p className="text-gray-500 text-xs md:text-sm mb-6 md:mb-8 leading-relaxed">

@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next';
+import { HoneypotField } from '@/components/HoneypotField';
+import Turnstile from '@/components/Turnstile';
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState('');
@@ -14,6 +17,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -22,6 +26,13 @@ export default function SignupPage() {
     setLoading(true);
     setError('');
     setSuccess(false);
+
+    // Validate CAPTCHA
+    if (!captchaToken) {
+      setError('Please complete the CAPTCHA verification');
+      setLoading(false);
+      return;
+    }
 
     // Validate passwords match
     if (password !== confirmPassword) {
@@ -38,20 +49,41 @@ export default function SignupPage() {
     }
 
     try {
+      // Verify CAPTCHA server-side
+      const verifyResponse = await fetch('/api/captcha/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: captchaToken }),
+      });
+
+      const verifyResult = await verifyResponse.json();
+      if (!verifyResult.success) {
+        setError('CAPTCHA verification failed. Please try again.');
+        setLoading(false);
+        return;
+      }
+
       // Sign up the user
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
+        email: email.toLowerCase().trim(),
         password,
         options: {
           data: {
-            full_name: fullName,
-            phone: phone,
+            full_name: fullName.trim(),
+            phone: phone.trim(),
           },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
       if (signUpError) {
-        setError(signUpError.message);
+        // Check for rate limiting or spam-related errors
+        if (signUpError.message.includes('rate limit') ||
+            signUpError.message.includes('too many requests')) {
+          setError('Too many signup attempts. Please try again later.');
+        } else {
+          setError(signUpError.message);
+        }
         return;
       }
 
@@ -59,9 +91,9 @@ export default function SignupPage() {
         // Create profile
         const { error: profileError } = await supabase.from('profiles').insert({
           id: data.user.id,
-          email: email,
-          full_name: fullName,
-          phone: phone,
+          email: email.toLowerCase().trim(),
+          full_name: fullName.trim(),
+          phone: phone.trim(),
           role: 'customer',
         });
 
@@ -75,9 +107,9 @@ export default function SignupPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               id: data.user.id,
-              email: email,
-              full_name: fullName,
-              phone: phone,
+              email: email.toLowerCase().trim(),
+              full_name: fullName.trim(),
+              phone: phone.trim(),
             }),
           }).catch(err => console.error('Integration sync failed:', err));
         }
@@ -88,6 +120,7 @@ export default function SignupPage() {
         }, 2000);
       }
     } catch (err: any) {
+      console.error('Signup error:', err);
       setError(err.message || 'An error occurred');
     } finally {
       setLoading(false);
@@ -106,6 +139,9 @@ export default function SignupPage() {
 
         <div className="bg-white border-2 border-gray-200 rounded-2xl p-8 shadow-sm">
           <form onSubmit={handleSignup} className="space-y-5">
+            {/* Hidden honeypot field to catch bots */}
+            <HoneypotField />
+
             {error && (
               <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm">
                 {error}
@@ -193,9 +229,25 @@ export default function SignupPage() {
               />
             </div>
 
+            {/* Cloudflare Turnstile CAPTCHA */}
+            <div className="flex justify-center">
+              <Turnstile
+                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''}
+                onSuccess={setCaptchaToken}
+                onError={() => {
+                  setError('CAPTCHA verification failed. Please try again.');
+                  setCaptchaToken(null);
+                }}
+                onExpire={() => {
+                  setCaptchaToken(null);
+                }}
+                theme="auto"
+              />
+            </div>
+
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !captchaToken}
               className="w-full bg-[#F7C400] text-black font-bold py-3 px-6 rounded-lg hover:bg-[#e5b800] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating account...' : 'Create Account'}
