@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
+import { HoneypotField } from '@/components/HoneypotField';
+import { Turnstile } from '@/components/Turnstile';
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -67,6 +69,9 @@ export default function MyAccountPage() {
   }, [router]);
   const [activeTab, setActiveTab] = useState<'signup' | 'login'>('signup');
   const [showPassword, setShowPassword] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [signupData, setSignupData] = useState({
     firstName: '',
@@ -138,6 +143,23 @@ export default function MyAccountPage() {
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Clear previous errors
+    setSubmitError(null);
+
+    // Validate honeypot (client-side check)
+    const formData = new FormData(e.currentTarget as HTMLFormElement);
+    const honeypotValue = formData.get('website_url') as string;
+    if (honeypotValue && honeypotValue.trim() !== '') {
+      console.warn('Honeypot field filled - likely bot');
+      return; // Silently fail for bots
+    }
+
+    // Validate CAPTCHA
+    if (!captchaToken) {
+      setSubmitError('Please complete the CAPTCHA verification');
+      return;
+    }
+
     // Validate phone number
     const formattedPhone = formatPhoneNumber(signupData.phone);
     if (formattedPhone.length < 10) {
@@ -145,7 +167,25 @@ export default function MyAccountPage() {
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
+      // Verify CAPTCHA token
+      const verifyResponse = await fetch('/api/captcha/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: captchaToken }),
+      });
+
+      const verifyResult = await verifyResponse.json();
+
+      if (!verifyResult.success) {
+        setSubmitError('CAPTCHA verification failed. Please try again.');
+        setCaptchaToken(null);
+        setIsSubmitting(false);
+        return;
+      }
+
       // Process referral ID if provided
       let referredByUserId = null;
       if (signupData.referralId.trim()) {
@@ -159,23 +199,25 @@ export default function MyAccountPage() {
           referredByUserId = referrerData.id;
         } else {
           alert('Invalid referral ID. Please check and try again, or leave blank if you don\'t have one.');
+          setIsSubmitting(false);
           return;
         }
       }
 
       const { data, error } = await supabase.auth.signUp({
-        email: signupData.email,
+        email: signupData.email.toLowerCase().trim(),
         password: signupData.password,
         options: {
           data: {
-            full_name: `${signupData.firstName} ${signupData.lastName}`,
+            full_name: `${signupData.firstName.trim()} ${signupData.lastName.trim()}`,
             phone: `+234${formattedPhone}`,
           },
         },
       });
 
       if (error) {
-        alert(`Signup failed: ${error.message}`);
+        setSubmitError(error.message);
+        setIsSubmitting(false);
         return;
       }
 
@@ -186,8 +228,8 @@ export default function MyAccountPage() {
         // Create profile
         const { error: profileError } = await supabase.from('profiles').insert({
           id: data.user.id,
-          email: data.user.email || signupData.email,
-          full_name: `${signupData.firstName} ${signupData.lastName}`,
+          email: data.user.email || signupData.email.toLowerCase().trim(),
+          full_name: `${signupData.firstName.trim()} ${signupData.lastName.trim()}`,
           phone: `+234${formattedPhone}`,
           role: 'customer',
           referral_code: referralCode,
@@ -240,32 +282,63 @@ export default function MyAccountPage() {
         alert('Account created successfully! Please check your email to verify your account.');
         router.push('/my-account/dashboard');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Signup error:', error);
-      alert('An error occurred during signup. Please try again.');
+      // Check for rate limit errors
+      if (error.message?.includes('rate limit') || error.message?.includes('Too many requests')) {
+        setSubmitError('Too many signup attempts. Please wait a few minutes before trying again.');
+      } else {
+        setSubmitError('An error occurred during signup. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    // Validate honeypot (client-side check)
+    const formData = new FormData(e.currentTarget as HTMLFormElement);
+    const honeypotValue = formData.get('website_url') as string;
+    if (honeypotValue && honeypotValue.trim() !== '') {
+      console.warn('Honeypot field filled - likely bot');
+      setIsSubmitting(false);
+      return; // Silently fail for bots
+    }
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginData.email,
+        email: loginData.email.toLowerCase().trim(),
         password: loginData.password,
       });
 
       if (error) {
-        alert(`Login failed: ${error.message}`);
+        // Check for rate limit errors
+        if (error.message?.includes('rate limit') || error.message?.includes('Too many requests')) {
+          setSubmitError('Too many login attempts. Please wait a few minutes before trying again.');
+        } else {
+          setSubmitError(error.message);
+        }
+        setIsSubmitting(false);
         return;
       }
 
       if (data.session) {
         router.push('/my-account/dashboard');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      alert('An error occurred during login. Please try again.');
+      // Check for rate limit errors
+      if (error.message?.includes('rate limit') || error.message?.includes('Too many requests')) {
+        setSubmitError('Too many login attempts. Please wait a few minutes before trying again.');
+      } else {
+        setSubmitError('An error occurred during login. Please try again.');
+      }
+      setIsSubmitting(false);
     }
   };
 
@@ -317,6 +390,13 @@ export default function MyAccountPage() {
             </button>
           </div>
 
+          {/* Error Message */}
+          {submitError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+              {submitError}
+            </div>
+          )}
+
           {/* Signup Form */}
           {activeTab === 'signup' && (
             <>
@@ -324,6 +404,8 @@ export default function MyAccountPage() {
               <p className="wingclub-subtitle">Enter your information and claim your spot at the Wing table.</p>
 
               <form onSubmit={handleSignupSubmit}>
+                {/* Honeypot Field */}
+                <HoneypotField />
                 {/* Name Row */}
                 <div className="wingclub-row">
                   <div className="wingclub-field">
@@ -444,9 +526,28 @@ export default function MyAccountPage() {
                   </label>
                 </div>
 
+                {/* CAPTCHA Widget */}
+                <div className="wingclub-field mb-4">
+                  <Turnstile
+                    siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''}
+                    onSuccess={setCaptchaToken}
+                    onError={() => {
+                      setSubmitError('CAPTCHA verification failed. Please try again.');
+                      setCaptchaToken(null);
+                    }}
+                    onExpire={() => {
+                      setCaptchaToken(null);
+                    }}
+                  />
+                </div>
+
                 {/* Submit Button */}
-                <button type="submit" className="wingclub-submit-btn">
-                  Join the Wingclub
+                <button
+                  type="submit"
+                  className="wingclub-submit-btn"
+                  disabled={isSubmitting || !captchaToken}
+                >
+                  {isSubmitting ? 'Creating Account...' : 'Join the Wingclub'}
                 </button>
               </form>
 
@@ -467,6 +568,8 @@ export default function MyAccountPage() {
               <p className="wingclub-subtitle">Enter your credentials to access your account.</p>
 
               <form onSubmit={handleLoginSubmit}>
+                {/* Honeypot Field */}
+                <HoneypotField />
                 {/* Email */}
                 <div className="wingclub-field">
                   <label className="wingclub-label">Email</label>
@@ -535,8 +638,12 @@ export default function MyAccountPage() {
                 </div>
 
                 {/* Submit Button */}
-                <button type="submit" className="wingclub-submit-btn">
-                  Login
+                <button
+                  type="submit"
+                  className="wingclub-submit-btn"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Logging in...' : 'Login'}
                 </button>
               </form>
 
