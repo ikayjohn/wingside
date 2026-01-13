@@ -45,6 +45,14 @@ export async function POST(request: NextRequest) {
 
     const result = await response.json();
 
+    // Log for debugging
+    console.log('Turnstile verification result:', {
+      success: result.success,
+      hostname: result.hostname,
+      errorCodes: result['error-codes'],
+      challenge_ts: result.challenge_ts,
+    });
+
     if (result.success) {
       return NextResponse.json({
         success: true,
@@ -58,6 +66,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: 'Captcha verification failed',
           errorCodes: result['error-codes'],
+          details: result,
         },
         { status: 400 }
       );

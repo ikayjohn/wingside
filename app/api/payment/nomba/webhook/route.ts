@@ -230,8 +230,8 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 4. Award purchase points (₦100 = 1 point)
-      const purchasePoints = Math.floor(Number(order.total) / 100)
+      // 4. Award purchase points (₦100 = 10 points)
+      const purchasePoints = Math.floor(Number(order.total) / 10)
 
       if (purchasePoints > 0 && profileId) {
         const { error: pointsError } = await admin.rpc('award_points', {

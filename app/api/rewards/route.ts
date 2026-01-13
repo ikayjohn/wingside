@@ -45,7 +45,7 @@ export async function GET() {
       .select('*')
       .eq('user_id', user.id);
 
-    // Calculate available points from orders (100 NGN = 1 point)
+    // Calculate available points from orders (₦100 = 10 points)
     const { data: orders } = await supabase
       .from('orders')
       .select('total, payment_status')
@@ -53,7 +53,7 @@ export async function GET() {
       .eq('payment_status', 'paid');
 
     const totalSpent = orders?.reduce((sum, order) => sum + Number(order.total), 0) || 0;
-    const purchasePoints = Math.floor(totalSpent / 100);
+    const purchasePoints = Math.floor(totalSpent / 10);
 
     return NextResponse.json({
       points: profile?.points || 0,

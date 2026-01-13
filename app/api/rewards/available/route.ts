@@ -104,7 +104,7 @@ export async function GET() {
       }
     ];
 
-    // Calculate points from purchases
+    // Calculate points from purchases (₦100 = 10 points)
     const { data: orders } = await supabase
       .from('orders')
       .select('total')
@@ -112,7 +112,7 @@ export async function GET() {
       .eq('payment_status', 'paid');
 
     const totalSpent = orders?.reduce((sum, order) => sum + Number(order.total), 0) || 0;
-    const purchasePoints = Math.floor(totalSpent / 100);
+    const purchasePoints = Math.floor(totalSpent / 10);
 
     return NextResponse.json({
       currentPoints: profile?.points || 0,

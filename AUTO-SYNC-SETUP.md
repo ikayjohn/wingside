@@ -87,13 +87,13 @@ Sync to Zoho CRM:
   ✅ Add note to contact
   ↓
 Sync to Embedly:
-  ✅ Credit loyalty points (1 pt per ₦100)
+  ✅ Credit loyalty points (10 pts per ₦100)
   ✅ Update wallet balance in database
 ```
 
 **Points calculation:**
 - Order total: ₦10,000
-- Points earned: 100 points (₦10,000 × 0.01)
+- Points earned: 1,000 points (₦10,000 ÷ 10)
 
 ---
 
