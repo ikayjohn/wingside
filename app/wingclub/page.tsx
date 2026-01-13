@@ -188,8 +188,8 @@ export default function WingclubPage() {
             <div className="relative bg-[#D6E9F5] rounded-3xl p-8 overflow-hidden min-h-[400px]">
               <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-6">
-                  <h3 className="text-2xl font-bold text-black">Wing Member</h3>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <h3 className="text-4xl font-bold text-black">Wing Member</h3>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                   </svg>
                 </div>
@@ -199,7 +199,7 @@ export default function WingclubPage() {
                   <li>• ₦3000 off your 10th purchase</li>
                   <li>• Redeem ₦3000 for every 500 points earned.</li>
                 </ul>
-                <p className="text-base text-black font-semibold">(0-1000 points)</p>
+                <p className="text-2xl text-black font-extrabold">0 - 5,000 points</p>
               </div>
               {/* Decorative Shape */}
               <div className="absolute bottom-0 right-0 w-64 h-64 translate-x-12 translate-y-12">
@@ -211,21 +211,21 @@ export default function WingclubPage() {
             <div className="relative bg-[#FFF8E1] rounded-3xl p-8 overflow-hidden min-h-[400px]">
               <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-6">
-                  <h3 className="text-2xl font-bold text-black">Wing Leader</h3>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <h3 className="text-4xl font-bold text-black">Wing Leader</h3>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                   </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                   </svg>
                 </div>
                 <ul className="space-y-2 mb-16 text-base text-black">
-                  <li>• All Freshman perks</li>
-                  <li>• Birthday Wings - because cake is overrated.</li>
-                  <li><br></br> </li>
-                  <li> <br></br></li>
+                  <li>• All WING MEMBER perks</li>
+                  <li>• Birthday Wings - because cake is overrated</li>
+                  <li>• Priority pickup - skip the line</li>
+                  <li>• Double points on weekends</li>
                 </ul>
-                <p className="text-base text-black font-semibold">(1001- 2000 points)</p>
+                <p className="text-2xl text-black font-extrabold">5,001 - 20,000 points</p>
               </div>
               {/* Decorative Shape */}
               <div className="absolute bottom-0 right-0 w-64 h-64 translate-x-12 translate-y-12">
@@ -237,24 +237,24 @@ export default function WingclubPage() {
             <div className="relative bg-[#EDE7F6] rounded-3xl p-8 overflow-hidden min-h-[400px]">
               <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-6">
-                  <h3 className="text-2xl font-bold text-black">Wingzard</h3>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <h3 className="text-4xl font-bold text-black">Wingzard</h3>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                   </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                   </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#F7C400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                   </svg>
                 </div>
                 <ul className="space-y-2 mb-16 text-base text-black">
-                  <li>• All Pro perks</li>
-                  <li>• Free delivery (your wallet says thanks)</li>
+                  <li>• All WING LEADER perks</li>
+                  <li>• Free delivery for life</li>
                   <li>• VIP access to exclusive events</li>
-                  <li> <br></br></li>
+                  <li>• Early access to new flavor launches</li>
                 </ul>
-                <p className="text-base text-black font-semibold">(2500+ points)</p>
+                <p className="text-2xl text-black font-extrabold">20,000+ points</p>
               </div>
               {/* Decorative Shape */}
               <div className="absolute bottom-0 right-0 w-64 h-64 translate-x-12 translate-y-12">

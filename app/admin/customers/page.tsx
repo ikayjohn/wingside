@@ -2,6 +2,34 @@
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+
+// Tier Icon Component
+function TierIcon({ points }: { points?: number }) {
+  if (!points) return null;
+
+  let tierIcon = '/wingmember.svg';
+  let alt = 'Wing Member';
+
+  if (points >= 20000) {
+    tierIcon = '/wingzard.svg';
+    alt = 'Wingzard';
+  } else if (points >= 5001) {
+    tierIcon = '/wingleader.svg';
+    alt = 'Wing Leader';
+  }
+
+  return (
+    <Image
+      src={tierIcon}
+      alt={alt}
+      width={24}
+      height={24}
+      className="inline-block"
+      title={alt}
+    />
+  );
+}
 
 interface Customer {
   id: string;
@@ -452,8 +480,9 @@ export default function AdminCustomersPage() {
                 <tr key={customer.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
                         {customer.full_name || 'No name'}
+                        <TierIcon points={customer.wallet_balance} />
                       </div>
                       <div className="text-sm text-gray-500">
                         {customer.role}
@@ -567,7 +596,10 @@ export default function AdminCustomersPage() {
                         </div>
                         <div>
                           <span className="text-sm text-gray-500">Role:</span>
-                          <p className="font-medium capitalize">{selectedCustomer.role}</p>
+                          <p className="font-medium capitalize flex items-center gap-2">
+                            {selectedCustomer.role}
+                            <TierIcon points={selectedCustomer.wallet_balance} />
+                          </p>
                         </div>
                         <div>
                           <span className="text-sm text-gray-500">Member Since:</span>

@@ -247,7 +247,7 @@ export default function MyAccountPage() {
             referred_user_id: data.user.id,
             referral_code_used: signupData.referralId.trim().toUpperCase(),
             status: 'pending_signup',
-            reward_amount: 500, // ₦500 reward for both referrer and referred
+            reward_amount: 200, // 200 points reward for both referrer and referred
             referred_email: signupData.email,
           });
 

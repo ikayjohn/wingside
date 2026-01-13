@@ -72,10 +72,10 @@ export async function POST(request: NextRequest) {
         referralCount: referrerData.referral_count || 0
       },
       rewards: {
-        referrerReward: parseFloat(referrerReward),
-        referredReward: parseFloat(referredReward)
+        referrerReward: parseInt(referrerReward),
+        referredReward: parseInt(referredReward)
       },
-      message: `Valid referral code! You'll get ₦${referredReward} off when you sign up.`
+      message: `Valid referral code! You'll get ${referredReward} points when you sign up.`
     });
 
   } catch (error) {

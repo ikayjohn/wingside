@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import ConvertPointsModal from '@/components/ConvertPointsModal';
 import FundWalletModal from '@/components/FundWalletModal';
 import ReferralSection from '@/components/ReferralSection';
@@ -474,23 +475,28 @@ export default function WingclubDashboard() {
             </div>
 
             <div className="dashboard-wallet-right">
-              <button className="dashboard-wallet-icon-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
-                  <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
-                  <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
-                </svg>
-              </button>
+              <Image src="/wallet.svg" alt="Wallet" width={48} height={48} className="brightness-0 invert" />
+            </div>
+          </div>
 
-              <div className="dashboard-ref-id-inline">
-                <span>Referral Code: {userData.referralCode || userData.refId}</span>
-                <button
-                  className="dashboard-copy-btn-dark"
-                  onClick={() => copyToClipboard(userData.referralCode || userData.refId, 'ref')}
-                >
-                  {copied === 'ref' ? '✓ Copied' : 'Copy'}
-                </button>
-              </div>
+          <div className="flex justify-end mt-4">
+            <div className="dashboard-ref-id-inline">
+              <span>Referral Code: {userData.referralCode || userData.refId}</span>
+              <button
+                className="dashboard-copy-btn-dark"
+                onClick={() => copyToClipboard(userData.referralCode || userData.refId, 'ref')}
+              >
+                {copied === 'ref' ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2v2"></path>
+                  </svg>
+                )}
+              </button>
             </div>
           </div>
         </div>
@@ -504,51 +510,35 @@ export default function WingclubDashboard() {
             onClick={() => setShowConvertModal(true)}
           >
             <div className="dashboard-action-icon blue">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="23 4 23 10 17 10"></polyline>
-                <polyline points="1 20 1 14 7 14"></polyline>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-              </svg>
+              <Image src="/convert.svg" alt="Convert Points" width={40} height={40} />
             </div>
             <span>Convert Points</span>
           </button>
 
           <Link href="/my-account/earn-rewards" className="dashboard-action-card">
             <div className="dashboard-action-icon yellow">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-              </svg>
+              <Image src="/earnrewards.svg" alt="Earn Rewards" width={40} height={40} />
             </div>
-            <span>Earn rewards</span>
+            <span>Earn Rewards</span>
           </Link>
 
           <Link href="/my-account/tier-progression" className="dashboard-action-card">
             <div className="dashboard-action-icon gray">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m2 4 3 12h14l3-12-6 7-4-4-4 4-6-7z"></path>
-                <path d="M3 16h18"></path>
-              </svg>
+              <Image src="/wingzard.svg" alt="Tier Progression" width={40} height={40} />
             </div>
             <span>Tier Progression</span>
           </Link>
 
           <Link href="/my-account/wallet-history" className="dashboard-action-card">
             <div className="dashboard-action-icon green">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
+              <Image src="/wallethistory.svg" alt="Wallet History" width={40} height={40} />
             </div>
             <span>Wallet History</span>
           </Link>
 
           <Link href="/my-account/referrals" className="dashboard-action-card">
             <div className="dashboard-action-icon purple">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="m22 21-3.5-3.5M19 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6"></path>
-              </svg>
+              <Image src="/referrals.svg" alt="Referrals" width={40} height={40} />
             </div>
             <span>Referrals</span>
           </Link>
@@ -613,9 +603,7 @@ export default function WingclubDashboard() {
           <div className="rounded-2xl bg-gradient-to-r from-gray-100 to-gray-200 p-6 mb-8 border-2 border-dashed border-gray-300">
             <div className="flex items-center gap-4">
               <div className="flex items-center justify-center w-16 h-16 bg-gray-300 rounded-full">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
-                  <path d="M12 2c.5 0 .4.6.4.9-.2 2.2-1 4.4-1 6.6 0 1.8.5 3.5 1.5 5 1-1.5 1.5-3.2 1.5-5 0-2.2-.8-4.4-1-6.6 0-.3-.1-.9.4-.9 1.6 0 3 1.4 3 3v1c0 3.3-2.7 6-6 6s-6-2.7-6-6v-1c0-1.6 1.4-3 3-3z"/>
-                </svg>
+                <Image src="/streak.svg" alt="Streak" width={32} height={32} />
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-gray-700">Start Your Streak Today!</h3>

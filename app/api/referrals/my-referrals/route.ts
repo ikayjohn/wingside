@@ -71,14 +71,14 @@ export async function GET() {
       );
     }
 
-    // Calculate statistics
+    // Calculate statistics (now based on points)
     const stats = {
       totalReferrals: referrals?.length || 0,
       pendingReferrals: referrals?.filter(r => r.status === 'pending_signup' || r.status === 'signed_up').length || 0,
       completedReferrals: referrals?.filter(r => r.status === 'first_order_completed').length || 0,
-      totalEarnings: userProfile?.total_referral_earnings || 0,
-      pendingRewards: rewards?.filter(r => r.status === 'pending').reduce((sum, r) => sum + (r.amount || 0), 0) || 0,
-      creditedRewards: rewards?.filter(r => r.status === 'credited').reduce((sum, r) => sum + (r.amount || 0), 0) || 0
+      totalEarnings: rewards?.filter(r => r.status === 'credited').reduce((sum, r) => sum + (r.points || r.amount || 0), 0) || 0,
+      pendingRewards: rewards?.filter(r => r.status === 'pending').reduce((sum, r) => sum + (r.points || r.amount || 0), 0) || 0,
+      creditedRewards: rewards?.filter(r => r.status === 'credited').reduce((sum, r) => sum + (r.points || r.amount || 0), 0) || 0
     };
 
     return NextResponse.json({

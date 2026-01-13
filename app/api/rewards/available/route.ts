@@ -93,7 +93,7 @@ export async function GET() {
       {
         id: 'birthday',
         name: 'Birthday Bonus',
-        points: 50,
+        points: 100,
         description: 'Special points on your birthday!',
         icon: '🎂',
         category: 'special',

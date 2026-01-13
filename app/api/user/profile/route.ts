@@ -63,33 +63,33 @@ export async function GET() {
 
     // Calculate tier based on total points
     // Tier Structure:
-    // - Wing Member: 0 - 1000 Points
-    // - Wing Leader: 1001 - 2000 Points
-    // - Wingzard: 2000+ Points
+    // - Wing Member: 0 - 5,000 Points
+    // - Wing Leader: 5,001 - 20,000 Points
+    // - Wingzard: 20,000+ Points
     let currentTier = 'Wing Member'
     let nextTier = 'Wing Leader'
     let tierProgress = 0
-    let tierThreshold = 1000
+    let tierThreshold = 5000
     let tierStart = 0
 
     const totalPoints = profile.points || 0
 
-    if (totalPoints >= 2000) {
+    if (totalPoints >= 20000) {
       currentTier = 'Wingzard'
       nextTier = 'Wingzard' // Max tier
-      tierThreshold = 2000
-      tierStart = 2000
+      tierThreshold = 20000
+      tierStart = 20000
       tierProgress = 100 // At max tier
-    } else if (totalPoints >= 1001) {
+    } else if (totalPoints >= 5001) {
       currentTier = 'Wing Leader'
       nextTier = 'Wingzard'
-      tierThreshold = 2000
-      tierStart = 1000
+      tierThreshold = 20000
+      tierStart = 5000
       tierProgress = ((totalPoints - tierStart) / (tierThreshold - tierStart)) * 100
     } else {
       currentTier = 'Wing Member'
       nextTier = 'Wing Leader'
-      tierThreshold = 1000
+      tierThreshold = 5000
       tierStart = 0
       tierProgress = ((totalPoints - tierStart) / (tierThreshold - tierStart)) * 100
     }

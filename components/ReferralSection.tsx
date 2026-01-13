@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
+import Image from 'next/image';
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -175,8 +176,8 @@ export default function ReferralSection() {
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Refer & Earn</h2>
 
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-          <p className="text-yellow-800 font-medium mb-2">🎉 Invite friends and earn ₦500 for each referral!</p>
-          <p className="text-sm text-yellow-700">Your friend also gets ₦500 off their first order.</p>
+          <p className="text-yellow-800 font-medium mb-2">🎉 200 Points for each referral!</p>
+          <p className="text-sm text-yellow-700">Your friend also gets 200 points after their first order. You'll earn your points when your friend places their first order.</p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
@@ -229,17 +230,17 @@ export default function ReferralSection() {
 
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Total Earnings</p>
-          <p className="text-2xl font-bold text-green-600">₦{stats.totalEarnings.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-green-600">{stats.totalEarnings.toLocaleString()} pts</p>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Pending Rewards</p>
-          <p className="text-2xl font-bold text-yellow-600">₦{stats.pendingRewards.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-yellow-600">{stats.pendingRewards.toLocaleString()} pts</p>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Credited</p>
-          <p className="text-2xl font-bold text-blue-600">₦{stats.creditedRewards.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-blue-600">{stats.creditedRewards.toLocaleString()} pts</p>
         </div>
       </div>
 
@@ -264,7 +265,7 @@ export default function ReferralSection() {
                     {getStatusText(referral.status)}
                   </span>
                   <p className="text-sm text-gray-600 mt-1">
-                    ₦{referral.reward_amount.toLocaleString()}
+                    {referral.reward_amount || 200} pts
                   </p>
                 </div>
               </div>
@@ -273,11 +274,7 @@ export default function ReferralSection() {
         ) : (
           <div className="text-center py-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="m22 21-3.5-3.5M19 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6"></path>
-              </svg>
+              <Image src="/referrals.svg" alt="No referrals" width={32} height={32} />
             </div>
             <p className="text-gray-600">No referrals yet</p>
             <p className="text-sm text-gray-500 mb-4">Share your referral code to start earning!</p>

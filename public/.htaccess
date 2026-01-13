@@ -1,4 +1,4 @@
-# Hostinger Optimization for Next.js
+# Hostinger Configuration for Next.js with API Routes
 
 # Enable compression
 <IfModule mod_deflate.c>
@@ -26,7 +26,23 @@
   Header set X-Content-Type-Options "nosniff"
   Header set X-Frame-Options "SAMEORIGIN"
   Header set X-XSS-Protection "1; mode=block"
-  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set Referrer-P-Policy "strict-origin-when-cross-origin"
+
+  # CORS headers for API routes
+  <FilesMatch "\.json$">
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+  </FilesMatch>
+</IfModule>
+
+# Handle OPTIONS requests for CORS
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Respond to OPTIONS requests with CORS headers
+  RewriteCond %{REQUEST_METHOD} OPTIONS
+  RewriteRule ^(.*)$ - [R=200,L]
 </IfModule>
 
 # Prevent directory browsing
@@ -38,4 +54,13 @@ Options -Indexes
   Deny from all
 </FilesMatch>
 
+# Allow API routes to accept POST requests
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
 
+  # Allow POST requests to API routes
+  RewriteCond %{REQUEST_METHOD} POST
+  RewriteCond %{REQUEST_URI} ^/api/
+  RewriteRule ^(.*)$ - [L]
+</IfModule>

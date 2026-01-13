@@ -50,7 +50,7 @@ export default function SupportPage() {
       { question: 'How much does it cost to join?', answer: 'Absolutely nothing! Zilch! It\'s completely free to join. In fact, you get 10% off your first order just for signing up.' },
       { question: 'How do I earn points?', answer: 'Earn 10 points for every ₦100 spent on all orders. Points are automatically added to your account after each completed purchase.' },
       { question: 'What can I do with my points?', answer: 'Redeem ₦3,000 for every 500 points earned! There\'s no limit to how many points you can earn or redeem.' },
-      { question: 'What are the membership tiers?', answer: 'We have three tiers: Wing Member (0-1,000 points), Wing Leader (1,001-2,000 points), and Wingzard (2,500+ points). Higher tiers unlock exclusive perks like birthday rewards and free delivery.' },
+      { question: 'What are the membership tiers?', answer: 'We have three tiers: Wing Member (0-5,000 points), Wing Leader (5,001-20,000 points), and Wingzard (20,000+ points). Higher tiers unlock exclusive perks like birthday rewards and free delivery.' },
       { question: 'How do I check my points balance?', answer: 'Log into your account dashboard to see your total points, current tier, and tier progress in real-time.' },
       { question: 'Can I refer friends?', answer: 'Yes! Share your unique referral code from your dashboard. You\'ll earn points when your friends sign up and make their first purchase.' },
       { question: 'Do points expire?', answer: 'Your points are valid for 12 months from the date earned. Keep ordering to keep them active!' },

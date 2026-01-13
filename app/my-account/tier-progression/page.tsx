@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface UserProfile {
   totalPoints: number;
@@ -49,7 +50,7 @@ export default function TierProgressionPage() {
     {
       id: 1,
       name: 'Wing Member',
-      pointsRange: '0 - 1000',
+      pointsRange: '0 - 5,000',
       description: 'Start your wing journey with exclusive member benefits',
       color: 'gray',
       isUnlocked: true,
@@ -57,18 +58,18 @@ export default function TierProgressionPage() {
     {
       id: 2,
       name: 'Wing Leader',
-      pointsRange: '1001 - 2000',
+      pointsRange: '5,001 - 20,000',
       description: 'Lead the flock with enhanced rewards and priority access',
       color: 'yellow',
-      isUnlocked: (userData?.totalPoints || 0) > 1000,
+      isUnlocked: (userData?.totalPoints || 0) > 5000,
     },
     {
       id: 3,
       name: 'Wingzard',
-      pointsRange: '2000+',
+      pointsRange: '20,000+',
       description: 'Master of wings with ultimate VIP treatment and exclusive perks',
       color: 'orange',
-      isUnlocked: (userData?.totalPoints || 0) >= 2000,
+      isUnlocked: (userData?.totalPoints || 0) >= 20000,
     },
   ];
 
@@ -130,14 +131,15 @@ export default function TierProgressionPage() {
               </p>
             </div>
             <div className="tier-current-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-                <path d="M4 22h16"></path>
-                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
-                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
-                <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
-              </svg>
+              {userData.currentTier === 'Wing Member' && (
+                <Image src="/wingmember.svg" alt="Wing Member" width={64} height={64} />
+              )}
+              {userData.currentTier === 'Wing Leader' && (
+                <Image src="/wingleader.svg" alt="Wing Leader" width={64} height={64} />
+              )}
+              {userData.currentTier === 'Wingzard' && (
+                <Image src="/wingzard.svg" alt="Wingzard" width={64} height={64} />
+              )}
             </div>
           </div>
 
@@ -158,10 +160,25 @@ export default function TierProgressionPage() {
             <div className="tier-stat-item">
               <p className="tier-stat-label">Next Tier</p>
               <div className="tier-next-tier">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m2 4 3 12h14l3-12-6 7-4-4-4 4-6-7z"></path>
-                  <path d="M3 16h18"></path>
-                </svg>
+                {!isMaxTier && (
+                  <>
+                    {userData.tierProgress.nextTier === 'Wing Member' && (
+                      <Image src="/wingmember.svg" alt="Wing Member" width={24} height={24} />
+                    )}
+                    {userData.tierProgress.nextTier === 'Wing Leader' && (
+                      <Image src="/wingleader.svg" alt="Wing Leader" width={24} height={24} />
+                    )}
+                    {userData.tierProgress.nextTier === 'Wingzard' && (
+                      <Image src="/wingzard.svg" alt="Wingzard" width={24} height={24} />
+                    )}
+                  </>
+                )}
+                {isMaxTier && (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m2 4 3 12h14l3-12-6 7-4-4-4 4-6-7z"></path>
+                    <path d="M3 16h18"></path>
+                  </svg>
+                )}
                 <span>{isMaxTier ? 'Max Tier' : userData.tierProgress.nextTier}</span>
               </div>
             </div>
@@ -209,7 +226,7 @@ export default function TierProgressionPage() {
             <div className="tier-earn-card">
               <div>
                 <h4 className="tier-earn-title">Purchase Wings</h4>
-                <p className="tier-earn-description">Earn 10 points per ₦200</p>
+                <p className="tier-earn-description">Earn 10 points for every ₦100 spent</p>
               </div>
               <Link href="/order" className="tier-earn-btn yellow">
                 Order wings now
@@ -219,11 +236,11 @@ export default function TierProgressionPage() {
             <div className="tier-earn-card">
               <div>
                 <h4 className="tier-earn-title">Refer Friends</h4>
-                <p className="tier-earn-description">Get 100 pts for every Wing Club...</p>
+                <p className="tier-earn-description">Get 200 points for every friend you refer</p>
               </div>
-              <button className="tier-earn-btn purple">
-                Get my Wingzard Points
-              </button>
+              <Link href="/my-account/referrals" className="tier-earn-btn purple">
+                Refer & Earn
+              </Link>
             </div>
 
             <div className="tier-earn-card">
@@ -232,7 +249,7 @@ export default function TierProgressionPage() {
                 <p className="tier-earn-description">Special birthday reward</p>
               </div>
               <button className="tier-earn-btn gray">
-                +50 pts
+                +100 pts
               </button>
             </div>
           </div>
@@ -249,26 +266,28 @@ export default function TierProgressionPage() {
                   <div className="tier-card-header">
                     <div className="tier-card-icon">
                       {tier.name === 'Wing Member' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                          <circle cx="9" cy="7" r="4"></circle>
-                        </svg>
+                        <Image
+                          src="/wingmember.svg"
+                          alt="Wing Member"
+                          width={48}
+                          height={48}
+                        />
                       )}
                       {tier.name === 'Wing Leader' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-                          <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-                          <path d="M4 22h16"></path>
-                          <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
-                          <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
-                          <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
-                        </svg>
+                        <Image
+                          src="/wingleader.svg"
+                          alt="Wing Leader"
+                          width={48}
+                          height={48}
+                        />
                       )}
                       {tier.name === 'Wingzard' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="m2 4 3 12h14l3-12-6 7-4-4-4 4-6-7z"></path>
-                          <path d="M3 16h18"></path>
-                        </svg>
+                        <Image
+                          src="/wingzard.svg"
+                          alt="Wingzard"
+                          width={48}
+                          height={48}
+                        />
                       )}
                       <span className="tier-card-name">{tier.name}</span>
                     </div>

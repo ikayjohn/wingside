@@ -53,26 +53,26 @@ export async function POST(request: NextRequest) {
 
     const shareMessages = {
       email: {
-        subject: `Join Wingside and get ₦500 off your first order!`,
-        body: `Hey! I've been enjoying Wingside's amazing chicken wings and thought you'd love them too. Use my referral code ${userProfile.referral_code} to get ₦500 off your first order.
+        subject: `Join Wingside and get 200 points on signup!`,
+        body: `Hey! I've been enjoying Wingside's amazing chicken wings and thought you'd love them too. Use my referral code ${userProfile.referral_code} to get 200 points when you sign up.
 
 ${referralLink}
 
-${customMessage || `I've already earned ₦${userProfile.total_referral_earnings || 0} from referrals - it's a great deal!`}
+${customMessage || `I've been earning points through referrals - join me and start earning too!`}
 
 Enjoy the wings!
 ${userProfile.full_name}`
       },
       whatsapp: {
-        message: `Hey! I've been enjoying Wingside's amazing chicken wings and thought you'd love them too. Use my referral code ${userProfile.referral_code} to get ₦500 off your first order: ${referralLink}
+        message: `Hey! I've been enjoying Wingside's amazing chicken wings and thought you'd love them too. Use my referral code ${userProfile.referral_code} to get 200 points when you sign up: ${referralLink}
 
-${customMessage || `I've already earned ₦${userProfile.total_referral_earnings || 0} from referrals - it's a great deal!`}`
+${customMessage || `I've been earning points through referrals - join me and start earning too!`}`
       },
       twitter: {
-        message: `Get ₦500 off your first order at Wingside! 🍗 Use my referral code ${userProfile.referral_code} to enjoy amazing chicken wings. ${referralLink} #Wingside #ChickenWings #FoodieNG`
+        message: `Get 200 points when you join Wingside! 🍗 Use my referral code ${userProfile.referral_code} to enjoy amazing chicken wings. ${referralLink} #Wingside #ChickenWings #FoodieNG`
       },
       facebook: {
-        message: `Love chicken wings? Get ₦500 off your first order at Wingside using my referral code ${userProfile.referral_code}! 🍗✨ ${referralLink}
+        message: `Love chicken wings? Get 200 points when you join Wingside using my referral code ${userProfile.referral_code}! 🍗✨ ${referralLink}
 
 ${customMessage || `I've been enjoying their amazing flavors and you can too!`}`
       }
