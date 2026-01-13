@@ -140,7 +140,7 @@ export default function WingclubPage() {
                 </svg>
               </div>
               <h3 className="text-[#F7C400] font-bold text-lg mb-2">Earn Points</h3>
-              <p className="text-white text-sm">Get 1 point for every ₦100 spent</p>
+              <p className="text-white text-sm">Get 10 points for every ₦100 spent</p>
             </div>
 
             {/* Step 3: Unlock Perks */}
@@ -195,7 +195,7 @@ export default function WingclubPage() {
                 </div>
                 <ul className="space-y-2 mb-16 text-base text-black">
                   <li>• 10% off first order</li>
-                  <li>• 1 point for every ₦100 spent</li>
+                  <li>• 10 points for every ₦100 spent</li>
                   <li>• ₦3000 off your 10th purchase</li>
                   <li>• Redeem ₦3000 for every 500 points earned.</li>
                 </ul>

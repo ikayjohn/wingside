@@ -76,7 +76,7 @@ The system supports these transaction types:
 - `funding` - Wallet funded by user
 - `referral_reward` - Points from referral program
 - `first_order_bonus` - First order bonus
-- `purchase_points` - Points earned from purchase (₦100 = 1 point)
+- `purchase_points` - Points earned from purchase (₦100 = 10 points)
 - `promo_credit` - Promo code credit
 - `social_verification` - Social media verification reward
 - `streak_bonus` - Daily streak bonus
@@ -174,8 +174,8 @@ await creditWallet(
 Award purchase points and first order bonus:
 
 ```typescript
-// Award purchase points (₦100 = 1 point)
-const pointsEarned = Math.floor(orderTotal / 100);
+// Award purchase points (₦100 = 10 points)
+const pointsEarned = Math.floor(orderTotal / 10);
 await creditWallet(
   userId,
   pointsEarned,
