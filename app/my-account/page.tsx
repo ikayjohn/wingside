@@ -629,10 +629,11 @@ export default function MyAccountPage() {
                   </label>
                 </div>
 
-                {/* CAPTCHA Widget */}
+                {/* CAPTCHA Widget - only load on signup tab */}
                 <div className="wingclub-field mb-4">
                   <Turnstile
                     siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''}
+                    loadScript={activeTab === 'signup'}
                     onSuccess={setCaptchaToken}
                     onError={() => {
                       setSubmitError('CAPTCHA verification failed. Please try again.');

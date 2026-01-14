@@ -64,6 +64,12 @@ interface TurnstileProps {
    * ID for the container element
    */
   id?: string;
+
+  /**
+   * Whether to load the Turnstile script
+   * Set to true to start loading (lazy load)
+   */
+  loadScript?: boolean;
 }
 
 export const Turnstile: React.FC<TurnstileProps> = ({
@@ -75,14 +81,20 @@ export const Turnstile: React.FC<TurnstileProps> = ({
   language = 'en',
   className = '',
   id = 'turnstile-container',
+  loadScript = true,
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isScriptLoading, setIsScriptLoading] = useState(false);
   const widgetIdRef = useRef<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Load Turnstile script
+  // Load Turnstile script (lazy load based on loadScript prop)
   useEffect(() => {
+    // Don't load unless loadScript is true
+    if (!loadScript) {
+      return;
+    }
+
     // Check if script is already loaded globally
     if (typeof window !== 'undefined' && window.turnstile) {
       setIsLoaded(true);
@@ -125,7 +137,7 @@ export const Turnstile: React.FC<TurnstileProps> = ({
       // Don't remove the script as other components might need it
       // Just clean up the widget
     };
-  }, []); // Empty deps array - only run once on mount
+  }, [loadScript]); // Load when loadScript becomes true
 
   // Render Turnstile widget
   useEffect(() => {
