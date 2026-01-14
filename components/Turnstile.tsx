@@ -83,7 +83,20 @@ export const Turnstile: React.FC<TurnstileProps> = ({
 
   // Load Turnstile script
   useEffect(() => {
-    if (isLoaded || isScriptLoading || typeof window !== 'undefined' && window.turnstile) {
+    // Check if script is already loaded globally
+    if (typeof window !== 'undefined' && window.turnstile) {
+      setIsLoaded(true);
+      return;
+    }
+
+    // Check if we're already loading
+    if (isScriptLoading) {
+      return;
+    }
+
+    // Check if script tag already exists
+    const existingScript = document.querySelector('script[src*="turnstile/api.js"]');
+    if (existingScript) {
       setIsLoaded(true);
       return;
     }
@@ -109,12 +122,10 @@ export const Turnstile: React.FC<TurnstileProps> = ({
     document.head.appendChild(script);
 
     return () => {
-      // Clean up script if component unmounts
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
+      // Don't remove the script as other components might need it
+      // Just clean up the widget
     };
-  }, [isLoaded, isScriptLoading, onError]);
+  }, []); // Empty deps array - only run once on mount
 
   // Render Turnstile widget
   useEffect(() => {
@@ -163,24 +174,12 @@ export const Turnstile: React.FC<TurnstileProps> = ({
     };
   }, [isLoaded, siteKey, onSuccess, onError, onExpire, theme, language]);
 
-  // Reset widget when site key changes
-  useEffect(() => {
-    // Only reset if widget exists
-    if (widgetIdRef.current && window.turnstile) {
-      try {
-        window.turnstile.reset(widgetIdRef.current);
-      } catch (error) {
-        // Silently ignore reset errors - widget might not be fully initialized yet
-        // This can happen during rapid re-renders or when component is unmounting
-      }
-    }
-  }, [siteKey]);
-
   return (
     <div
       id={id}
       ref={containerRef}
-      className={className}
+      className={`turnstile-wrapper ${className}`}
+      style={{ minHeight: '65px', width: '300px' }}
     />
   );
 };

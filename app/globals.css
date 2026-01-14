@@ -5847,3 +5847,16 @@ input[type="button"],
   background-color: #374151;
 }
 
+/* Turnstile CAPTCHA */
+.turnstile-wrapper {
+  display: block;
+  width: fit-content;
+  min-width: 300px;
+  min-height: 65px;
+}
+
+.turnstile-wrapper iframe {
+  display: block;
+  border: none;
+}
+
