@@ -17,7 +17,9 @@ export default function AdminDeliveryAreasPage() {
   const [deliveryAreas, setDeliveryAreas] = useState<DeliveryArea[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [showBulkEdit, setShowBulkEdit] = useState(false)
   const [editingArea, setEditingArea] = useState<DeliveryArea | null>(null)
+  const [bulkData, setBulkData] = useState<DeliveryArea[]>([])
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -29,18 +31,59 @@ export default function AdminDeliveryAreasPage() {
   })
 
   useEffect(() => {
-    fetchDeliveryAreas()
+    fetchDeliveryAreas(true) // Force bypass cache on initial load to get fresh data
   }, [])
 
-  const fetchDeliveryAreas = async () => {
+  const fetchDeliveryAreas = async (bypassCache = false) => {
     try {
-      const response = await fetch('/api/delivery-areas')
-      const data = await response.json()
+      const url = bypassCache
+        ? `/api/delivery-areas?_timestamp=${Date.now()}`
+        : '/api/delivery-areas'
+
+      console.log('🔄 Fetching delivery areas:', { bypassCache, url })
+
+      const response = await fetch(url, {
+        cache: bypassCache ? 'no-store' : 'default',
+        credentials: 'include', // Important: include cookies
+        headers: bypassCache ? {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        } : {}
+      })
+
+      // Check response status before parsing
+      if (!response.ok) {
+        console.error('❌ Response not OK:', response.status, response.statusText)
+        const text = await response.text()
+        console.error('❌ Response body:', text.substring(0, 500))
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      // Get raw text first for debugging
+      const rawText = await response.text()
+      console.log('✅ Response received, length:', rawText.length)
+      console.log('✅ Response preview:', rawText.substring(0, 200))
+
+      // Parse JSON
+      let data
+      try {
+        data = JSON.parse(rawText)
+      } catch (parseError) {
+        console.error('❌ JSON parse error:', parseError)
+        console.error('❌ Raw response:', rawText.substring(0, 500))
+        throw new Error('Failed to parse API response as JSON')
+      }
+
+      console.log('📦 Fetched delivery areas:', data.deliveryAreas?.length, 'areas')
+
       if (data.deliveryAreas) {
-        setDeliveryAreas(data.deliveryAreas)
+        // Sort by display_order to ensure correct sequence (create new array to avoid mutation)
+        const sorted = [...data.deliveryAreas].sort((a: DeliveryArea, b: DeliveryArea) => a.display_order - b.display_order)
+        console.log('✅ Sorted delivery areas:', sorted.map(a => `${a.name} (${a.display_order})`))
+        setDeliveryAreas(sorted)
       }
     } catch (error) {
-      console.error('Error fetching delivery areas:', error)
+      console.error('❌ Error fetching delivery areas:', error)
     } finally {
       setLoading(false)
     }
@@ -66,11 +109,12 @@ export default function AdminDeliveryAreasPage() {
     try {
       const response = await fetch(`/api/delivery-areas/${id}`, {
         method: 'DELETE',
+        credentials: 'include', // Important: include cookies
       })
 
       if (response.ok) {
         alert('Delivery area deleted successfully')
-        fetchDeliveryAreas()
+        fetchDeliveryAreas(true)
       } else {
         alert('Failed to delete delivery area')
       }
@@ -78,6 +122,90 @@ export default function AdminDeliveryAreasPage() {
       console.error('Error deleting delivery area:', error)
       alert('Error deleting delivery area')
     }
+  }
+
+  const handleBulkEdit = () => {
+    setBulkData([...deliveryAreas])
+    setShowBulkEdit(true)
+  }
+
+  const handleBulkSave = async () => {
+    try {
+      console.log('💾 Saving bulk updates for', bulkData.length, 'areas')
+      console.log('📋 Bulk data:', bulkData)
+
+      // Confirm before saving
+      const confirmed = confirm(`Update all ${bulkData.length} delivery areas?`)
+      if (!confirmed) {
+        console.log('❌ Cancelled by user')
+        return
+      }
+
+      // Make requests sequentially instead of parallel to avoid auth issues
+      const results = []
+      let successCount = 0
+      let failCount = 0
+
+      for (const area of bulkData) {
+        console.log(`📤 Updating area ${area.id}:`, area.name)
+
+        try {
+          const response = await fetch(`/api/delivery-areas/${area.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include', // Important: include cookies
+            body: JSON.stringify(area),
+          })
+
+          if (response.ok) {
+            console.log(`✅ Updated area ${area.name}`)
+            successCount++
+            results.push({ status: 'fulfilled', value: response })
+          } else {
+            const error = await response.json()
+            console.error(`❌ Failed to update area ${area.name}:`, error)
+            failCount++
+            results.push({ status: 'rejected', reason: error })
+          }
+        } catch (error) {
+          console.error(`❌ Error updating area ${area.name}:`, error)
+          failCount++
+          results.push({ status: 'rejected', reason: error })
+        }
+      }
+
+      console.log(`✅ Bulk update complete: ${successCount} succeeded, ${failCount} failed`)
+
+      if (failCount === 0) {
+        alert(`All ${successCount} delivery areas updated successfully!`)
+      } else if (successCount === 0) {
+        alert('All updates failed. You may have been logged out. Please refresh and try again.')
+        return // Don't refresh data if all failed
+      } else {
+        alert(`Update complete: ${successCount} succeeded, ${failCount} failed. Check console for details.`)
+      }
+
+      setShowBulkEdit(false)
+
+      // Wait for cache invalidation to complete
+      console.log('⏳ Waiting for cache to clear...')
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      // Force refresh with cache bypass
+      console.log('🔄 Refreshing data...')
+      await fetchDeliveryAreas(true)
+
+      console.log('✅ Done!')
+    } catch (error) {
+      console.error('❌ Error in bulk save:', error)
+      alert('Error saving bulk updates: ' + (error as Error).message)
+    }
+  }
+
+  const updateBulkItem = (id: string, field: keyof DeliveryArea, value: any) => {
+    setBulkData(prev => prev.map(area =>
+      area.id === id ? { ...area, [field]: value } : area
+    ))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,13 +218,22 @@ export default function AdminDeliveryAreasPage() {
 
       const method = editingArea ? 'PUT' : 'POST'
 
+      console.log('🚀 Sending request:', { method, url, formData, editingArea })
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Important: include cookies
         body: JSON.stringify(formData),
       })
 
+      console.log('📡 Response status:', response.status, response.ok)
+
+      const responseData = await response.json()
+      console.log('📦 Response data:', responseData)
+
       if (response.ok) {
+        console.log('✅ Update successful, refreshing list...')
         alert(`Delivery area ${editingArea ? 'updated' : 'created'} successfully`)
         setShowForm(false)
         setEditingArea(null)
@@ -109,13 +246,14 @@ export default function AdminDeliveryAreasPage() {
           is_active: true,
           display_order: 0,
         })
-        fetchDeliveryAreas()
+        // Bypass cache to get fresh data
+        fetchDeliveryAreas(true)
       } else {
-        const error = await response.json()
-        alert(`Failed to ${editingArea ? 'update' : 'create'} delivery area: ${error.error}`)
+        console.error('❌ Error response:', responseData)
+        alert(`Failed to ${editingArea ? 'update' : 'create'} delivery area: ${responseData.error || responseData.details || 'Unknown error'}`)
       }
     } catch (error) {
-      console.error('Error saving delivery area:', error)
+      console.error('❌ Error saving delivery area:', error)
       alert('Error saving delivery area')
     }
   }
@@ -143,24 +281,32 @@ export default function AdminDeliveryAreasPage() {
           <h1 className="text-3xl font-bold text-gray-900">Delivery Areas</h1>
           <p className="text-gray-600 mt-2">Manage delivery zones and fees</p>
         </div>
-        <button
-          onClick={() => {
-            setEditingArea(null)
-            setFormData({
-              name: '',
-              description: '',
-              delivery_fee: 0,
-              min_order_amount: 0,
-              estimated_time: '',
-              is_active: true,
-              display_order: 0,
-            })
-            setShowForm(true)
-          }}
-          className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-6 py-3 rounded-lg transition-colors"
-        >
-          + Add New Area
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleBulkEdit}
+            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+          >
+            ✏️ Bulk Edit
+          </button>
+          <button
+            onClick={() => {
+              setEditingArea(null)
+              setFormData({
+                name: '',
+                description: '',
+                delivery_fee: 0,
+                min_order_amount: 0,
+                estimated_time: '',
+                is_active: true,
+                display_order: 0,
+              })
+              setShowForm(true)
+            }}
+            className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-6 py-3 rounded-lg transition-colors"
+          >
+            + Add New Area
+          </button>
+        </div>
       </div>
 
       {/* Delivery Areas Table */}
@@ -392,6 +538,126 @@ export default function AdminDeliveryAreasPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Edit Modal */}
+      {showBulkEdit && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Bulk Edit Delivery Areas</h2>
+                  <p className="text-sm text-gray-600 mt-1">Edit all delivery areas and prices at once</p>
+                </div>
+                <button
+                  onClick={() => setShowBulkEdit(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Area Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Delivery Fee (₦)</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Min Order (₦)</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Est. Time</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {bulkData.map((area) => (
+                      <tr key={area.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-2">
+                          <input
+                            type="text"
+                            value={area.name}
+                            onChange={(e) => updateBulkItem(area.id, 'name', e.target.value)}
+                            className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400 text-sm"
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <input
+                            type="text"
+                            value={area.description || ''}
+                            onChange={(e) => updateBulkItem(area.id, 'description', e.target.value)}
+                            className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400 text-sm"
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <input
+                            type="number"
+                            value={area.delivery_fee}
+                            onChange={(e) => updateBulkItem(area.id, 'delivery_fee', Number(e.target.value))}
+                            className="w-24 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400 text-sm"
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <input
+                            type="number"
+                            value={area.min_order_amount}
+                            onChange={(e) => updateBulkItem(area.id, 'min_order_amount', Number(e.target.value))}
+                            className="w-24 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400 text-sm"
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <input
+                            type="text"
+                            value={area.estimated_time || ''}
+                            onChange={(e) => updateBulkItem(area.id, 'estimated_time', e.target.value)}
+                            className="w-28 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400 text-sm"
+                            placeholder="30-45 mins"
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <select
+                            value={area.is_active ? 'active' : 'inactive'}
+                            onChange={(e) => updateBulkItem(area.id, 'is_active', e.target.value === 'active')}
+                            className="px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400 text-sm"
+                          >
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 bg-gray-50">
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-gray-600">
+                  Editing {bulkData.length} delivery area{bulkData.length !== 1 ? 's' : ''}
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowBulkEdit(false)}
+                    className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleBulkSave}
+                    className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium"
+                  >
+                    Save All Changes
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

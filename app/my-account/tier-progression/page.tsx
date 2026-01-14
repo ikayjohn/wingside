@@ -50,7 +50,7 @@ export default function TierProgressionPage() {
     {
       id: 1,
       name: 'Wing Member',
-      pointsRange: '0 - 5,000',
+      pointsRange: '0 - 5000',
       description: 'Start your wing journey with exclusive member benefits',
       color: 'gray',
       isUnlocked: true,
@@ -58,7 +58,7 @@ export default function TierProgressionPage() {
     {
       id: 2,
       name: 'Wing Leader',
-      pointsRange: '5,001 - 20,000',
+      pointsRange: '5001 - 20,000',
       description: 'Lead the flock with enhanced rewards and priority access',
       color: 'yellow',
       isUnlocked: (userData?.totalPoints || 0) > 5000,
@@ -198,7 +198,7 @@ export default function TierProgressionPage() {
                 ></div>
               </div>
               <p className="tier-progress-text">
-                {userData.tierProgress.pointsToNext} more points to unlock {userData.tierProgress.nextTier.toLowerCase()}
+                {userData.tierProgress.pointsToNext} more points to unlock {userData.tierProgress.nextTier}
               </p>
             </div>
           )}

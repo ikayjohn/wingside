@@ -35,7 +35,7 @@ export default function EarnRewardsPage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [socialVerifyModal, setSocialVerifyModal] = useState<{
     open: boolean;
-    platform: 'instagram' | 'twitter';
+    platform: 'instagram' | 'twitter' | 'tiktok' | 'facebook' | 'youtube';
     platformName: string;
     platformUrl: string;
     points: number;
@@ -116,7 +116,10 @@ export default function EarnRewardsPage() {
     const descriptions: Record<string, string> = {
       first_order: 'First order bonus',
       instagram_follow: 'Following @mywingside on Instagram',
-      twitter_follow: 'Following @mywingside on Twitter',
+      twitter_follow: 'Following @mywingside on Twitter/X',
+      tiktok_follow: 'Following @mywingside on TikTok',
+      facebook_follow: 'Following Wingside on Facebook',
+      youtube_follow: 'Subscribing to Wingside on YouTube',
       review: 'Order review',
       birthday: 'Birthday bonus'
     };
@@ -168,8 +171,8 @@ export default function EarnRewardsPage() {
         </svg>
       ),
       star: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
         </svg>
       ),
       gift: (
@@ -179,6 +182,26 @@ export default function EarnRewardsPage() {
           <line x1="12" y1="22" x2="12" y2="7"></line>
           <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
           <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+        </svg>
+      ),
+      facebook: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
+        </svg>
+      ),
+      youtube: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+        </svg>
+      ),
+      twitter: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+        </svg>
+      ),
+      tiktok: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
         </svg>
       ),
     };
@@ -199,7 +222,7 @@ export default function EarnRewardsPage() {
       id: 'referral',
       title: 'Refer a Friend',
       description: 'Invite a friend to join Wing Club',
-      points: 20,
+      points: 200,
       icon: 'users',
       iconColor: 'purple',
       type: 'link',
@@ -209,13 +232,61 @@ export default function EarnRewardsPage() {
       id: 'instagram_follow',
       title: 'Follow @mywingside on Instagram',
       description: 'Follow us on Instagram for exclusive updates',
-      points: 100,
+      points: 30,
       icon: 'instagram',
       iconColor: 'pink',
       type: 'social-verify',
       platform: 'instagram' as const,
       platformName: 'Instagram',
       platformUrl: 'https://instagram.com/mywingside'
+    },
+    {
+      id: 'twitter_follow',
+      title: 'Follow @mywingside on Twitter/X',
+      description: 'Follow us on X for latest news and updates',
+      points: 25,
+      icon: 'twitter',
+      iconColor: 'black',
+      type: 'social-verify',
+      platform: 'twitter' as const,
+      platformName: 'Twitter/X',
+      platformUrl: 'https://twitter.com/mywingside'
+    },
+    {
+      id: 'tiktok_follow',
+      title: 'Follow @mywingside on TikTok',
+      description: 'Follow us on TikTok for fun content',
+      points: 30,
+      icon: 'tiktok',
+      iconColor: 'black',
+      type: 'social-verify',
+      platform: 'tiktok' as const,
+      platformName: 'TikTok',
+      platformUrl: 'https://tiktok.com/@mywingside'
+    },
+    {
+      id: 'youtube_follow',
+      title: 'Subscribe to Wingside on YouTube',
+      description: 'Subscribe for videos and behind-the-scenes content',
+      points: 40,
+      icon: 'youtube',
+      iconColor: 'black',
+      type: 'social-verify',
+      platform: 'youtube' as const,
+      platformName: 'YouTube',
+      platformUrl: 'https://youtube.com/@mywingside'
+    },
+    {
+      id: 'facebook_follow',
+      title: 'Follow Wingside on Facebook',
+      description: 'Like our Facebook page for updates',
+      points: 25,
+      icon: 'facebook',
+      iconColor: 'black',
+      type: 'social-verify',
+      platform: 'facebook' as const,
+      platformName: 'Facebook',
+      platformUrl: 'https://facebook.com/mywingside'
     },
     {
       id: 'purchase',
@@ -307,6 +378,11 @@ export default function EarnRewardsPage() {
                   <div className="earn-rewards-task-info">
                     <h3 className="earn-rewards-task-title">
                       {task.title}
+                      {task.type !== 'passive' && (
+                        <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-200 text-gray-700">
+                          +{task.points} pts
+                        </span>
+                      )}
                       {claimed && <span className="ml-2 text-xs text-green-600 font-medium">✓ Claimed</span>}
                     </h3>
                     <p className="earn-rewards-task-description">{task.description}</p>
@@ -343,7 +419,7 @@ export default function EarnRewardsPage() {
                       disabled={claiming === task.id}
                       className="bg-[#F7C400] text-gray-900 py-2 px-4 rounded-full font-medium text-sm hover:bg-[#e5b500] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {claiming === task.id ? 'Claiming...' : `Claim +${task.points} pts`}
+                      {claiming === task.id ? 'Claiming...' : `Claim Now`}
                     </button>
                   )}
                 </div>

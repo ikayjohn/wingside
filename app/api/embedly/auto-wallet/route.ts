@@ -158,33 +158,36 @@ export async function POST() {
         wallet
       });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating wallet:', error);
 
-      // Try to get existing wallets by calling a different method
-      // Since the create wallet failed, let's try to see if there are existing wallets
-      try {
-        // Try to get wallet history (this might work and give us wallet info)
-        console.log('Attempting to find existing wallet...');
+      // Check if error is "Allowed number of wallets reached"
+      // This means the wallet already exists in Embedly but isn't saved in our DB
+      if (error.message?.includes('Allowed number of wallets') || error.message?.includes('400')) {
+        console.log('Wallet already exists in Embedly, attempting to recover...');
+
+        // Since we can't list wallets by customer, we need to inform the user
+        // that their wallet exists but we need them to contact support with their email
         return NextResponse.json({
-          success: true,
-          message: 'Customer account created. Please contact support to create your wallet.',
+          success: false,
+          message: 'You already have a wallet in our system, but we need to link it to your account.',
+          error: 'WALLET_EXISTS_NOT_LINKED',
           customer: {
             id: profile.embedly_customer_id,
             email: profile.email,
             fullName: profile.full_name
           },
-          needsManualWalletCreation: true
-        });
-      } catch (findError) {
-        return NextResponse.json(
-          {
-            error: 'Failed to create wallet',
-            details: error instanceof Error ? error.message : 'Unknown error'
-          },
-          { status: 500 }
-        );
+          instructions: 'Please contact support with your email address to link your existing wallet.'
+        }, { status: 400 });
       }
+
+      return NextResponse.json(
+        {
+          error: 'Failed to create wallet',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        },
+        { status: 500 }
+      );
     }
 
   } catch (error) {

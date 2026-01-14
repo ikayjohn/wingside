@@ -5,7 +5,7 @@ import React, { useState } from "react";
 interface SocialVerifyModalProps {
   isOpen: boolean;
   onClose: () => void;
-  platform: 'instagram' | 'twitter';
+  platform: 'instagram' | 'twitter' | 'tiktok' | 'facebook' | 'youtube';
   platformName: string;
   platformUrl: string;
   points: number;

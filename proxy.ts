@@ -95,8 +95,10 @@ export async function proxy(request: NextRequest) {
             console.log('[Maintenance] Access code check:', { code: accessCodeCookie, valid: hasValidCode })
           }
 
-          // If no valid code, show maintenance page
-          if (!hasValidCode) {
+          // If no valid code, show maintenance page (but exclude API routes)
+          // API routes should always be accessible even during maintenance
+          const isApiRoute = pathname.startsWith('/api/')
+          if (!hasValidCode && !isApiRoute) {
             console.log('[Maintenance] No valid access code, redirecting to maintenance page')
             const url = request.nextUrl.clone()
             url.pathname = '/maintenance'

@@ -110,26 +110,28 @@ export default function AdminLayout({
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar - Full Height */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-72 bg-[#F7C400] flex flex-col transform transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-50 w-56 bg-white border-r border-gray-200 flex flex-col transform transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
       `}>
         {/* Sidebar Header */}
-        <div className="p-6 border-b border-[#e5a800]">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden text-gray-900 hover:text-white p-2 rounded-lg hover:bg-[#e5a800] transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            <h1 className="text-2xl font-bold text-gray-900">Wingside® Cockpit</h1>
-          </div>
+        <div className="p-6 flex items-center justify-center relative">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="lg:hidden absolute left-6 text-gray-900 hover:text-[#552627] p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <img
+            src="/logo.png"
+            alt="Wingside"
+            className="h-[72px] w-auto"
+          />
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-4 space-y-0.5 overflow-y-auto">
           {navItems.map((item, index) => {
             const hasChildren = 'children' in item;
             const isActive = !hasChildren && pathname === item.href;
@@ -138,20 +140,20 @@ export default function AdminLayout({
 
             if (hasChildren) {
               return (
-                <div key={index} className="space-y-1">
+                <div key={index} className="space-y-0.5">
                   <button
                     onClick={() => setOpenDropdown(openDropdown === item.label ? null : item.label)}
                     className={`
                       w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition-all duration-200
                       ${hasActiveChild
                         ? 'bg-[#552627] text-white font-semibold shadow-md'
-                        : 'text-gray-900 hover:bg-[#e5a800] hover:text-white'
+                        : 'text-gray-700 hover:bg-gray-100 hover:text-[#552627]'
                       }
                     `}
                   >
                     <div className="flex items-center gap-3">
                       {item.icon}
-                      <span>{item.label}</span>
+                      <span className="text-sm font-medium">{item.label}</span>
                     </div>
                     <svg
                       className={`w-4 h-4 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
@@ -164,7 +166,7 @@ export default function AdminLayout({
                   </button>
 
                   {isDropdownOpen && (
-                    <div className="ml-4 space-y-1">
+                    <div className="ml-4 space-y-0.5">
                       {item.children?.map((child) => {
                         const childIsActive = pathname === child.href;
                         return (
@@ -172,10 +174,10 @@ export default function AdminLayout({
                             key={child.href}
                             href={child.href}
                             className={`
-                              block px-4 py-2.5 rounded-lg text-sm transition-all duration-200
+                              block px-4 py-2.5 rounded-lg text-xs transition-all duration-200
                               ${childIsActive
                                 ? 'bg-[#552627] text-white font-semibold shadow-md'
-                                : 'text-gray-900 hover:bg-[#e5a800] hover:text-white'
+                                : 'text-gray-700 hover:bg-gray-100 hover:text-[#552627]'
                               }
                             `}
                           >
@@ -197,12 +199,12 @@ export default function AdminLayout({
                   flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
                   ${isActive
                     ? 'bg-[#552627] text-white font-semibold shadow-md'
-                    : 'text-gray-900 hover:bg-[#e5a800] hover:text-white'
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-[#552627]'
                   }
                 `}
               >
                 {item.icon}
-                <span>{item.label}</span>
+                <span className="text-sm font-medium">{item.label}</span>
                 {isActive && (
                   <span className="ml-auto">
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -216,14 +218,14 @@ export default function AdminLayout({
         </nav>
 
         {/* Maintenance Mode Link at Bottom */}
-        <div className="p-4 border-t border-[#e5a800]">
+        <div className="p-4 border-t border-gray-200">
           <Link
             href="/admin/maintenance"
             className={`
               flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
               ${pathname === '/admin/maintenance'
                 ? 'bg-[#552627] text-white font-semibold shadow-md'
-                : 'text-gray-900 hover:bg-[#e5a800] hover:text-white'
+                : 'text-gray-700 hover:bg-gray-100 hover:text-[#552627]'
               }
             `}
           >
@@ -231,7 +233,7 @@ export default function AdminLayout({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <span>Maintenance Mode</span>
+            <span className="text-sm font-medium">Maintenance Mode</span>
             {pathname === '/admin/maintenance' && (
               <span className="ml-auto">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -252,15 +254,11 @@ export default function AdminLayout({
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col lg:ml-72">
+      <div className="flex-1 flex flex-col lg:ml-56">
         {/* Header */}
-        <header className="bg-white shadow-md border-b border-gray-200 px-6 py-4">
+        <header className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
-            <img
-              src="/logo.png"
-              alt="Wingside"
-              className="h-15 w-auto"
-            />
+            <h1 className="text-2xl font-bold text-gray-900">Wingside® Cockpit</h1>
 
             {/* User Info & Actions */}
             <div className="flex items-center gap-4">
@@ -350,7 +348,7 @@ export default function AdminLayout({
             <div className="mt-6 pt-6 border-t border-gray-200">
               <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <p className="text-sm text-gray-600">
-                  © 2025 Wingside. All rights reserved.
+                  © {new Date().getFullYear()} Wingside Foods Limited. All rights reserved.
                 </p>
               </div>
             </div>

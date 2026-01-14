@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import { createHoneypotField, generateHoneypotFieldName } from '@/lib/honeypot';
+import { createHoneypotField } from '@/lib/honeypot';
 
 interface HoneypotFieldProps {
   /**
-   * Custom field name (optional, will generate random if not provided)
+   * Custom field name (optional, defaults to 'website_verify')
    */
   fieldName?: string;
 
@@ -19,27 +19,42 @@ export const HoneypotField: React.FC<HoneypotFieldProps> = ({
   fieldName,
   validateTimestamp = true,
 }) => {
-  const props = createHoneypotField({
-    fieldName,
-    validateTimestamp,
-  });
+  // Use a fixed field name to avoid hydration mismatch
+  const [timestamp] = React.useState(Date.now());
+  const honeypotFieldName = fieldName || 'website_verify';
+
+  const honeypotProps = {
+    name: honeypotFieldName,
+    defaultValue: '',
+    style: {
+      position: 'absolute' as const,
+      left: '-5000px',
+      width: '0',
+      height: '0',
+      opacity: '0',
+      pointerEvents: 'none' as const,
+    },
+    tabIndex: -1,
+    autoComplete: 'off',
+    'aria-hidden': true,
+  };
 
   return (
     <>
       <input
-        {...props}
+        {...honeypotProps}
         type="text"
-        name={props.name}
+        name={honeypotProps.name}
       />
       <input
         type="hidden"
         name="_timestamp"
-        value={props.timestamp}
+        value={timestamp}
       />
       <input
         type="hidden"
         name="_honeypotFieldName"
-        value={props.name}
+        value={honeypotProps.name}
       />
     </>
   );
@@ -49,19 +64,17 @@ export const HoneypotField: React.FC<HoneypotFieldProps> = ({
  * Hook to use honeypot in forms
  */
 export function useHoneypot(config?: { fieldName?: string }) {
-  const [fieldName] = React.useState(
-    config?.fieldName || generateHoneypotFieldName()
-  );
   const [timestamp] = React.useState(Date.now());
+  const honeypotFieldName = config?.fieldName || 'website_verify';
 
   return {
-    fieldName,
+    fieldName: honeypotFieldName,
     timestamp,
     getFormData: (additionalData: Record<string, any> = {}) => ({
       ...additionalData,
-      [fieldName]: '', // Empty for honeypot
+      [honeypotFieldName]: '', // Empty for honeypot
       _timestamp: timestamp,
-      _honeypotFieldName: fieldName,
+      _honeypotFieldName: honeypotFieldName,
     }),
   };
 }

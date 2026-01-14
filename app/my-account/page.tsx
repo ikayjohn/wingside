@@ -72,6 +72,12 @@ export default function MyAccountPage() {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    email?: string;
+  }>({});
 
   const [signupData, setSignupData] = useState({
     firstName: '',
@@ -89,8 +95,57 @@ export default function MyAccountPage() {
     rememberMe: false,
   });
 
+  // Validation functions
+  const validateName = (name: string, fieldName: string): { valid: boolean; error?: string } => {
+    if (!name || name.trim().length === 0) {
+      return { valid: false, error: `${fieldName} is required` };
+    }
+
+    // Check for numbers in name
+    if (/\d/.test(name)) {
+      return { valid: false, error: `${fieldName} cannot contain numbers` };
+    }
+
+    // Check for special characters (allow hyphens, apostrophes, spaces)
+    if (!/^[a-zA-Z\s\-']+$/.test(name)) {
+      return { valid: false, error: `${fieldName} can only contain letters` };
+    }
+
+    if (name.trim().length < 2) {
+      return { valid: false, error: `${fieldName} must be at least 2 characters` };
+    }
+
+    return { valid: true };
+  };
+
+  const validatePhone = (phone: string): { valid: boolean; error?: string } => {
+    if (!phone || phone.trim().length === 0) {
+      return { valid: false, error: 'Phone number is required' };
+    }
+
+    // Remove all non-numeric characters
+    const cleaned = phone.replace(/\D/g, '');
+
+    // Nigerian phone numbers must be 10 digits (after removing country code)
+    if (cleaned.length !== 10) {
+      return { valid: false, error: 'Please enter a valid 10-digit Nigerian phone number' };
+    }
+
+    // Must start with valid Nigerian mobile prefix (7, 8, or 9)
+    if (!/^[789]\d{9}$/.test(cleaned)) {
+      return { valid: false, error: 'Phone number must start with 7, 8, or 9' };
+    }
+
+    return { valid: true };
+  };
+
   const handleSignupChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
+
+    // Clear field error when user starts typing
+    if (name in fieldErrors) {
+      setFieldErrors(prev => ({ ...prev, [name]: undefined }));
+    }
 
     if (name === 'phone') {
       // Handle phone number formatting for Nigerian numbers
@@ -105,6 +160,13 @@ export default function MyAccountPage() {
       setSignupData(prev => ({
         ...prev,
         [name]: phoneValue
+      }));
+    } else if (name === 'firstName' || name === 'lastName') {
+      // Only allow letters, spaces, hyphens, and apostrophes in names
+      const nameValue = value.replace(/[^a-zA-Z\s\-']/g, '');
+      setSignupData(prev => ({
+        ...prev,
+        [name]: nameValue
       }));
     } else {
       setSignupData(prev => ({
@@ -145,6 +207,7 @@ export default function MyAccountPage() {
 
     // Clear previous errors
     setSubmitError(null);
+    setFieldErrors({});
 
     // Validate honeypot (client-side check)
     const formData = new FormData(e.currentTarget as HTMLFormElement);
@@ -160,12 +223,29 @@ export default function MyAccountPage() {
       return;
     }
 
-    // Validate phone number
-    const formattedPhone = formatPhoneNumber(signupData.phone);
-    if (formattedPhone.length < 10) {
-      alert('Please enter a valid Nigerian phone number');
+    // Validate first name
+    const firstNameValidation = validateName(signupData.firstName, 'First name');
+    if (!firstNameValidation.valid) {
+      setFieldErrors({ firstName: firstNameValidation.error! });
       return;
     }
+
+    // Validate last name
+    const lastNameValidation = validateName(signupData.lastName, 'Last name');
+    if (!lastNameValidation.valid) {
+      setFieldErrors({ lastName: lastNameValidation.error! });
+      return;
+    }
+
+    // Validate phone number
+    const phoneValidation = validatePhone(signupData.phone);
+    if (!phoneValidation.valid) {
+      setFieldErrors({ phone: phoneValidation.error! });
+      return;
+    }
+
+    // Format phone number
+    const formattedPhone = formatPhoneNumber(signupData.phone);
 
     setIsSubmitting(true);
 
@@ -258,6 +338,7 @@ export default function MyAccountPage() {
 
         // Auto-create Embedly customer and wallet
         try {
+          console.log('🔄 Attempting to create Embedly wallet...');
           const embedlyResponse = await fetch('/api/embedly/auto-wallet', {
             method: 'POST',
             headers: {
@@ -265,17 +346,26 @@ export default function MyAccountPage() {
             },
           });
 
+          if (!embedlyResponse.ok) {
+            const errorText = await embedlyResponse.text();
+            console.error('❌ Embedly API error:', embedlyResponse.status, errorText);
+            return;
+          }
+
           const embedlyResult = await embedlyResponse.json();
 
           if (embedlyResult.success && embedlyResult.wallet) {
-            console.log('Embedly wallet created automatically:', embedlyResult.wallet.virtualAccount.accountNumber);
+            console.log('✅ Embedly wallet created:', embedlyResult.wallet.virtualAccount?.accountNumber || 'No account number');
           } else if (embedlyResult.needsManualWalletCreation) {
-            console.log('Embedly customer created, wallet needs manual creation');
+            console.log('⚠️ Embedly customer created, wallet needs manual creation');
+          } else if (embedlyResult.error) {
+            console.error('❌ Embedly error:', embedlyResult.error);
           } else {
-            console.log('Embedly wallet creation deferred:', embedlyResult.message || 'No immediate response');
+            console.log('ℹ️ Embedly response:', embedlyResult.message || 'No details');
           }
         } catch (embedlyError) {
-          console.error('Embedly auto-wallet creation failed:', embedlyError);
+          console.error('❌ Embedly auto-wallet creation failed:', embedlyError);
+          console.error('Error details:', embedlyError instanceof Error ? embedlyError.message : embedlyError);
           // Don't fail signup if Embedly wallet creation fails
         }
 
@@ -415,9 +505,12 @@ export default function MyAccountPage() {
                       name="firstName"
                       value={signupData.firstName}
                       onChange={handleSignupChange}
-                      placeholder="First name"
-                      className="wingclub-input"
+                      placeholder="e.g., John"
+                      className={`wingclub-input ${fieldErrors.firstName ? 'error' : ''}`}
                     />
+                    {fieldErrors.firstName && (
+                      <span className="wingclub-error">{fieldErrors.firstName}</span>
+                    )}
                   </div>
                   <div className="wingclub-field">
                     <label className="wingclub-label">Last name</label>
@@ -426,9 +519,12 @@ export default function MyAccountPage() {
                       name="lastName"
                       value={signupData.lastName}
                       onChange={handleSignupChange}
-                      placeholder="Last name"
-                      className="wingclub-input"
+                      placeholder="e.g., Doe"
+                      className={`wingclub-input ${fieldErrors.lastName ? 'error' : ''}`}
                     />
+                    {fieldErrors.lastName && (
+                      <span className="wingclub-error">{fieldErrors.lastName}</span>
+                    )}
                   </div>
                 </div>
 
@@ -458,10 +554,13 @@ export default function MyAccountPage() {
                       value={signupData.phone}
                       onChange={handleSignupChange}
                       placeholder="801 234 5678"
-                      className="wingclub-phone-input rounded-l-none flex-1"
+                      className={`wingclub-phone-input rounded-l-none flex-1 ${fieldErrors.phone ? 'error' : ''}`}
                     />
                   </div>
                   <p className="text-xs text-gray-400 mt-1">Enter Nigerian number without the leading 0</p>
+                  {fieldErrors.phone && (
+                    <span className="wingclub-error">{fieldErrors.phone}</span>
+                  )}
                 </div>
 
                 {/* Password */}

@@ -17,16 +17,22 @@ export default function ForgotPasswordPage() {
     setError('');
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      console.log('🔄 Sending password reset email to:', email);
+      console.log('📍 Redirect URL:', `${window.location.origin}/reset-password`);
+
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
 
       if (error) {
-        setError(error.message);
+        console.error('❌ Password reset error:', error);
+        setError(error.message || 'Error sending recovery email');
       } else {
+        console.log('✅ Password reset email sent successfully');
         setSubmitted(true);
       }
     } catch (err: any) {
+      console.error('❌ Unexpected error:', err);
       setError(err.message || 'An error occurred');
     } finally {
       setLoading(false);
@@ -62,7 +68,11 @@ export default function ForgotPasswordPage() {
 
               {error && (
                 <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm mb-4">
-                  {error}
+                  <strong>Error:</strong> {error}
+                  <br />
+                  <span className="text-xs mt-1 block">
+                    If the problem persists, please contact support or try again later.
+                  </span>
                 </div>
               )}
 

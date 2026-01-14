@@ -165,15 +165,15 @@ export const Turnstile: React.FC<TurnstileProps> = ({
 
   // Reset widget when site key changes
   useEffect(() => {
-    return () => {
-      if (widgetIdRef.current && window.turnstile) {
-        try {
-          window.turnstile.reset(widgetIdRef.current);
-        } catch (error) {
-          console.error('Failed to reset Turnstile widget:', error);
-        }
+    // Only reset if widget exists
+    if (widgetIdRef.current && window.turnstile) {
+      try {
+        window.turnstile.reset(widgetIdRef.current);
+      } catch (error) {
+        // Silently ignore reset errors - widget might not be fully initialized yet
+        // This can happen during rapid re-renders or when component is unmounting
       }
-    };
+    }
   }, [siteKey]);
 
   return (

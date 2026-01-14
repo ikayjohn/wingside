@@ -5,19 +5,29 @@ import { createAdminClient } from '@/lib/supabase/admin';
 // Social platform configurations
 const SOCIAL_PLATFORMS: Record<string, { points: number; url: string; name: string }> = {
   instagram: {
-    points: 100,
+    points: 30,
     url: 'https://instagram.com/mywingside',
     name: 'Instagram'
   },
   twitter: {
-    points: 10,
+    points: 25,
     url: 'https://twitter.com/mywingside',
     name: 'Twitter/X'
   },
   tiktok: {
-    points: 15,
+    points: 30,
     url: 'https://tiktok.com/@mywingside',
     name: 'TikTok'
+  },
+  facebook: {
+    points: 25,
+    url: 'https://facebook.com/mywingside',
+    name: 'Facebook'
+  },
+  youtube: {
+    points: 40,
+    url: 'https://youtube.com/@mywingside',
+    name: 'YouTube'
   }
 };
 

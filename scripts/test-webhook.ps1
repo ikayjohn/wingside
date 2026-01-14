@@ -35,7 +35,7 @@ Write-Host ""
 
 try {
     $response = Invoke-RestMethod `
-        -Uri "https://www.wingside.ng/api/payment/nomba/webhook" `
+        -Uri "https://www.wingside.ng/api/payment/nomba/webhook/" `
         -Method POST `
         -ContentType "application/json" `
         -Body $body `

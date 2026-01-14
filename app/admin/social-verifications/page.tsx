@@ -90,6 +90,8 @@ export default function SocialVerificationsPage() {
       instagram: `https://instagram.com/${username}`,
       twitter: `https://twitter.com/${username}`,
       tiktok: `https://tiktok.com/@${username}`,
+      facebook: `https://facebook.com/${username}`,
+      youtube: `https://youtube.com/@${username}`,
     };
     window.open(urls[platform] || '#', '_blank');
   }
@@ -120,8 +122,10 @@ export default function SocialVerificationsPage() {
   function getPlatformIcon(platform: string) {
     const icons: Record<string, string> = {
       instagram: '📸',
-      twitter: '🐦',
+      twitter: '𝕏',
       tiktok: '🎵',
+      facebook: '👥',
+      youtube: '▶️',
     };
     return icons[platform] || '🔗';
   }

@@ -199,7 +199,7 @@ export default function WingclubPage() {
                   <li>• ₦3000 off your 10th purchase</li>
                   <li>• Redeem ₦3000 for every 500 points earned.</li>
                 </ul>
-                <p className="text-2xl text-black font-extrabold">0 - 5,000 points</p>
+                <p className="text-2xl text-black font-extrabold">0 - 5000 points</p>
               </div>
               {/* Decorative Shape */}
               <div className="absolute bottom-0 right-0 w-64 h-64 translate-x-12 translate-y-12">
@@ -225,7 +225,7 @@ export default function WingclubPage() {
                   <li>• Priority pickup - skip the line</li>
                   <li>• Double points on weekends</li>
                 </ul>
-                <p className="text-2xl text-black font-extrabold">5,001 - 20,000 points</p>
+                <p className="text-2xl text-black font-extrabold">5001 - 20,000 points</p>
               </div>
               {/* Decorative Shape */}
               <div className="absolute bottom-0 right-0 w-64 h-64 translate-x-12 translate-y-12">

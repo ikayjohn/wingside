@@ -1475,6 +1475,27 @@ input[type="button"],
   border-color: #F7C400;
 }
 
+.wingclub-input.error {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.wingclub-input.error:focus {
+  border-color: #ef4444;
+}
+
+.wingclub-phone-input.error {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.wingclub-error {
+  display: block;
+  color: #ef4444;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
 .wingclub-input-highlight {
   border-color: #F7C400;
   background-color: #FFFBEB;
@@ -2578,6 +2599,21 @@ input[type="button"],
 .earn-rewards-task-icon.red {
   background-color: #fee2e2;
   color: #ef4444;
+}
+
+.earn-rewards-task-icon.black {
+  background-color: #f3f4f6;
+  color: #000000;
+}
+
+.earn-rewards-task-icon.pink {
+  background-color: #fce7f3;
+  color: #ec4899;
+}
+
+.earn-rewards-task-icon.orange {
+  background-color: #ffedd5;
+  color: #f97316;
 }
 
 .earn-rewards-task-info {
