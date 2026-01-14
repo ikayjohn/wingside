@@ -12,28 +12,31 @@ const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// Generate referral code based on name and user ID
-function generateReferralCode(fullName: string, userId: string): string {
-  // Extract first part of name and clean it
-  const namePart = fullName
-    .split(' ')[0]
-    .replace(/[^a-zA-Z]/g, '')
-    .toLowerCase()
-    .slice(0, 8);
+// Generate referral code based on first name, last name, and random numbers
+function generateReferralCode(firstName: string, lastName: string): string {
+  // Clean and format names
+  const cleanFirst = firstName.replace(/[^a-zA-Z]/g, '').toLowerCase();
+  const cleanLast = lastName.replace(/[^a-zA-Z]/g, '').toLowerCase();
 
-  // Get last 4 characters of user ID and encode them
-  const idPart = userId.slice(-4).replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  // Take first 4 chars of first name and first 4 chars of last name
+  const firstPart = cleanFirst.slice(0, 4).toLowerCase();
+  const lastPart = cleanLast.slice(0, 4).toLowerCase();
 
-  // Combine and ensure uniqueness
-  let code = `${namePart}${idPart}`;
+  // Generate 3 random digits
+  const randomDigits = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
 
-  // Add random suffix if too short
-  if (code.length < 6) {
-    const randomSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
-    code = `${namePart}${randomSuffix}`;
+  // Combine: FIRST4 + LAST4 + 3DIGITS
+  // Example: johndoe123
+  let code = `${firstPart}${lastPart}${randomDigits}`;
+
+  // Ensure code is at least 5 characters
+  if (code.length < 5) {
+    const extraRandom = Math.random().toString(36).substring(2, 4).toUpperCase();
+    code = `${code}${extraRandom}`;
   }
 
-  return code;
+  // Max length 15 characters
+  return code.slice(0, 15);
 }
 
 export default function MyAccountPage() {
@@ -303,7 +306,7 @@ export default function MyAccountPage() {
 
       if (data.user) {
         // Generate unique referral code for new user
-        const referralCode = generateReferralCode(`${signupData.firstName} ${signupData.lastName}`, data.user.id);
+        const referralCode = generateReferralCode(signupData.firstName, signupData.lastName);
 
         // Create profile
         const { error: profileError } = await supabase.from('profiles').insert({
@@ -599,15 +602,16 @@ export default function MyAccountPage() {
 
                 {/* Referral ID */}
                 <div className="wingclub-field">
-                  <label className="wingclub-label">Referral ID</label>
+                  <label className="wingclub-label">Referral ID (Optional)</label>
                   <input
                     type="text"
                     name="referralId"
                     value={signupData.referralId}
                     onChange={handleSignupChange}
-                    placeholder="e.g. Wingmanwings"
-                    className="wingclub-input wingclub-input-highlight"
+                    placeholder="e.g. johndoe123"
+                    className="wingclub-input"
                   />
+                  <p className="text-xs text-gray-400 mt-1">Enter a friend's referral code to earn rewards</p>
                 </div>
 
                 {/* Privacy Checkbox */}
