@@ -245,6 +245,22 @@ export default function MyAccountPage() {
 
       console.log('✅ Signup successful:', signupResult);
 
+      // Sign the user in after successful signup
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: signupData.email,
+        password: signupData.password,
+      });
+
+      if (signInError) {
+        console.error('Sign in after signup failed:', signInError);
+        // Don't fail the entire flow - user can sign in manually
+        alert('Account created successfully! Please check your email and then log in.');
+        router.push('/my-account');
+        return;
+      }
+
+      console.log('✅ User signed in successfully');
+
       // Auto-create Embedly customer and wallet (optional, separate from signup)
       try {
         console.log('🔄 Attempting to create Embedly wallet...');
@@ -268,7 +284,7 @@ export default function MyAccountPage() {
         // Don't fail signup if Embedly wallet creation fails
       }
 
-      alert('Account created successfully! Please check your email to verify your account.');
+      alert('Account created successfully! Welcome to Wingside!');
       router.push('/my-account/dashboard');
 
     } catch (error: any) {
