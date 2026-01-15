@@ -25,8 +25,8 @@ export const Recaptcha: React.FC<RecaptchaProps> = ({
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    // Check if already loaded
-    if (typeof window !== 'undefined' && window.grecaptcha) {
+    // Check if already loaded AND ready
+    if (typeof window !== 'undefined' && window.grecaptcha && typeof window.grecaptcha.execute === 'function') {
       setIsLoaded(true);
       return;
     }
@@ -38,7 +38,16 @@ export const Recaptcha: React.FC<RecaptchaProps> = ({
     script.defer = true;
 
     script.onload = () => {
-      setIsLoaded(true);
+      // Wait for grecaptcha to be fully ready
+      const checkReady = () => {
+        if (window.grecaptcha && typeof window.grecaptcha.execute === 'function') {
+          setIsLoaded(true);
+        } else {
+          // Check again in 100ms
+          setTimeout(checkReady, 100);
+        }
+      };
+      checkReady();
     };
 
     script.onerror = () => {
@@ -58,6 +67,14 @@ export const Recaptcha: React.FC<RecaptchaProps> = ({
       return;
     }
 
+    // Check if execute function is available (it might not be ready immediately)
+    if (typeof window.grecaptcha.execute !== 'function') {
+      console.warn('reCAPTCHA execute function not ready yet, retrying...');
+      // Retry after a short delay
+      setTimeout(() => executeRecaptcha(), 500);
+      return;
+    }
+
     try {
       const token = await window.grecaptcha.execute(siteKey, { action });
       onVerify(token);
@@ -69,10 +86,10 @@ export const Recaptcha: React.FC<RecaptchaProps> = ({
   // Auto-execute when component mounts (invisible verification)
   useEffect(() => {
     if (isLoaded) {
-      // Small delay to ensure script is fully ready
+      // Wait longer for script to fully initialize
       const timer = setTimeout(() => {
         executeRecaptcha();
-      }, 500);
+      }, 1000);
 
       return () => clearTimeout(timer);
     }
@@ -91,6 +108,12 @@ export function useRecaptcha(siteKey: string, action: string = 'submit') {
   const execute = async (): Promise<string | null> => {
     if (typeof window === 'undefined' || !window.grecaptcha) {
       console.warn('reCAPTCHA not available');
+      return null;
+    }
+
+    // Check if execute function is available
+    if (typeof window.grecaptcha.execute !== 'function') {
+      console.warn('reCAPTCHA execute function not ready');
       return null;
     }
 
