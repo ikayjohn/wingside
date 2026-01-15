@@ -53,6 +53,8 @@ export default function MyAccountPage() {
     lastName?: string;
     phone?: string;
     email?: string;
+    dobDay?: string;
+    dobMonth?: string;
   }>({});
 
   const [signupData, setSignupData] = useState({
@@ -63,6 +65,9 @@ export default function MyAccountPage() {
     password: '',
     referralId: '',
     agreePrivacy: false,
+    dobDay: '',
+    dobMonth: '',
+    dobYear: '',
   });
 
   const [loginData, setLoginData] = useState({
@@ -110,6 +115,25 @@ export default function MyAccountPage() {
     // Must start with valid Nigerian mobile prefix (7, 8, or 9)
     if (!/^[789]\d{9}$/.test(cleaned)) {
       return { valid: false, error: 'Phone number must start with 7, 8, or 9' };
+    }
+
+    return { valid: true };
+  };
+
+  const validateDOB = (day: string, month: string): { valid: boolean; error?: string } => {
+    if (!day || !month) {
+      return { valid: false, error: 'Day and month are required' };
+    }
+
+    const dayNum = parseInt(day);
+    const monthNum = parseInt(month);
+
+    if (isNaN(dayNum) || dayNum < 1 || dayNum > 31) {
+      return { valid: false, error: 'Please enter a valid day (1-31)' };
+    }
+
+    if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+      return { valid: false, error: 'Please enter a valid month (1-12)' };
     }
 
     return { valid: true };
@@ -236,8 +260,23 @@ export default function MyAccountPage() {
       return;
     }
 
+    // Validate date of birth (day and month required)
+    const dobValidation = validateDOB(signupData.dobDay, signupData.dobMonth);
+    if (!dobValidation.valid) {
+      setFieldErrors({
+        dobDay: dobValidation.error!,
+        dobMonth: dobValidation.error!,
+      });
+      return;
+    }
+
     // Format phone number
     const formattedPhone = formatPhoneNumber(signupData.phone);
+
+    // Format date of birth for API (DD-MM format, year optional)
+    const dobFormatted = signupData.dobYear
+      ? `${signupData.dobDay.padStart(2, '0')}-${signupData.dobMonth.padStart(2, '0')}-${signupData.dobYear}`
+      : `${signupData.dobDay.padStart(2, '0')}-${signupData.dobMonth.padStart(2, '0')}`;
 
     setIsSubmitting(true);
 
@@ -255,6 +294,7 @@ export default function MyAccountPage() {
           lastName: signupData.lastName,
           phone: formattedPhone,
           referralId: signupData.referralId,
+          dateOfBirth: dobFormatted,
         }),
       });
 
@@ -417,7 +457,7 @@ export default function MyAccountPage() {
                 {/* Name Row */}
                 <div className="wingclub-row">
                   <div className="wingclub-field">
-                    <label className="wingclub-label">First name</label>
+                    <label className="wingclub-label">First name <span className="text-red-500">*</span></label>
                     <input
                       type="text"
                       name="firstName"
@@ -431,7 +471,7 @@ export default function MyAccountPage() {
                     )}
                   </div>
                   <div className="wingclub-field">
-                    <label className="wingclub-label">Last name</label>
+                    <label className="wingclub-label">Last name <span className="text-red-500">*</span></label>
                     <input
                       type="text"
                       name="lastName"
@@ -446,44 +486,117 @@ export default function MyAccountPage() {
                   </div>
                 </div>
 
-                {/* Email */}
-                <div className="wingclub-field">
-                  <label className="wingclub-label">Email</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={signupData.email}
-                    onChange={handleSignupChange}
-                    placeholder="you@company.com"
-                    className="wingclub-input"
-                  />
-                </div>
-
-                {/* Phone */}
-                <div className="wingclub-field">
-                  <label className="wingclub-label">Phone number</label>
-                  <div className="wingclub-phone-wrapper">
-                    <div className="flex items-center px-3 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-gray-600">
-                      +234
-                    </div>
+                {/* Email and Phone Row */}
+                <div className="wingclub-row">
+                  {/* Email */}
+                  <div className="wingclub-field">
+                    <label className="wingclub-label">Email <span className="text-red-500">*</span></label>
                     <input
-                      type="tel"
-                      name="phone"
-                      value={signupData.phone}
+                      type="email"
+                      name="email"
+                      value={signupData.email}
                       onChange={handleSignupChange}
-                      placeholder="801 234 5678"
-                      className={`wingclub-phone-input rounded-l-none flex-1 ${fieldErrors.phone ? 'error' : ''}`}
+                      placeholder="you@company.com"
+                      className="wingclub-input"
                     />
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">Enter Nigerian number without the leading 0</p>
-                  {fieldErrors.phone && (
-                    <span className="wingclub-error">{fieldErrors.phone}</span>
+
+                  {/* Phone */}
+                  <div className="wingclub-field">
+                    <label className="wingclub-label">Phone number <span className="text-red-500">*</span></label>
+                    <div className="wingclub-phone-wrapper">
+                      <div className="flex items-center px-3 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-gray-600">
+                        +234
+                      </div>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={signupData.phone}
+                        onChange={handleSignupChange}
+                        placeholder="801 234 5678"
+                        className={`wingclub-phone-input rounded-l-none flex-1 ${fieldErrors.phone ? 'error' : ''}`}
+                      />
+                    </div>
+                    {fieldErrors.phone && (
+                      <span className="wingclub-error">{fieldErrors.phone}</span>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-gray-400 -mt-3 mb-2">Enter Nigerian number without the leading 0</p>
+
+                {/* Date of Birth */}
+                <div className="wingclub-field">
+                  <label className="wingclub-label">Date of Birth <span className="text-red-500">*</span></label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {/* Day */}
+                    <div>
+                      <label className="text-xs text-gray-600 mb-1 block">Day *</label>
+                      <select
+                        name="dobDay"
+                        value={signupData.dobDay}
+                        onChange={handleSignupChange}
+                        className={`wingclub-input ${fieldErrors.dobDay ? 'error' : ''}`}
+                        required
+                      >
+                        <option value="">Day</option>
+                        {Array.from({ length: 31 }, (_, i) => (
+                          <option key={i + 1} value={i + 1}>
+                            {i + 1}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Month */}
+                    <div>
+                      <label className="text-xs text-gray-600 mb-1 block">Month *</label>
+                      <select
+                        name="dobMonth"
+                        value={signupData.dobMonth}
+                        onChange={handleSignupChange}
+                        className={`wingclub-input ${fieldErrors.dobMonth ? 'error' : ''}`}
+                        required
+                      >
+                        <option value="">Month</option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                      </select>
+                    </div>
+
+                    {/* Year (Optional) */}
+                    <div>
+                      <label className="text-xs text-gray-600 mb-1 block">Year (optional)</label>
+                      <input
+                        type="number"
+                        name="dobYear"
+                        value={signupData.dobYear}
+                        onChange={handleSignupChange}
+                        placeholder="YYYY"
+                        min="1900"
+                        max={new Date().getFullYear()}
+                        className="wingclub-input"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">Day and month are required for birthday rewards</p>
+                  {(fieldErrors.dobDay || fieldErrors.dobMonth) && (
+                    <span className="wingclub-error">{fieldErrors.dobDay || fieldErrors.dobMonth}</span>
                   )}
                 </div>
 
                 {/* Password */}
                 <div className="wingclub-field">
-                  <label className="wingclub-label">Set a password</label>
+                  <label className="wingclub-label">Set a password <span className="text-red-500">*</span></label>
                   <div className="wingclub-password-wrapper">
                     <input
                       type={showPassword ? 'text' : 'password'}

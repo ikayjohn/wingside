@@ -37,7 +37,8 @@ async function initializeEmbedlyCustomer(
   email: string,
   firstName: string,
   lastName: string,
-  phone: string
+  phone: string,
+  dateOfBirth: string | null
 ): Promise<{ customerId: string | null; error: string | null }> {
   if (!isEmbedlyConfigured()) {
     console.log('Embedly not configured, skipping customer initialization');
@@ -76,6 +77,11 @@ async function initializeEmbedlyCustomer(
       countryId: nigeria.id,
     };
 
+    // Add date of birth if provided
+    if (dateOfBirth) {
+      customerData.dob = dateOfBirth;
+    }
+
     // Create customer in Embedly
     const embedlyCustomer = await embedlyClient.createCustomer(customerData);
 
@@ -109,6 +115,7 @@ export async function POST(request: Request) {
       lastName,
       phone,
       referralId,
+      dateOfBirth,
     } = body;
 
     // Validate required fields
@@ -117,6 +124,20 @@ export async function POST(request: Request) {
         { error: 'Missing required fields' },
         { status: 400 }
       );
+    }
+
+    // Validate date of birth (day and month required)
+    let formattedDOB = null;
+    if (dateOfBirth) {
+      const parts = dateOfBirth.split('-');
+      if (parts.length >= 2) {
+        const day = parts[0].padStart(2, '0');
+        const month = parts[1].padStart(2, '0');
+        const year = parts[2] || null;
+
+        // Format for Embedly: DD-MM-YYYY or DD-MM
+        formattedDOB = year ? `${day}-${month}-${year}` : `${day}-${month}`;
+      }
     }
 
     // Validate referral code if provided
@@ -178,6 +199,7 @@ export async function POST(request: Request) {
       role: 'customer',
       referral_code: referralCode,
       referred_by: referredByUserId,
+      date_of_birth: formattedDOB,
     });
 
     if (profileError) {
@@ -191,7 +213,8 @@ export async function POST(request: Request) {
       authData.user.email!,
       firstName,
       lastName,
-      `+234${phone}`
+      `+234${phone}`,
+      formattedDOB
     );
 
     // Update profile with Embedly customer ID if successful
