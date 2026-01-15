@@ -27,8 +27,9 @@ const nextConfig: NextConfig = {
   // Security headers
   async headers() {
     return [
+      // Page routes - full security headers
       {
-        source: '/:path*',
+        source: '/(?!api/:path*)',
         headers: [
           {
             key: 'X-DNS-Prefetch-Control',
@@ -77,7 +78,7 @@ const nextConfig: NextConfig = {
           }
         ],
       },
-      // API routes - stricter CSP
+      // API routes - minimal security headers (no CSP needed for JSON APIs)
       {
         source: '/api/:path*',
         headers: [
@@ -86,9 +87,13 @@ const nextConfig: NextConfig = {
             value: 'DENY'
           },
           {
-            key: 'Content-Security-Policy',
-            value: "default-src 'self'; object-src 'none'; base-uri 'self'"
-          }
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload'
+          },
         ],
       }
     ]
