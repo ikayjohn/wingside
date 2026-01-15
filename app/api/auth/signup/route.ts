@@ -93,6 +93,25 @@ export async function POST(request: Request) {
       );
     }
 
+    // Manually send verification email
+    try {
+      const { error: otpError } = await supabase.auth.admin.generateLink({
+        type: 'signup',
+        email: email.toLowerCase().trim(),
+        password: password,
+      });
+
+      if (otpError) {
+        console.error('Verification email error:', otpError);
+        // Don't fail signup if email fails, just log it
+      } else {
+        console.log('✅ Verification email sent to:', email.toLowerCase().trim());
+      }
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      // Don't fail signup if email fails
+    }
+
     // Generate referral code for new user
     const referralCode = generateReferralCode(firstName, lastName);
 
