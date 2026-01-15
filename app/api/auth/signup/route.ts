@@ -1,16 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import embedlyClient, { CreateCustomerRequest } from '@/lib/embedly/client';
+import { syncNewCustomer } from '@/lib/integrations';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-
-// Check if Embedly is configured
-function isEmbedlyConfigured(): boolean {
-  return !!(process.env.EMBEDLY_API_KEY && process.env.EMBEDLY_ORG_ID);
-}
 
 // Generate referral code based on first name, last name, and random numbers
 function generateReferralCode(firstName: string, lastName: string): string {
@@ -30,79 +25,6 @@ function generateReferralCode(firstName: string, lastName: string): string {
   }
 
   return code.slice(0, 15);
-}
-
-// Initialize Embedly customer for new user
-async function initializeEmbedlyCustomer(
-  email: string,
-  firstName: string,
-  lastName: string,
-  phone: string,
-  dateOfBirth: string | null
-): Promise<{ customerId: string | null; error: string | null }> {
-  if (!isEmbedlyConfigured()) {
-    console.log('Embedly not configured, skipping customer initialization');
-    return { customerId: null, error: null };
-  }
-
-  try {
-    // Get required Embedly configuration
-    const [countries, customerTypes] = await Promise.all([
-      embedlyClient.getCountries(),
-      embedlyClient.getCustomerTypes()
-    ]);
-
-    // Find Nigeria
-    const nigeria = countries.find(country => country.countryCodeTwo === 'NG');
-    if (!nigeria) {
-      console.error('Embedly: Nigeria country not found');
-      return { customerId: null, error: 'Nigeria country not found in Embedly system' };
-    }
-
-    // Find Individual customer type
-    const individualType = customerTypes.find(type => type.name.toLowerCase() === 'individual');
-    if (!individualType) {
-      console.error('Embedly: Individual customer type not found');
-      return { customerId: null, error: 'Individual customer type not found' };
-    }
-
-    // Prepare customer data
-    const customerData: CreateCustomerRequest = {
-      organizationId: process.env.EMBEDLY_ORG_ID!,
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      emailAddress: email.toLowerCase().trim(),
-      mobileNumber: phone,
-      customerTypeId: individualType.id,
-      countryId: nigeria.id,
-    };
-
-    // Add date of birth if provided
-    if (dateOfBirth) {
-      customerData.dob = dateOfBirth;
-    }
-
-    // Create customer in Embedly
-    const embedlyCustomer = await embedlyClient.createCustomer(customerData);
-
-    console.log(`Embedly: Customer ${embedlyCustomer.id} created for ${email}`);
-    return { customerId: embedlyCustomer.id, error: null };
-
-  } catch (error: any) {
-    // Check if customer already exists
-    try {
-      const existingCustomer = await embedlyClient.getCustomerByEmail(email);
-      if (existingCustomer) {
-        console.log(`Embedly: Existing customer ${existingCustomer.id} found for ${email}`);
-        return { customerId: existingCustomer.id, error: null };
-      }
-    } catch (findError) {
-      // Customer doesn't exist, return original error
-    }
-
-    console.error('Embedly customer initialization error:', error);
-    return { customerId: null, error: error.message || 'Failed to create Embedly customer' };
-  }
 }
 
 export async function POST(request: Request) {
@@ -218,31 +140,27 @@ export async function POST(request: Request) {
       // But log it for debugging
     }
 
-    // Initialize Embedly customer account
-    const embedlyResult = await initializeEmbedlyCustomer(
-      authData.user.email!,
-      firstName,
-      lastName,
-      `+234${phone}`,
-      formattedDOB
-    );
+    // Sync customer to integrations (Zoho CRM and Embedly)
+    const syncResult = await syncNewCustomer({
+      id: authData.user.id,
+      email: authData.user.email!,
+      full_name: `${firstName.trim()} ${lastName.trim()}`,
+      phone: `+234${phone}`,
+    });
 
-    // Update profile with Embedly customer ID if successful
-    if (embedlyResult.customerId) {
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ embedly_customer_id: embedlyResult.customerId })
-        .eq('id', authData.user.id);
+    if (syncResult.zoho) {
+      console.log(`Zoho CRM: Contact ${syncResult.zoho.action} - ${authData.user.email}`);
+    }
 
-      if (updateError) {
-        console.error('Profile update error (Embedly ID):', updateError);
-        // Don't fail signup if we can't save the Embedly ID
-      } else {
-        console.log(`Profile updated with Embedly customer ID: ${embedlyResult.customerId}`);
+    if (syncResult.embedly) {
+      console.log(`Embedly: Customer ${syncResult.embedly.isNewCustomer ? 'created' : 'linked'} - ${syncResult.embedly.customer_id}`);
+      if (syncResult.embedly.wallet_id) {
+        console.log(`Embedly: Wallet ${syncResult.embedly.wallet_id} created`);
       }
-    } else if (embedlyResult.error) {
-      console.warn('Embedly initialization failed, but signup succeeded:', embedlyResult.error);
-      // Continue with signup even if Embedly fails
+    }
+
+    if (syncResult.error) {
+      console.warn('Integration sync failed, but signup succeeded:', syncResult.error);
     }
 
     // Create referral record if user was referred
