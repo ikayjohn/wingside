@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import { HoneypotField } from '@/components/HoneypotField';
-import { Turnstile } from '@/components/Turnstile';
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -72,7 +71,6 @@ export default function MyAccountPage() {
   }, [router]);
   const [activeTab, setActiveTab] = useState<'signup' | 'login'>('signup');
   const [showPassword, setShowPassword] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{
@@ -220,12 +218,6 @@ export default function MyAccountPage() {
       return; // Silently fail for bots
     }
 
-    // Validate CAPTCHA
-    if (!captchaToken) {
-      setSubmitError('Please complete the CAPTCHA verification');
-      return;
-    }
-
     // Validate first name
     const firstNameValidation = validateName(signupData.firstName, 'First name');
     if (!firstNameValidation.valid) {
@@ -253,22 +245,6 @@ export default function MyAccountPage() {
     setIsSubmitting(true);
 
     try {
-      // Verify CAPTCHA token
-      const verifyResponse = await fetch('/api/captcha/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: captchaToken }),
-      });
-
-      const verifyResult = await verifyResponse.json();
-
-      if (!verifyResult.success) {
-        setSubmitError('CAPTCHA verification failed. Please try again.');
-        setCaptchaToken(null);
-        setIsSubmitting(false);
-        return;
-      }
-
       // Process referral ID if provided
       let referredByUserId = null;
       if (signupData.referralId.trim()) {
@@ -629,27 +605,11 @@ export default function MyAccountPage() {
                   </label>
                 </div>
 
-                {/* CAPTCHA Widget - only load on signup tab */}
-                <div className="wingclub-field mb-4">
-                  <Turnstile
-                    siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''}
-                    loadScript={activeTab === 'signup'}
-                    onSuccess={setCaptchaToken}
-                    onError={() => {
-                      setSubmitError('CAPTCHA verification failed. Please try again.');
-                      setCaptchaToken(null);
-                    }}
-                    onExpire={() => {
-                      setCaptchaToken(null);
-                    }}
-                  />
-                </div>
-
                 {/* Submit Button */}
                 <button
                   type="submit"
                   className="wingclub-submit-btn"
-                  disabled={isSubmitting || !captchaToken}
+                  disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Creating Account...' : 'Join the Wingclub'}
                 </button>
