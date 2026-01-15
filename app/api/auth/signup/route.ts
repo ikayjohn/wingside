@@ -116,12 +116,21 @@ export async function POST(request: Request) {
       phone,
       referralId,
       dateOfBirth,
+      gender,
     } = body;
 
     // Validate required fields
-    if (!email || !password || !firstName || !lastName || !phone) {
+    if (!email || !password || !firstName || !lastName || !phone || !gender) {
       return NextResponse.json(
         { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Validate gender
+    if (gender !== 'M' && gender !== 'F') {
+      return NextResponse.json(
+        { error: 'Gender must be M or F' },
         { status: 400 }
       );
     }
@@ -200,6 +209,7 @@ export async function POST(request: Request) {
       referral_code: referralCode,
       referred_by: referredByUserId,
       date_of_birth: formattedDOB,
+      gender: gender,
     });
 
     if (profileError) {

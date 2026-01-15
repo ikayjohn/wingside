@@ -55,6 +55,7 @@ export default function MyAccountPage() {
     email?: string;
     dobDay?: string;
     dobMonth?: string;
+    gender?: string;
   }>({});
 
   const [signupData, setSignupData] = useState({
@@ -68,6 +69,7 @@ export default function MyAccountPage() {
     dobDay: '',
     dobMonth: '',
     dobYear: '',
+    gender: '',
   });
 
   const [loginData, setLoginData] = useState({
@@ -134,6 +136,18 @@ export default function MyAccountPage() {
 
     if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
       return { valid: false, error: 'Please enter a valid month (1-12)' };
+    }
+
+    return { valid: true };
+  };
+
+  const validateGender = (gender: string): { valid: boolean; error?: string } => {
+    if (!gender || gender.trim() === '') {
+      return { valid: false, error: 'Gender is required' };
+    }
+
+    if (gender !== 'M' && gender !== 'F') {
+      return { valid: false, error: 'Please select a gender' };
     }
 
     return { valid: true };
@@ -270,6 +284,13 @@ export default function MyAccountPage() {
       return;
     }
 
+    // Validate gender
+    const genderValidation = validateGender(signupData.gender);
+    if (!genderValidation.valid) {
+      setFieldErrors({ gender: genderValidation.error! });
+      return;
+    }
+
     // Format phone number
     const formattedPhone = formatPhoneNumber(signupData.phone);
 
@@ -295,6 +316,7 @@ export default function MyAccountPage() {
           phone: formattedPhone,
           referralId: signupData.referralId,
           dateOfBirth: dobFormatted,
+          gender: signupData.gender,
         }),
       });
 
@@ -524,10 +546,10 @@ export default function MyAccountPage() {
                   </div>
                 </div>
 
-                {/* Date of Birth */}
+                {/* Date of Birth and Gender */}
                 <div className="wingclub-field">
-                  <label className="wingclub-label">Date of Birth <span className="text-red-500">*</span></label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <label className="wingclub-label">Date of Birth & Gender <span className="text-red-500">*</span></label>
+                  <div className="grid grid-cols-4 gap-3">
                     {/* Day */}
                     <div>
                       <label className="text-xs text-gray-600 mb-1 block">Day *</label>
@@ -575,7 +597,7 @@ export default function MyAccountPage() {
 
                     {/* Year (Optional) */}
                     <div>
-                      <label className="text-xs text-gray-600 mb-1 block">Year (optional)</label>
+                      <label className="text-xs text-gray-600 mb-1 block">Year</label>
                       <input
                         type="number"
                         name="dobYear"
@@ -587,10 +609,51 @@ export default function MyAccountPage() {
                         className="wingclub-input"
                       />
                     </div>
+
+                    {/* Gender Switch */}
+                    <div>
+                      <label className="text-xs text-gray-600 mb-1 block">Gender *</label>
+                      <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                        <button
+                          type="button"
+                          className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                            signupData.gender === 'M'
+                              ? 'bg-yellow-400 text-black shadow-sm'
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                          onClick={() => {
+                            setSignupData(prev => ({ ...prev, gender: 'M' }));
+                            if (fieldErrors.gender) {
+                              setFieldErrors(prev => ({ ...prev, gender: undefined }));
+                            }
+                          }}
+                        >
+                          M
+                        </button>
+                        <button
+                          type="button"
+                          className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                            signupData.gender === 'F'
+                              ? 'bg-yellow-400 text-black shadow-sm'
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                          onClick={() => {
+                            setSignupData(prev => ({ ...prev, gender: 'F' }));
+                            if (fieldErrors.gender) {
+                              setFieldErrors(prev => ({ ...prev, gender: undefined }));
+                            }
+                          }}
+                        >
+                          F
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">Day and month are required for birthday rewards</p>
-                  {(fieldErrors.dobDay || fieldErrors.dobMonth) && (
-                    <span className="wingclub-error">{fieldErrors.dobDay || fieldErrors.dobMonth}</span>
+                  <p className="text-xs text-gray-400 mt-1">Day, month, and gender are required</p>
+                  {(fieldErrors.dobDay || fieldErrors.dobMonth || fieldErrors.gender) && (
+                    <span className="wingclub-error">
+                      {fieldErrors.dobDay || fieldErrors.dobMonth || fieldErrors.gender}
+                    </span>
                   )}
                 </div>
 
@@ -641,9 +704,9 @@ export default function MyAccountPage() {
                       placeholder="e.g. johndoe123"
                       className="wingclub-input"
                     />
+                    <p className="text-[10px] text-gray-400 mt-1">Enter a friend's code to earn rewards</p>
                   </div>
                 </div>
-                <p className="text-xs text-gray-400 -mt-3 mb-2">Enter a friend's referral code to earn rewards (case-insensitive)</p>
 
                 {/* Privacy Checkbox */}
                 <div className="wingclub-checkbox-wrapper">
