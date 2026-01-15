@@ -128,9 +128,9 @@ export async function POST(request: Request) {
     }
 
     // Validate gender
-    if (gender !== 'M' && gender !== 'F') {
+    if (gender !== 'Male' && gender !== 'Female') {
       return NextResponse.json(
-        { error: 'Gender must be M or F' },
+        { error: 'Gender must be Male or Female' },
         { status: 400 }
       );
     }

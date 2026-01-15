@@ -146,7 +146,7 @@ export default function MyAccountPage() {
       return { valid: false, error: 'Gender is required' };
     }
 
-    if (gender !== 'M' && gender !== 'F') {
+    if (gender !== 'Male' && gender !== 'Female') {
       return { valid: false, error: 'Please select a gender' };
     }
 
@@ -617,12 +617,12 @@ export default function MyAccountPage() {
                         <button
                           type="button"
                           className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
-                            signupData.gender === 'M'
-                              ? 'bg-yellow-400 text-black shadow-sm'
+                            signupData.gender === 'Male'
+                              ? 'bg-yellow-400 text-black'
                               : 'text-gray-600 hover:text-gray-900'
                           }`}
                           onClick={() => {
-                            setSignupData(prev => ({ ...prev, gender: 'M' }));
+                            setSignupData(prev => ({ ...prev, gender: 'Male' }));
                             if (fieldErrors.gender) {
                               setFieldErrors(prev => ({ ...prev, gender: undefined }));
                             }
@@ -633,12 +633,12 @@ export default function MyAccountPage() {
                         <button
                           type="button"
                           className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
-                            signupData.gender === 'F'
-                              ? 'bg-yellow-400 text-black shadow-sm'
+                            signupData.gender === 'Female'
+                              ? 'bg-yellow-400 text-black'
                               : 'text-gray-600 hover:text-gray-900'
                           }`}
                           onClick={() => {
-                            setSignupData(prev => ({ ...prev, gender: 'F' }));
+                            setSignupData(prev => ({ ...prev, gender: 'Female' }));
                             if (fieldErrors.gender) {
                               setFieldErrors(prev => ({ ...prev, gender: undefined }));
                             }
