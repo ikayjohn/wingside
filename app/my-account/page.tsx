@@ -496,7 +496,7 @@ export default function MyAccountPage() {
                       name="email"
                       value={signupData.email}
                       onChange={handleSignupChange}
-                      placeholder="you@company.com"
+                      placeholder="you@mail.com"
                       className="wingclub-input"
                     />
                   </div>
@@ -517,12 +517,12 @@ export default function MyAccountPage() {
                         className={`wingclub-phone-input rounded-l-none flex-1 ${fieldErrors.phone ? 'error' : ''}`}
                       />
                     </div>
+                    <p className="text-xs text-gray-400 mt-1">Enter Nigerian number without the leading 0</p>
                     {fieldErrors.phone && (
                       <span className="wingclub-error">{fieldErrors.phone}</span>
                     )}
                   </div>
                 </div>
-                <p className="text-xs text-gray-400 -mt-3 mb-2">Enter Nigerian number without the leading 0</p>
 
                 {/* Date of Birth */}
                 <div className="wingclub-field">
