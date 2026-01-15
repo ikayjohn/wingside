@@ -254,7 +254,7 @@ export default function MyAccountPage() {
       if (signInError) {
         console.error('Sign in after signup failed:', signInError);
         // Don't fail the entire flow - user can sign in manually
-        alert('Account created successfully! Please check your email and then log in.');
+        alert('Account created successfully! Please log in to continue.');
         router.push('/my-account');
         return;
       }
