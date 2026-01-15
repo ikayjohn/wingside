@@ -26,6 +26,89 @@ async function requireAdmin() {
   return {};
 }
 
+// GET /api/admin/customers/[id] - Get customer details
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { error } = await requireAdmin();
+    if (error) return error;
+
+    const { id } = await params;
+    const admin = createAdminClient();
+
+    // Get customer profile
+    const { data: profile, error: profileError } = await admin
+      .from('profiles')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (profileError || !profile) {
+      return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
+    }
+
+    // Get customer's addresses
+    const { data: addresses } = await admin
+      .from('addresses')
+      .select('*')
+      .eq('user_id', id)
+      .order('is_default', { ascending: false, nullsFirst: false });
+
+    // Get customer's recent orders (last 5)
+    const { data: recentOrders } = await admin
+      .from('orders')
+      .select('*')
+      .eq('user_id', id)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    // Get order statistics
+    const { count: totalOrders } = await admin
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', id);
+
+    // Calculate total spent
+    const { data: orderTotals } = await admin
+      .from('orders')
+      .select('total')
+      .eq('user_id', id)
+      .eq('status', 'completed');
+
+    const totalSpent = orderTotals?.reduce((sum, order) => sum + (order.total || 0), 0) || 0;
+
+    // Get last order date
+    const { data: lastOrder } = await admin
+      .from('orders')
+      .select('created_at')
+      .eq('user_id', id)
+      .eq('status', 'completed')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    const customerDetails = {
+      ...profile,
+      addresses: addresses || [],
+      recent_orders: recentOrders || [],
+      total_orders: totalOrders || 0,
+      total_spent: totalSpent,
+      last_order_date: lastOrder?.created_at,
+    };
+
+    return NextResponse.json({ customer: customerDetails });
+
+  } catch (error: any) {
+    console.error('Error fetching customer details:', error);
+    return NextResponse.json(
+      { error: error.message || 'Failed to fetch customer details' },
+      { status: 500 }
+    );
+  }
+}
+
 // DELETE /api/admin/customers/[id] - Delete a customer
 export async function DELETE(
   request: NextRequest,
