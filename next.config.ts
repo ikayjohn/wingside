@@ -27,9 +27,9 @@ const nextConfig: NextConfig = {
   // Security headers
   async headers() {
     return [
-      // Page routes - full security headers
+      // All routes - base security headers
       {
-        source: '/(?!api/:path*)',
+        source: '/:path*',
         headers: [
           {
             key: 'X-DNS-Prefetch-Control',
@@ -38,10 +38,6 @@ const nextConfig: NextConfig = {
           {
             key: 'Strict-Transport-Security',
             value: 'max-age=63072000; includeSubDomains; preload'
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN'
           },
           {
             key: 'X-Content-Type-Options',
@@ -58,6 +54,16 @@ const nextConfig: NextConfig = {
           {
             key: 'Permissions-Policy',
             value: 'camera=(self), microphone=(self), geolocation=(self)'
+          },
+        ],
+      },
+      // Page routes (not API) - add CSP and frame options
+      {
+        source: '/:path((?!api).*)*',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN'
           },
           {
             key: 'Content-Security-Policy',
@@ -78,21 +84,13 @@ const nextConfig: NextConfig = {
           }
         ],
       },
-      // API routes - minimal security headers (no CSP needed for JSON APIs)
+      // API routes - stricter frame options
       {
         source: '/api/:path*',
         headers: [
           {
             key: 'X-Frame-Options',
             value: 'DENY'
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff'
-          },
-          {
-            key: 'Strict-Transport-Security',
-            value: 'max-age=63072000; includeSubDomains; preload'
           },
         ],
       }
