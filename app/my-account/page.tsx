@@ -549,7 +549,7 @@ export default function MyAccountPage() {
                 {/* Date of Birth and Gender */}
                 <div className="wingclub-field">
                   <label className="wingclub-label">Date of Birth & Gender <span className="text-red-500">*</span></label>
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-[1fr_1fr_1fr_0.7fr] gap-4">
                     {/* Day */}
                     <div>
                       <label className="text-xs text-gray-600 mb-1 block">Day *</label>
@@ -760,7 +760,7 @@ export default function MyAccountPage() {
                     name="email"
                     value={loginData.email}
                     onChange={handleLoginChange}
-                    placeholder="you@company.com"
+                    placeholder="you@mail.com"
                     className="wingclub-input"
                   />
                 </div>
