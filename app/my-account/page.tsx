@@ -275,7 +275,7 @@ export default function MyAccountPage() {
         const { data: referrerData, error: referrerError } = await supabase
           .from('profiles')
           .select('id')
-          .eq('referral_code', signupData.referralId.trim().toUpperCase())
+          .eq('referral_code', signupData.referralId.trim().toLowerCase())
           .single();
 
         if (!referrerError && referrerData) {
@@ -608,10 +608,10 @@ export default function MyAccountPage() {
                     name="referralId"
                     value={signupData.referralId}
                     onChange={handleSignupChange}
-                    placeholder="e.g. johndoe123"
+                    placeholder="e.g. johndoe123 (all lowercase)"
                     className="wingclub-input"
                   />
-                  <p className="text-xs text-gray-400 mt-1">Enter a friend's referral code to earn rewards</p>
+                  <p className="text-xs text-gray-400 mt-1">Enter a friend's referral code to earn rewards (case-insensitive)</p>
                 </div>
 
                 {/* Privacy Checkbox */}
