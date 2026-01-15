@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { sanitizeBlogHtml } from '@/lib/security';
 
 interface BlogPost {
   id: string;
@@ -136,7 +137,7 @@ export default function BlogPostPage() {
         {/* Content */}
         <div
           className="prose prose-lg max-w-none"
-          dangerouslySetInnerHTML={{ __html: post.content }}
+          dangerouslySetInnerHTML={{ __html: sanitizeBlogHtml(post.content) }}
           style={{
             color: '#374151',
             lineHeight: '1.8'

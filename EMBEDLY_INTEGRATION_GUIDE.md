@@ -65,8 +65,8 @@ EMBEDLY_BASE_URL=https://waas-prod.embedly.ng/api/v1
 
 ### For Staging Environment:
 ```bash
-EMBEDLY_API_KEY=BSK-sqg0f3hCF3sC2KGtNBVsfxbOFFaiOgCEraaCYmg6G0EsqUQ9ihAbeIE2FkAvFlBtIv4kecDVsy4H
-EMBEDLY_ORG_ID=02600494-1a3c-11f0-a818-6045bd97b81d
+EMBEDLY_API_KEY=your_staging_api_key_here
+EMBEDLY_ORG_ID=your_staging_org_id_here
 EMBEDLY_BASE_URL=https://waas-staging.embedly.ng/api/v1
 ```
 

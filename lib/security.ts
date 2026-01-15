@@ -3,7 +3,7 @@
  */
 
 /**
- * Sanitize HTML string to prevent XSS attacks
+ * Sanitize HTML string to prevent XSS attacks while preserving safe formatting
  * Removes potentially dangerous HTML tags and attributes
  */
 export function sanitizeHtml(html: string): string {
@@ -12,21 +12,68 @@ export function sanitizeHtml(html: string): string {
   // Remove script tags and their content
   let sanitized = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
 
-  // Remove dangerous event handlers (onclick, onerror, etc.)
+  // Remove dangerous event handlers (onclick, onerror, onload, onmouseover, etc.)
   sanitized = sanitized.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
   sanitized = sanitized.replace(/\s*on\w+\s*=\s*[^\s>]*/gi, '');
 
-  // Remove javascript: protocol
+  // Remove javascript: protocol from href attributes
+  sanitized = sanitized.replace(/href\s*=\s*["']javascript:[^"']*["']/gi, '');
+  sanitized = sanitized.replace(/href\s*=\s*javascript:[^\s>]*/gi, '');
+
+  // Remove javascript: and vbscript: protocols anywhere
   sanitized = sanitized.replace(/javascript:/gi, '');
+  sanitized = sanitized.replace(/vbscript:/gi, '');
 
   // Remove data: protocol (except for images)
   sanitized = sanitized.replace(/data:(?!image\/)/gi, '');
 
-  // Remove vbscript: protocol
-  sanitized = sanitized.replace(/vbscript:/gi, '');
-
   // Remove other potentially dangerous protocols
-  sanitized = sanitized.replace(/(file:|ftp:)/gi, '');
+  sanitized = sanitized.replace(/(file:|ftp:|mailto:)/gi, '');
+
+  // Remove iframe, object, embed, form, input tags
+  sanitized = sanitized.replace(/<(iframe|object|embed|form|input|button|textarea|select)[^>]*>/gi, '');
+  sanitized = sanitized.replace(/<\/(iframe|object|embed|form|button|textarea|select)>/gi, '');
+
+  // Remove style tags with content
+  sanitized = sanitized.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+
+  // Remove meta tags
+  sanitized = sanitized.replace(/<meta[^>]*>/gi, '');
+
+  // Remove link tags
+  sanitized = sanitized.replace(/<link[^>]*>/gi, '');
+
+  // Remove dangerous attributes from any remaining tags
+  // Remove src attributes with javascript: or data: (except images)
+  sanitized = sanitized.replace(/<(?!img)(\w+)[^>]*src\s*=\s*["']javascript:[^"']*["'][^>]*>/gi, '<$1>');
+  sanitized = sanitized.replace(/<(?!img)(\w+)[^>]*src\s*=\s*["']data:[^"']*["'][^>]*>/gi, '<$1>');
+
+  return sanitized;
+}
+
+/**
+ * Sanitize HTML for blog content - preserves formatting tags
+ * Allows safe tags: p, br, strong, b, em, i, u, a, ul, ol, li, h1-h6, blockquote, img, div, span
+ */
+export function sanitizeBlogHtml(html: string): string {
+  if (!html) return '';
+
+  // First use the general HTML sanitizer
+  let sanitized = sanitizeHtml(html);
+
+  // Additional blog-specific sanitization
+  // Remove any remaining suspicious attributes
+  const dangerousAttrs = [
+    /\s*(?:on\w+|formaction|formaction|xlink:href|data[\w-]*)\s*=\s*["'][^"']*["']/gi,
+    /\s*(?:on\w+|formaction|xlink:href|data[\w-]*)\s*=\s*[^\s>]*/gi
+  ];
+
+  dangerousAttrs.forEach(pattern => {
+    sanitized = sanitized.replace(pattern, '');
+  });
+
+  // Remove HTML comments that might contain scripts
+  sanitized = sanitized.replace(/<!--[\s\S]*?-->/g, '');
 
   return sanitized;
 }

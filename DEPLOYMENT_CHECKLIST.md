@@ -40,8 +40,8 @@
 ### 1. **Environment Variables** ✅
 ```bash
 # These are already configured in .env.local
-EMBEDLY_API_KEY=BSK-iAYkZ8p4jJoKeUARw2RGApZjlsCdHDQsS3xR4Jt3YKQWZWUkaV0D2QHNqCFpZNu2wr9qXXXLnmHf
-EMBEDLY_ORG_ID=49849c1d-7845-11f0-8d44-4af84d9ff6f1
+EMBEDLY_API_KEY=your_production_api_key_here
+EMBEDLY_ORG_ID=your_production_org_id_here
 EMBEDLY_BASE_URL=https://waas-prod.embedly.ng/api/v1
 ```
 

@@ -1,14 +1,22 @@
 /**
  * API middleware for Next.js routes
- * Provides common functionality like rate limiting, error handling, etc.
+ * Provides common functionality like rate limiting, error handling, authentication, etc.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, RateLimitResult, RateLimitConfig } from './rate-limit';
+import { createClient } from '@/lib/supabase/server';
+import { AuthenticationError, AuthorizationError, errorToResponse } from './errors';
+import { csrfProtection } from './csrf';
 
 export interface MiddlewareContext {
   request: NextRequest;
   identifier?: string;
+  user?: {
+    id: string;
+    email: string;
+    role?: string;
+  };
 }
 
 export type MiddlewareFunction<T = any> = (
@@ -41,6 +49,64 @@ export function extractIdentifier(request: NextRequest): string {
              request.headers.get('x-real-ip') ||
              'unknown';
   return `ip:${ip}`;
+}
+
+/**
+ * Verify authentication from session
+ */
+export async function requireAuth(request: NextRequest): Promise<MiddlewareContext> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new AuthenticationError('Valid authentication required');
+  }
+
+  // Get user role from profile
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  return {
+    request,
+    user: {
+      id: user.id,
+      email: user.email || '',
+      role: profile?.role,
+    },
+  };
+}
+
+/**
+ * Verify admin role
+ */
+export async function requireAdmin(request: NextRequest): Promise<MiddlewareContext> {
+  const context = await requireAuth(request);
+
+  if (context.user?.role !== 'admin') {
+    throw new AuthorizationError('Admin access required');
+  }
+
+  return context;
+}
+
+/**
+ * Verify customer role
+ */
+export async function requireCustomer(request: NextRequest): Promise<MiddlewareContext> {
+  const context = await requireAuth(request);
+
+  if (context.user?.role !== 'customer' && context.user?.role !== 'admin') {
+    throw new AuthorizationError('Customer access required');
+  }
+
+  return context;
 }
 
 /**
@@ -106,26 +172,49 @@ export function withErrorHandler(
     try {
       return await handler(context);
     } catch (error) {
-      console.error('API Error:', error);
-
-      // Handle specific error types
-      if (error instanceof Error) {
-        return NextResponse.json(
-          {
-            error: 'Internal server error',
-            message: process.env.NODE_ENV === 'development'
-              ? error.message
-              : 'An unexpected error occurred',
-          },
-          { status: 500 }
-        );
-      }
-
-      return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
-      );
+      // Use the standardized error response
+      return errorToResponse(error as Error);
     }
+  };
+}
+
+/**
+ * Authentication middleware
+ */
+export function withAuth(
+  handler: MiddlewareFunction,
+  options: {
+    requireAdmin?: boolean;
+    requireCustomer?: boolean;
+  } = {}
+): MiddlewareFunction {
+  return async (context: MiddlewareContext) => {
+    let authenticatedContext;
+
+    if (options.requireAdmin) {
+      authenticatedContext = await requireAdmin(context.request);
+    } else if (options.requireCustomer) {
+      authenticatedContext = await requireCustomer(context.request);
+    } else {
+      authenticatedContext = await requireAuth(context.request);
+    }
+
+    // Merge authenticated context with original context
+    return await handler({ ...context, ...authenticatedContext });
+  };
+}
+
+/**
+ * CSRF protection middleware
+ */
+export function withCsrf(handler: MiddlewareFunction): MiddlewareFunction {
+  return async (context: MiddlewareContext) => {
+    const csrfError = await csrfProtection(context.request);
+    if (csrfError) {
+      return csrfError;
+    }
+
+    return await handler(context);
   };
 }
 
@@ -174,5 +263,48 @@ export const middleware = {
     composeMiddleware(
       (h) => withErrorHandler(h),
       (h) => withRateLimit(h, config || { limit: 100, window: 60000 })
+    )(handler),
+
+  /**
+   * Full protection: auth + CSRF + rate limit + error handling
+   */
+  withFullProtection: (
+    handler: MiddlewareFunction,
+    options: {
+      requireAdmin?: boolean;
+      requireCustomer?: boolean;
+      rateLimit?: RateLimitConfig;
+    } = {}
+  ) =>
+    composeMiddleware(
+      (h) => withErrorHandler(h),
+      (h) => withCsrf(h),
+      (h) => withAuth(h, {
+        requireAdmin: options.requireAdmin,
+        requireCustomer: options.requireCustomer,
+      }),
+      (h) => withRateLimit(h, options.rateLimit || { limit: 100, window: 60000 })
+    )(handler),
+
+  /**
+   * API route protection: auth + error handling
+   */
+  withApiAuth: (
+    handler: MiddlewareFunction,
+    options?: { requireAdmin?: boolean; requireCustomer?: boolean }
+  ) =>
+    composeMiddleware(
+      (h) => withErrorHandler(h),
+      (h) => withAuth(h, options || {})
+    )(handler),
+
+  /**
+   * Public API: CSRF + rate limit + error handling
+   */
+  withPublicApi: (handler: MiddlewareFunction, config?: RateLimitConfig) =>
+    composeMiddleware(
+      (h) => withErrorHandler(h),
+      (h) => withCsrf(h),
+      (h) => withRateLimit(h, config || { limit: 20, window: 60000 })
     )(handler),
 };

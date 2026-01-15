@@ -1,5 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { sanitizeEmail, sanitizeUrl } from '@/lib/security'
+
+// Email validation regex
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// Validate email format
+function isValidEmail(email: string): boolean {
+  return EMAIL_REGEX.test(email)
+}
+
+// Validate amount (must be positive and within reasonable bounds)
+function isValidAmount(amount: number): boolean {
+  const MIN_AMOUNT = 100 // Minimum ₦100
+  const MAX_AMOUNT = 10000000 // Maximum ₦10,000,000
+  return typeof amount === 'number' &&
+         amount >= MIN_AMOUNT &&
+         amount <= MAX_AMOUNT &&
+         Number.isFinite(amount)
+}
 
 // POST /api/payment/initialize - Initialize Paystack payment
 export async function POST(request: NextRequest) {
@@ -7,6 +26,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { order_id, amount, email, metadata } = body
 
+    // Validate required fields
     if (!order_id || !amount || !email) {
       return NextResponse.json(
         { error: 'Missing required fields' },
@@ -14,12 +34,38 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate and sanitize email
+    const sanitizedEmail = sanitizeEmail(email)
+    if (!isValidEmail(sanitizedEmail)) {
+      return NextResponse.json(
+        { error: 'Invalid email address' },
+        { status: 400 }
+      )
+    }
+
+    // Validate amount
+    const numericAmount = Number(amount)
+    if (!isValidAmount(numericAmount)) {
+      return NextResponse.json(
+        { error: 'Invalid amount. Must be between ₦100 and ₦10,000,000' },
+        { status: 400 }
+      )
+    }
+
+    // Validate order_id format (should be a valid UUID or string)
+    if (typeof order_id !== 'string' || order_id.length < 1) {
+      return NextResponse.json(
+        { error: 'Invalid order ID' },
+        { status: 400 }
+      )
+    }
+
     const supabase = await createClient()
 
-    // Verify order exists
+    // Verify order exists and belongs to user
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .select('order_number')
+      .select('id, order_number, user_id, total, status')
       .eq('id', order_id)
       .single()
 
@@ -27,6 +73,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
+      )
+    }
+
+    // Check if order is already paid
+    if (order.status === 'paid' || order.status === 'completed') {
+      return NextResponse.json(
+        { error: 'Order has already been paid for' },
+        { status: 400 }
+      )
+    }
+
+    // Verify amount matches order total (within small margin for rounding)
+    const amountDifference = Math.abs(numericAmount - order.total)
+    if (amountDifference > 1) { // Allow ₦1 difference for rounding
+      return NextResponse.json(
+        { error: 'Amount does not match order total' },
+        { status: 400 }
       )
     }
 
@@ -42,11 +105,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Convert amount to kobo (Paystack expects amounts in kobo/cents)
-    const amountInKobo = Math.round(amount * 100)
+    const amountInKobo = Math.round(order.total * 100)
 
-    // Build callback URL
+    // Build callback URL - validate app URL
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.wingside.ng'
-    const callbackUrl = `${appUrl}/payment/callback?order_id=${order_id}`
+    const sanitizedAppUrl = sanitizeUrl(appUrl)
+
+    if (!sanitizedAppUrl) {
+      console.error('Invalid NEXT_PUBLIC_APP_URL')
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      )
+    }
+
+    const callbackUrl = `${sanitizedAppUrl}/payment/callback?order_id=${encodeURIComponent(order_id)}`
 
     const paystackResponse = await fetch(
       'https://api.paystack.co/transaction/initialize',
@@ -57,14 +130,17 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email,
+          email: sanitizedEmail,
           amount: amountInKobo,
           reference: `${order.order_number}_${Date.now()}`,
           callback_url: callbackUrl,
           metadata: {
             order_id,
             order_number: order.order_number,
-            ...metadata,
+            custom_fields: {
+              // Remove sensitive data from metadata
+              ...metadata,
+            },
           },
         }),
       }
