@@ -248,16 +248,23 @@ export default function MyAccountPage() {
       // Process referral ID if provided
       let referredByUserId = null;
       if (signupData.referralId.trim()) {
+        const searchCode = signupData.referralId.trim().toLowerCase();
+        console.log('🔍 Looking up referral code:', searchCode);
+
         const { data: referrerData, error: referrerError } = await supabase
           .from('profiles')
           .select('id')
-          .eq('referral_code', signupData.referralId.trim().toLowerCase())
+          .eq('referral_code', searchCode)
           .single();
+
+        console.log('📋 Referral lookup result:', { referrerData, referrerError });
 
         if (!referrerError && referrerData) {
           referredByUserId = referrerData.id;
+          console.log('✅ Referral code validated successfully');
         } else {
-          alert('Invalid referral ID. Please check and try again, or leave blank if you don\'t have one.');
+          console.error('❌ Referral validation failed:', referrerError);
+          alert(`Invalid referral ID: "${searchCode}". Please check and try again, or leave blank if you don't have one.`);
           setIsSubmitting(false);
           return;
         }
