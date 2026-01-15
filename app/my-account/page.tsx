@@ -251,19 +251,22 @@ export default function MyAccountPage() {
         const searchCode = signupData.referralId.trim().toLowerCase();
         console.log('🔍 Looking up referral code:', searchCode);
 
-        const { data: referrerData, error: referrerError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('referral_code', searchCode)
-          .single();
+        // Use API endpoint to validate referral code (bypasses RLS)
+        const validateResponse = await fetch('/api/referrals/validate-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ referralCode: searchCode }),
+        });
 
-        console.log('📋 Referral lookup result:', { referrerData, referrerError });
+        const validateResult = await validateResponse.json();
 
-        if (!referrerError && referrerData) {
-          referredByUserId = referrerData.id;
+        console.log('📋 Referral lookup result:', validateResult);
+
+        if (validateResponse.ok && validateResult.valid) {
+          referredByUserId = validateResult.referrerId;
           console.log('✅ Referral code validated successfully');
         } else {
-          console.error('❌ Referral validation failed:', referrerError);
+          console.error('❌ Referral validation failed:', validateResult);
           alert(`Invalid referral ID: "${searchCode}". Please check and try again, or leave blank if you don't have one.`);
           setIsSubmitting(false);
           return;
