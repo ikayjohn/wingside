@@ -245,8 +245,23 @@ export default function MyAccountPage() {
 
       console.log('✅ Signup successful:', signupResult);
 
-      alert('Account created successfully! Please check your email to verify your account, then log in.');
-      router.push('/my-account');
+      // Sign the user in after successful signup (account is auto-confirmed)
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: signupData.email,
+        password: signupData.password,
+      });
+
+      if (signInError) {
+        console.error('Sign in after signup failed:', signInError);
+        alert('Account created successfully! Please log in to continue.');
+        router.push('/my-account');
+        return;
+      }
+
+      console.log('✅ User signed in successfully');
+
+      alert('Account created successfully! Welcome to Wingside!');
+      router.push('/my-account/dashboard');
 
     } catch (error: any) {
       console.error('Signup error:', error);
