@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import { HoneypotField } from '@/components/HoneypotField';
+import { Recaptcha } from '@/components/Recaptcha';
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -46,6 +47,7 @@ export default function MyAccountPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{
     firstName?: string;
     lastName?: string;
@@ -190,6 +192,28 @@ export default function MyAccountPage() {
       console.warn('Honeypot field filled - likely bot');
       return; // Silently fail for bots
     }
+
+    // Verify reCAPTCHA token
+    if (!recaptchaToken) {
+      setSubmitError('Bot verification failed. Please try again.');
+      return;
+    }
+
+    const recaptchaVerifyResponse = await fetch('/api/recaptcha/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: recaptchaToken }),
+    });
+
+    const recaptchaResult = await recaptchaVerifyResponse.json();
+
+    if (!recaptchaVerifyResponse.ok || !recaptchaResult.success) {
+      console.error('reCAPTCHA verification failed:', recaptchaResult);
+      setSubmitError('Bot verification failed. Please try again.');
+      return;
+    }
+
+    console.log('✅ reCAPTCHA verified, score:', recaptchaResult.score);
 
     // Validate first name
     const firstNameValidation = validateName(signupData.firstName, 'First name');
@@ -382,6 +406,14 @@ export default function MyAccountPage() {
               <form onSubmit={handleSignupSubmit}>
                 {/* Honeypot Field */}
                 <HoneypotField />
+
+                {/* reCAPTCHA v3 (invisible) */}
+                <Recaptcha
+                  siteKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ''}
+                  onVerify={setRecaptchaToken}
+                  action="signup"
+                />
+
                 {/* Name Row */}
                 <div className="wingclub-row">
                   <div className="wingclub-field">
