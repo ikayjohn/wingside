@@ -122,6 +122,7 @@ export default function AdminCustomersPage() {
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [syncingCustomer, setSyncingCustomer] = useState(false);
   const [syncMessage, setSyncMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [deletingCustomer, setDeletingCustomer] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchTerm), 350);
@@ -249,6 +250,42 @@ export default function AdminCustomersPage() {
       setSyncMessage({ type: 'error', text: 'Failed to sync customer' });
     } finally {
       setSyncingCustomer(false);
+    }
+  }
+
+  async function deleteCustomer(customerId: string) {
+    if (!confirm('Are you sure you want to delete this customer? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setDeletingCustomer(true);
+      setSyncMessage(null);
+
+      const res = await fetch(`/api/admin/customers/${customerId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setSyncMessage({ type: 'error', text: data.error || 'Failed to delete customer' });
+        return;
+      }
+
+      setSyncMessage({ type: 'success', text: 'Customer deleted successfully!' });
+
+      // Close details panel and refresh customer list
+      setSelectedCustomer(null);
+      await fetchCustomers();
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setSyncMessage(null), 3000);
+    } catch (error) {
+      console.error('Delete error:', error);
+      setSyncMessage({ type: 'error', text: 'Failed to delete customer' });
+    } finally {
+      setDeletingCustomer(false);
     }
   }
 
@@ -559,12 +596,21 @@ export default function AdminCustomersPage() {
             <div className="p-6">
               <div className="flex justify-between items-start mb-6">
                 <h2 className="text-2xl font-bold text-[#552627]">Customer Details</h2>
-                <button
-                  onClick={() => setSelectedCustomer(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => deleteCustomer(selectedCustomer.id)}
+                    disabled={deletingCustomer}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  >
+                    {deletingCustomer ? 'Deleting...' : 'Delete Customer'}
+                  </button>
+                  <button
+                    onClick={() => setSelectedCustomer(null)}
+                    className="text-gray-400 hover:text-gray-600 text-xl"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
 
               {loadingDetails ? (
