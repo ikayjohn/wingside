@@ -1,10 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import embedlyClient, { CreateCustomerRequest } from '@/lib/embedly/client';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+// Check if Embedly is configured
+function isEmbedlyConfigured(): boolean {
+  return !!(process.env.EMBEDLY_API_KEY && process.env.EMBEDLY_ORG_ID);
+}
 
 // Generate referral code based on first name, last name, and random numbers
 function generateReferralCode(firstName: string, lastName: string): string {
@@ -24,6 +30,73 @@ function generateReferralCode(firstName: string, lastName: string): string {
   }
 
   return code.slice(0, 15);
+}
+
+// Initialize Embedly customer for new user
+async function initializeEmbedlyCustomer(
+  email: string,
+  firstName: string,
+  lastName: string,
+  phone: string
+): Promise<{ customerId: string | null; error: string | null }> {
+  if (!isEmbedlyConfigured()) {
+    console.log('Embedly not configured, skipping customer initialization');
+    return { customerId: null, error: null };
+  }
+
+  try {
+    // Get required Embedly configuration
+    const [countries, customerTypes] = await Promise.all([
+      embedlyClient.getCountries(),
+      embedlyClient.getCustomerTypes()
+    ]);
+
+    // Find Nigeria
+    const nigeria = countries.find(country => country.countryCodeTwo === 'NG');
+    if (!nigeria) {
+      console.error('Embedly: Nigeria country not found');
+      return { customerId: null, error: 'Nigeria country not found in Embedly system' };
+    }
+
+    // Find Individual customer type
+    const individualType = customerTypes.find(type => type.name.toLowerCase() === 'individual');
+    if (!individualType) {
+      console.error('Embedly: Individual customer type not found');
+      return { customerId: null, error: 'Individual customer type not found' };
+    }
+
+    // Prepare customer data
+    const customerData: CreateCustomerRequest = {
+      organizationId: process.env.EMBEDLY_ORG_ID!,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      emailAddress: email.toLowerCase().trim(),
+      mobileNumber: phone,
+      customerTypeId: individualType.id,
+      countryId: nigeria.id,
+    };
+
+    // Create customer in Embedly
+    const embedlyCustomer = await embedlyClient.createCustomer(customerData);
+
+    console.log(`Embedly: Customer ${embedlyCustomer.id} created for ${email}`);
+    return { customerId: embedlyCustomer.id, error: null };
+
+  } catch (error: any) {
+    // Check if customer already exists
+    try {
+      const existingCustomer = await embedlyClient.getCustomerByEmail(email);
+      if (existingCustomer) {
+        console.log(`Embedly: Existing customer ${existingCustomer.id} found for ${email}`);
+        return { customerId: existingCustomer.id, error: null };
+      }
+    } catch (findError) {
+      // Customer doesn't exist, return original error
+    }
+
+    console.error('Embedly customer initialization error:', error);
+    return { customerId: null, error: error.message || 'Failed to create Embedly customer' };
+  }
 }
 
 export async function POST(request: Request) {
@@ -111,6 +184,32 @@ export async function POST(request: Request) {
       console.error('Profile creation error:', profileError);
       // Don't fail the entire signup if profile creation fails
       // But log it for debugging
+    }
+
+    // Initialize Embedly customer account
+    const embedlyResult = await initializeEmbedlyCustomer(
+      authData.user.email!,
+      firstName,
+      lastName,
+      `+234${phone}`
+    );
+
+    // Update profile with Embedly customer ID if successful
+    if (embedlyResult.customerId) {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ embedly_customer_id: embedlyResult.customerId })
+        .eq('id', authData.user.id);
+
+      if (updateError) {
+        console.error('Profile update error (Embedly ID):', updateError);
+        // Don't fail signup if we can't save the Embedly ID
+      } else {
+        console.log(`Profile updated with Embedly customer ID: ${embedlyResult.customerId}`);
+      }
+    } else if (embedlyResult.error) {
+      console.warn('Embedly initialization failed, but signup succeeded:', embedlyResult.error);
+      // Continue with signup even if Embedly fails
     }
 
     // Create referral record if user was referred
