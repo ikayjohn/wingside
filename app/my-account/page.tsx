@@ -11,33 +11,6 @@ const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// Generate referral code based on first name, last name, and random numbers
-function generateReferralCode(firstName: string, lastName: string): string {
-  // Clean and format names
-  const cleanFirst = firstName.replace(/[^a-zA-Z]/g, '').toLowerCase();
-  const cleanLast = lastName.replace(/[^a-zA-Z]/g, '').toLowerCase();
-
-  // Take first 4 chars of first name and first 4 chars of last name
-  const firstPart = cleanFirst.slice(0, 4).toLowerCase();
-  const lastPart = cleanLast.slice(0, 4).toLowerCase();
-
-  // Generate 3 random digits
-  const randomDigits = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-
-  // Combine: FIRST4 + LAST4 + 3DIGITS
-  // Example: johndoe123
-  let code = `${firstPart}${lastPart}${randomDigits}`;
-
-  // Ensure code is at least 5 characters
-  if (code.length < 5) {
-    const extraRandom = Math.random().toString(36).substring(2, 4).toUpperCase();
-    code = `${code}${extraRandom}`;
-  }
-
-  // Max length 15 characters
-  return code.slice(0, 15);
-}
-
 export default function MyAccountPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -245,130 +218,62 @@ export default function MyAccountPage() {
     setIsSubmitting(true);
 
     try {
-      // Process referral ID if provided
-      let referredByUserId = null;
-      if (signupData.referralId.trim()) {
-        const searchCode = signupData.referralId.trim().toLowerCase();
-        console.log('🔍 Looking up referral code:', searchCode);
+      console.log('🔄 Starting signup process...');
 
-        // Use API endpoint to validate referral code (bypasses RLS)
-        const validateResponse = await fetch('/api/referrals/validate-code', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ referralCode: searchCode }),
-        });
-
-        const validateResult = await validateResponse.json();
-
-        console.log('📋 Referral lookup result:', validateResult);
-
-        if (validateResponse.ok && validateResult.valid) {
-          referredByUserId = validateResult.referrerId;
-          console.log('✅ Referral code validated successfully');
-        } else {
-          console.error('❌ Referral validation failed:', validateResult);
-          alert(`Invalid referral ID: "${searchCode}". Please check and try again, or leave blank if you don't have one.`);
-          setIsSubmitting(false);
-          return;
-        }
-      }
-
-      const { data, error } = await supabase.auth.signUp({
-        email: signupData.email.toLowerCase().trim(),
-        password: signupData.password,
-        options: {
-          data: {
-            full_name: `${signupData.firstName.trim()} ${signupData.lastName.trim()}`,
-            phone: `+234${formattedPhone}`,
-          },
-        },
+      // Call server-side signup API
+      const signupResponse = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: signupData.email,
+          password: signupData.password,
+          firstName: signupData.firstName,
+          lastName: signupData.lastName,
+          phone: formattedPhone,
+          referralId: signupData.referralId,
+        }),
       });
 
-      if (error) {
-        setSubmitError(error.message);
+      const signupResult = await signupResponse.json();
+
+      if (!signupResponse.ok) {
+        console.error('❌ Signup failed:', signupResult);
+        setSubmitError(signupResult.error || 'Signup failed. Please try again.');
         setIsSubmitting(false);
         return;
       }
 
-      if (data.user) {
-        // Generate unique referral code for new user
-        const referralCode = generateReferralCode(signupData.firstName, signupData.lastName);
+      console.log('✅ Signup successful:', signupResult);
 
-        // Create profile
-        const { error: profileError } = await supabase.from('profiles').insert({
-          id: data.user.id,
-          email: data.user.email || signupData.email.toLowerCase().trim(),
-          full_name: `${signupData.firstName.trim()} ${signupData.lastName.trim()}`,
-          phone: `+234${formattedPhone}`,
-          role: 'customer',
-          referral_code: referralCode,
-          referred_by: referredByUserId,
+      // Auto-create Embedly customer and wallet (optional, separate from signup)
+      try {
+        console.log('🔄 Attempting to create Embedly wallet...');
+        const embedlyResponse = await fetch('/api/embedly/auto-wallet', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
         });
 
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-        }
-
-        // If user was referred, create referral record
-        if (referredByUserId) {
-          const { error: referralError } = await supabase.from('referrals').insert({
-            referrer_id: referredByUserId,
-            referred_user_id: data.user.id,
-            referral_code_used: signupData.referralId.trim().toUpperCase(),
-            status: 'pending_signup',
-            reward_amount: 200, // 200 points reward for both referrer and referred
-            referred_email: signupData.email,
-          });
-
-          if (referralError) {
-            console.error('Referral creation error:', referralError);
-          }
-        }
-
-        // Auto-create Embedly customer and wallet
-        try {
-          console.log('🔄 Attempting to create Embedly wallet...');
-          const embedlyResponse = await fetch('/api/embedly/auto-wallet', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (!embedlyResponse.ok) {
-            const errorText = await embedlyResponse.text();
-            console.error('❌ Embedly API error:', embedlyResponse.status, errorText);
-            return;
-          }
-
+        if (!embedlyResponse.ok) {
+          const errorText = await embedlyResponse.text();
+          console.error('❌ Embedly API error:', embedlyResponse.status, errorText);
+          // Don't fail signup if Embedly fails
+        } else {
           const embedlyResult = await embedlyResponse.json();
-
-          if (embedlyResult.success && embedlyResult.wallet) {
-            console.log('✅ Embedly wallet created:', embedlyResult.wallet.virtualAccount?.accountNumber || 'No account number');
-          } else if (embedlyResult.needsManualWalletCreation) {
-            console.log('⚠️ Embedly customer created, wallet needs manual creation');
-          } else if (embedlyResult.error) {
-            console.error('❌ Embedly error:', embedlyResult.error);
-          } else {
-            console.log('ℹ️ Embedly response:', embedlyResult.message || 'No details');
-          }
-        } catch (embedlyError) {
-          console.error('❌ Embedly auto-wallet creation failed:', embedlyError);
-          console.error('Error details:', embedlyError instanceof Error ? embedlyError.message : embedlyError);
-          // Don't fail signup if Embedly wallet creation fails
+          console.log('✅ Embedly response:', embedlyResult);
         }
-
-        alert('Account created successfully! Please check your email to verify your account.');
-        router.push('/my-account/dashboard');
+      } catch (embedlyError) {
+        console.error('❌ Embedly auto-wallet creation failed:', embedlyError);
+        // Don't fail signup if Embedly wallet creation fails
       }
+
+      alert('Account created successfully! Please check your email to verify your account.');
+      router.push('/my-account/dashboard');
+
     } catch (error: any) {
       console.error('Signup error:', error);
-      // Check for rate limit errors
-      if (error.message?.includes('rate limit') || error.message?.includes('Too many requests')) {
-        setSubmitError('Too many signup attempts. Please wait a few minutes before trying again.');
-      } else {
-        setSubmitError('An error occurred during signup. Please try again.');
-      }
+      setSubmitError('An error occurred during signup. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
