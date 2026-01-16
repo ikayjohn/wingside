@@ -12,8 +12,7 @@ WHERE reward_amount = 200; -- Old points-based amount
 UPDATE referral_rewards
 SET amount = 1000, -- Convert to naira amount
     points = 0, -- Clear points since we now use naira
-    description = REGEXP_REPLACE(description, '200 points', '₦1,000'),
-    updated_at = NOW()
+    description = REGEXP_REPLACE(description, '200 points', '₦1,000')
 WHERE reward_type = 'referrer_bonus'
   AND amount = 0
   AND points = 200;
@@ -22,8 +21,7 @@ WHERE reward_type = 'referrer_bonus'
 UPDATE referral_rewards
 SET amount = 1000, -- Convert to naira amount
     points = 0, -- Clear points since we now use naira
-    description = REGEXP_REPLACE(description, '200 points', '₦1,000'),
-    updated_at = NOW()
+    description = REGEXP_REPLACE(description, '200 points', '₦1,000')
 WHERE reward_type = 'referred_bonus'
   AND amount = 0
   AND points = 200;
