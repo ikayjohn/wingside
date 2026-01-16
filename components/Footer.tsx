@@ -9,7 +9,12 @@ export default function Footer() {
   const [settings, setSettings] = useState<Partial<SiteSettings>>({});
 
   useEffect(() => {
-    fetchSettings().then(setSettings);
+    fetchSettings()
+      .then(setSettings)
+      .catch((error) => {
+        console.error('Failed to fetch settings in Footer:', error);
+        // Keep default empty settings on error
+      });
   }, []);
 
   return (

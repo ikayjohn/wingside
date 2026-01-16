@@ -452,7 +452,7 @@ export default function OrderPage() {
         <div className="absolute inset-0 bg-black/50" />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-4">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-2">
-            <span className="text-yellow-400">WINGS</span> and so "<span className="italic">munch</span>" more.
+            <span className="text-yellow-400">WINGS</span> and so &quot;<span className="italic">munch</span>&quot; more.
           </h1>
         </div>
       </section>

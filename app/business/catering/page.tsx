@@ -113,7 +113,7 @@ ${formData.moreDetails}
 
             {/* Description */}
             <p className="text-sm md:text-base lg:text-lg text-white mb-8 max-w-3xl leading-relaxed">
-              Wings, sandwiches, milkshakes and more that turn any gathering into an instant vibe. Whether it's birthdays, farewells, or "just because," we've got your party food all locked-in
+              Wings, sandwiches, milkshakes and more that turn any gathering into an instant vibe. Whether it&apos;s birthdays, farewells, or &quot;just because,&quot; we&apos;ve got your party food all locked-in
             </p>
 
             {/* CTA Button */}

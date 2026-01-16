@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AdminLayout } from "./admin-layout-wrapper";
@@ -62,25 +62,14 @@ export const metadata: Metadata = {
     },
   },
   manifest: '/manifest.json',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   themeColor: '#F7C400',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'Wingside',
-  },
-  icons: {
-    icon: '/favicon.png',
-    shortcut: '/favicon.png',
-    apple: [
-      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
-    ],
-  },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
 };
 
 export default function RootLayout({
