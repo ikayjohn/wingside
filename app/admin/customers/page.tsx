@@ -124,20 +124,7 @@ export default function AdminCustomersPage() {
   const [syncMessage, setSyncMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [deletingCustomer, setDeletingCustomer] = useState(false);
 
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(searchTerm), 350);
-    return () => clearTimeout(t);
-  }, [searchTerm]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [filter, debouncedSearch, pageSize, sort]);
-
-  useEffect(() => {
-    fetchCustomers();
-  }, [filter, debouncedSearch, page, pageSize, sort]);
-
-  async function fetchCustomers() {
+  const fetchCustomers = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -170,7 +157,20 @@ export default function AdminCustomersPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [filter, debouncedSearch, page, pageSize, sort, setLoading, setError, setCustomers, setTotalPages]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 350);
+    return () => clearTimeout(t);
+  }, [searchTerm, setDebouncedSearch]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filter, debouncedSearch, pageSize, sort, setPage]);
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [filter, debouncedSearch, page, pageSize, sort, fetchCustomers]);
 
   async function fetchOrderHistory(customerId: string, pageNum = 1, status = 'all') {
     try {

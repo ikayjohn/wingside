@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 
 interface Slide {
@@ -19,25 +19,25 @@ export default function HeroSlideshow() {
   const [loading, setLoading] = useState(true);
   const [shouldAnimate, setShouldAnimate] = useState(false);
 
-  useEffect(() => {
-    async function fetchSlides() {
-      try {
-        const response = await fetch('/api/hero-slides/public');
-        const data = await response.json();
-        if (response.ok && data.slides && data.slides.length > 0) {
-          setSlides(data.slides);
-          // Trigger animation after slides load
-          setTimeout(() => setShouldAnimate(true), 100);
-        }
-      } catch (error) {
-        console.error('Error fetching slides:', error);
-      } finally {
-        setLoading(false);
+  const fetchSlides = useCallback(async () => {
+    try {
+      const response = await fetch('/api/hero-slides/public');
+      const data = await response.json();
+      if (response.ok && data.slides && data.slides.length > 0) {
+        setSlides(data.slides);
+        // Trigger animation after slides load
+        setTimeout(() => setShouldAnimate(true), 100);
       }
+    } catch (error) {
+      console.error('Error fetching slides:', error);
+    } finally {
+      setLoading(false);
     }
-
-    fetchSlides();
   }, []);
+
+  useEffect(() => {
+    fetchSlides();
+  }, [fetchSlides]);
 
   useEffect(() => {
     if (slides.length <= 1) return;

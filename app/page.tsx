@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import HeroSlideshow from '@/components/HeroSlideshow';
 
@@ -111,14 +111,10 @@ export default function WingsideLanding() {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [setActiveDeliverySection]);
 
   // Fetch flavors from database on mount
-  useEffect(() => {
-    fetchFlavors();
-  }, []);
-
-  async function fetchFlavors() {
+  const fetchFlavors = useCallback(async () => {
     try {
       const response = await fetch('/api/flavors');
       const data = await response.json();
@@ -130,7 +126,11 @@ export default function WingsideLanding() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    fetchFlavors();
+  }, [fetchFlavors]);
 
   // Helper function to parse description into two parts
   const parseDescription = (description: string) => {

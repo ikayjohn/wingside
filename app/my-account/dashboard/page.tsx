@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -84,71 +84,71 @@ export default function WingclubDashboard() {
   const [loadingNotifications, setLoadingNotifications] = useState(true);
 
   // Fetch user data on component mount
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        setLoading(true);
-        setError('');
+  const fetchUserData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError('');
 
-        // Fetch user profile
-        const profileResponse = await fetch('/api/user/profile');
-        if (!profileResponse.ok) {
-          const errorText = await profileResponse.text();
-          console.error('Profile API error:', errorText);
-          throw new Error(`Failed to fetch profile: ${profileResponse.status}`);
-        }
-        const profileData = await profileResponse.json();
-
-        // Fetch wallet transactions
-        const transactionsResponse = await fetch('/api/user/wallet-history');
-        if (!transactionsResponse.ok) {
-          console.error('Transactions API error:', transactionsResponse.status);
-        }
-        const transactionsData = await transactionsResponse.json();
-
-        setUserData(profileData.profile);
-        setRecentTransactions(transactionsData.transactions || []);
-
-        // Redirect admins to admin panel
-        if (profileData.profile?.role === 'admin') {
-          router.push('/admin');
-          return;
-        }
-      } catch (err) {
-        console.error('Dashboard data fetch error:', err);
-        if (err instanceof Error) {
-          console.error('Error message:', err.message);
-          console.error('Error stack:', err.stack);
-        }
-        setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
-      } finally {
-        setLoading(false);
+      // Fetch user profile
+      const profileResponse = await fetch('/api/user/profile');
+      if (!profileResponse.ok) {
+        const errorText = await profileResponse.text();
+        console.error('Profile API error:', errorText);
+        throw new Error(`Failed to fetch profile: ${profileResponse.status}`);
       }
-    };
+      const profileData = await profileResponse.json();
 
+      // Fetch wallet transactions
+      const transactionsResponse = await fetch('/api/user/wallet-history');
+      if (!transactionsResponse.ok) {
+        console.error('Transactions API error:', transactionsResponse.status);
+      }
+      const transactionsData = await transactionsResponse.json();
+
+      setUserData(profileData.profile);
+      setRecentTransactions(transactionsData.transactions || []);
+
+      // Redirect admins to admin panel
+      if (profileData.profile?.role === 'admin') {
+        router.push('/admin');
+        return;
+      }
+    } catch (err) {
+      console.error('Dashboard data fetch error:', err);
+      if (err instanceof Error) {
+        console.error('Error message:', err.message);
+        console.error('Error stack:', err.stack);
+      }
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
+
+  useEffect(() => {
     fetchUserData();
-  }, []);
+  }, [fetchUserData]);
 
   // Fetch Embedly wallet data
-  useEffect(() => {
-    const fetchEmbedlyWallet = async () => {
-      try {
-        setLoadingWallet(true);
-        const walletResponse = await fetch('/api/embedly/wallets');
-        const walletData = await walletResponse.json();
+  const fetchEmbedlyWallet = useCallback(async () => {
+    try {
+      setLoadingWallet(true);
+      const walletResponse = await fetch('/api/embedly/wallets');
+      const walletData = await walletResponse.json();
 
-        if (walletData.success && walletData.hasWallet && walletData.wallet) {
-          setEmbedlyWallet(walletData.wallet);
-        }
-      } catch (err) {
-        console.error('Failed to fetch Embedly wallet:', err);
-      } finally {
-        setLoadingWallet(false);
+      if (walletData.success && walletData.hasWallet && walletData.wallet) {
+        setEmbedlyWallet(walletData.wallet);
       }
-    };
-
-    fetchEmbedlyWallet();
+    } catch (err) {
+      console.error('Failed to fetch Embedly wallet:', err);
+    } finally {
+      setLoadingWallet(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchEmbedlyWallet();
+  }, [fetchEmbedlyWallet]);
 
   // Set greeting based on time of day
   useEffect(() => {
@@ -163,27 +163,27 @@ export default function WingclubDashboard() {
   }, []);
 
   // Fetch notifications on component mount
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        setLoadingNotifications(true);
-        const response = await fetch('/api/notifications');
-        const data = await response.json();
+  const fetchNotifications = useCallback(async () => {
+    try {
+      setLoadingNotifications(true);
+      const response = await fetch('/api/notifications');
+      const data = await response.json();
 
-        if (response.ok) {
-          setNotifications(data.notifications || []);
-        } else {
-          console.error('Failed to fetch notifications:', data.error);
-        }
-      } catch (error) {
-        console.error('Error fetching notifications:', error);
-      } finally {
-        setLoadingNotifications(false);
+      if (response.ok) {
+        setNotifications(data.notifications || []);
+      } else {
+        console.error('Failed to fetch notifications:', data.error);
       }
-    };
-
-    fetchNotifications();
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setLoadingNotifications(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   // Mark all notifications as read
   const markAllAsRead = async () => {

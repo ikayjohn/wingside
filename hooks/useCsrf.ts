@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 /**
  * React Hook for CSRF Protection
@@ -10,27 +10,27 @@ export function useCsrf() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function fetchCsrfToken() {
-      try {
-        const response = await fetch('/api/auth/csrf')
-        const data = await response.json()
+  const fetchCsrfToken = useCallback(async () => {
+    try {
+      const response = await fetch('/api/auth/csrf')
+      const data = await response.json()
 
-        if (response.ok) {
-          setCsrfToken(data.token)
-        } else {
-          setError(data.error || 'Failed to fetch CSRF token')
-        }
-      } catch (err) {
-        setError('Network error while fetching CSRF token')
-        console.error('CSRF token fetch error:', err)
-      } finally {
-        setLoading(false)
+      if (response.ok) {
+        setCsrfToken(data.token)
+      } else {
+        setError(data.error || 'Failed to fetch CSRF token')
       }
+    } catch (err) {
+      setError('Network error while fetching CSRF token')
+      console.error('CSRF token fetch error:', err)
+    } finally {
+      setLoading(false)
     }
-
-    fetchCsrfToken()
   }, [])
+
+  useEffect(() => {
+    fetchCsrfToken()
+  }, [fetchCsrfToken])
 
   /**
    * Wrapper around fetch that automatically includes CSRF token

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 
 // Types
@@ -90,7 +90,7 @@ export default function OrderPage() {
     if (savedCart) {
       setCart(JSON.parse(savedCart));
     }
-  }, []);
+  }, [setCart]);
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
@@ -98,57 +98,57 @@ export default function OrderPage() {
   }, [cart]);
 
   // Fetch products from API on mount
-  useEffect(() => {
-    async function fetchProducts() {
-      try {
-        const response = await fetch('/api/products');
-        const data = await response.json();
+  const fetchProducts = useCallback(async () => {
+    try {
+      const response = await fetch('/api/products');
+      const data = await response.json();
 
-        if (data.products) {
-          // Transform API data to match expected format
-          const transformedProducts = data.products.map((p: any) => ({
-            id: p.id, // Keep as UUID string
-            name: p.name,
-            category: p.category?.name || 'Wings',
-            subcategory: p.subcategory,
-            image: p.image_url || p.image,
-            flavors: p.flavors || [],
-            sizes: p.sizes || [],
-            badge: p.badge,
-            flavorCount: p.max_flavors || 1,
-            wingCount: p.wing_count,
-            flavorLabel: p.flavorLabel, // Use camelCase from API
-            description: p.description,
-          }));
-          setProducts(transformedProducts);
-        }
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      } finally {
-        setLoading(false);
+      if (data.products) {
+        // Transform API data to match expected format
+        const transformedProducts = data.products.map((p: any) => ({
+          id: p.id, // Keep as UUID string
+          name: p.name,
+          category: p.category?.name || 'Wings',
+          subcategory: p.subcategory,
+          image: p.image_url || p.image,
+          flavors: p.flavors || [],
+          sizes: p.sizes || [],
+          badge: p.badge,
+          flavorCount: p.max_flavors || 1,
+          wingCount: p.wing_count,
+          flavorLabel: p.flavorLabel, // Use camelCase from API
+          description: p.description,
+        }));
+        setProducts(transformedProducts);
       }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
     }
-
-    fetchProducts();
   }, []);
 
-  // Check if orders are currently accepted
   useEffect(() => {
-    async function checkOrderStatus() {
-      try {
-        const response = await fetch('/api/orders/status');
-        const data = await response.json();
-        setAcceptingOrders(data.acceptingOrders);
-        setOrderStatusMessage(data.message);
-        setCountdown(data.countdown || null);
-        setAutoCloseEnabled(data.autoCloseEnabled || false);
-      } catch (error) {
-        console.error('Error checking order status:', error);
-        // Default to accepting orders on error
-        setAcceptingOrders(true);
-      }
-    }
+    fetchProducts();
+  }, [fetchProducts]);
 
+  // Check if orders are currently accepted
+  const checkOrderStatus = useCallback(async () => {
+    try {
+      const response = await fetch('/api/orders/status');
+      const data = await response.json();
+      setAcceptingOrders(data.acceptingOrders);
+      setOrderStatusMessage(data.message);
+      setCountdown(data.countdown || null);
+      setAutoCloseEnabled(data.autoCloseEnabled || false);
+    } catch (error) {
+      console.error('Error checking order status:', error);
+      // Default to accepting orders on error
+      setAcceptingOrders(true);
+    }
+  }, []);
+
+  useEffect(() => {
     checkOrderStatus();
 
     // If auto-close is enabled, refresh every minute
@@ -157,7 +157,7 @@ export default function OrderPage() {
     }, 60000); // Refresh every 60 seconds
 
     return () => clearInterval(interval);
-  }, []);
+  }, [checkOrderStatus]);
 
 
   const filteredProducts = products

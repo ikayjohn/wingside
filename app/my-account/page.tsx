@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
@@ -17,32 +17,32 @@ export default function MyAccountPage() {
   const [loading, setLoading] = useState(true);
 
   // Check if user is already logged in
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+  const checkAuthStatus = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
 
-      if (user) {
-        // Check if user is admin
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
+    if (user) {
+      // Check if user is admin
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
 
-        // Redirect based on role
-        if (profile?.role === 'admin') {
-          router.push('/admin');
-        } else {
-          router.push('/my-account/dashboard');
-        }
+      // Redirect based on role
+      if (profile?.role === 'admin') {
+        router.push('/admin');
       } else {
-        // User is not logged in, show login/signup forms
-        setLoading(false);
+        router.push('/my-account/dashboard');
       }
-    };
-
-    checkAuthStatus();
+    } else {
+      // User is not logged in, show login/signup forms
+      setLoading(false);
+    }
   }, [router]);
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
   const [activeTab, setActiveTab] = useState<'signup' | 'login'>('signup');
   const [showPassword, setShowPassword] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);

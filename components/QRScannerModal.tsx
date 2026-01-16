@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 
 interface QRScannerModalProps {
@@ -13,6 +13,16 @@ export default function QRScannerModal({ isOpen, onClose, onScanSuccess }: QRSca
   const [error, setError] = useState<string>("");
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+
+  const handleClose = useCallback(() => {
+    if (scannerRef.current && isScanning) {
+      scannerRef.current.stop().catch((err) => {
+        console.error("Error stopping scanner:", err);
+      });
+      setIsScanning(false);
+    }
+    onClose();
+  }, [isScanning, onClose]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -77,17 +87,7 @@ export default function QRScannerModal({ isOpen, onClose, onScanSuccess }: QRSca
         });
       }
     };
-  }, [isOpen, onScanSuccess, isScanning]);
-
-  const handleClose = () => {
-    if (scannerRef.current && isScanning) {
-      scannerRef.current.stop().catch((err) => {
-        console.error("Error stopping scanner:", err);
-      });
-      setIsScanning(false);
-    }
-    onClose();
-  };
+  }, [isOpen, onScanSuccess, isScanning, handleClose]);
 
   if (!isOpen) return null;
 
