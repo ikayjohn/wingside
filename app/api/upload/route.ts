@@ -139,10 +139,11 @@ export async function POST(request: NextRequest) {
       url: publicUrl,
       fileName: fileName,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Upload API] Unexpected error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Internal server error: ' + error.message },
+      { error: 'Internal server error: ' + errorMessage },
       { status: 500 }
     )
   }

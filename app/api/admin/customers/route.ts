@@ -83,11 +83,12 @@ export async function GET(request: NextRequest) {
         total_orders: number
         total_spent: number
         last_order_date: string | null
+        default_address?: string
       }
     > = {}
 
     userIds.forEach((id) => {
-      byUser[id] = { total_orders: 0, total_spent: 0, last_order_date: null }
+      byUser[id] = { total_orders: 0, total_spent: 0, last_order_date: null, default_address: undefined }
     })
 
     if (userIds.length > 0) {
@@ -131,19 +132,19 @@ export async function GET(request: NextRequest) {
         }
 
         for (const id of Object.keys(defaultAddressByUser)) {
-          ;(byUser[id] as any).default_address = defaultAddressByUser[id]
+          byUser[id].default_address = defaultAddressByUser[id]
         }
       }
     }
 
     const customers = (profiles || []).map((p) => {
-      const agg = byUser[p.id] || { total_orders: 0, total_spent: 0, last_order_date: null }
+      const agg = byUser[p.id] || { total_orders: 0, total_spent: 0, last_order_date: null, default_address: null }
       return {
         ...p,
         total_orders: agg.total_orders,
         total_spent: agg.total_spent,
         last_order_date: agg.last_order_date,
-        default_address: (agg as any).default_address || null,
+        default_address: agg.default_address || null,
       }
     })
 

@@ -27,11 +27,14 @@ export async function GET() {
       error: error,
       data_stringified: JSON.stringify(data, null, 2)
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const stackTrace = error instanceof Error ? error.stack : undefined
+
     return NextResponse.json({
       success: false,
-      error: error.message,
-      stack: error.stack
+      error: errorMessage,
+      stack: stackTrace
     })
   }
 }

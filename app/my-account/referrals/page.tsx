@@ -20,7 +20,7 @@ export default function ReferralsPage() {
 
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Refer & Earn</h1>
           <p className="text-gray-600">
-            Invite your friends to Wingside and earn 200 points for every successful referral. Your friends also get 200 points!
+            Invite your friends to Wingside and earn ₦1,000 for every successful referral. Your friends also get ₦1,000!
           </p>
         </div>
 
@@ -48,7 +48,7 @@ export default function ReferralsPage() {
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Friend Signs Up</h3>
               <p className="text-sm text-gray-600">
-                Your friend uses your code to sign up and gets 200 points after their first order.
+                Your friend uses your code to sign up and gets ₦1,000 after their first order.
               </p>
             </div>
 
@@ -58,7 +58,7 @@ export default function ReferralsPage() {
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">You Get Rewarded</h3>
               <p className="text-sm text-gray-600">
-                Once your friend places their first order, you both earn 200 points credited to your accounts.
+                Once your friend places their first order, you both earn ₦1,000 credited to your wallets.
               </p>
             </div>
           </div>
@@ -71,7 +71,7 @@ export default function ReferralsPage() {
           <div className="space-y-3 text-sm text-gray-600">
             <div className="flex items-start gap-3">
               <span className="text-yellow-500 mt-1">•</span>
-              <p>Referral rewards (200 points) are credited to your account after your friend completes their first order.</p>
+              <p>Referral rewards (₦1,000) are credited to your wallet after your friend completes their first order.</p>
             </div>
             <div className="flex items-start gap-3">
               <span className="text-yellow-500 mt-1">•</span>
@@ -83,7 +83,7 @@ export default function ReferralsPage() {
             </div>
             <div className="flex items-start gap-3">
               <span className="text-yellow-500 mt-1">•</span>
-              <p>Referral rewards are credited as points to your account and can be redeemed for discounts on future orders.</p>
+              <p>Referral rewards are credited as naira to your wallet and can be used to pay for future orders.</p>
             </div>
             <div className="flex items-start gap-3">
               <span className="text-yellow-500 mt-1">•</span>
@@ -108,7 +108,7 @@ export default function ReferralsPage() {
 
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">When will I receive my referral reward?</h3>
-              <p className="text-sm text-gray-600">200 points are credited to your account within 24 hours after your friend completes their first qualifying order.</p>
+              <p className="text-sm text-gray-600">₦1,000 is credited to your wallet within 24 hours after your friend completes their first qualifying order.</p>
             </div>
 
             <div>

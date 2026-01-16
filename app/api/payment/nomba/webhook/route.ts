@@ -324,7 +324,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ received: true })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Nomba webhook processing error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

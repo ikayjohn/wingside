@@ -13,7 +13,7 @@ export class AppError extends Error {
     public statusCode: number,
     public message: string,
     public code?: string,
-    public details?: any
+    public details?: unknown
   ) {
     super(message)
     this.name = this.constructor.name
@@ -25,7 +25,7 @@ export class AppError extends Error {
  * Validation Error (400)
  */
 export class ValidationError extends AppError {
-  constructor(message: string, details?: any) {
+  constructor(message: string, details?: unknown) {
     super(400, message, 'VALIDATION_ERROR', details)
   }
 }
@@ -61,7 +61,7 @@ export class NotFoundError extends AppError {
  * Conflict Error (409)
  */
 export class ConflictError extends AppError {
-  constructor(message: string, details?: any) {
+  constructor(message: string, details?: unknown) {
     super(409, message, 'CONFLICT_ERROR', details)
   }
 }
@@ -82,7 +82,7 @@ export class RateLimitError extends AppError {
  * Server Error (500)
  */
 export class ServerError extends AppError {
-  constructor(message: string = 'Internal server error', details?: any) {
+  constructor(message: string = 'Internal server error', details?: unknown) {
     super(500, message, 'SERVER_ERROR', details)
   }
 }
@@ -99,37 +99,43 @@ export class ServiceUnavailableError extends AppError {
 /**
  * Convert error to API response
  */
-export function errorToResponse(error: Error | AppError): NextResponse {
-  // Log error for debugging
-  console.error('API Error:', {
-    name: error.name,
-    message: error.message,
-    stack: error.stack,
-  })
-
+export function errorToResponse(error: unknown): NextResponse {
   // Handle known application errors
   if (error instanceof AppError) {
-    const response: any = {
+    const response: Record<string, unknown> = {
       error: error.message,
       code: error.code,
     }
 
     // Include details in development
-    if (process.env.NODE_ENV === 'development' && error.details) {
+    if (process.env.NODE_ENV === 'development' && error.details !== undefined) {
       response.details = error.details
     }
 
     return NextResponse.json(response, { status: error.statusCode })
   }
 
-  // Handle unknown errors
+  // Handle standard Error objects
+  if (error instanceof Error) {
+    const isDevelopment = process.env.NODE_ENV === 'development'
+
+    return NextResponse.json(
+      {
+        error: isDevelopment ? error.message : 'An unexpected error occurred',
+        code: 'INTERNAL_ERROR',
+        ...(isDevelopment && { stack: error.stack }),
+      },
+      { status: 500 }
+    )
+  }
+
+  // Handle unknown errors (non-Error objects)
   const isDevelopment = process.env.NODE_ENV === 'development'
 
   return NextResponse.json(
     {
-      error: isDevelopment ? error.message : 'An unexpected error occurred',
+      error: isDevelopment ? 'Unknown error occurred' : 'An unexpected error occurred',
       code: 'INTERNAL_ERROR',
-      ...(isDevelopment && { stack: error.stack }),
     },
     { status: 500 }
   )
@@ -139,13 +145,13 @@ export function errorToResponse(error: Error | AppError): NextResponse {
  * Async handler wrapper that catches errors and converts them to responses
  */
 export function asyncHandler(
-  handler: (...args: any[]) => Promise<NextResponse>
-): (...args: any[]) => Promise<NextResponse> {
-  return async (...args: any[]): Promise<NextResponse> => {
+  handler: (...args: unknown[]) => Promise<NextResponse>
+): (...args: unknown[]) => Promise<NextResponse> {
+  return async (...args: unknown[]): Promise<NextResponse> => {
     try {
       return await handler(...args)
     } catch (error) {
-      return errorToResponse(error as Error)
+      return errorToResponse(error)
     }
   }
 }
@@ -154,7 +160,7 @@ export function asyncHandler(
  * Validate required fields
  */
 export function validateRequired(
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   requiredFields: string[]
 ): void {
   const missing = requiredFields.filter(field => !data[field])
@@ -215,7 +221,7 @@ export function validateAmount(
 /**
  * Standard success response
  */
-export function successResponse(data: any, status: number = 200): NextResponse {
+export function successResponse(data: Record<string, unknown>, status: number = 200): NextResponse {
   return NextResponse.json({ success: true, ...data }, { status })
 }
 

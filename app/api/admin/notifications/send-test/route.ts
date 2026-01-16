@@ -120,8 +120,9 @@ export async function POST(request: Request) {
           message: `Test email sent to ${recipient || profile.email}!`,
           messageId: result.data?.id,
         });
-      } catch (resendError: any) {
-        console.error('Resend error:', resendError);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error('Resend error:', error);
 
         // Log the failed notification
         await supabaseAdmin.from('notification_logs').insert({
@@ -130,12 +131,12 @@ export async function POST(request: Request) {
           template_key: 'order_confirmation',
           channel: 'test_email',
           status: 'failed',
-          error_message: resendError.message,
+          error_message: errorMessage,
           metadata: { to: recipient || profile.email },
         });
 
         return NextResponse.json(
-          { error: `Resend error: ${resendError.message}` },
+          { error: `Resend error: ${errorMessage}` },
           { status: 500 }
         );
       }
@@ -170,10 +171,10 @@ export async function POST(request: Request) {
       { error: 'Invalid notification type. Use "email" or "push"' },
       { status: 400 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Send test notification error:', error);
     return NextResponse.json(
-      { error: `Failed to send test notification: ${error.message}` },
+      { error: `Failed to send test notification: ${error instanceof Error ? error instanceof Error ? error.message : 'Unknown error' : 'Unknown error'}` },
       { status: 500 }
     );
   }

@@ -13,7 +13,7 @@ export async function GET() {
     }
 
     return NextResponse.json({ publicKey });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Get VAPID key error:', error);
     return NextResponse.json(
       { error: 'Failed to get VAPID public key' },

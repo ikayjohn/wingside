@@ -70,7 +70,7 @@ export async function GET(request: Request) {
       limit,
       offset,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Get notification logs error:', error);
     return NextResponse.json(
       { error: 'Failed to get notification logs' },

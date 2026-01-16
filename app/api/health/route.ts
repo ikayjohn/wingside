@@ -3,7 +3,13 @@ import { createClient } from '@/lib/supabase/server';
 
 export async function GET() {
   try {
-    const healthStatus: any = {
+    const healthStatus: Record<string, unknown> & {
+      services: {
+        nextjs: string;
+        database: string | unknown;
+        environment: string;
+      };
+    } = {
       timestamp: new Date().toISOString(),
       status: 'ok',
       version: '1.0.0',
@@ -23,12 +29,14 @@ export async function GET() {
         .limit(1);
 
       if (error) {
-        healthStatus.services.database = `error: ${error.message}`;
+        const errorMessage = error.message || 'Unknown error';
+        healthStatus.services.database = `error: ${errorMessage}`;
       } else {
         healthStatus.services.database = 'ok';
       }
-    } catch (dbError) {
-      healthStatus.services.database = `connection error: ${dbError.message}`;
+    } catch (dbError: unknown) {
+      const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown error';
+      healthStatus.services.database = `connection error: ${errorMessage}`;
     }
 
     // Check environment variables

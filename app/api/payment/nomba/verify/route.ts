@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
       order_id: order?.id,
       message: 'Payment verified successfully',
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Nomba payment verification error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

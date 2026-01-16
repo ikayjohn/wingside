@@ -103,11 +103,14 @@ export async function GET() {
     )
     console.log('[Admin GET] Response created:', { status: response.status, headers: response.headers.get('content-type') })
     return response
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const stackTrace = error instanceof Error ? error.stack : undefined;
+
     console.error('[Admin GET] Unexpected error in catch block:', error)
-    console.error('[Admin GET] Error stack:', error.stack)
+    console.error('[Admin GET] Error stack:', stackTrace)
     return NextResponse.json(
-      { error: 'Failed to fetch maintenance settings', details: error.message },
+      { error: 'Failed to fetch maintenance settings', details: errorMessage },
       { status: 500, headers: { 'content-type': 'application/json' } }
     )
   }
@@ -241,10 +244,11 @@ export async function POST(request: Request) {
         accessCodes: accessCodes || []
       }
     }, { headers: { 'content-type': 'application/json' } })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('[Admin POST] Unexpected error:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to update maintenance settings' },
+      { error: errorMessage },
       { status: 500, headers: { 'content-type': 'application/json' } }
     )
   }

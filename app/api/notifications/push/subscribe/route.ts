@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       const result = await subscribeToPush(user.id, subscription, userAgent);
       return NextResponse.json(result);
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Push subscription error:', error);
     return NextResponse.json(
       { error: 'Failed to manage push subscription' },
@@ -94,7 +94,7 @@ export async function DELETE(request: Request) {
     const result = await unsubscribeFromPush(user.id, endpoint);
 
     return NextResponse.json(result);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Push unsubscribe error:', error);
     return NextResponse.json(
       { error: 'Failed to unsubscribe from push notifications' },

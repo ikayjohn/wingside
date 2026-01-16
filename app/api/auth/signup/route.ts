@@ -179,7 +179,7 @@ export async function POST(request: Request) {
         referred_user_id: authData.user.id,
         referral_code_used: referralId.trim().toUpperCase(),
         status: 'pending_signup',
-        reward_amount: 200,
+        reward_amount: 1000, // Updated to ₦1000 naira reward
         referred_email: email.toLowerCase().trim(),
       });
 

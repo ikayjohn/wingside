@@ -55,7 +55,8 @@ export async function GET(request: NextRequest) {
     console.log(`[Hero Slides API] Success: ${slides?.length || 0} slides returned`);
 
     return NextResponse.json({ slides });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('[Hero Slides API] Exception:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -150,18 +151,25 @@ export async function POST(request: NextRequest) {
     console.log('[Hero Slides API] POST - Success! Slide created:', slide);
     return NextResponse.json({ slide }, { status: 201 });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorName = error instanceof Error ? error.name : 'Unknown';
+    const stackTrace = error instanceof Error ? error.stack : undefined;
+
     console.error('[Hero Slides API] POST - Exception:', error);
-    console.error('[Hero Slides API] POST - Error name:', error.name);
-    console.error('[Hero Slides API] POST - Error message:', error.message);
-    console.error('[Hero Slides API] POST - Stack:', error.stack);
+    console.error('[Hero Slides API] POST - Error name:', errorName);
+    console.error('[Hero Slides API] POST - Error message:', errorMessage);
+
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[Hero Slides API] POST - Stack:', stackTrace);
+    }
 
     // Return JSON even for unexpected errors
     return NextResponse.json(
       {
-        error: error.message || 'Unknown error',
-        type: error.name,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        error: errorMessage,
+        type: errorName,
+        stack: process.env.NODE_ENV === 'development' ? stackTrace : undefined
       },
       { status: 500 }
     );

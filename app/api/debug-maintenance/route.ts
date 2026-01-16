@@ -47,13 +47,18 @@ export async function GET() {
       logs
     }, { headers: { 'content-type': 'application/json' } })
 
-  } catch (error: any) {
-    logs.push(`Error: ${error.message}`)
-    logs.push(`Stack: ${error.stack?.substring(0, 200)}`)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const stackTrace = error instanceof Error ? error.stack?.substring(0, 200) : undefined
+
+    logs.push(`Error: ${errorMessage}`)
+    if (stackTrace) {
+      logs.push(`Stack: ${stackTrace}`)
+    }
 
     return NextResponse.json({
       success: false,
-      error: error.message,
+      error: errorMessage,
       logs
     }, { status: 500, headers: { 'content-type': 'application/json' } })
   }

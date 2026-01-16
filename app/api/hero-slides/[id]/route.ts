@@ -54,7 +54,7 @@ export async function PATCH(
 
     if (error) {
       console.error('[Hero Slides API] PATCH - Error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
     }
 
     if (!slide) {
@@ -63,7 +63,7 @@ export async function PATCH(
 
     console.log('[Hero Slides API] PATCH - Success:', slide);
     return NextResponse.json({ slide });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Hero Slides API] PATCH - Exception:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -108,12 +108,12 @@ export async function DELETE(
 
     if (error) {
       console.error('[Hero Slides API] DELETE - Error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
     }
 
     console.log('[Hero Slides API] DELETE - Success');
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Hero Slides API] DELETE - Exception:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

@@ -159,7 +159,8 @@ export async function POST(request: NextRequest) {
       checkout_url: checkoutData.data.checkoutLink,
       order_reference: orderReference,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     console.error('Nomba payment initialization error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

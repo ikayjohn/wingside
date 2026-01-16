@@ -34,8 +34,11 @@ export async function POST(request: NextRequest) {
     console.log('[TEST INSERT] Success:', data);
     return NextResponse.json({ success: true, data });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const stackTrace = error instanceof Error ? error.stack : undefined;
+
     console.error('[TEST INSERT] Exception:', error);
-    return NextResponse.json({ error: error.message, stack: error.stack }, { status: 500 });
+    return NextResponse.json({ error: errorMessage, stack: stackTrace }, { status: 500 });
   }
 }

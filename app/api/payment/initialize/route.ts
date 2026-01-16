@@ -169,7 +169,8 @@ export async function POST(request: NextRequest) {
       access_code: paystackData.data.access_code,
       reference: paystackData.data.reference,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     console.error('Payment initialization error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

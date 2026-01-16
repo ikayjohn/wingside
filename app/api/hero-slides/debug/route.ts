@@ -64,9 +64,14 @@ export async function GET() {
       debug.data = slides;
     }
 
-  } catch (error: any) {
-    debug.errors.push(`Exception: ${error.message}`);
-    debug.errors.push(`Stack: ${error.stack}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const stackTrace = error instanceof Error ? error.stack : undefined;
+
+    debug.errors.push(`Exception: ${errorMessage}`);
+    if (stackTrace) {
+      debug.errors.push(`Stack: ${stackTrace}`);
+    }
   }
 
   return NextResponse.json(debug);

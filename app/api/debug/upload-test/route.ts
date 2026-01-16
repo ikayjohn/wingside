@@ -3,14 +3,22 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   try {
-    const checks = {
+    const checks: {
+      envVars: {
+        supabaseUrl: boolean
+        supabaseAnonKey: boolean
+        serviceRoleKey: boolean
+      }
+      auth: any
+      storage: any
+    } = {
       envVars: {
         supabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
         supabaseAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
         serviceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
       },
-      auth: null as any,
-      storage: null as any,
+      auth: null,
+      storage: null,
     }
 
     // Test Supabase client creation
@@ -41,8 +49,9 @@ export async function GET(request: NextRequest) {
           error: profileError?.message || null,
         }
       }
-    } catch (error: any) {
-      checks.auth = { error: error.message }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      checks.auth = { error: errorMessage }
     }
 
     // Test storage access
@@ -55,12 +64,14 @@ export async function GET(request: NextRequest) {
         productImagesExists: buckets?.some((b: any) => b.id === 'product-images') || false,
         error: error?.message || null,
       }
-    } catch (error: any) {
-      checks.storage = { error: error.message }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      checks.storage = { error: errorMessage }
     }
 
     return NextResponse.json(checks)
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

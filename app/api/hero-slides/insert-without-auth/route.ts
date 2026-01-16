@@ -47,11 +47,14 @@ export async function POST(request: NextRequest) {
     console.log('[INSERT WITHOUT AUTH] Success:', slide);
     return NextResponse.json({ slide }, { status: 201 });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const stackTrace = error instanceof Error ? error.stack : undefined;
+
     console.error('[INSERT WITHOUT AUTH] Exception:', error);
-    console.error('[INSERT WITHOUT AUTH] Stack:', error.stack);
+    console.error('[INSERT WITHOUT AUTH] Stack:', stackTrace);
     return NextResponse.json(
-      { error: error.message, stack: error.stack },
+      { error: errorMessage, stack: stackTrace },
       { status: 500 }
     );
   }

@@ -57,7 +57,7 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json(preferences);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Get notification preferences error:', error);
     return NextResponse.json(
       { error: 'Failed to get notification preferences' },
@@ -113,7 +113,7 @@ export async function PUT(request: Request) {
     }
 
     return NextResponse.json(data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Update notification preferences error:', error);
     return NextResponse.json(
       { error: 'Failed to update notification preferences' },

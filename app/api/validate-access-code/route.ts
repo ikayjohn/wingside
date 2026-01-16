@@ -118,7 +118,7 @@ export async function POST(request: Request) {
       error: 'No access codes configured'
     }, { headers: { 'content-type': 'application/json' } })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Validate Access Code] Unexpected error:', error)
     return NextResponse.json(
       { valid: false, error: 'Validation failed' },

@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
       order_id: orderId,
       message: 'Payment verified successfully',
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Payment verification error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

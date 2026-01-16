@@ -67,7 +67,7 @@ export async function PUT(
     if (error) {
       console.error('Error updating store:', error);
       return NextResponse.json(
-        { error: 'Failed to update store', details: error.message },
+        { error: 'Failed to update store', details: error instanceof Error ? error.message : 'Unknown error' },
         { status: 500 }
       );
     }
@@ -132,7 +132,7 @@ export async function DELETE(
     if (error) {
       console.error('Error deleting store:', error);
       return NextResponse.json(
-        { error: 'Failed to delete store', details: error.message },
+        { error: 'Failed to delete store', details: error instanceof Error ? error.message : 'Unknown error' },
         { status: 500 }
       );
     }

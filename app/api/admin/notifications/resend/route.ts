@@ -96,7 +96,7 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Resend notification error:', error);
     return NextResponse.json(
       { error: 'Failed to resend notification' },

@@ -176,8 +176,8 @@ export default function ReferralSection() {
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Refer & Earn</h2>
 
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-          <p className="text-yellow-800 font-medium mb-2">🎉 200 Points for each referral!</p>
-          <p className="text-sm text-yellow-700">Your friend also gets 200 points after their first order. You'll earn your points when your friend places their first order.</p>
+          <p className="text-yellow-800 font-medium mb-2">🎉 Earn ₦1,000 for each referral!</p>
+          <p className="text-sm text-yellow-700">Your friend also gets ₦1,000 after their first order. You'll earn your reward when your friend places their first order.</p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
@@ -230,17 +230,17 @@ export default function ReferralSection() {
 
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Total Earnings</p>
-          <p className="text-2xl font-bold text-green-600">{stats.totalEarnings.toLocaleString()} pts</p>
+          <p className="text-2xl font-bold text-green-600">₦{stats.totalEarnings.toLocaleString()}</p>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Pending Rewards</p>
-          <p className="text-2xl font-bold text-yellow-600">{stats.pendingRewards.toLocaleString()} pts</p>
+          <p className="text-2xl font-bold text-yellow-600">₦{stats.pendingRewards.toLocaleString()}</p>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Credited</p>
-          <p className="text-2xl font-bold text-blue-600">{stats.creditedRewards.toLocaleString()} pts</p>
+          <p className="text-2xl font-bold text-blue-600">₦{stats.creditedRewards.toLocaleString()}</p>
         </div>
       </div>
 
@@ -265,7 +265,7 @@ export default function ReferralSection() {
                     {getStatusText(referral.status)}
                   </span>
                   <p className="text-sm text-gray-600 mt-1">
-                    {referral.reward_amount || 200} pts
+                    ₦{referral.reward_amount || 1000}
                   </p>
                 </div>
               </div>

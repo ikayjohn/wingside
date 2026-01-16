@@ -100,10 +100,11 @@ export async function GET(
 
     return NextResponse.json({ customer: customerDetails });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching customer details:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch customer details' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
@@ -163,10 +164,11 @@ export async function DELETE(
       }
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Customer deletion error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: error.message || 'Failed to delete customer' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

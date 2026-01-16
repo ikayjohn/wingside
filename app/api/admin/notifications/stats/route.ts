@@ -68,7 +68,8 @@ export async function GET(request: Request) {
     };
 
     return NextResponse.json(stats);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Get notification stats error:', error);
     return NextResponse.json(
       { error: 'Failed to get notification stats' },

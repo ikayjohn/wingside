@@ -93,7 +93,7 @@ export async function POST(request: Request) {
     } else {
       return NextResponse.json({ error: 'Invalid notification type' }, { status: 400 });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Send notification error:', error);
     return NextResponse.json(
       { error: 'Failed to send notification' },

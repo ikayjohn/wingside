@@ -55,7 +55,7 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json(templates);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Get templates error:', error);
     return NextResponse.json(
       { error: 'Failed to get email templates' },
@@ -133,7 +133,7 @@ export async function PUT(request: Request) {
       template: data,
       message: 'Template updated successfully',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Update template error:', error);
     return NextResponse.json(
       { error: 'Failed to update template' },

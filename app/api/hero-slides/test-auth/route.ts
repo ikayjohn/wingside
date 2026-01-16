@@ -60,8 +60,8 @@ export async function POST(request: NextRequest) {
     debug.steps.push('6. ✅ All checks passed - user is admin!');
     return NextResponse.json(debug);
 
-  } catch (error: any) {
-    debug.errors.push(`Exception: ${error.message}`);
+  } catch (error: unknown) {
+    debug.errors.push(`Exception: ${error instanceof Error ? error.message : 'Unknown error'}`);
     debug.data.exception = error;
     return NextResponse.json(debug);
   }
