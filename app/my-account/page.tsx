@@ -232,26 +232,27 @@ export default function MyAccountPage() {
     }
 
     // Verify reCAPTCHA token
-    if (!recaptchaToken) {
-      setSubmitError('Bot verification failed. Please try again.');
-      return;
-    }
+    // DISABLED: Bot verification temporarily disabled
+    // if (!recaptchaToken) {
+    //   setSubmitError('Bot verification failed. Please try again.');
+    //   return;
+    // }
 
-    const recaptchaVerifyResponse = await fetch('/api/recaptcha/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: recaptchaToken }),
-    });
+    // const recaptchaVerifyResponse = await fetch('/api/recaptcha/verify', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ token: recaptchaToken }),
+    // });
 
-    const recaptchaResult = await recaptchaVerifyResponse.json();
+    // const recaptchaResult = await recaptchaVerifyResponse.json();
 
-    if (!recaptchaVerifyResponse.ok || !recaptchaResult.success) {
-      console.error('reCAPTCHA verification failed:', recaptchaResult);
-      setSubmitError('Bot verification failed. Please try again.');
-      return;
-    }
+    // if (!recaptchaVerifyResponse.ok || !recaptchaResult.success) {
+    //   console.error('reCAPTCHA verification failed:', recaptchaResult);
+    //   setSubmitError('Bot verification failed. Please try again.');
+    //   return;
+    // }
 
-    console.log('✅ reCAPTCHA verified, score:', recaptchaResult.score);
+    // console.log('✅ reCAPTCHA verified, score:', recaptchaResult.score);
 
     // Validate first name
     const firstNameValidation = validateName(signupData.firstName, 'First name');
@@ -469,12 +470,14 @@ export default function MyAccountPage() {
                 {/* Honeypot Field */}
                 <HoneypotField />
 
-                {/* reCAPTCHA v3 (invisible) */}
+                {/* reCAPTCHA v3 (invisible) - DISABLED */}
+                {/*
                 <Recaptcha
                   siteKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ''}
                   onVerify={setRecaptchaToken}
                   action="signup"
                 />
+                */}
 
                 {/* Name Row */}
                 <div className="wingclub-row">
