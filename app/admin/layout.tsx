@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -18,11 +18,7 @@ export default function AdminLayout({
   const pathname = usePathname();
   const supabase = createClient();
 
-  useEffect(() => {
-    checkUser();
-  }, []);
-
-  async function checkUser() {
+  const checkUser = useCallback(async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -46,7 +42,11 @@ export default function AdminLayout({
 
     setUser(user);
     setLoading(false);
-  }
+  }, [supabase, router]);
+
+  useEffect(() => {
+    checkUser();
+  }, [checkUser]);
 
   async function handleSignOut() {
     await supabase.auth.signOut();

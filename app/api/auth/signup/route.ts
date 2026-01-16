@@ -2,10 +2,19 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { syncNewCustomer } from '@/lib/integrations';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Validate environment variables
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!url) {
+  throw new Error('Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL');
+}
+
+if (!serviceKey) {
+  throw new Error('Missing required environment variable: SUPABASE_SERVICE_ROLE_KEY');
+}
+
+const supabase = createClient(url, serviceKey);
 
 // Generate referral code based on first name, last name, and random numbers
 function generateReferralCode(firstName: string, lastName: string): string {
