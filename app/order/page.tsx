@@ -100,7 +100,14 @@ export default function OrderPage() {
   // Fetch products from API on mount
   const fetchProducts = useCallback(async () => {
     try {
-      const response = await fetch('/api/products');
+      // Add timestamp to prevent browser caching
+      const response = await fetch(`/api/products?_t=${Date.now()}`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+        cache: 'no-store',
+      });
       const data = await response.json();
 
       if (data.products) {
