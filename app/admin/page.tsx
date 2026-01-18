@@ -375,7 +375,10 @@ export default function AdminDashboard() {
           </div>
           <div className="w-full flex-1">
             <ResponsiveContainer width="100%" height={350}>
-              <AreaChart data={chartData.dailyChart} margin={{ top: 20, right: 10, left: 0, bottom: 20 }}>
+              <AreaChart
+                data={chartData.dailyChart}
+                margin={{ top: 30, right: 10, left: 0, bottom: 30 }}
+              >
                 <defs>
                   <linearGradient id="colorOrders1" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#F7C400" stopOpacity={0.6}/>
@@ -402,7 +405,7 @@ export default function AdminDashboard() {
                   tick={{ fill: '#6b7280', fontSize: 12 }}
                   axisLine={false}
                   tickLine={false}
-                  dy={5}
+                  dy={10}
                 />
                 <YAxis
                   stroke="#9ca3af"
@@ -411,6 +414,8 @@ export default function AdminDashboard() {
                   axisLine={false}
                   tickLine={false}
                   width={40}
+                  domain={[0, 'auto']}
+                  allowDataOverflow={true}
                 />
                 <Tooltip
                   contentStyle={{
