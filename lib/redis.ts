@@ -174,9 +174,11 @@ export async function clearAllCache(): Promise<void> {
 export const CacheInvalidation = {
   // Invalidate all product-related caches
   async products() {
+    console.log('[Cache Invalidation] Clearing product caches')
     await deleteCachePattern('wingside:products*');
     // Also clear memory cache
     memoryCache.deletePattern('wingside:products*');
+    console.log('[Cache Invalidation] Product caches cleared')
   },
 
   // Invalidate all flavor-related caches
@@ -250,11 +252,14 @@ class MemoryCache {
   // Delete all keys matching a pattern
   deletePattern(pattern: string): void {
     const regex = new RegExp(pattern.replace('*', '.*'));
+    let deletedCount = 0;
     for (const key of this.cache.keys()) {
       if (regex.test(key)) {
         this.cache.delete(key);
+        deletedCount++;
       }
     }
+    console.log(`[Memory Cache] Deleted ${deletedCount} keys matching pattern: ${pattern}`)
   }
 }
 

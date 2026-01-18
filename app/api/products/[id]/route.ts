@@ -109,24 +109,59 @@ export async function PUT(
 
     // Update sizes if provided
     if (body.sizes && body.sizes.length > 0) {
+      console.log('[Products API] Updating sizes:', body.sizes)
+
       // Delete existing sizes
-      await supabase.from('product_sizes').delete().eq('product_id', id)
+      const { error: deleteError } = await supabase
+        .from('product_sizes')
+        .delete()
+        .eq('product_id', id)
+
+      if (deleteError) {
+        console.error('[Products API] Error deleting sizes:', deleteError)
+      } else {
+        console.log('[Products API] Deleted existing sizes')
+      }
 
       // Insert new sizes
-      await supabase.from('product_sizes').insert(
-        body.sizes.map((size: any) => ({
-          product_id: id,
-          name: size.name,
-          price: size.price,
-          is_default: size.is_default || false,
-        }))
-      )
+      const sizesToInsert = body.sizes.map((size: any) => ({
+        product_id: id,
+        name: size.name,
+        price: size.price,
+        is_default: size.is_default || false,
+      }))
+      console.log('[Products API] Inserting new sizes:', sizesToInsert)
+
+      const { error: insertError } = await supabase
+        .from('product_sizes')
+        .insert(sizesToInsert)
+
+      if (insertError) {
+        console.error('[Products API] Error inserting sizes:', insertError)
+      } else {
+        console.log('[Products API] Sizes updated successfully')
+      }
+    } else {
+      console.log('[Products API] No sizes provided in update')
     }
 
     // Invalidate cache so the updated product is fetched
     await CacheInvalidation.products()
 
-    return NextResponse.json({ product })
+    // Fetch the updated product with sizes to return to client
+    const { data: updatedProduct } = await supabase
+      .from('products')
+      .select(`
+        *,
+        category:categories(id, name, slug),
+        sizes:product_sizes(*)
+      `)
+      .eq('id', id)
+      .single()
+
+    console.log('[Products API] Updated product with sizes:', updatedProduct)
+
+    return NextResponse.json({ product: updatedProduct })
   } catch (error) {
     console.error('Error:', error)
     return NextResponse.json(

@@ -81,7 +81,14 @@ export default function AdminProductsPage() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('/api/products')
+      // Add cache-busting header for admin pages
+      const response = await fetch('/api/products', {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+        cache: 'no-store',
+      })
       const data = await response.json()
       if (data.products) {
         setProducts(data.products)
@@ -239,6 +246,7 @@ export default function AdminProductsPage() {
     }
 
     console.log('[Product Submit] productData being sent to API:', { ...productData, image_url: productData.image_url?.substring(0, 50) + '...' })
+    console.log('[Product Submit] sizes array:', productData.sizes)
 
     try {
       const url = editingProduct
