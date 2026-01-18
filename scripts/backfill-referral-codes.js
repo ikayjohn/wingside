@@ -105,7 +105,7 @@ async function backfillReferralCodes() {
     // Update customer with referral code
     const { data: updateData, error: updateError } = await supabase
       .from('profiles')
-      .update({ referral_code })
+      .update({ referral_code: referralCode })
       .eq('id', customer.id)
       .select('id, email, referral_code')
       .single();
