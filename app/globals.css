@@ -1917,7 +1917,7 @@ input[type="button"],
 
 @media (min-width: 768px) {
   .dashboard-quick-actions {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 1rem;
   }
 }

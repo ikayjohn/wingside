@@ -292,7 +292,7 @@ export default function Header() {
                 ) : (
                   <li role="none">
                     <Link
-                      href="/login"
+                      href="/my-account"
                       className="sidebar-link"
                       onClick={handleClose}
                       role="menuitem"

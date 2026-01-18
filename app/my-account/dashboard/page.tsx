@@ -269,15 +269,20 @@ export default function WingclubDashboard() {
                 <img
                   src={userData.avatar_url}
                   alt={userData.name}
-                  className="w-16 h-16 rounded-full object-cover border-4 border-[#F7C400] shadow-lg"
+                  className="w-16 h-16 rounded-full object-cover border-4 border-white"
+                  onError={(e) => {
+                    // Fallback to initial if image fails to load
+                    e.currentTarget.style.display = 'none';
+                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = 'flex';
+                  }}
                 />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#F7C400] to-[#e5b000] flex items-center justify-center border-4 border-[#F7C400] shadow-lg">
-                  <span className="text-2xl font-bold text-white">
-                    {userData.name.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-              )}
+              ) : null}
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center border-4 border-white" style={{ display: userData.avatar_url ? 'none' : 'flex' }}>
+                <span className="text-2xl font-bold text-white">
+                  {userData.name.charAt(0).toUpperCase()}
+                </span>
+              </div>
               {/* Online indicator */}
               <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
             </div>
@@ -529,6 +534,17 @@ export default function WingclubDashboard() {
             <span>Tier Progression</span>
           </Link>
 
+          <Link href="/my-account/orders" className="dashboard-action-card">
+            <div className="dashboard-action-icon orange">
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="9" cy="21" r="1"></circle>
+                <circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+              </svg>
+            </div>
+            <span>My Orders</span>
+          </Link>
+
           <Link href="/my-account/wallet-history" className="dashboard-action-card">
             <div className="dashboard-action-icon green">
               <Image src="/wallethistory.svg" alt="Wallet History" width={40} height={40} />
@@ -655,7 +671,7 @@ export default function WingclubDashboard() {
           <div className="dashboard-recent-section">
             <div className="dashboard-recent-header">
               <h3 className="dashboard-recent-title">My Recent Orders</h3>
-              <Link href="/order-confirmation" className="dashboard-view-all">View All</Link>
+              <Link href="/my-account/orders" className="dashboard-view-all">View All</Link>
             </div>
             
             {userData.recentOrders && userData.recentOrders.length > 0 ? (
