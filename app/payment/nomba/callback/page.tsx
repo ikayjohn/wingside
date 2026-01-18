@@ -27,7 +27,7 @@ function NombaPaymentCallbackContent() {
 
   const verifyPayment = async () => {
     try {
-      // Get order details to retrieve payment reference
+      // Get order details to check payment status
       const orderResponse = await fetch(`/api/orders/${orderId}`);
       const orderData = await orderResponse.json();
 
@@ -35,10 +35,26 @@ function NombaPaymentCallbackContent() {
         throw new Error('Order not found');
       }
 
-      const paymentRef = orderData.order.payment_reference;
+      const order = orderData.order;
+
+      // If order is already paid (webhook processed it), show success
+      if (order.payment_status === 'paid' || order.status === 'confirmed') {
+        setPaymentStatus('success');
+        setMessage('Payment successful! Your order has been confirmed.');
+        setOrderNumber(order.order_number);
+
+        // Redirect to order confirmation after 3 seconds
+        setTimeout(() => {
+          router.push(`/order-confirmation?orderNumber=${order.order_number}`);
+        }, 3000);
+        return;
+      }
+
+      // Order not paid yet, try to verify with Nomba
+      const paymentRef = order.payment_reference;
 
       if (!paymentRef) {
-        throw new Error('Payment reference not found');
+        throw new Error('Payment reference not found. Please contact support with your order ID.');
       }
 
       // Verify payment using Nomba verify endpoint
@@ -53,11 +69,11 @@ function NombaPaymentCallbackContent() {
       if (verifyData.success) {
         setPaymentStatus('success');
         setMessage('Payment successful! Your order has been confirmed.');
-        setOrderNumber(orderData.order.order_number);
+        setOrderNumber(order.order_number);
 
         // Redirect to order confirmation after 3 seconds
         setTimeout(() => {
-          router.push(`/order-confirmation?orderNumber=${orderData.order.order_number}`);
+          router.push(`/order-confirmation?orderNumber=${order.order_number}`);
         }, 3000);
       } else {
         setPaymentStatus('failed');
