@@ -5,6 +5,11 @@ const EMBEDLY_API_KEY = process.env.EMBEDLY_API_KEY;
 const EMBEDLY_ORG_ID = process.env.EMBEDLY_ORG_ID;
 const EMBEDLY_BASE_URL = process.env.EMBEDLY_BASE_URL || 'https://waas-prod.embedly.ng/api/v1';
 
+// Cached GUIDs
+let NIGERIA_COUNTRY_ID: string | null = null;
+let INDIVIDUAL_CUSTOMER_TYPE_ID: string | null = null;
+let NGN_CURRENCY_ID: string | null = null;
+
 // Make authenticated API request
 async function embedlyRequest(
   endpoint: string,
@@ -33,6 +38,71 @@ async function embedlyRequest(
   return response.json();
 }
 
+// Get Nigeria's country GUID
+async function getNigeriaCountryId(): Promise<string> {
+  if (NIGERIA_COUNTRY_ID) {
+    return NIGERIA_COUNTRY_ID;
+  }
+
+  try {
+    const result = await embedlyRequest('/utilities/countries/get');
+    const nigeria = result.data?.find((c: any) => c.countryCodeTwo === 'NG');
+    if (nigeria) {
+      NIGERIA_COUNTRY_ID = nigeria.id;
+      return NIGERIA_COUNTRY_ID;
+    }
+    throw new Error('Nigeria not found in countries list');
+  } catch (error) {
+    console.error('Failed to get Nigeria country ID:', error);
+    throw error;
+  }
+}
+
+// Get individual customer type GUID
+async function getIndividualCustomerTypeId(): Promise<string> {
+  if (INDIVIDUAL_CUSTOMER_TYPE_ID) {
+    return INDIVIDUAL_CUSTOMER_TYPE_ID;
+  }
+
+  try {
+    const result = await embedlyRequest('/customers/types/all');
+    const individual = result.data?.find((t: any) => t.name.toLowerCase() === 'individual');
+    if (individual) {
+      INDIVIDUAL_CUSTOMER_TYPE_ID = individual.id;
+      return INDIVIDUAL_CUSTOMER_TYPE_ID;
+    }
+    // Use first customer type if individual not found
+    if (result.data && result.data.length > 0) {
+      INDIVIDUAL_CUSTOMER_TYPE_ID = result.data[0].id;
+      return INDIVIDUAL_CUSTOMER_TYPE_ID;
+    }
+    throw new Error('No customer types found');
+  } catch (error) {
+    console.error('Failed to get individual customer type ID:', error);
+    throw error;
+  }
+}
+
+// Get NGN currency GUID
+async function getNgnCurrencyId(): Promise<string> {
+  if (NGN_CURRENCY_ID) {
+    return NGN_CURRENCY_ID;
+  }
+
+  try {
+    const result = await embedlyRequest('/utilities/currencies/get');
+    const ngn = result.data?.find((c: any) => c.shortName === 'NGN');
+    if (ngn) {
+      NGN_CURRENCY_ID = ngn.id;
+      return NGN_CURRENCY_ID;
+    }
+    throw new Error('NGN currency not found in currencies list');
+  } catch (error) {
+    console.error('Failed to get NGN currency ID:', error);
+    throw error;
+  }
+}
+
 // ============ Customer Operations ============
 
 export interface EmbedlyCustomer {
@@ -48,9 +118,20 @@ export interface EmbedlyCustomer {
 
 // Create customer
 export async function createCustomer(customer: Omit<EmbedlyCustomer, 'id'>): Promise<string> {
-  const result = await embedlyRequest('/customer', 'POST', {
-    ...customer,
-    organisationId: EMBEDLY_ORG_ID,
+  // Get required GUIDs
+  const countryId = await getNigeriaCountryId();
+  const customerTypeId = await getIndividualCustomerTypeId();
+
+  const result = await embedlyRequest('/customers/add', 'POST', {
+    organizationId: EMBEDLY_ORG_ID,
+    firstName: customer.firstName,
+    lastName: customer.lastName,
+    emailAddress: customer.email,
+    mobileNumber: customer.phone || '',
+    countryId,
+    customerTypeId,
+    city: 'Port Harcourt', // Default city - can be overridden
+    address: 'Wingside Customer', // Default address - can be overridden
   });
   return result.data?.id || result.id;
 }
@@ -97,13 +178,16 @@ export interface EmbedlyWallet {
 }
 
 // Create wallet for customer
-export async function createWallet(customerId: string, currency: string = 'NGN'): Promise<string> {
-  const result = await embedlyRequest('/wallet', 'POST', {
+export async function createWallet(customerId: string, customerName?: string, currency: string = 'NGN'): Promise<string> {
+  // Get NGN currency GUID
+  const currencyId = await getNgnCurrencyId();
+
+  const result = await embedlyRequest('/wallets/add', 'POST', {
     customerId,
-    currency,
-    organisationId: EMBEDLY_ORG_ID,
+    currencyId,
+    name: customerName || 'Wallet', // Use customer name if provided
   });
-  return result.data?.id || result.id;
+  return result.data?.id || result.walletId || result.id;
 }
 
 // Get wallet by ID
@@ -212,7 +296,7 @@ export async function setupCustomerWithWallet(customer: {
 
     // Try to create wallet (will use existing if customer has one, or create new)
     try {
-      walletId = await createWallet(customerId);
+      walletId = await createWallet(customerId, customer.full_name);
       console.log(`Embedly: Wallet ${walletId} ready for customer ${customerId}`);
     } catch (walletError: any) {
       // Wallet creation failed - customer might already have max wallets
