@@ -108,6 +108,19 @@ export async function GET() {
       })?.reduce((sum, order) => sum + Number(order.total), 0) || 0) / 100
     )
 
+    // Parse date_of_birth to extract birthday day and month if not already stored
+    let birthdayDay = profile.birthday_day
+    let birthdayMonth = profile.birthday_month
+
+    if (!birthdayDay && !birthdayMonth && profile.date_of_birth) {
+      // date_of_birth is stored as DD-MM-YYYY or DD-MM format
+      const dobParts = profile.date_of_birth.split('-')
+      if (dobParts.length >= 2) {
+        birthdayDay = parseInt(dobParts[0], 10)
+        birthdayMonth = parseInt(dobParts[1], 10)
+      }
+    }
+
     const userData = {
       id: profile.id,
       name: profile.full_name || 'Customer',
@@ -115,8 +128,8 @@ export async function GET() {
       lastName: profile.last_name || profile.full_name?.split(' ').slice(1).join(' ') || '',
       email: profile.email,
       phone: profile.phone,
-      birthdayDay: profile.birthday_day,
-      birthdayMonth: profile.birthday_month,
+      birthdayDay,
+      birthdayMonth,
       points: profile.points || 0, // Add points field
       walletBalance: profile.wallet_balance || 0,
       cardNumber: `WC${profile.id.slice(0, 8).toUpperCase()}`,
@@ -203,6 +216,10 @@ export async function PATCH(request: Request) {
       }
       updateData.birthday_day = birthdayDay
       updateData.birthday_month = birthdayMonth
+      // Also save in date_of_birth field for consistency
+      const day = String(birthdayDay).padStart(2, '0')
+      const month = String(birthdayMonth).padStart(2, '0')
+      updateData.date_of_birth = `${day}-${month}`
     }
 
     // Update full_name if first or last name changed
