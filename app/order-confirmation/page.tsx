@@ -292,11 +292,11 @@ function OrderConfirmationContent() {
           <h3 className="font-bold text-[#552627] mb-2">Need Help?</h3>
           <p className="text-gray-700 mb-4">If you have any questions about your order, please contact us.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center text-sm">
-            <a href="tel:+2348012345678" className="text-[#552627] hover:underline font-medium">
-              📞 +234 801 234 5678
+            <a href="tel:+2348090191999" className="text-[#552627] hover:underline font-medium">
+              📞 +234 809 019 1999
             </a>
-            <a href="mailto:orders@wingside.com" className="text-[#552627] hover:underline font-medium">
-              ✉️ orders@wingside.com
+            <a href="mailto:reachus@wingside.ng" className="text-[#552627] hover:underline font-medium">
+              ✉️ reachus@wingside.ng
             </a>
           </div>
         </div>
