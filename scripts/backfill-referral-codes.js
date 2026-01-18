@@ -39,7 +39,7 @@ async function backfillReferralCodes() {
   // Fetch all customers without referral codes
   const { data: customers, error } = await supabase
     .from('profiles')
-    .select('id, email, full_name, first_name, last_name, referral_code')
+    .select('id, email, full_name, referral_code')
     .is('referral_code', null)
     .eq('role', 'customer')
     .order('created_at', { ascending: false });
@@ -61,8 +61,8 @@ async function backfillReferralCodes() {
 
   for (const customer of customers) {
     const nameParts = (customer.full_name || '').split(' ');
-    const firstName = customer.first_name || nameParts[0] || '';
-    const lastName = customer.last_name || nameParts.slice(1).join(' ') || '';
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
 
     // Generate unique referral code
     let referralCode = generateReferralCode(firstName, lastName, customer.id);
