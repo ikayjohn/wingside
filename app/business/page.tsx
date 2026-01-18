@@ -69,7 +69,7 @@ export default function BusinessPage() {
                 />
               </div>
               <h3 className="text-2xl md:text-3xl font-bold mb-3 group-hover:text-[#F7C400] transition-colors">Wingpost</h3>
-              <p className="text-gray-700 text-base md:text-lg">
+              <p className="text-gray-700 text-sm md:text-base">
                 Snack station meets magic. We set up in your office (for free!) with sandwiches, salads, parfaits & more. You pick what we stock. They eat. Everyone wins.
               </p>
             </Link>
@@ -85,7 +85,7 @@ export default function BusinessPage() {
                 />
               </div>
               <h3 className="text-2xl md:text-3xl font-bold mb-3 group-hover:text-[#F7C400] transition-colors">Wingside Office Lunch</h3>
-              <p className="text-gray-700 text-base md:text-lg">
+              <p className="text-gray-700 text-sm md:text-base">
                 Lunch without the lunchtime chaos. Personalized meals delivered when you want, how you want. Work harder, munch smarter.
               </p>
             </Link>
@@ -101,7 +101,7 @@ export default function BusinessPage() {
                 />
               </div>
               <h3 className="text-2xl md:text-3xl font-bold mb-3 group-hover:text-[#F7C400] transition-colors">Wingside Meetings</h3>
-              <p className="text-gray-700 text-base md:text-lg">
+              <p className="text-gray-700 text-sm md:text-base">
                 From a quick huddle to a 500-person conference, we've got the spread that keeps everyone focused (and full). Zero stress, maximum flavor.
               </p>
             </Link>
@@ -117,7 +117,7 @@ export default function BusinessPage() {
                 />
               </div>
               <h3 className="text-2xl md:text-3xl font-bold mb-3 group-hover:text-[#F7C400] transition-colors">Wingside Catering</h3>
-              <p className="text-gray-700 text-base md:text-lg">
+              <p className="text-gray-700 text-sm md:text-base">
                 Birthday parties, company dinners, farewells, or anything you can possibly think of. We're able to provide you with customized menu options to fit your guests, and your budget.
               </p>
             </Link>
