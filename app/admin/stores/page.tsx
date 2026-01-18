@@ -82,7 +82,14 @@ export default function AdminStoresPage() {
     try {
       setLoading(true);
       setError('');
-      const response = await fetch('/api/admin/stores');
+      // Add cache-busting headers
+      const response = await fetch('/api/admin/stores', {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+        cache: 'no-store',
+      });
 
       if (response.status === 401) {
         router.push('/signin');

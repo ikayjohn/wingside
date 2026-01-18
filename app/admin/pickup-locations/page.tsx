@@ -60,7 +60,14 @@ export default function AdminPickupLocationsPage() {
       setLoading(true);
       setError('');
 
-      const res = await fetch('/api/pickup-locations');
+      // Add cache-busting headers
+      const res = await fetch('/api/pickup-locations', {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+        cache: 'no-store',
+      });
       const json = await res.json();
 
       if (!res.ok) {

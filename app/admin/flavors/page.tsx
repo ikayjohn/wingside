@@ -50,7 +50,14 @@ export default function AdminFlavorsPage() {
       if (filter === 'active') params.set('active', 'true');
       if (categoryFilter !== 'all') params.set('category', categoryFilter);
 
-      const response = await fetch(`/api/admin/flavors?${params}`);
+      // Add cache-busting headers
+      const response = await fetch(`/api/admin/flavors?${params}`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+        cache: 'no-store',
+      });
       const data = await response.json();
 
       if (!response.ok) {

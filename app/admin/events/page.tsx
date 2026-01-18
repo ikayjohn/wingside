@@ -43,7 +43,14 @@ export default function EventsAdminPage() {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch('/api/events');
+      // Add cache-busting headers
+      const response = await fetch('/api/events', {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+        cache: 'no-store',
+      });
       const data = await response.json();
       if (data.events) {
         setEvents(data.events);

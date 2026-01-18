@@ -42,7 +42,14 @@ export default function AdminPromoCodesPage() {
 
   const fetchPromoCodes = async () => {
     try {
-      const response = await fetch('/api/promo-codes')
+      // Add cache-busting headers
+      const response = await fetch('/api/promo-codes', {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+        cache: 'no-store',
+      })
       const data = await response.json()
       if (data.promoCodes) {
         setPromoCodes(data.promoCodes)
