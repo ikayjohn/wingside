@@ -369,13 +369,13 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Orders This Week Chart */}
         <div className="bg-white rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-900">Orders This Week</h2>
             <div className="text-sm text-gray-600">Last 7 days</div>
           </div>
-          <div className="w-full h-full">
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={chartData.dailyChart} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <div className="w-full" style={{ height: '250px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData.dailyChart} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                 <defs>
                   <linearGradient id="colorOrders1" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#F7C400" stopOpacity={0.6}/>
@@ -399,7 +399,7 @@ export default function AdminDashboard() {
                   dataKey="day"
                   stroke="#9ca3af"
                   strokeWidth={1}
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  tick={{ fill: '#6b7280', fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
                   dy={5}
@@ -407,10 +407,10 @@ export default function AdminDashboard() {
                 <YAxis
                   stroke="#9ca3af"
                   strokeWidth={1}
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  tick={{ fill: '#6b7280', fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
-                  width={40}
+                  width={35}
                 />
                 <Tooltip
                   contentStyle={{
@@ -429,7 +429,7 @@ export default function AdminDashboard() {
                   type="natural"
                   dataKey="orders"
                   stroke="#F7C400"
-                  strokeWidth={4}
+                  strokeWidth={3}
                   fill="url(#colorOrders1)"
                   filter="url(#glow)"
                 />
