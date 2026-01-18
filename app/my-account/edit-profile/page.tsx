@@ -479,7 +479,7 @@ export default function EditProfilePage() {
 
                   {formData.birthdayDay && formData.birthdayMonth && (
                     <p className="text-xs text-amber-600 mt-2">
-                      Contact customer support if you need to update your birthday.
+                      Contact support if you need to update your birthday.
                     </p>
                   )}
                 </div>
