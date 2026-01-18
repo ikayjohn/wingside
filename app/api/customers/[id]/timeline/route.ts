@@ -9,10 +9,10 @@ const supabase = createClient(
 // GET /api/customers/[id]/timeline - Get complete customer timeline
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const customerId = params.id
+    const { id: customerId } = await params
 
     // Fetch customer info
     const { data: customer, error: customerError } = await supabase

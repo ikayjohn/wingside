@@ -9,9 +9,10 @@ const supabase = createClient(
 // POST /api/leads/[id]/convert - Convert a lead to a customer
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
 
     const { customer_id } = body
@@ -27,7 +28,7 @@ export async function POST(
     const { data: lead } = await supabase
       .from('leads')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (!lead) {
@@ -59,7 +60,7 @@ export async function POST(
         converted_to_customer_id: customer_id,
         converted_at: new Date().toISOString()
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single()
 
@@ -67,7 +68,7 @@ export async function POST(
 
     // Log conversion activity
     await supabase.from('lead_activities').insert({
-      lead_id: params.id,
+      lead_id: id,
       activity_type: 'status_change',
       subject: 'Lead converted to customer',
       description: `Lead "${lead.name}" was converted to customer "${customer.full_name}"`,

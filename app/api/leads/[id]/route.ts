@@ -9,9 +9,11 @@ const supabase = createClient(
 // GET /api/leads/[id] - Fetch a single lead with activities
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
+
     const { data: lead, error } = await supabase
       .from('leads')
       .select(`
@@ -27,7 +29,7 @@ export async function GET(
           email
         )
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (error) throw error
@@ -46,7 +48,7 @@ export async function GET(
         *,
         creator:profiles(id, full_name, email)
       `)
-      .eq('lead_id', params.id)
+      .eq('lead_id', id)
       .order('created_at', { ascending: false })
 
     return NextResponse.json({ lead, activities })
@@ -62,16 +64,17 @@ export async function GET(
 // PATCH /api/leads/[id] - Update a lead
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
 
     // Get existing lead to track status changes
     const { data: existingLead } = await supabase
       .from('leads')
       .select('status, name')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (!existingLead) {
@@ -88,7 +91,7 @@ export async function PATCH(
         ...body,
         updated_at: new Date().toISOString()
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single()
 
@@ -97,7 +100,7 @@ export async function PATCH(
     // Log activity if status changed
     if (body.status && body.status !== existingLead.status) {
       await supabase.from('lead_activities').insert({
-        lead_id: params.id,
+        lead_id: id,
         activity_type: 'status_change',
         subject: 'Status updated',
         description: `Status changed from ${existingLead.status} to ${body.status}`,
@@ -118,14 +121,15 @@ export async function PATCH(
 // DELETE /api/leads/[id] - Delete a lead
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
 
     const { error } = await supabase
       .from('leads')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
 
     if (error) throw error
 

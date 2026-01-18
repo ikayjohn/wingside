@@ -9,16 +9,18 @@ const supabase = createClient(
 // GET /api/leads/[id]/activities - Fetch all activities for a lead
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
+
     const { data: activities, error } = await supabase
       .from('lead_activities')
       .select(`
         *,
         creator:profiles(id, full_name, email)
       `)
-      .eq('lead_id', params.id)
+      .eq('lead_id', id)
       .order('created_at', { ascending: false })
 
     if (error) throw error
@@ -36,9 +38,10 @@ export async function GET(
 // POST /api/leads/[id]/activities - Add an activity to a lead
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
 
     const { activity_type, subject, description, metadata, created_by } = body
@@ -54,7 +57,7 @@ export async function POST(
     const { data: lead } = await supabase
       .from('leads')
       .select('name')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (!lead) {
@@ -68,7 +71,7 @@ export async function POST(
     const { data: activity, error } = await supabase
       .from('lead_activities')
       .insert({
-        lead_id: params.id,
+        lead_id: id,
         activity_type,
         subject: subject || `${activity_type.replace('_', ' ')} logged`,
         description,

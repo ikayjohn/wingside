@@ -10,9 +10,11 @@ const supabase = createClient(
 // POST /api/leads/[id]/score - Recalculate lead score
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
+
     // Fetch lead with activity count
     const { data: lead, error: leadError } = await supabase
       .from('leads')
@@ -20,7 +22,7 @@ export async function POST(
         *,
         activities(count)
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (leadError || !lead) {
@@ -51,7 +53,7 @@ export async function POST(
         score: newScore,
         score_updated_at: new Date().toISOString()
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single()
 
@@ -75,9 +77,10 @@ export async function POST(
 // GET /api/leads/[id]/score - Get lead score analysis
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
 
     const { data: lead, error } = await supabase
       .from('leads')
@@ -85,7 +88,7 @@ export async function GET(
         *,
         activities(count)
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (error || !lead) {
