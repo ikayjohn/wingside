@@ -231,6 +231,51 @@ export async function sendRewardEmail(
 }
 
 /**
+ * Send welcome email after signup
+ */
+export async function sendWelcomeEmail(
+  userEmail: string,
+  userName: string,
+  referralCode?: string
+) {
+  return sendEmail({
+    to: userEmail,
+    template_key: 'welcome',
+    variables: {
+      customer_name: userName,
+      referral_code: referralCode,
+      referral_link: referralCode ? `${process.env.NEXT_PUBLIC_SITE_URL}/signup?ref=${referralCode}` : undefined,
+    },
+  });
+}
+
+/**
+ * Send referral reward notification email
+ */
+export async function sendReferralRewardEmail(
+  userEmail: string,
+  userName: string,
+  rewardData: {
+    referredUserName: string;
+    rewardAmount: number;
+    totalRewards: number;
+    referralLink: string;
+  }
+) {
+  return sendEmail({
+    to: userEmail,
+    template_key: 'referral_reward',
+    variables: {
+      customer_name: userName,
+      referred_user_name: rewardData.referredUserName,
+      reward_amount: rewardData.rewardAmount,
+      total_rewards: rewardData.totalRewards,
+      referral_link: rewardData.referralLink,
+    },
+  });
+}
+
+/**
  * Send password reset email
  */
 export async function sendPasswordResetEmail(

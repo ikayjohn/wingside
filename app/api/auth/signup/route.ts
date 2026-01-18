@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { syncNewCustomer } from '@/lib/integrations';
+import { sendWelcomeEmail } from '@/lib/notifications/email';
 
 // Validate environment variables
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -211,6 +212,24 @@ export async function POST(request: Request) {
 
     if (syncResult.error) {
       console.warn('Integration sync failed, but signup succeeded:', syncResult.error);
+    }
+
+    // Send welcome email
+    try {
+      const emailResult = await sendWelcomeEmail(
+        authData.user.email!,
+        `${firstName.trim()} ${lastName.trim()}`,
+        referralCode
+      );
+
+      if (emailResult.success) {
+        console.log(`Welcome email sent to ${authData.user.email}`);
+      } else {
+        console.warn(`Welcome email failed: ${emailResult.error}`);
+      }
+    } catch (emailError) {
+      // Don't fail signup if email fails
+      console.warn('Welcome email error:', emailError);
     }
 
     // Create referral record if user was referred
