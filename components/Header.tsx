@@ -278,6 +278,29 @@ export default function Header() {
             {/* Sidebar Links */}
             <nav className="px-10 py-4" aria-label="Main navigation">
               <ul className="space-y-4" role="menu">
+                {isLoggedIn ? (
+                  <li role="none">
+                    <Link
+                      href="/my-account/dashboard"
+                      className="sidebar-link"
+                      onClick={handleClose}
+                      role="menuitem"
+                    >
+                      My Account
+                    </Link>
+                  </li>
+                ) : (
+                  <li role="none">
+                    <Link
+                      href="/login"
+                      className="sidebar-link"
+                      onClick={handleClose}
+                      role="menuitem"
+                    >
+                      Login or Sign Up
+                    </Link>
+                  </li>
+                )}
                 <li role="none">
                   <Link
                     href="/business"
@@ -348,29 +371,6 @@ export default function Header() {
                     Wingclub
                   </Link>
                 </li>
-                {isLoggedIn ? (
-                  <li role="none">
-                    <Link
-                      href="/my-account/dashboard"
-                      className="sidebar-link"
-                      onClick={handleClose}
-                      role="menuitem"
-                    >
-                      My Account
-                    </Link>
-                  </li>
-                ) : (
-                  <li role="none">
-                    <Link
-                      href="/login"
-                      className="sidebar-link"
-                      onClick={handleClose}
-                      role="menuitem"
-                    >
-                      Login or Sign Up
-                    </Link>
-                  </li>
-                )}
               </ul>
 
               {/* Order Button */}
