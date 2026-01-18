@@ -74,7 +74,8 @@
       "Bash(done:*)",
       "Bash(Select-Object -Last 20)",
       "Bash(Select-Object:*)",
-      "Bash(Select-String:*)"
+      "Bash(Select-String:*)",
+      "Bash(pm2 env:*)"
     ],
     "deny": [],
     "ask": []

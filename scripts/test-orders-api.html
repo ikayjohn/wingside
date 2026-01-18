@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head><title>Test Orders API</title></head>
+<body>
+  <h1>Test Orders API</h1>
+  <button onclick="testOrders()">Fetch Recent Orders</button>
+  <pre id="result"></pre>
+
+  <script>
+    async function testOrders() {
+      const result = document.getElementById('result');
+      result.textContent = 'Loading...';
+
+      try {
+        // Try to fetch recent orders
+        const response = await fetch('/api/orders');
+        const data = await response.json();
+
+        result.textContent = JSON.stringify(data, null, 2);
+
+        if (data.orders && data.orders.length > 0) {
+          console.log('Found orders:', data.orders);
+          data.orders.forEach(order => {
+            console.log(`Order: ${order.order_number}`);
+            console.log(`Payment Status: ${order.payment_status}`);
+            console.log(`Test URL: https://wingside.ng/payment/nomba/callback/?order_id=${order.order_number}`);
+          });
+        }
+      } catch (error) {
+        result.textContent = 'Error: ' + error.message;
+      }
+    }
+  </script>
+</body>
+</html>
