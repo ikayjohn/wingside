@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { sendOrderConfirmation, sendOrderNotification } from '@/lib/emails/service'
 
 // GET /api/orders - Fetch user's orders or all orders (admin)
@@ -12,13 +13,29 @@ export async function GET(request: NextRequest) {
 
     // If orderNumber is provided, fetch that specific order (no auth required for confirmation/tracking)
     if (orderNumber) {
-      const { data: orders, error } = await supabase
+      let { data: orders, error } = await supabase
         .from('orders')
         .select(`
           *,
           items:order_items(*)
         `)
         .eq('order_number', orderNumber)
+
+      // If server client fails (RLS), use admin client
+      if (error && (!orders || orders.length === 0)) {
+        console.log('[Orders API] Server client failed for orderNumber lookup, trying admin client...')
+        const admin = createAdminClient()
+        const result = await admin
+          .from('orders')
+          .select(`
+            *,
+            items:order_items(*)
+          `)
+          .eq('order_number', orderNumber)
+
+        orders = result.data
+        error = result.error
+      }
 
       if (error) {
         console.error('Error fetching order:', error)
@@ -33,13 +50,29 @@ export async function GET(request: NextRequest) {
 
     // If orderId is provided, fetch that specific order (no auth required for tracking)
     if (orderId) {
-      const { data: orders, error } = await supabase
+      let { data: orders, error } = await supabase
         .from('orders')
         .select(`
           *,
           items:order_items(*)
         `)
         .eq('id', orderId)
+
+      // If server client fails (RLS), use admin client
+      if (error && (!orders || orders.length === 0)) {
+        console.log('[Orders API] Server client failed for orderId lookup, trying admin client...')
+        const admin = createAdminClient()
+        const result = await admin
+          .from('orders')
+          .select(`
+            *,
+            items:order_items(*)
+          `)
+          .eq('id', orderId)
+
+        orders = result.data
+        error = result.error
+      }
 
       if (error) {
         console.error('Error fetching order:', error)
