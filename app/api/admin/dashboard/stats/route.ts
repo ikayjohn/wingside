@@ -58,11 +58,11 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact', head: true })
       .gte('created_at', sevenDaysAgo.toISOString())
 
-    // Fetch total revenue (only completed orders)
+    // Fetch total revenue (successfully paid orders)
     const { data: orders } = await admin
       .from('orders')
       .select('total')
-      .eq('status', 'completed')
+      .eq('payment_status', 'paid')
 
     const totalRevenue = orders?.reduce((sum, order) => sum + (order.total || 0), 0) || 0
 

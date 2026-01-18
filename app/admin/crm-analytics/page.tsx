@@ -7,7 +7,7 @@ interface CustomerSegment {
   name: string;
   description: string;
   color: string;
-  icon: string;
+  icon: React.ReactNode;
   count: number;
   percentage: number;
 }
@@ -117,20 +117,20 @@ export default function CRManalyticsPage() {
     percentage: customers.length > 0 ? ((count as number) / customers.length * 100).toFixed(1) as any : 0
   }));
 
-  function getSegmentIcon(id: string): string {
-    const icons: Record<string, string> = {
-      'vip': '👑',
-      'regular': '⭐',
-      'new': '🆕',
-      'at-risk': '⚠️',
-      'churned': '❌',
-      'corporate': '🏢',
-      'weekend-warrior': '🎉',
-      'big-spender': '💰',
-      'one-time': '🔸',
-      'emerging': '📈'
+  function getSegmentIcon(id: string): React.ReactNode {
+    const icons: Record<string, React.ReactNode> = {
+      'vip': <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.699-3.181a1 1 0 011.827 1.035L17.128 8H18a1 1 0 110 2h-.782l-1.304 6.524a1 1 0 01-.978.806l-2.621.328a1 1 0 01-1.13-.874l-.56-3.355-2.23 2.23a1 1 0 01-1.414 0l-2.23-2.23-.56 3.355a1 1 0 01-1.13.874l-2.621-.328a1 1 0 01-.978-.806L2.782 10H2a1 1 0 110-2h.872l1.352-3.241a1 1 0 011.827-1.035L8.046 6.323V3a1 1 0 011-1z" clipRule="evenodd" /></svg>,
+      'regular': <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>,
+      'new': <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>,
+      'at-risk': <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>,
+      'churned': <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>,
+      'corporate': <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd" /></svg>,
+      'weekend-warrior': <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>,
+      'big-spender': <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4z" /><path fillRule="evenodd" d="M6 10a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>,
+      'one-time': <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" /></svg>,
+      'emerging': <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" /></svg>
     };
-    return icons[id] || '👤';
+    return icons[id] || <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>;
   }
 
   return (
@@ -157,7 +157,9 @@ export default function CRManalyticsPage() {
               <p className="text-sm text-gray-600">Total Customers</p>
               <p className="text-3xl font-bold text-gray-900 mt-1">{customers.length}</p>
             </div>
-            <div className="text-4xl">👥</div>
+            <svg className="w-8 h-8 text-gray-900" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+            </svg>
           </div>
         </div>
 
@@ -167,7 +169,9 @@ export default function CRManalyticsPage() {
               <p className="text-sm text-gray-600">Avg. Health Score</p>
               <p className="text-3xl font-bold text-gray-900 mt-1">{averageHealthScore.toFixed(0)}</p>
             </div>
-            <div className="text-4xl">❤️</div>
+            <svg className="w-8 h-8 text-gray-900" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+            </svg>
           </div>
         </div>
 
@@ -177,7 +181,9 @@ export default function CRManalyticsPage() {
               <p className="text-sm text-gray-600">At-Risk Customers</p>
               <p className="text-3xl font-bold text-orange-600 mt-1">{segmentStats['at-risk'] || 0}</p>
             </div>
-            <div className="text-4xl">⚠️</div>
+            <svg className="w-8 h-8 text-gray-900" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
           </div>
         </div>
 
@@ -187,7 +193,9 @@ export default function CRManalyticsPage() {
               <p className="text-sm text-gray-600">Churned Customers</p>
               <p className="text-3xl font-bold text-red-600 mt-1">{segmentStats['churned'] || 0}</p>
             </div>
-            <div className="text-4xl">📉</div>
+            <svg className="w-8 h-8 text-gray-900" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
           </div>
         </div>
       </div>

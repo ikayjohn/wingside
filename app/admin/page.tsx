@@ -368,91 +368,94 @@ export default function AdminDashboard() {
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Orders This Week Chart */}
-        <div className="bg-white rounded-2xl p-5 h-full min-h-[400px]">
+        <div className="bg-white rounded-2xl p-5 h-full min-h-[400px] flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-900">Orders This Week</h2>
             <div className="text-xs text-gray-600">Last 7 days</div>
           </div>
           <div className="w-full flex-1">
-            <ResponsiveContainer width="100%" height={350}>
-              <AreaChart
-                data={chartData.dailyChart}
-                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="colorOrders1" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#F7C400" stopOpacity={0.6}/>
-                    <stop offset="50%" stopColor="#F7C400" stopOpacity={0.3}/>
-                    <stop offset="100%" stopColor="#F7C400" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorOrders2" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#552627" stopOpacity={0.4}/>
-                    <stop offset="100%" stopColor="#552627" stopOpacity={0}/>
-                  </linearGradient>
-                  <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                    <feMerge>
-                      <feMergeNode in="coloredBlur"/>
-                      <feMergeNode in="SourceGraphic"/>
-                    </feMerge>
-                  </filter>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={true} vertical={false} />
-                <XAxis
-                  dataKey="day"
-                  stroke="#9ca3af"
-                  strokeWidth={1}
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
-                  axisLine={false}
-                  tickLine={false}
-                  dy={10}
-                  height={30}
-                />
-                <YAxis
-                  stroke="#9ca3af"
-                  strokeWidth={1}
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={40}
-                  tickFormatter={(value) => {
-                    const maxVal = Math.max(...chartData.dailyChart.map(d => d.orders), 1);
-                    const paddedMax = Math.ceil(maxVal * 1.2);
-                    return value <= paddedMax ? value : '';
-                  }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#552627',
-                    border: 'none',
-                    borderRadius: '12px',
-                    color: '#fff',
-                    boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-                    padding: '12px'
-                  }}
-                  itemStyle={{ color: '#fff', fontSize: 14, fontWeight: 'bold' }}
-                  labelStyle={{ color: '#fbbf24', fontSize: 12 }}
-                  formatter={(value: number) => [`${value} orders`, 'Count']}
-                />
-                <Area
-                  type="natural"
-                  dataKey="orders"
-                  stroke="#F7C400"
-                  strokeWidth={3}
-                  fill="url(#colorOrders1)"
-                  filter="url(#glow)"
-                />
-                <Area
-                  type="natural"
-                  dataKey="orders"
-                  stroke="#D4A800"
-                  strokeWidth={2}
-                  fill="url(#colorOrders2)"
-                  fillOpacity={0.3}
-                />
-                {/* Custom dots will be rendered via scatter */}
-              </AreaChart>
-            </ResponsiveContainer>
+            {(() => {
+              const maxOrders = Math.max(...chartData.dailyChart.map(d => d.orders), 1);
+              const yMax = Math.max(Math.ceil(maxOrders * 1.4), 3);
+              const yMin = 0;
+              return (
+                <ResponsiveContainer width="100%" height={350}>
+                  <AreaChart
+                    data={chartData.dailyChart}
+                    margin={{ top: 20, right: 10, left: 0, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorOrders1" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#F7C400" stopOpacity={0.6}/>
+                        <stop offset="50%" stopColor="#F7C400" stopOpacity={0.3}/>
+                        <stop offset="100%" stopColor="#F7C400" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorOrders2" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#552627" stopOpacity={0.4}/>
+                        <stop offset="100%" stopColor="#552627" stopOpacity={0}/>
+                      </linearGradient>
+                      <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                        <feMerge>
+                          <feMergeNode in="coloredBlur"/>
+                          <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                      </filter>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={true} vertical={false} />
+                    <XAxis
+                      dataKey="day"
+                      stroke="#9ca3af"
+                      strokeWidth={1}
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                      dy={10}
+                      height={30}
+                    />
+                    <YAxis
+                      stroke="#9ca3af"
+                      strokeWidth={1}
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={40}
+                      domain={[yMin, yMax]}
+                      allowDataOverflow={false}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#552627',
+                        border: 'none',
+                        borderRadius: '12px',
+                        color: '#fff',
+                        boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                        padding: '12px'
+                      }}
+                      itemStyle={{ color: '#fff', fontSize: 14, fontWeight: 'bold' }}
+                      labelStyle={{ color: '#fbbf24', fontSize: 12 }}
+                      formatter={(value: number) => [`${value} orders`, 'Count']}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="orders"
+                      stroke="#F7C400"
+                      strokeWidth={3}
+                      fill="url(#colorOrders1)"
+                      filter="url(#glow)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="orders"
+                      stroke="#D4A800"
+                      strokeWidth={2}
+                      fill="url(#colorOrders2)"
+                      fillOpacity={0.3}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              );
+            })()}
           </div>
         </div>
 

@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     const { data: revenueData } = await admin
       .from('orders')
       .select('created_at, total')
-      .eq('status', 'completed')
+      .eq('payment_status', 'paid')
       .gte('created_at', thirtyDaysAgo.toISOString())
       .order('created_at', { ascending: true })
 
