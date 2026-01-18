@@ -5,7 +5,23 @@
  */
 
 const { createClient } = require('@supabase/supabase-js');
+
+// Try to load from multiple possible env file locations
 require('dotenv').config({ path: '.env.local' });
+require('dotenv').config({ path: '.env' }); // Fallback to .env
+
+// Verify required env vars are set
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+  console.error('❌ Error: NEXT_PUBLIC_SUPABASE_URL is not set');
+  console.error('💡 Make sure environment variables are set in .env or .env.local');
+  process.exit(1);
+}
+
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('❌ Error: SUPABASE_SERVICE_ROLE_KEY is not set');
+  console.error('💡 Make sure environment variables are set in .env or .env.local');
+  process.exit(1);
+}
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
