@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update order payment status in database
-    const supabase = createClient()
+    const supabase = await createClient()
 
     // Find order by payment reference
     const { data: order } = await supabase
