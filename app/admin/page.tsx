@@ -373,9 +373,9 @@ export default function AdminDashboard() {
             <h2 className="text-xl font-bold text-gray-900">Orders This Week</h2>
             <div className="text-sm text-gray-600">Last 7 days</div>
           </div>
-          <div className="w-full" style={{ height: '250px' }}>
+          <div className="w-full h-48">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData.dailyChart} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+              <AreaChart data={chartData.dailyChart} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorOrders1" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#F7C400" stopOpacity={0.6}/>
