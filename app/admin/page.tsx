@@ -377,7 +377,7 @@ export default function AdminDashboard() {
             <ResponsiveContainer width="100%" height={350}>
               <AreaChart
                 data={chartData.dailyChart}
-                margin={{ top: 30, right: 10, left: 0, bottom: 30 }}
+                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
               >
                 <defs>
                   <linearGradient id="colorOrders1" x1="0" y1="0" x2="0" y2="1">
@@ -406,6 +406,7 @@ export default function AdminDashboard() {
                   axisLine={false}
                   tickLine={false}
                   dy={10}
+                  height={30}
                 />
                 <YAxis
                   stroke="#9ca3af"
@@ -414,8 +415,11 @@ export default function AdminDashboard() {
                   axisLine={false}
                   tickLine={false}
                   width={40}
-                  domain={[0, 'auto']}
-                  allowDataOverflow={true}
+                  tickFormatter={(value) => {
+                    const maxVal = Math.max(...chartData.dailyChart.map(d => d.orders), 1);
+                    const paddedMax = Math.ceil(maxVal * 1.2);
+                    return value <= paddedMax ? value : '';
+                  }}
                 />
                 <Tooltip
                   contentStyle={{
