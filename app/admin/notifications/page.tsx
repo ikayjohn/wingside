@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { BarChart3, Mail } from 'lucide-react';
 import NotificationDashboard from '@/components/admin/NotificationDashboard';
 import EmailTemplatesManager from '@/components/admin/EmailTemplatesManager';
 
@@ -112,23 +113,25 @@ export default function AdminNotificationsPage() {
             <nav className="-mb-px flex space-x-8">
               <button
                 onClick={() => setActiveTab('dashboard')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
                   activeTab === 'dashboard'
                     ? 'border-yellow-500 text-yellow-600'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                 }`}
               >
-                📊 Dashboard
+                <BarChart3 className="w-5 h-5" />
+                Dashboard
               </button>
               <button
                 onClick={() => setActiveTab('templates')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
                   activeTab === 'templates'
                     ? 'border-yellow-500 text-yellow-600'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                 }`}
               >
-                📧 Email Templates
+                <Mail className="w-5 h-5" />
+                Email Templates
               </button>
             </nav>
           </div>
