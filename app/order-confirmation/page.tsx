@@ -259,10 +259,19 @@ function OrderConfirmationContent() {
               </div>
             </div>
 
-            {/* Delivery Address */}
+            {/* Delivery Address / Pickup Location */}
             <div className="bg-white rounded-lg p-6 border border-gray-200">
-              <h2 className="text-xl font-bold text-[#552627] mb-4">Delivery Address</h2>
-              <p className="text-gray-900">{order.delivery_address_text}</p>
+              {order.delivery_fee === 0 || order.delivery_address_text?.toLowerCase().includes('pickup') ? (
+                <>
+                  <h2 className="text-xl font-bold text-[#552627] mb-4">Pickup Location</h2>
+                  <p className="text-gray-900">{order.delivery_address_text}</p>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-xl font-bold text-[#552627] mb-4">Delivery Address</h2>
+                  <p className="text-gray-900">{order.delivery_address_text}</p>
+                </>
+              )}
             </div>
           </div>
         </div>
