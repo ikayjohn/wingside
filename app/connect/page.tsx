@@ -143,7 +143,12 @@ export default function WingsideConnectPage() {
             </span>
           </div>
 
-          <button className="connect-hero-btn">Join the movement</button>
+          <button
+            className="connect-hero-btn"
+            onClick={() => document.getElementById('join-form')?.scrollIntoView({ behavior: 'smooth' })}
+          >
+            Join the movement
+          </button>
         </div>
       </section>
 
@@ -250,7 +255,7 @@ export default function WingsideConnectPage() {
       </section>
 
       {/* Join WingFam Section */}
-      <section className="connect-join-section">
+      <section id="join-form" className="connect-join-section">
         <div className="connect-join-container">
           <h2 className="connect-join-title">
             Join the <span className="text-yellow-400">WingFam</span>
