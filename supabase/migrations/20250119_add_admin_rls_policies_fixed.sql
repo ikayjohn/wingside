@@ -8,8 +8,13 @@
 -- Enable RLS if not already enabled
 ALTER TABLE events ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist (ignore errors)
+DROP POLICY IF EXISTS "Admins can insert events" ON events;
+DROP POLICY IF EXISTS "Admins can update events" ON events;
+DROP POLICY IF EXISTS "Admins can delete events" ON events;
+
 -- Policy: Admins can insert events
-CREATE POLICY IF NOT EXISTS "Admins can insert events"
+CREATE POLICY "Admins can insert events"
   ON events
   FOR INSERT
   TO authenticated
@@ -22,7 +27,7 @@ CREATE POLICY IF NOT EXISTS "Admins can insert events"
   );
 
 -- Policy: Admins can update events
-CREATE POLICY IF NOT EXISTS "Admins can update events"
+CREATE POLICY "Admins can update events"
   ON events
   FOR UPDATE
   TO authenticated
@@ -42,7 +47,7 @@ CREATE POLICY IF NOT EXISTS "Admins can update events"
   );
 
 -- Policy: Admins can delete events
-CREATE POLICY IF NOT EXISTS "Admins can delete events"
+CREATE POLICY "Admins can delete events"
   ON events
   FOR DELETE
   TO authenticated
@@ -61,15 +66,21 @@ CREATE POLICY IF NOT EXISTS "Admins can delete events"
 -- Enable RLS if not already enabled
 ALTER TABLE stores ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Public can view stores" ON stores;
+DROP POLICY IF EXISTS "Admins can insert stores" ON stores;
+DROP POLICY IF EXISTS "Admins can update stores" ON stores;
+DROP POLICY IF EXISTS "Admins can delete stores" ON stores;
+
 -- Policy: Public can view stores
-CREATE POLICY IF NOT EXISTS "Public can view stores"
+CREATE POLICY "Public can view stores"
   ON stores
   FOR SELECT
   TO public
   USING (true);
 
 -- Policy: Admins can insert stores
-CREATE POLICY IF NOT EXISTS "Admins can insert stores"
+CREATE POLICY "Admins can insert stores"
   ON stores
   FOR INSERT
   TO authenticated
@@ -82,7 +93,7 @@ CREATE POLICY IF NOT EXISTS "Admins can insert stores"
   );
 
 -- Policy: Admins can update stores
-CREATE POLICY IF NOT EXISTS "Admins can update stores"
+CREATE POLICY "Admins can update stores"
   ON stores
   FOR UPDATE
   TO authenticated
@@ -102,7 +113,7 @@ CREATE POLICY IF NOT EXISTS "Admins can update stores"
   );
 
 -- Policy: Admins can delete stores
-CREATE POLICY IF NOT EXISTS "Admins can delete stores"
+CREATE POLICY "Admins can delete stores"
   ON stores
   FOR DELETE
   TO authenticated
@@ -121,15 +132,21 @@ CREATE POLICY IF NOT EXISTS "Admins can delete stores"
 -- Enable RLS if not already enabled
 ALTER TABLE promo_codes ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Public can view active promo codes" ON promo_codes;
+DROP POLICY IF EXISTS "Admins can insert promo codes" ON promo_codes;
+DROP POLICY IF EXISTS "Admins can update promo codes" ON promo_codes;
+DROP POLICY IF EXISTS "Admins can delete promo codes" ON promo_codes;
+
 -- Policy: Public can view active promo codes
-CREATE POLICY IF NOT EXISTS "Public can view active promo codes"
+CREATE POLICY "Public can view active promo codes"
   ON promo_codes
   FOR SELECT
   TO public
   USING (is_active = true);
 
 -- Policy: Admins can insert promo codes
-CREATE POLICY IF NOT EXISTS "Admins can insert promo codes"
+CREATE POLICY "Admins can insert promo codes"
   ON promo_codes
   FOR INSERT
   TO authenticated
@@ -142,7 +159,7 @@ CREATE POLICY IF NOT EXISTS "Admins can insert promo codes"
   );
 
 -- Policy: Admins can update promo codes
-CREATE POLICY IF NOT EXISTS "Admins can update promo codes"
+CREATE POLICY "Admins can update promo codes"
   ON promo_codes
   FOR UPDATE
   TO authenticated
@@ -162,7 +179,7 @@ CREATE POLICY IF NOT EXISTS "Admins can update promo codes"
   );
 
 -- Policy: Admins can delete promo codes
-CREATE POLICY IF NOT EXISTS "Admins can delete promo codes"
+CREATE POLICY "Admins can delete promo codes"
   ON promo_codes
   FOR DELETE
   TO authenticated
@@ -181,15 +198,21 @@ CREATE POLICY IF NOT EXISTS "Admins can delete promo codes"
 -- Enable RLS if not already enabled
 ALTER TABLE job_positions ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Public can view active job positions" ON job_positions;
+DROP POLICY IF EXISTS "Admins can insert job positions" ON job_positions;
+DROP POLICY IF EXISTS "Admins can update job positions" ON job_positions;
+DROP POLICY IF EXISTS "Admins can delete job positions" ON job_positions;
+
 -- Policy: Public can view active job positions
-CREATE POLICY IF NOT EXISTS "Public can view active job positions"
+CREATE POLICY "Public can view active job positions"
   ON job_positions
   FOR SELECT
   TO public
   USING (is_active = true);
 
 -- Policy: Admins can insert job positions
-CREATE POLICY IF NOT EXISTS "Admins can insert job positions"
+CREATE POLICY "Admins can insert job positions"
   ON job_positions
   FOR INSERT
   TO authenticated
@@ -202,7 +225,7 @@ CREATE POLICY IF NOT EXISTS "Admins can insert job positions"
   );
 
 -- Policy: Admins can update job positions
-CREATE POLICY IF NOT EXISTS "Admins can update job positions"
+CREATE POLICY "Admins can update job positions"
   ON job_positions
   FOR UPDATE
   TO authenticated
@@ -222,7 +245,7 @@ CREATE POLICY IF NOT EXISTS "Admins can update job positions"
   );
 
 -- Policy: Admins can delete job positions
-CREATE POLICY IF NOT EXISTS "Admins can delete job positions"
+CREATE POLICY "Admins can delete job positions"
   ON job_positions
   FOR DELETE
   TO authenticated
@@ -241,15 +264,21 @@ CREATE POLICY IF NOT EXISTS "Admins can delete job positions"
 -- Enable RLS if not already enabled
 ALTER TABLE pickup_locations ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Public can view active pickup locations" ON pickup_locations;
+DROP POLICY IF EXISTS "Admins can insert pickup locations" ON pickup_locations;
+DROP POLICY IF EXISTS "Admins can update pickup locations" ON pickup_locations;
+DROP POLICY IF EXISTS "Admins can delete pickup locations" ON pickup_locations;
+
 -- Policy: Public can view active pickup locations
-CREATE POLICY IF NOT EXISTS "Public can view active pickup locations"
+CREATE POLICY "Public can view active pickup locations"
   ON pickup_locations
   FOR SELECT
   TO public
   USING (is_active = true);
 
 -- Policy: Admins can insert pickup locations
-CREATE POLICY IF NOT EXISTS "Admins can insert pickup locations"
+CREATE POLICY "Admins can insert pickup locations"
   ON pickup_locations
   FOR INSERT
   TO authenticated
@@ -262,7 +291,7 @@ CREATE POLICY IF NOT EXISTS "Admins can insert pickup locations"
   );
 
 -- Policy: Admins can update pickup locations
-CREATE POLICY IF NOT EXISTS "Admins can update pickup locations"
+CREATE POLICY "Admins can update pickup locations"
   ON pickup_locations
   FOR UPDATE
   TO authenticated
@@ -282,7 +311,7 @@ CREATE POLICY IF NOT EXISTS "Admins can update pickup locations"
   );
 
 -- Policy: Admins can delete pickup locations
-CREATE POLICY IF NOT EXISTS "Admins can delete pickup locations"
+CREATE POLICY "Admins can delete pickup locations"
   ON pickup_locations
   FOR DELETE
   TO authenticated
@@ -301,15 +330,21 @@ CREATE POLICY IF NOT EXISTS "Admins can delete pickup locations"
 -- Enable RLS if not already enabled
 ALTER TABLE delivery_areas ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Public can view active delivery areas" ON delivery_areas;
+DROP POLICY IF EXISTS "Admins can insert delivery areas" ON delivery_areas;
+DROP POLICY IF EXISTS "Admins can update delivery areas" ON delivery_areas;
+DROP POLICY IF EXISTS "Admins can delete delivery areas" ON delivery_areas;
+
 -- Policy: Public can view active delivery areas
-CREATE POLICY IF NOT EXISTS "Public can view active delivery areas"
+CREATE POLICY "Public can view active delivery areas"
   ON delivery_areas
   FOR SELECT
   TO public
   USING (is_active = true);
 
 -- Policy: Admins can insert delivery areas
-CREATE POLICY IF NOT EXISTS "Admins can insert delivery areas"
+CREATE POLICY "Admins can insert delivery areas"
   ON delivery_areas
   FOR INSERT
   TO authenticated
@@ -322,7 +357,7 @@ CREATE POLICY IF NOT EXISTS "Admins can insert delivery areas"
   );
 
 -- Policy: Admins can update delivery areas
-CREATE POLICY IF NOT EXISTS "Admins can update delivery areas"
+CREATE POLICY "Admins can update delivery areas"
   ON delivery_areas
   FOR UPDATE
   TO authenticated
@@ -342,7 +377,7 @@ CREATE POLICY IF NOT EXISTS "Admins can update delivery areas"
   );
 
 -- Policy: Admins can delete delivery areas
-CREATE POLICY IF NOT EXISTS "Admins can delete delivery areas"
+CREATE POLICY "Admins can delete delivery areas"
   ON delivery_areas
   FOR DELETE
   TO authenticated
