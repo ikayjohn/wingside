@@ -130,25 +130,62 @@ export async function POST(request: Request) {
     // Generate referral code for new user
     const referralCode = generateReferralCode(firstName, lastName);
 
-    // Create profile
-    const { data: profileData, error: profileError } = await supabase.from('profiles').insert({
-      id: authData.user.id,
-      email: authData.user.email,
-      full_name: `${firstName.trim()} ${lastName.trim()}`,
-      phone: `+234${phone}`,
-      role: 'customer',
-      referral_code: referralCode,
-      referred_by: referredByUserId,
-      date_of_birth: formattedDOB,
-      gender: gender,
-    }).select()
+    // Check if profile was auto-created by Supabase Auth
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id, referral_code')
+      .eq('id', authData.user.id)
       .single();
 
+    let profileData;
+    let profileError;
+
+    if (existingProfile) {
+      // Profile exists (auto-created by Supabase Auth), UPDATE it with referral_code
+      console.log('Profile auto-created by Supabase Auth, updating with referral code...');
+      const result = await supabase
+        .from('profiles')
+        .update({
+          full_name: `${firstName.trim()} ${lastName.trim()}`,
+          phone: `+234${phone}`,
+          role: 'customer',
+          referral_code: referralCode,
+          referred_by: referredByUserId,
+          date_of_birth: formattedDOB,
+          gender: gender,
+        })
+        .eq('id', authData.user.id)
+        .select()
+        .single();
+
+      profileData = result.data;
+      profileError = result.error;
+    } else {
+      // Profile doesn't exist, INSERT it
+      const result = await supabase
+        .from('profiles')
+        .insert({
+          id: authData.user.id,
+          email: authData.user.email,
+          full_name: `${firstName.trim()} ${lastName.trim()}`,
+          phone: `+234${phone}`,
+          role: 'customer',
+          referral_code: referralCode,
+          referred_by: referredByUserId,
+          date_of_birth: formattedDOB,
+          gender: gender,
+        })
+        .select()
+        .single();
+
+      profileData = result.data;
+      profileError = result.error;
+    }
+
     if (profileError) {
-      console.error('Profile creation error:', profileError);
-      // Return actual error to frontend for debugging
+      console.error('Profile error:', profileError);
       return NextResponse.json(
-        { error: `Failed to create profile: ${profileError.message}` },
+        { error: `Failed to save profile: ${profileError.message}` },
         { status: 400 }
       );
     }
