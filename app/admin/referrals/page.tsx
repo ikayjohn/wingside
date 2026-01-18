@@ -57,25 +57,15 @@ export default function ReferralsManagementPage() {
       setLoading(true);
       setError('');
 
-      const { data, error } = await supabase
-        .from('referrals')
-        .select(`
-          *,
-          referrer:profiles!referrals_referrer_id_fkey (
-            full_name,
-            email,
-            referral_code
-          ),
-          referred_user:profiles!referrals_referred_user_id_fkey (
-            full_name,
-            email
-          )
-        `)
-        .order('created_at', { ascending: false });
+      const response = await fetch('/api/admin/referrals');
+      if (!response.ok) {
+        throw new Error('Failed to fetch referrals');
+      }
 
-      if (error) throw error;
+      const json = await response.json();
+      const data = json.data || [];
 
-      setReferrals(data || []);
+      setReferrals(data);
 
       // Calculate stats
       if (data) {
@@ -94,22 +84,22 @@ export default function ReferralsManagementPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, []);
 
   const fetchRewards = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
 
-      const { data, error } = await supabase
-        .from('referral_rewards')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
+      const response = await fetch('/api/admin/referral-rewards');
+      if (!response.ok) {
+        throw new Error('Failed to fetch referral rewards');
+      }
 
-      if (error) throw error;
+      const json = await response.json();
+      const data = json.data || [];
 
-      setRewards(data || []);
+      setRewards(data);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to fetch rewards';
       setError(message);
@@ -117,7 +107,7 @@ export default function ReferralsManagementPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'referrals') {
