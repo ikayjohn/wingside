@@ -368,12 +368,12 @@ export default function AdminDashboard() {
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Orders This Week Chart */}
-        <div className="bg-white rounded-2xl p-4">
-          <div className="flex items-center justify-between mb-3">
+        <div className="bg-white rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-900">Orders This Week</h2>
             <div className="text-xs text-gray-600">Last 7 days</div>
           </div>
-          <div className="w-full h-64">
+          <div className="w-full h-80">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData.dailyChart} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
                 <defs>
