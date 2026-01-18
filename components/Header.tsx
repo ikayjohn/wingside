@@ -356,18 +356,18 @@ export default function Header() {
                       onClick={handleClose}
                       role="menuitem"
                     >
-                      My Dashboard
+                      My Account
                     </Link>
                   </li>
                 ) : (
                   <li role="none">
                     <Link
-                      href="/my-account"
+                      href="/login"
                       className="sidebar-link"
                       onClick={handleClose}
                       role="menuitem"
                     >
-                      My Account
+                      Login or Sign Up
                     </Link>
                   </li>
                 )}
