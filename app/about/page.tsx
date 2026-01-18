@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { Home, UtensilsCrossed, Store, Rocket } from 'lucide-react';
 
 export default function AboutPage() {
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -120,8 +121,8 @@ export default function AboutPage() {
                 <div className="lg:text-right lg:pr-12">
                   <div className="bg-[#FFF8E1] rounded-3xl p-8 inline-block max-w-md relative z-10">
                     <div className="flex flex-col items-center lg:items-end gap-2 mb-4">
-                      <div className="w-12 h-12 bg-[#F7C400] rounded-full flex items-center justify-center text-2xl">
-                        🏠
+                      <div className="w-12 h-12 bg-[#F7C400] rounded-full flex items-center justify-center">
+                        <Home className="w-6 h-6 text-black" />
                       </div>
                       <h3 className="text-2xl font-bold text-black">2018</h3>
                     </div>
@@ -140,8 +141,8 @@ export default function AboutPage() {
                 <div className="lg:pl-12">
                   <div className="bg-[#FFF8E1] rounded-3xl p-8 inline-block max-w-md relative z-10">
                     <div className="flex flex-col items-center lg:items-start gap-2 mb-4">
-                      <div className="w-12 h-12 bg-[#F7C400] rounded-full flex items-center justify-center text-2xl">
-                        🍗
+                      <div className="w-12 h-12 bg-[#F7C400] rounded-full flex items-center justify-center">
+                        <UtensilsCrossed className="w-6 h-6 text-black" />
                       </div>
                       <h3 className="text-2xl font-bold text-black">2019</h3>
                     </div>
@@ -158,8 +159,8 @@ export default function AboutPage() {
                 <div className="lg:text-right lg:pr-12">
                   <div className="bg-[#FFF8E1] rounded-3xl p-8 inline-block max-w-md relative z-10">
                     <div className="flex flex-col items-center lg:items-end gap-2 mb-4">
-                      <div className="w-12 h-12 bg-[#F7C400] rounded-full flex items-center justify-center text-2xl">
-                        🏪
+                      <div className="w-12 h-12 bg-[#F7C400] rounded-full flex items-center justify-center">
+                        <Store className="w-6 h-6 text-black" />
                       </div>
                       <h3 className="text-2xl font-bold text-black">2020</h3>
                     </div>
@@ -178,8 +179,8 @@ export default function AboutPage() {
                 <div className="lg:pl-12">
                   <div className="bg-[#F7C400] rounded-3xl p-8 inline-block max-w-md relative z-10">
                     <div className="flex flex-col items-center lg:items-start gap-2 mb-4">
-                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl">
-                        🚀
+                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+                        <Rocket className="w-6 h-6 text-black" />
                       </div>
                       <h3 className="text-2xl font-bold text-black">Today</h3>
                     </div>
@@ -253,7 +254,7 @@ export default function AboutPage() {
               Order now
             </Link>
             <Link
-              href="/locations"
+              href="/contact"
               className="inline-block bg-transparent border-2 border-[#552627] text-[#552627] px-8 py-4 rounded-full font-semibold text-lg hover:bg-[#552627] hover:text-white transition-colors"
             >
               Find locations
