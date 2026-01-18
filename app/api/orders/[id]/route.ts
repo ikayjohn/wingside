@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-// GET /api/orders/[id] - Get single order
+// GET /api/orders/[id] - Get single order by ID or order_number
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -18,7 +18,7 @@ export async function GET(
         *,
         items:order_items(*)
       `)
-      .eq('id', id)
+      .or(`id.eq.${id},order_number.eq.${id}`)
       .single()
 
     // If server client fails (e.g., no auth session), use admin client
@@ -33,7 +33,7 @@ export async function GET(
           *,
           items:order_items(*)
         `)
-        .eq('id', id)
+        .or(`id.eq.${id},order_number.eq.${id}`)
         .single()
 
       order = result.data
