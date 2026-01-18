@@ -283,8 +283,6 @@ export default function WingclubDashboard() {
                   {userData.name.charAt(0).toUpperCase()}
                 </span>
               </div>
-              {/* Online indicator */}
-              <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
             </div>
 
             {/* Greeting */}
