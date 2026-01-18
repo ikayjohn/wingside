@@ -28,7 +28,7 @@ export default function BusinessPage() {
           {/* Text Content at Bottom */}
           <div className="w-full max-w-6xl">
             {/* Heading */}
-            <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 leading-[1.15]">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 leading-[1.05]">
               Because hungry employees <br />don't innovate.
             </h1>
 
