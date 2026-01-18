@@ -11,16 +11,38 @@ export async function GET(
     const { id } = await params
     console.log(`[Orders API] Looking up order: ${id}`)
 
+    // Helper function to try both UUID and order_number lookup
+    async function fetchOrder(client: any) {
+      // First, try to look up by order_number (text field)
+      const { data: orderByNumber, error: numberError } = await client
+        .from('orders')
+        .select(`
+          *,
+          items:order_items(*)
+        `)
+        .eq('order_number', id)
+        .single()
+
+      if (orderByNumber && !numberError) {
+        return { data: orderByNumber, error: null }
+      }
+
+      // If not found by order_number, try by ID (UUID field)
+      const { data: orderById, error: idError } = await client
+        .from('orders')
+        .select(`
+          *,
+          items:order_items(*)
+        `)
+        .eq('id', id)
+        .single()
+
+      return { data: orderById, error: idError }
+    }
+
     // Try server client first (respects RLS)
     const supabase = await createClient()
-    let { data: order, error } = await supabase
-      .from('orders')
-      .select(`
-        *,
-        items:order_items(*)
-      `)
-      .or(`id.eq.${id},order_number.eq.${id}`)
-      .single()
+    let { data: order, error } = await fetchOrder(supabase)
 
     console.log(`[Orders API] Server client result:`, { found: !!order, error: error?.message })
 
@@ -30,15 +52,7 @@ export async function GET(
       console.log('[Orders API] Server client failed, trying admin client...')
       const admin = createAdminClient()
 
-      const result = await admin
-        .from('orders')
-        .select(`
-          *,
-          items:order_items(*)
-        `)
-        .or(`id.eq.${id},order_number.eq.${id}`)
-        .single()
-
+      const result = await fetchOrder(admin)
       order = result.data
       error = result.error
 
