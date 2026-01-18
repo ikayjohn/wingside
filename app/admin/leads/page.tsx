@@ -227,12 +227,21 @@ export default function AdminLeadsPage() {
     if (!selectedLead) return;
 
     try {
+      // Convert tags from string (form input) to string array (API)
+      const tagsPayload = (() => {
+        if (!editLeadForm.tags) return undefined;
+        if (typeof editLeadForm.tags === 'string') {
+          return editLeadForm.tags.split(',').map((t: string) => t.trim()).filter(Boolean);
+        }
+        return editLeadForm.tags;
+      })();
+
+      const { tags, ...restEditForm } = editLeadForm;
+
       const payload = {
-        ...editLeadForm,
+        ...restEditForm,
         estimated_value: editLeadForm.estimated_value || undefined,
-        tags: typeof editLeadForm.tags === 'string'
-          ? editLeadForm.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
-          : editLeadForm.tags
+        tags: tagsPayload
       };
 
       const response = await fetch(`/api/leads/${selectedLead.lead.id}`, {
