@@ -48,7 +48,7 @@ function OrderConfirmationContent() {
 
   const fetchOrderDetails = async () => {
     try {
-      const response = await fetch(`/api/orders?orderNumber=${orderNumber}`);
+      const response = await fetch(`/api/orders/by-number/${orderNumber}`);
       const data = await response.json();
 
       if (response.ok && data.orders && data.orders.length > 0) {

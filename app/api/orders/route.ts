@@ -13,6 +13,8 @@ export async function GET(request: NextRequest) {
 
     // If orderNumber is provided, fetch that specific order (no auth required for confirmation/tracking)
     if (orderNumber) {
+      console.log(`[Orders API] Looking up order by orderNumber: ${orderNumber}`)
+
       let { data: orders, error } = await supabase
         .from('orders')
         .select(`
@@ -21,9 +23,14 @@ export async function GET(request: NextRequest) {
         `)
         .eq('order_number', orderNumber)
 
-      // If server client fails (RLS), use admin client
-      if (error && (!orders || orders.length === 0)) {
-        console.log('[Orders API] Server client failed for orderNumber lookup, trying admin client...')
+      console.log(`[Orders API] Server client result:`, {
+        found: orders?.length || 0,
+        error: error?.message
+      })
+
+      // If server client fails (RLS) or returns empty, use admin client
+      if (error || !orders || orders.length === 0) {
+        console.log('[Orders API] Trying admin client...')
         const admin = createAdminClient()
         const result = await admin
           .from('orders')
@@ -35,16 +42,22 @@ export async function GET(request: NextRequest) {
 
         orders = result.data
         error = result.error
+
+        console.log(`[Orders API] Admin client result:`, {
+          found: orders?.length || 0,
+          error: error?.message
+        })
       }
 
       if (error) {
-        console.error('Error fetching order:', error)
+        console.error('[Orders API] Error fetching order:', error)
         return NextResponse.json(
           { error: 'Failed to fetch order' },
           { status: 500 }
         )
       }
 
+      console.log(`[Orders API] ✅ Returning ${orders?.length || 0} orders`)
       return NextResponse.json({ orders })
     }
 
