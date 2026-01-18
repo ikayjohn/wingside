@@ -111,7 +111,7 @@ export default function WingsideConnectPage() {
         <div className="connect-hero-content">
           {/* Logo */}
           <div className="connect-hero-logo">
-            <img src="/logo-white.png" alt="Wingside" className="h-16 w-auto" />
+            <img src="/logo.png" alt="Wingside" className="h-16 w-auto" />
           </div>
 
           <h1 className="connect-hero-title">
