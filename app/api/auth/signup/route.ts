@@ -131,7 +131,7 @@ export async function POST(request: Request) {
     const referralCode = generateReferralCode(firstName, lastName);
 
     // Create profile
-    const { error: profileError } = await supabase.from('profiles').insert({
+    const { data: profileData, error: profileError } = await supabase.from('profiles').insert({
       id: authData.user.id,
       email: authData.user.email,
       full_name: `${firstName.trim()} ${lastName.trim()}`,
@@ -141,12 +141,16 @@ export async function POST(request: Request) {
       referred_by: referredByUserId,
       date_of_birth: formattedDOB,
       gender: gender,
-    });
+    }).select()
+      .single();
 
     if (profileError) {
       console.error('Profile creation error:', profileError);
-      // Don't fail the entire signup if profile creation fails
-      // But log it for debugging
+      // Return actual error to frontend for debugging
+      return NextResponse.json(
+        { error: `Failed to create profile: ${profileError.message}` },
+        { status: 400 }
+      );
     }
 
     // Sync customer to integrations (Zoho CRM and Embedly)
