@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { syncNewCustomer, syncOrderCompletion } from '@/lib/integrations'
 import { sendPaymentConfirmation, sendOrderNotification } from '@/lib/emails/service'
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
 
       console.log(`Payment successful for order reference: ${orderReference}`)
 
-      const supabase = createClient()
+      const supabase = await createClient()
 
       // Find order by payment reference
       const { data: order, error: orderError } = await supabase

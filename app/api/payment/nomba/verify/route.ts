@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 import { sendPaymentConfirmation } from '@/lib/emails/service'
 
 interface NombaVerifyResponse {
