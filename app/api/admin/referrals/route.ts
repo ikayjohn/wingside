@@ -1,15 +1,16 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { requireAdmin } from '@/lib/admin-auth'
 
 // GET /api/admin/referrals - Fetch all referrals (admin only)
 export async function GET(request: Request) {
   try {
-    const { data, error } = await supabase
+    // Verify admin authentication
+    const auth = await requireAdmin()
+    if (auth.success !== true) return auth.error
+
+    const { admin } = auth
+
+    const { data, error } = await admin
       .from('referrals')
       .select(`
         *,
@@ -28,10 +29,10 @@ export async function GET(request: Request) {
     if (error) throw error
 
     return NextResponse.json({ data })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching referrals:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch referrals' },
+      { error: 'Failed to fetch referrals' },
       { status: 500 }
     )
   }

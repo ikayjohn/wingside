@@ -127,12 +127,12 @@ export async function GET(request: NextRequest) {
       customers: filteredCustomers.slice(0, limit),
       total: filteredCustomers.length,
       segment_stats: segmentStats,
-      average_health_score: enrichedCustomers.reduce((sum: number, c: any) => sum + c.health_score, 0) / enrichedCustomers.length
+      average_health_score: enrichedCustomers.reduce((sum: number, c: { health_score: number }) => sum + c.health_score, 0) / enrichedCustomers.length
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching customer segments:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch customer segments' },
+      { error: 'Failed to fetch customer segments' },
       { status: 500 }
     )
   }

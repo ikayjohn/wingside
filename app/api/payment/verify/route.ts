@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     if (!paystackResponse.ok || !paystackData.status) {
       console.error('Paystack verification error:', paystackData)
       return NextResponse.json(
-        { error: paystackData.message || 'Failed to verify payment' },
+        { error: 'Failed to verify payment. Please try again.' },
         { status: 500 }
       )
     }

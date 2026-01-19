@@ -1,14 +1,15 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { syncNewCustomer } from '@/lib/integrations'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { requireAdmin } from '@/lib/admin-auth'
 
 // GET /api/admin/test-embedly-sync - Test Embedly configuration and last syncs
 export async function GET(request: NextRequest) {
+  // Verify admin authentication first
+  const auth = await requireAdmin()
+  if (auth.success !== true) return auth.error
+
+  const { admin } = auth
+
   const results = {
     env_configured: false,
     env_vars: {} as Record<string, string>,
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
     results.env_configured = !!(process.env.EMBEDLY_API_KEY && process.env.EMBEDLY_ORG_ID)
 
     // Get recent customer signups (last 10)
-    const { data: recentCustomers, error: customersError } = await supabase
+    const { data: recentCustomers, error: customersError } = await admin
       .from('profiles')
       .select('id, email, full_name, created_at, embedly_customer_id, embedly_wallet_id')
       .eq('role', 'customer')
@@ -64,7 +65,7 @@ export async function GET(request: NextRequest) {
 
         // Update the profile with the sync result
         if (testResult.embedly) {
-          await supabase
+          await admin
             .from('profiles')
             .update({
               embedly_customer_id: testResult.embedly.customer_id,
@@ -77,8 +78,8 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(results)
-  } catch (error: any) {
-    results.error = error.message || String(error)
+  } catch (error) {
+    results.error = error instanceof Error ? error.message : String(error)
     console.error('Embedly sync test error:', error)
     return NextResponse.json(results, { status: 500 })
   }
@@ -86,6 +87,12 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/test-embedly-sync - Manually trigger sync for a customer
 export async function POST(request: NextRequest) {
+  // Verify admin authentication
+  const auth = await requireAdmin()
+  if (auth.success !== true) return auth.error
+
+  const { admin } = auth
+
   try {
     const body = await request.json()
     const { customer_id } = body
@@ -95,7 +102,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get customer details
-    const { data: customer } = await supabase
+    const { data: customer } = await admin
       .from('profiles')
       .select('*')
       .eq('id', customer_id)
@@ -115,7 +122,7 @@ export async function POST(request: NextRequest) {
 
     // Update profile if sync succeeded
     if (syncResult.embedly) {
-      await supabase
+      await admin
         .from('profiles')
         .update({
           embedly_customer_id: syncResult.embedly.customer_id,
@@ -130,10 +137,10 @@ export async function POST(request: NextRequest) {
       customer,
       sync_result: syncResult
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Manual sync error:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to sync customer' },
+      { error: 'Failed to sync customer' },
       { status: 500 }
     )
   }

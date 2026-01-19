@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Error claiming reward:', error);
       return NextResponse.json(
-        { error: error.message || 'Failed to claim reward' },
+        { error: 'Failed to claim reward' },
         { status: 500 }
       );
     }

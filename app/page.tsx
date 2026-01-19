@@ -3,18 +3,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import HeroSlideshow from '@/components/HeroSlideshow';
+import { fetchSettings } from '@/lib/settings';
 
-// Structured data for SEO
-const structuredData = {
+// Structured data for SEO - will be populated with real data
+let structuredData = {
   "@context": "https://schema.org",
   "@type": "Restaurant",
   "name": "Wingside",
   "description": "Experience 20 bold wing flavors across 6 categories at Wingside. Your wings, your way.",
   "url": "https://wingside.com",
-  "telephone": "+234-XXX-XXX-XXXX",
+  "telephone": process.env.NEXT_PUBLIC_CONTACT_PHONE || "+234-809-019-1999",
   "address": {
     "@type": "PostalAddress",
-    "addressLocality": "Lagos",
+    "addressLocality": "Port Harcourt",
     "addressCountry": "NG"
   },
   "servesCuisine": "Chicken Wings",

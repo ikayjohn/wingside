@@ -1,10 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { sendContactNotification } from '@/lib/emails/service';
+import { checkRateLimitByIp, rateLimitErrorResponse } from '@/lib/rate-limit';
+import { csrfProtection } from '@/lib/csrf';
 
 // POST /api/newsletter/signup - Handle newsletter signup
 export async function POST(request: NextRequest) {
   try {
+    // Check CSRF token
+    const csrfError = await csrfProtection(request)
+    if (csrfError) {
+      return csrfError
+    }
+
+    // Check rate limit (5 signups per hour per IP)
+    const { rateLimit } = await checkRateLimitByIp({ limit: 5, window: 60 * 60 * 1000 });
+    if (!rateLimit.success) {
+      return rateLimitErrorResponse(rateLimit);
+    }
+
     const body = await request.json();
     const { email, type = 'gifts_launch' } = body;
 

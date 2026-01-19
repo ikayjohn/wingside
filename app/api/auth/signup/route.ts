@@ -116,7 +116,7 @@ export async function POST(request: Request) {
     if (authError) {
       console.error('Auth creation error:', authError);
       return NextResponse.json(
-        { error: authError.message },
+        { error: 'Failed to create account. Please try again.' },
         { status: 400 }
       );
     }
@@ -186,7 +186,7 @@ export async function POST(request: Request) {
     if (profileError) {
       console.error('Profile error:', profileError);
       return NextResponse.json(
-        { error: `Failed to save profile: ${profileError.message}` },
+        { error: 'Failed to save profile. Please try again.' },
         { status: 400 }
       );
     }

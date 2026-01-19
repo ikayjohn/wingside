@@ -44,6 +44,7 @@ export async function onOrderCreated(orderId: string) {
       order.user_id,
       user.email,
       user.full_name || 'Customer',
+      undefined, // userPhone - would need to fetch from profile if available
       {
         orderNumber: order.order_number,
         totalAmount: `₦${order.total_amount.toLocaleString()}`,

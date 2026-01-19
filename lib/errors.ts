@@ -3,7 +3,27 @@ import { NextResponse } from 'next/server'
 /**
  * Standardized Error Handling System
  * Provides consistent error responses across the application
+ * - Generic messages to users (security)
+ * - Detailed logs server-side (debugging)
  */
+
+/**
+ * Log error details server-side for debugging
+ * Never exposed to clients in production
+ */
+function logError(error: unknown, context?: string): void {
+  const timestamp = new Date().toISOString();
+
+  if (error instanceof Error) {
+    console.error(`[${timestamp}] Error${context ? ` in ${context}` : ''}:`, {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+    });
+  } else {
+    console.error(`[${timestamp}] Unknown error${context ? ` in ${context}` : ''}:`, error);
+  }
+}
 
 /**
  * Base Application Error
@@ -98,8 +118,13 @@ export class ServiceUnavailableError extends AppError {
 
 /**
  * Convert error to API response
+ * - Logs detailed errors server-side
+ * - Returns generic messages to clients (security)
  */
-export function errorToResponse(error: unknown): NextResponse {
+export function errorToResponse(error: unknown, context?: string): NextResponse {
+  // Always log errors server-side for debugging
+  logError(error, context)
+
   // Handle known application errors
   if (error instanceof AppError) {
     const response: Record<string, unknown> = {
@@ -107,7 +132,7 @@ export function errorToResponse(error: unknown): NextResponse {
       code: error.code,
     }
 
-    // Include details in development
+    // Include details ONLY in development
     if (process.env.NODE_ENV === 'development' && error.details !== undefined) {
       response.details = error.details
     }
@@ -130,11 +155,9 @@ export function errorToResponse(error: unknown): NextResponse {
   }
 
   // Handle unknown errors (non-Error objects)
-  const isDevelopment = process.env.NODE_ENV === 'development'
-
   return NextResponse.json(
     {
-      error: isDevelopment ? 'Unknown error occurred' : 'An unexpected error occurred',
+      error: 'An unexpected error occurred',
       code: 'INTERNAL_ERROR',
     },
     { status: 500 }
@@ -143,15 +166,17 @@ export function errorToResponse(error: unknown): NextResponse {
 
 /**
  * Async handler wrapper that catches errors and converts them to responses
+ * Logs errors server-side and returns generic messages to clients
  */
 export function asyncHandler(
-  handler: (...args: unknown[]) => Promise<NextResponse>
+  handler: (...args: unknown[]) => Promise<NextResponse>,
+  context?: string
 ): (...args: unknown[]) => Promise<NextResponse> {
   return async (...args: unknown[]): Promise<NextResponse> => {
     try {
       return await handler(...args)
     } catch (error) {
-      return errorToResponse(error)
+      return errorToResponse(error, context)
     }
   }
 }

@@ -9,6 +9,8 @@ import {
   detectSqlInjection,
   detectNoSqlInjection,
 } from '@/lib/security';
+import { checkRateLimitByIp, rateLimitErrorResponse } from '@/lib/rate-limit';
+import { csrfProtection } from '@/lib/csrf';
 
 // Validation schema
 const contactSchema = z.object({
@@ -24,6 +26,18 @@ const contactSchema = z.object({
 // POST /api/contact - Handle contact form submissions
 export async function POST(request: NextRequest) {
   try {
+    // Check CSRF token
+    const csrfError = await csrfProtection(request)
+    if (csrfError) {
+      return csrfError
+    }
+
+    // Check rate limit (3 submissions per hour)
+    const { rateLimit } = await checkRateLimitByIp({ limit: 3, window: 60 * 60 * 1000 });
+    if (!rateLimit.success) {
+      return rateLimitErrorResponse(rateLimit);
+    }
+
     // Parse request body
     let body;
     try {

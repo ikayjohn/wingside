@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { checkRateLimitByIp, rateLimitErrorResponse } from '@/lib/rate-limit';
+import { csrfProtection } from '@/lib/csrf';
 
 // Validation schema
 const partnershipSchema = z.object({
@@ -14,6 +16,18 @@ const partnershipSchema = z.object({
 // POST /api/partnership - Submit partnership inquiry
 export async function POST(request: NextRequest) {
   try {
+    // Check CSRF token
+    const csrfError = await csrfProtection(request)
+    if (csrfError) {
+      return csrfError
+    }
+
+    // Check rate limit (2 submissions per hour)
+    const { rateLimit } = await checkRateLimitByIp({ limit: 2, window: 60 * 60 * 1000 });
+    if (!rateLimit.success) {
+      return rateLimitErrorResponse(rateLimit);
+    }
+
     // Parse request body
     let body;
     try {

@@ -7,12 +7,20 @@ import {
   sendPromotionPush,
   sendRewardPush,
 } from './push';
+import {
+  sendSMS,
+  sendOrderConfirmationSMS,
+  sendOrderStatusSMS,
+  canSendSMSToUser,
+  isSMSEnabled,
+} from './sms';
 
 export interface NotificationOptions {
   channels: ('email' | 'push' | 'sms')[];
   userId: string;
   userEmail?: string;
   userName?: string;
+  userPhone?: string;
   type: 'order_confirmation' | 'order_status' | 'promotion' | 'reward' | 'reminder';
   data: Record<string, any>;
   preferences?: {
@@ -146,10 +154,56 @@ export async function sendNotification(options: NotificationOptions): Promise<{
     }
   }
 
-  // SMS (placeholder for future implementation)
-  if (options.channels.includes('sms')) {
-    // TODO: Implement SMS notifications
-    results.sms = { sent: false, ...(true ? { error: 'SMS not implemented yet' } : {}) };
+  // Send SMS if enabled
+  if (options.channels.includes('sms') && options.userPhone) {
+    const canSend =
+      options.preferences?.sms !== false &&
+      isSMSEnabled() &&
+      (await checkSMSPreference(options.userId, options.type));
+
+    if (canSend) {
+      try {
+        let smsResult;
+
+        switch (options.type) {
+          case 'order_confirmation':
+            smsResult = await sendOrderConfirmationSMS(options.userPhone, {
+              orderNumber: options.data.orderNumber,
+              totalAmount: options.data.totalAmount,
+              estimatedTime: options.data.estimatedTime || 30,
+            });
+            break;
+
+          case 'order_status':
+            smsResult = await sendOrderStatusSMS(options.userPhone, {
+              orderNumber: options.data.orderNumber,
+              status: options.data.status || 'ready',
+            });
+            break;
+
+          case 'promotion':
+            smsResult = await sendSMS(options.userPhone, options.data.message || 'New promotion available!');
+            break;
+
+          case 'reward':
+            smsResult = await sendSMS(
+              options.userPhone,
+              `🎉 You earned ${options.data.pointsEarned} points! Total: ${options.data.totalPoints} pts. Redeem rewards at wingside.com/my-account/dashboard`
+            );
+            break;
+
+          default:
+            smsResult = await sendSMS(options.userPhone, options.data.body || 'Notification from Wingside');
+        }
+
+        results.sms = {
+          sent: smsResult.success,
+          ...(smsResult.error ? { error: smsResult.error } : {}),
+        };
+      } catch (error: any) {
+        results.sms = { sent: false, ...(error.message ? { error: error.message } : {}) };
+      }
+    }
   }
 
   return results;
@@ -162,7 +216,8 @@ export async function notifyOrderConfirmation(
   userId: string,
   userEmail: string,
   userName: string,
-  orderData: {
+  userPhone?: string,
+  orderData?: {
     orderNumber: string;
     totalAmount: string;
     paymentMethod: string;
@@ -171,11 +226,15 @@ export async function notifyOrderConfirmation(
     orderTrackingUrl: string;
   }
 ) {
+  const channels: ('email' | 'push' | 'sms')[] = ['email', 'push'];
+  if (userPhone) channels.push('sms');
+
   return sendNotification({
-    channels: ['email', 'push'],
+    channels,
     userId,
     userEmail,
     userName,
+    userPhone,
     type: 'order_confirmation',
     data: {
       customer_name: userName,
@@ -192,7 +251,8 @@ export async function notifyOrderStatus(
   userEmail: string,
   userName: string,
   status: 'preparing' | 'ready' | 'picked_up' | 'out_for_delivery' | 'delivered',
-  orderData: {
+  userPhone?: string,
+  orderData?: {
     orderNumber: string;
     deliveryDriver?: string;
     estimatedArrival?: string;
@@ -202,11 +262,15 @@ export async function notifyOrderStatus(
     totalPoints?: number;
   }
 ) {
+  const channels: ('email' | 'push' | 'sms')[] = ['email', 'push'];
+  if (userPhone) channels.push('sms');
+
   return sendNotification({
-    channels: ['email', 'push'],
+    channels,
     userId,
     userEmail,
     userName,
+    userPhone,
     type: 'order_status',
     data: {
       customer_name: userName,
@@ -313,6 +377,27 @@ async function checkPushPreference(
   return canSendPushToUser(userId, prefType);
 }
 
+/**
+ * Check SMS preference for user and type
+ */
+async function checkSMSPreference(
+  userId: string,
+  type: string
+): Promise<boolean> {
+  const typeMap: Record<string, 'order_confirmations' | 'order_status' | 'promotions' | 'rewards'> = {
+    order_confirmation: 'order_confirmations',
+    order_status: 'order_status',
+    promotion: 'promotions',
+    reward: 'rewards',
+  };
+
+  const prefType = typeMap[type];
+  if (!prefType) return true;
+
+  return canSendSMSToUser(userId, prefType);
+}
+
 // Re-export functions for convenience
 export * from './email';
 export * from './push';
+export * from './sms';

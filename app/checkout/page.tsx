@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import type { Address, PromoCode, PromoCodeValidationResponse, OrderAddon } from '@/types/checkout';
 
 interface DeliveryArea {
   id: string;
@@ -44,7 +45,7 @@ export default function CheckoutPage() {
   const supabase = createClient();
 
   const [promoCode, setPromoCode] = useState('');
-  const [appliedPromo, setAppliedPromo] = useState<any>(null);
+  const [appliedPromo, setAppliedPromo] = useState<PromoCodeValidationResponse | null>(null);
   const [promoError, setPromoError] = useState('');
   const [applyingPromo, setApplyingPromo] = useState(false);
 
@@ -168,7 +169,7 @@ export default function CheckoutPage() {
             setSavedAddresses(data.addresses || []);
 
             // Auto-select default address if available
-            const defaultAddress = data.addresses?.find((addr: any) => addr.is_default);
+            const defaultAddress = data.addresses?.find((addr: Address) => addr.is_default);
             if (defaultAddress) {
               setSelectedAddressId(defaultAddress.id);
               populateAddressFields(defaultAddress);
@@ -275,7 +276,7 @@ export default function CheckoutPage() {
   };
 
   // Populate form fields with selected address
-  const populateAddressFields = (address: any) => {
+  const populateAddressFields = (address: Address) => {
     setFormData(prev => ({
       ...prev,
       streetAddress: address.street_address || '',
@@ -594,7 +595,7 @@ export default function CheckoutPage() {
             });
           }
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error('Account creation error:', error);
         setSubmitError('Failed to create account. Please try again.');
         setSubmitting(false);
@@ -614,7 +615,7 @@ export default function CheckoutPage() {
         }
 
         // Build addons object
-        const addons: any = {};
+        const addons: OrderAddon = {};
         if (item.rice) {
           addons.rice = Array.isArray(item.rice) ? item.rice : [item.rice];
         }
@@ -830,9 +831,9 @@ export default function CheckoutPage() {
         // Redirect to Paystack payment page
         window.location.href = paymentData.authorization_url;
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error submitting order:', error);
-      setSubmitError(error.message || 'Failed to submit order. Please try again.');
+      setSubmitError('Failed to submit order. Please try again.');
       setSubmitting(false);
     }
   };

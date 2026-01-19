@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sanitizeEmail, sanitizeUrl } from '@/lib/security'
+import { checkRateLimitByIp, rateLimitErrorResponse } from '@/lib/rate-limit'
+import { csrfProtection } from '@/lib/csrf'
 
 // Email validation regex
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -23,6 +25,18 @@ function isValidAmount(amount: number): boolean {
 // POST /api/payment/initialize - Initialize Paystack payment
 export async function POST(request: NextRequest) {
   try {
+    // Check CSRF token
+    const csrfError = await csrfProtection(request)
+    if (csrfError) {
+      return csrfError
+    }
+
+    // Check rate limit (10 payment initializations per 5 minutes per IP)
+    const { rateLimit } = await checkRateLimitByIp({ limit: 10, window: 5 * 60 * 1000 });
+    if (!rateLimit.success) {
+      return rateLimitErrorResponse(rateLimit);
+    }
+
     const body = await request.json()
     const { order_id, amount, email, metadata } = body
 
@@ -151,7 +165,7 @@ export async function POST(request: NextRequest) {
     if (!paystackResponse.ok || !paystackData.status) {
       console.error('Paystack initialization error:', paystackData)
       return NextResponse.json(
-        { error: paystackData.message || 'Failed to initialize payment' },
+        { error: 'Failed to initialize payment. Please try again.' },
         { status: 500 }
       )
     }

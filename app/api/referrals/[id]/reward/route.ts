@@ -98,10 +98,10 @@ export async function POST(
       message: 'Reward notification sent successfully',
       messageId: emailResult.messageId,
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Referral reward error:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to send reward notification' },
+      { error: 'Failed to send reward notification' },
       { status: 500 }
     )
   }

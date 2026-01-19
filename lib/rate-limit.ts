@@ -3,6 +3,9 @@
  * For production, use Redis, Upstash, or Vercel KV for distributed rate limiting
  */
 
+import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
+
 interface RateLimitEntry {
   count: number;
   resetTime: number;
@@ -176,3 +179,101 @@ export const RateLimitPresets = {
     blockDuration: 7 * 24 * 60 * 60 * 1000, // 7 day block
   },
 };
+
+/**
+ * Get client IP address from request headers
+ */
+export async function getClientIp(): Promise<string> {
+  const headersList = await headers();
+
+  // Check various headers for IP address
+  const forwardedFor = headersList.get('x-forwarded-for');
+  const realIp = headersList.get('x-real-ip');
+  const cfConnectingIp = headersList.get('cf-connecting-ip');
+  const xClientIp = headersList.get('x-client-ip');
+
+  if (forwardedFor) {
+    // x-forwarded-for can contain multiple IPs, take the first one
+    return forwardedFor.split(',')[0].trim();
+  }
+
+  if (realIp) return realIp;
+  if (cfConnectingIp) return cfConnectingIp;
+  if (xClientIp) return xClientIp;
+
+  // Fallback to a default (not ideal but prevents crashes)
+  return 'unknown';
+}
+
+/**
+ * Check rate limit based on client IP address
+ * Convenience function for API routes
+ */
+export async function checkRateLimitByIp(
+  config: RateLimitConfig
+): Promise<{ rateLimit: RateLimitResult; ip: string }> {
+  const ip = await getClientIp();
+  const rateLimit = checkRateLimit(ip, config);
+  return { rateLimit, ip };
+}
+
+/**
+ * Create a rate limit error response with proper headers
+ */
+export function rateLimitErrorResponse(result: RateLimitResult): NextResponse {
+  return NextResponse.json(
+    {
+      error: 'Too many requests',
+      message: `Rate limit exceeded. Please try again later.`,
+    },
+    {
+      status: 429,
+      headers: {
+        'X-RateLimit-Limit': result.limit.toString(),
+        'X-RateLimit-Remaining': result.remaining.toString(),
+        'X-RateLimit-Reset': new Date(result.reset).toISOString(),
+        'Retry-After': (result.retryAfter || 60).toString(),
+      },
+    }
+  );
+}
+
+/**
+ * Middleware to apply rate limiting to API routes
+ *
+ * Usage in API routes:
+ * ```ts
+ * import { withRateLimit } from '@/lib/rate-limit';
+ *
+ * export async function POST(request: NextRequest) {
+ *   return withRateLimit(request, async () => {
+ *     // Your route logic here
+ *     return NextResponse.json({ success: true });
+ *   }, 'auth');
+ * }
+ * ```
+ */
+export async function withRateLimit<T extends NextResponse>(
+  request: Request,
+  handler: () => Promise<T>,
+  preset: keyof typeof RateLimitPresets | RateLimitConfig = 'api'
+): Promise<T | NextResponse> {
+  const config =
+    typeof preset === 'string' ? RateLimitPresets[preset] : preset;
+
+  const { rateLimit, ip } = await checkRateLimitByIp(config);
+
+  if (!rateLimit.success) {
+    return rateLimitErrorResponse(rateLimit);
+  }
+
+  const response = await handler();
+
+  // Add rate limit headers to successful response
+  response.headers.set('X-RateLimit-Limit', rateLimit.limit.toString());
+  response.headers.set('X-RateLimit-Remaining', rateLimit.remaining.toString());
+  response.headers.set('X-RateLimit-Reset', new Date(rateLimit.reset).toISOString());
+
+  return response;
+}
+

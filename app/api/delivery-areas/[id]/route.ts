@@ -60,7 +60,7 @@ export async function PUT(
     if (error) {
       console.error('❌ Error updating delivery area:', error)
       return NextResponse.json(
-        { error: 'Failed to update delivery area', details: error.message },
+        { error: 'Failed to update delivery area' },
         { status: 500 }
       )
     }

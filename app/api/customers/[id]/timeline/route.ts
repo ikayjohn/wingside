@@ -232,10 +232,10 @@ export async function GET(
       timeline,
       stats
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching customer timeline:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch customer timeline' },
+      { error: 'Failed to fetch customer timeline' },
       { status: 500 }
     )
   }

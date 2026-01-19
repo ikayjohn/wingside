@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { checkRateLimitByIp, rateLimitErrorResponse } from '@/lib/rate-limit';
 
 /**
  * Verify Cloudflare Turnstile token
@@ -7,6 +8,12 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function POST(request: NextRequest) {
   try {
+    // Check rate limit (20 verifications per minute)
+    const { rateLimit } = await checkRateLimitByIp({ limit: 20, window: 60 * 1000 });
+    if (!rateLimit.success) {
+      return rateLimitErrorResponse(rateLimit);
+    }
+
     const { token } = await request.json();
 
     if (!token) {
