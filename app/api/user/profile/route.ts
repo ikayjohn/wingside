@@ -72,7 +72,7 @@ export async function GET() {
     let tierThreshold = 5000
     let tierStart = 0
 
-    const totalPoints = profile.points || 0
+    const totalPoints = profile.total_points || 0
 
     if (totalPoints >= 20000) {
       currentTier = 'Wingzard'
@@ -130,7 +130,7 @@ export async function GET() {
       phone: profile.phone,
       birthdayDay,
       birthdayMonth,
-      points: profile.points || 0, // Add points field
+      points: profile.total_points || 0, // Add points field
       walletBalance: profile.wallet_balance || 0,
       cardNumber: `WC${profile.id.slice(0, 8).toUpperCase()}`,
       bankAccount: '9012345678', // This would come from payment system
