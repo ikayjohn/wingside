@@ -111,8 +111,9 @@ export async function GET() {
       .eq('user_id', user.id)
       .eq('payment_status', 'paid');
 
+    // Calculate purchase points using per-order rounding (matches actual awarded points)
+    const purchasePoints = orders?.reduce((sum, order) => sum + Math.floor(Number(order.total) / 10), 0) || 0;
     const totalSpent = orders?.reduce((sum, order) => sum + Number(order.total), 0) || 0;
-    const purchasePoints = Math.floor(totalSpent / 10);
 
     return NextResponse.json({
       currentPoints: profile?.total_points || 0,
