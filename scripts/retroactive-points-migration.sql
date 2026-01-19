@@ -1,7 +1,14 @@
+-- ============================================================================
 -- Retroactively Award Points for Old Paid Orders
+-- ============================================================================
 -- This script awards points for all previously paid orders that didn't get points
+-- Calculation: ₦100 = 10 points (₦10 = 1 point)
+-- ============================================================================
 
--- First, let's see what we're working with
+-- First, show what we're working with
+SELECT
+    '=== CURRENT STATE ===' as info;
+
 SELECT
     p.email,
     p.total_points as current_points,
@@ -14,7 +21,10 @@ WHERE o.payment_status = 'paid'
 GROUP BY p.id, p.email, p.total_points
 ORDER BY total_spent DESC;
 
--- Now create a function to retroactively award points
+-- ============================================================================
+-- CREATE OR REPLACE THE FUNCTION
+-- ============================================================================
+
 CREATE OR REPLACE FUNCTION retroactively_award_points()
 RETURNS TABLE(
     ret_user_id UUID,
@@ -83,7 +93,7 @@ BEGIN
                             'order_total', order_record.total,
                             'awarded_at', NOW()
                         ),
-                        order_record.created_at  -- Use original order date
+                        order_record.created_at
                     );
                 EXCEPTION WHEN OTHERS THEN
                     -- Table might not exist, continue
@@ -120,16 +130,26 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Execute the function to award points
+-- ============================================================================
+-- EXECUTE THE FUNCTION
+-- ============================================================================
+
+SELECT '=== AWARDING POINTS ===' as info;
+
 SELECT * FROM retroactively_award_points();
 
--- Verify the results
+-- ============================================================================
+-- VERIFY THE RESULTS
+-- ============================================================================
+
+SELECT '=== FINAL RESULTS ===' as info;
+
 SELECT
     p.email,
     p.total_points as new_points,
     COUNT(DISTINCT o.id) as total_orders,
     SUM(CASE WHEN o.payment_status = 'paid' THEN 1 ELSE 0 END) as paid_orders,
-    FLOOR(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total ELSE 0 END) / 10) as points_from_orders,
+    FLOOR(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total ELSE 0 END) / 10) as expected_points,
     COUNT(ph.id) as point_transactions
 FROM profiles p
 LEFT JOIN orders o ON o.user_id = p.id
@@ -137,3 +157,48 @@ LEFT JOIN points_history ph ON ph.user_id = p.id
 GROUP BY p.id, p.email, p.total_points
 HAVING COUNT(o.id) > 0
 ORDER BY new_points DESC NULLS LAST;
+
+-- ============================================================================
+-- SUMMARY
+-- ============================================================================
+
+SELECT
+    '=== SUMMARY ===' as info;
+
+SELECT
+    COUNT(DISTINCT o.user_id) as users_with_paid_orders,
+    SUM(CASE WHEN o.payment_status = 'paid' THEN 1 ELSE 0 END) as total_paid_orders,
+    SUM(CASE WHEN o.payment_status = 'paid' THEN o.total ELSE 0 END) as total_amount_spent,
+    FLOOR(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total ELSE 0 END) / 10) as total_points_awarded
+FROM orders o;
+
+-- ============================================================================
+-- VERIFICATION QUERY FOR SPECIFIC USERS
+-- ============================================================================
+
+SELECT
+    '=== SPECIFIC USER VERIFICATION ===' as info;
+
+-- Mocha Badom
+SELECT
+    'Mocha Badom' as user,
+    p.total_points as current_points,
+    COUNT(o.id) as orders,
+    SUM(o.total) as spent,
+    FLOOR(SUM(o.total) / 10) as expected_points
+FROM profiles p
+LEFT JOIN orders o ON o.user_id = p.id
+WHERE p.email = 'billionaireboyscorp@gmail.com'
+GROUP BY p.id, p.total_points;
+
+-- Howard Test
+SELECT
+    'Howard Test' as user,
+    p.total_points as current_points,
+    COUNT(o.id) as orders,
+    SUM(o.total) as spent,
+    FLOOR(SUM(o.total) / 10) as expected_points
+FROM profiles p
+LEFT JOIN orders o ON o.user_id = p.id
+WHERE p.email = 'blackspacebhd@gmail.com'
+GROUP BY p.id, p.total_points;
