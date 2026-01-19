@@ -17,8 +17,8 @@ ORDER BY total_spent DESC;
 -- Now create a function to retroactively award points
 CREATE OR REPLACE FUNCTION retroactively_award_points()
 RETURNS TABLE(
-    user_id UUID,
-    email TEXT,
+    ret_user_id UUID,
+    ret_email TEXT,
     orders_processed INTEGER,
     points_awarded INTEGER,
     new_total_points INTEGER
@@ -29,6 +29,7 @@ DECLARE
     v_points_to_award INTEGER;
     v_new_total INTEGER;
     v_order_count INTEGER;
+    v_current_user_id UUID;
 BEGIN
     -- Loop through all users who have paid orders
     FOR user_record IN
@@ -37,6 +38,7 @@ BEGIN
         INNER JOIN profiles p ON p.id = o.user_id
         WHERE o.payment_status = 'paid'
     LOOP
+        v_current_user_id := user_record.user_id;
         v_points_to_award := 0;
         v_order_count := 0;
 
@@ -44,7 +46,7 @@ BEGIN
         FOR order_record IN
             SELECT id, order_number, total
             FROM orders
-            WHERE user_id = user_record.user_id
+            WHERE user_id = v_current_user_id
             AND payment_status = 'paid'
             ORDER BY created_at ASC
         LOOP
@@ -56,7 +58,7 @@ BEGIN
                 UPDATE profiles
                 SET total_points = COALESCE(total_points, 0) + v_order_points,
                     updated_at = NOW()
-                WHERE id = user_record.user_id
+                WHERE id = v_current_user_id
                 RETURNING total_points INTO v_new_total;
 
                 -- Log in points_history if table exists
@@ -70,7 +72,7 @@ BEGIN
                         metadata,
                         created_at
                     ) VALUES (
-                        user_record.user_id,
+                        v_current_user_id,
                         v_order_points,
                         'earned',
                         'purchase',
@@ -99,7 +101,18 @@ BEGIN
             END;
         END LOOP;
 
+        -- Get final points total
+        SELECT total_points INTO v_new_total
+        FROM profiles
+        WHERE id = v_current_user_id;
+
         -- Return result for this user
+        ret_user_id := v_current_user_id;
+        ret_email := user_record.email;
+        orders_processed := v_order_count;
+        points_awarded := v_points_to_award;
+        new_total_points := v_new_total;
+
         RETURN NEXT;
     END LOOP;
 
