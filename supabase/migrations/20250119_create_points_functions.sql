@@ -33,11 +33,33 @@ CREATE INDEX IF NOT EXISTS idx_reward_claims_user_id ON reward_claims(user_id);
 CREATE INDEX IF NOT EXISTS idx_reward_claims_reward_type ON reward_claims(reward_type);
 CREATE INDEX IF NOT EXISTS idx_reward_claims_user_reward ON reward_claims(user_id, reward_type);
 
--- Enable RLS
-ALTER TABLE points_history ENABLE ROW LEVEL SECURITY;
-ALTER TABLE reward_claims ENABLE ROW LEVEL SECURITY;
+-- Enable RLS (idempotent)
+DO $$
+BEGIN
+    -- Enable RLS on points_history if not already enabled
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_tables
+        WHERE tablename = 'points_history'
+        AND rowsecurity = true
+    ) THEN
+        ALTER TABLE points_history ENABLE ROW LEVEL SECURITY;
+    END IF;
+
+    -- Enable RLS on reward_claims if not already enabled
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_tables
+        WHERE tablename = 'reward_claims'
+        AND rowsecurity = true
+    ) THEN
+        ALTER TABLE reward_claims ENABLE ROW LEVEL SECURITY;
+    END IF;
+END $$;
 
 -- RLS Policies for points_history
+-- Drop policies if they exist
+DROP POLICY IF EXISTS "Users can view own points history" ON points_history;
+DROP POLICY IF EXISTS "Service role can manage points history" ON points_history;
+
 -- Users can read their own points history
 CREATE POLICY "Users can view own points history"
 ON points_history FOR SELECT
@@ -49,6 +71,10 @@ ON points_history FOR ALL
 USING (auth.jwt() ->> 'role' = 'service_role');
 
 -- RLS Policies for reward_claims
+-- Drop policies if they exist
+DROP POLICY IF EXISTS "Users can view own reward claims" ON reward_claims;
+DROP POLICY IF EXISTS "Service role can manage reward claims" ON reward_claims;
+
 -- Users can read their own reward claims
 CREATE POLICY "Users can view own reward claims"
 ON reward_claims FOR SELECT
