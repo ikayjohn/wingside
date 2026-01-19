@@ -160,8 +160,8 @@ EMBEDLY_API_KEY=⚠️ Optional
 
 ### 🚨 Critical Issues Found
 1. Users with paid orders have 0 points (needs retroactive migration):
-   - demo.customer@wingside.ng: Should have ~40 points (₦4,031 spent)
-   - billionaireboyscorp@gmail.com: Should have ~40 points (₦4,031 spent)
+   - demo.customer@wingside.ng: Should have ~403 points (₦4,031 spent)
+   - billionaireboyscorp@gmail.com: Should have ~403 points (₦4,031 spent)
 
 2. Missing RPC functions (needs migration):
    - `award_points()`
