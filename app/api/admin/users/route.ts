@@ -61,7 +61,7 @@ export async function GET() {
         phone,
         role,
         wallet_balance,
-        points,
+        total_points,
         created_at
       `)
       .order('created_at', { ascending: false });

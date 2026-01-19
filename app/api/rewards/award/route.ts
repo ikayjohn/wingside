@@ -39,14 +39,14 @@ export async function POST(request: NextRequest) {
     // Fetch updated profile to get new points total
     const { data: profile } = await supabase
       .from('profiles')
-      .select('points')
+      .select('total_points')
       .eq('id', user.id)
       .single();
 
     return NextResponse.json({
       success: true,
       rewardId: data,
-      newPointsTotal: profile?.points || 0
+      newPointsTotal: profile?.total_points || 0
     });
   } catch (error) {
     console.error('Award points error:', error);

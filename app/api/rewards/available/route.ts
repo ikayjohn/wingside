@@ -19,7 +19,7 @@ export async function GET() {
     // Get user's profile with points and order count
     const { data: profile } = await supabase
       .from('profiles')
-      .select('points, created_at')
+      .select('total_points, created_at')
       .eq('id', user.id)
       .single();
 
@@ -115,7 +115,7 @@ export async function GET() {
     const purchasePoints = Math.floor(totalSpent / 10);
 
     return NextResponse.json({
-      currentPoints: profile?.points || 0,
+      currentPoints: profile?.total_points || 0,
       purchasePoints,
       totalSpent,
       orderCount: orderCount || 0,

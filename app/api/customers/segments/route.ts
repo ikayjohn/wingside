@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
         role,
         created_at,
         wallet_balance,
-        points,
+        total_points,
         total_orders,
         total_spent,
         last_order_date,
