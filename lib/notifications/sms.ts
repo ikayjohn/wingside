@@ -159,17 +159,29 @@ class AfricasTalkingProvider implements SMSProvider {
  * Environment variables needed:
  * - TERMII_API_KEY
  * - TERMII_SENDER_ID
+ * - TERMII_BASE_URL (optional - defaults to sample URL, but should use account-specific URL from dashboard)
+ *
+ * IMPORTANT: Each Termii account has its own unique base URL.
+ * Get your account-specific base URL from: https://termii.com/dashboard > Settings > API Settings
+ * The default 'https://v3.api.termii.com' is a sample URL from documentation.
  */
 class TermiiProvider implements SMSProvider {
   private apiKey: string;
   private senderId: string;
+  private baseUrl: string;
 
   constructor() {
     this.apiKey = process.env.TERMII_API_KEY || '';
     this.senderId = process.env.TERMII_SENDER_ID || 'Wingside';
+    // Use account-specific base URL from environment, or fall back to sample URL
+    this.baseUrl = process.env.TERMII_BASE_URL || 'https://v3.api.termii.com';
 
     if (!this.apiKey) {
       console.warn('Termii not configured: Missing API key');
+    }
+
+    if (!process.env.TERMII_BASE_URL) {
+      console.warn('Termii: Using sample base URL. For production, set TERMII_BASE_URL to your account-specific URL from Termii dashboard.');
     }
   }
 
@@ -182,7 +194,7 @@ class TermiiProvider implements SMSProvider {
     }
 
     try {
-      const url = 'https://v3.api.termii.com/api/sms/send';
+      const url = `${this.baseUrl}/api/sms/send`;
 
       // Termii expects phone numbers in international format WITHOUT the + prefix
       // e.g., 23490126727, not +23490126727

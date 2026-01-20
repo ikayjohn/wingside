@@ -9,6 +9,7 @@ require('dotenv').config({ path: '.env' });
 
 const TERMII_API_KEY = process.env.TERMII_API_KEY;
 const TERMII_SENDER_ID = process.env.TERMII_SENDER_ID || 'Wingside';
+const TERMII_BASE_URL = process.env.TERMII_BASE_URL || 'https://v3.api.termii.com';
 
 console.log('🔍 Termii Account Diagnostics\n');
 console.log('='.repeat(60));
@@ -18,11 +19,18 @@ if (!TERMII_API_KEY) {
   process.exit(1);
 }
 
+if (!process.env.TERMII_BASE_URL) {
+  console.warn('\n⚠️  WARNING: TERMII_BASE_URL is not set.');
+  console.warn('  Using default: https://v3.api.termii.com (sample URL from documentation)');
+  console.warn('  For production, get your account-specific URL from: https://termii.com/dashboard > Settings > API Settings\n');
+}
+
 async function diagnoseAccount() {
   try {
     // Test 1: Check Account Balance
     console.log('\n📊 Test 1: Checking Account Balance...');
-    const balanceResponse = await fetch('https://v3.api.termii.com/api/get/balance', {
+    console.log(`  Base URL: ${TERMII_BASE_URL}`);
+    const balanceResponse = await fetch(`${TERMII_BASE_URL}/api/get/balance`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -44,7 +52,7 @@ async function diagnoseAccount() {
 
     // Test 2: Check Sender ID Status
     console.log('\n📝 Test 2: Checking Sender ID Status...');
-    const senderIdResponse = await fetch('https://v3.api.termii.com/api/sender-id/verify', {
+    const senderIdResponse = await fetch(`${TERMII_BASE_URL}/api/sender-id/verify`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -70,7 +78,7 @@ async function diagnoseAccount() {
     console.log('\n📤 Test 3: Testing with numeric sender ID (works without registration)...');
     const testPhone = process.argv[2] || '+2348176423576';
 
-    const numericSenderResponse = await fetch('https://v3.api.termii.com/api/sms/send', {
+    const numericSenderResponse = await fetch(`${TERMII_BASE_URL}/api/sms/send`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
