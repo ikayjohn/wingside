@@ -19,12 +19,6 @@ if (!TERMII_API_KEY) {
   process.exit(1);
 }
 
-if (!process.env.TERMII_BASE_URL) {
-  console.warn('\n⚠️  WARNING: TERMII_BASE_URL is not set.');
-  console.warn('  Using default: https://v3.api.termii.com (sample URL from documentation)');
-  console.warn('  For production, get your account-specific URL from: https://termii.com/dashboard > Settings > API Settings\n');
-}
-
 async function diagnoseAccount() {
   try {
     // Test 1: Check Account Balance

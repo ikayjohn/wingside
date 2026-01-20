@@ -29,15 +29,8 @@ if (!TERMII_API_KEY) {
   console.error('\n❌ ERROR: TERMII_API_KEY is not set in your environment variables.');
   console.error('\nPlease add this to your .env file:');
   console.error('  TERMII_API_KEY=your_api_key_here');
-  console.error('  SMS_PROVIDER=termii');
-  console.error('  TERMII_BASE_URL=https://your-account-specific-base-url.termii.com\n');
+  console.error('  SMS_PROVIDER=termii\n');
   process.exit(1);
-}
-
-if (!process.env.TERMII_BASE_URL) {
-  console.warn('\n⚠️  WARNING: TERMII_BASE_URL is not set.');
-  console.warn('  Using default: https://v3.api.termii.com (sample URL from documentation)');
-  console.warn('  For production, get your account-specific URL from: https://termii.com/dashboard > Settings > API Settings\n');
 }
 
 if (SMS_PROVIDER !== 'termii') {

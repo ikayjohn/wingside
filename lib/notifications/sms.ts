@@ -159,11 +159,12 @@ class AfricasTalkingProvider implements SMSProvider {
  * Environment variables needed:
  * - TERMII_API_KEY
  * - TERMII_SENDER_ID
- * - TERMII_BASE_URL (optional - defaults to sample URL, but should use account-specific URL from dashboard)
+ * - TERMII_BASE_URL (optional - defaults to https://v3.api.termii.com)
  *
- * IMPORTANT: Each Termii account has its own unique base URL.
- * Get your account-specific base URL from: https://termii.com/dashboard > Settings > API Settings
- * The default 'https://v3.api.termii.com' is a sample URL from documentation.
+ * Base URL Configuration:
+ * Most Termii accounts use https://v3.api.termii.com (the default).
+ * If your account uses a different base URL, set TERMII_BASE_URL.
+ * Get your base URL from: https://termii.com/dashboard > Settings > API Settings
  */
 class TermiiProvider implements SMSProvider {
   private apiKey: string;
@@ -173,15 +174,11 @@ class TermiiProvider implements SMSProvider {
   constructor() {
     this.apiKey = process.env.TERMII_API_KEY || '';
     this.senderId = process.env.TERMII_SENDER_ID || 'Wingside';
-    // Use account-specific base URL from environment, or fall back to sample URL
+    // Use account-specific base URL from environment, or fall back to default
     this.baseUrl = process.env.TERMII_BASE_URL || 'https://v3.api.termii.com';
 
     if (!this.apiKey) {
       console.warn('Termii not configured: Missing API key');
-    }
-
-    if (!process.env.TERMII_BASE_URL) {
-      console.warn('Termii: Using sample base URL. For production, set TERMII_BASE_URL to your account-specific URL from Termii dashboard.');
     }
   }
 
