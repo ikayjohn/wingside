@@ -137,6 +137,14 @@ async function testTermiiSMS() {
       } else if (data.message === 'Invalid phone number') {
         console.error('\n💡 The phone number might be invalid.');
         console.error(`   Formatted number: ${formattedPhone}\n`);
+      } else if (data.message === 'Country Inactive. Contact Administrator to activate country.') {
+        console.error('\n❌ COUNTRY NOT ACTIVATED');
+        console.error('  Your Termii account is valid, but NIGERIA is not activated.');
+        console.error('\n💡 TO FIX THIS:');
+        console.error('  1. Go to https://termii.com/dashboard');
+        console.error('  2. Navigate to Settings > Countries or Billing');
+        console.error('  3. Activate Nigeria as a country for SMS sending');
+        console.error('  4. Add funds to your Termii wallet if required\n');
       }
 
       process.exit(1);
