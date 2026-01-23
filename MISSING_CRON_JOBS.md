@@ -12,6 +12,11 @@
    - **Endpoint:** `/api/cron/expire-points`
    - **Status:** Code ready, pending VPS deployment
 
+3. **Promo Code Auto-Deactivation** ✅
+   - **Schedule:** Daily 4:00 AM
+   - **Endpoint:** `/api/cron/expire-promo-codes`
+   - **Status:** Code ready, pending VPS deployment
+
 ## ⚠️ Features That Need Cron Jobs
 
 ### 1. **Birthday Bonus** ⚠️ HIGH PRIORITY
@@ -68,30 +73,21 @@ WHERE birthday_day = EXTRACT(DAY FROM CURRENT_DATE)
 
 ---
 
-### 3. **Promo Code Auto-Deactivation** ⚠️ LOW PRIORITY
-**Current State:**
-- Promo codes have `valid_until` field
-- **Missing:** Automatic deactivation when expired
+### 3. **Promo Code Auto-Deactivation** ✅ IMPLEMENTED
+**Status:** Code complete, ready for VPS deployment
 
-**What's Needed:**
-- Daily cron job
-- Find promo codes where `valid_until < NOW()` AND `is_active = true`
-- Set `is_active = false`
+**What Was Implemented:**
+- ✅ Database migration: `20250128_add_promo_expiration.sql`
+- ✅ API endpoint: `/api/cron/expire-promo-codes` (POST and GET)
+- ✅ Cron script: `run-expire-promo-codes-cron.sh`
+- ✅ Database functions:
+  - `process_promo_expiration()` - Deactivates expired promo codes
+  - `get_expiring_promo_codes()` - For admin warning notifications
+- ✅ Setup guide: `SETUP_PROMO_EXPIRATION_CRON.md`
 
-**Implementation:**
-```bash
-# Create: app/api/cron/expire-promo-codes/route.ts
-# Schedule: 0 4 * * * (daily at 4:00 AM)
-```
+**Schedule:** Daily at 4:00 AM (`0 4 * * *`)
 
-**Query:**
-```sql
-UPDATE promo_codes
-SET is_active = false
-WHERE valid_until < NOW()
-  AND is_active = true
-RETURNING code, valid_until;
-```
+**Next Step:** Follow `SETUP_PROMO_EXPIRATION_CRON.md` to deploy on VPS
 
 ---
 
@@ -248,8 +244,8 @@ For each cron job:
 
 ## Current Status
 
-- ✅ 2/8 cron jobs implemented (25%)
+- ✅ 3/8 cron jobs implemented (37.5%)
 - ⚠️ 1/8 high priority missing (Birthday Bonuses)
-- 📊 5/8 optional but recommended
+- 📊 4/8 optional but recommended
 
-**Next Action:** Deploy Points Expiration to VPS, then implement Birthday Bonuses cron job.
+**Next Action:** Deploy Points Expiration and Promo Expiration to VPS, then implement Birthday Bonuses cron job.
