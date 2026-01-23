@@ -56,29 +56,25 @@ echo ""
 # Create the cron job script
 CRON_SCRIPT="$APP_DIR/run-tier-downgrade-cron.sh"
 
-cat > "$CRON_SCRIPT" << 'EOF'
+cat > "$CRON_SCRIPT" << 'CRONSCRIPT'
 #!/bin/bash
-# Tier Downgrade Cron Job
-# Auto-generated
+# Tier Downgrade Cron Job - Auto-generated
 
-# Change to app directory
 cd /var/www/wingside
 
-# Load environment variables from .env.production (skip comments and empty lines)
-set -a
-source <(grep -v '^#' .env.production | grep -v '^$' | sed 's/\r$//')
-set +a
+# Extract CRON_SECRET from .env.production
+CRON_SECRET=$(grep "^CRON_SECRET=" .env.production | cut -d '=' -f 2- | tr -d '\r')
 
-# Run the tier downgrade endpoint
+# Call the API
 curl -X POST "https://wingside.ng/api/cron/tier-downgrades" \
   -H "Authorization: Bearer $CRON_SECRET" \
   -H "Content-Type: application/json" \
-  -s -o /dev/null -w "HTTP Status: %{http_code}\n" \
+  -s -w "\nHTTP Status: %{http_code}\n" \
   >> /var/www/wingside/logs/tier-downgrades.log 2>&1
 
-# Log the execution
-echo "[$(date)] Tier downgrade cron executed" >> /var/www/wingside/logs/tier-downgrades.log
-EOF
+# Log execution
+echo "[$(date)] Tier downgrade cron executed - Exit: $?" >> /var/www/wingside/logs/tier-downgrades.log
+CRONSCRIPT
 
 chmod +x "$CRON_SCRIPT"
 echo "✅ Created cron script: $CRON_SCRIPT"
