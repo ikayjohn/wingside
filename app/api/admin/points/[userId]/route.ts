@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 // GET /api/admin/points/[userId] - Get detailed points information for a user (Admin only)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     const supabase = await createClient()
@@ -34,7 +34,7 @@ export async function GET(
       )
     }
 
-    const { userId } = params
+    const { userId } = await params
 
     if (!userId) {
       return NextResponse.json(
