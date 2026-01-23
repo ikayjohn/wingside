@@ -25,7 +25,7 @@ echo ""
 
 # Step 2: Install dependencies
 echo "2️⃣  Installing dependencies..."
-npm install --production
+npm ci
 echo "✅ Dependencies installed"
 echo ""
 
