@@ -722,8 +722,12 @@ export default function WingclubDashboard() {
                         <p className="font-semibold text-gray-900">₦{Number(order.total).toLocaleString()}</p>
                         <span className={`inline-block px-2 py-1 text-xs rounded-full ${
                           order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                          order.status === 'confirmed' ? 'bg-indigo-100 text-indigo-700' :
                           order.status === 'preparing' ? 'bg-blue-100 text-blue-700' :
                           order.status === 'out_for_delivery' ? 'bg-yellow-100 text-yellow-700' :
+                          order.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                          order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                          order.status === 'failed' ? 'bg-red-200 text-red-800' :
                           'bg-gray-100 text-gray-700'
                         }`}>
                           {order.status.replace('_', ' ').toUpperCase()}
@@ -831,6 +835,8 @@ export default function WingclubDashboard() {
           accountNumber={embedlyWallet.virtualAccount.accountNumber}
           accountName={embedlyWallet.name}
           bankName={embedlyWallet.virtualAccount.bankName}
+          currentBalance={embedlyWallet.availableBalance}
+          onRefreshBalance={fetchEmbedlyWallet}
         />
       )}
     </div>

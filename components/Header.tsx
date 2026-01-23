@@ -153,11 +153,7 @@ export default function Header() {
                 <div className="relative hidden sm:block" ref={dropdownRef}>
                   <button
                     onClick={() => setDashboardDropdownOpen(!dashboardDropdownOpen)}
-                    className={`header-dashboard-btn ${
-                      isHomepage && !isScrolled
-                        ? '!text-white hover:!text-gray-200'
-                        : ''
-                    }`}
+                    className="header-dashboard-btn"
                     aria-label="Toggle dashboard menu"
                     aria-expanded={dashboardDropdownOpen}
                     aria-haspopup="true"
