@@ -103,7 +103,8 @@ export default function AdminProductsPage() {
   const fetchProducts = async () => {
     try {
       // Add cache-busting header and timestamp for admin pages
-      const response = await fetch(`/api/products/?_t=${Date.now()}`, {
+      // Also request inactive products for management
+      const response = await fetch(`/api/products/?includeInactive=true&_t=${Date.now()}`, {
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache',
@@ -472,11 +473,10 @@ export default function AdminProductsPage() {
       <div className="mb-6 flex gap-2 overflow-x-auto">
         <button
           onClick={() => setSelectedCategory('all')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
-            selectedCategory === 'all'
+          className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${selectedCategory === 'all'
               ? 'bg-yellow-400 text-black'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
+            }`}
         >
           All ({products.length})
         </button>
@@ -486,11 +486,10 @@ export default function AdminProductsPage() {
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.name)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
-                selectedCategory === category.name
+              className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${selectedCategory === category.name
                   ? 'bg-yellow-400 text-black'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               {category.name} ({count})
             </button>
@@ -572,11 +571,10 @@ export default function AdminProductsPage() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
-                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      product.is_active
+                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.is_active
                         ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'
-                    }`}
+                      }`}
                   >
                     {product.is_active ? 'Active' : 'Inactive'}
                   </span>

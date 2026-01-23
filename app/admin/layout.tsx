@@ -62,6 +62,7 @@ export default function AdminLayout({
       children: [
         { href: '/admin/orders', label: 'Orders' },
         { href: '/admin/products', label: 'Products' },
+        { href: '/admin/categories', label: 'Categories' },
         { href: '/admin/flavors', label: 'Flavors' },
         { href: '/admin/delivery-areas', label: 'Delivery Areas' },
         { href: '/admin/promo-codes', label: 'Promo Codes' },
@@ -159,8 +160,8 @@ export default function AdminLayout({
                       ${item.label === 'WingCommerce'
                         ? 'bg-[#FFFDE7] text-gray-900 hover:bg-[#FFF9C4] font-extrabold'
                         : hasActiveChild
-                        ? 'bg-[#552627] text-white font-semibold shadow-md'
-                        : 'text-gray-700 hover:bg-gray-100 hover:text-[#552627]'
+                          ? 'bg-[#552627] text-white font-semibold shadow-md'
+                          : 'text-gray-700 hover:bg-gray-100 hover:text-[#552627]'
                       }
                     `}
                   >

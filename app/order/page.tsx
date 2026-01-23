@@ -39,7 +39,7 @@ interface Product {
   description?: string;
 }
 
-const wingCafeSubcategories = [
+const defaultWingCafeSubcategories = [
   'Coffee Classics',
   'Everyday Sips',
   'Toasted & Spiced Lattes',
@@ -72,7 +72,11 @@ export default function OrderPage() {
   const [countdown, setCountdown] = useState<{ hours: number; minutes: number } | null>(null);
   const [autoCloseEnabled, setAutoCloseEnabled] = useState(false);
 
-  const categories = ['Wings', 'Sides', 'Sandwiches', 'Wraps', 'Salads', 'Wing Cafe', 'Pastries', 'Wingside Special', 'Drinks', 'Meal Deals', 'Kids'];
+  const [apiCategories, setApiCategories] = useState<any[]>([]);
+
+  const categories = apiCategories.length > 0
+    ? apiCategories.map(c => c.name)
+    : ['Wings', 'Sides', 'Sandwiches', 'Wraps', 'Salads', 'Wing Cafe', 'Pastries', 'Wingside Special', 'Drinks', 'Meal Deals', 'Kids'];
 
   // Flavor category mapping
   const flavorCategories = {
@@ -141,9 +145,23 @@ export default function OrderPage() {
     }
   }, []);
 
+  // Fetch categories from API
+  const fetchCategories = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/categories?_t=${Date.now()}`);
+      const data = await response.json();
+      if (data.categories) {
+        setApiCategories(data.categories);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchProducts();
-  }, [fetchProducts]);
+    fetchCategories();
+  }, [fetchProducts, fetchCategories]);
 
   // Check if orders are currently accepted
   const checkOrderStatus = useCallback(async () => {
@@ -180,6 +198,28 @@ export default function OrderPage() {
       return true;
     })
     .sort((a, b) => {
+      // Custom generic sorting for Sides
+      if (activeCategory === 'Sides') {
+        const sidesOrder = [
+          'Potato Wedges',
+          'French Fries',
+          'Fried Plantain',
+          'Fiesta Rice',
+          'Bacon Coconut Rice',
+          'Jollof Rice'
+        ];
+        const indexA = sidesOrder.indexOf(a.name);
+        const indexB = sidesOrder.indexOf(b.name);
+
+        // If both are in the list, sort by index
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+        // If only A is in list, it comes first
+        if (indexA !== -1) return -1;
+        // If only B is in list, it comes first
+        if (indexB !== -1) return 1;
+        // If neither, fall back to price sorting
+      }
+
       // Get the lowest price for each product
       const minPriceA = Math.min(...a.sizes.map(s => s.price));
       const minPriceB = Math.min(...b.sizes.map(s => s.price));
@@ -188,12 +228,16 @@ export default function OrderPage() {
 
   // Reset subcategory when changing main category
   useEffect(() => {
-    if (activeCategory === 'Wing Cafe' && !activeSubcategory) {
-      setActiveSubcategory(wingCafeSubcategories[0]);
-    } else if (activeCategory !== 'Wing Cafe') {
+    const activeCatData = apiCategories.find(c => c.name === activeCategory);
+    const subCats = activeCatData?.subcategories?.map((s: any) => s.name) ||
+      (activeCategory === 'Wing Cafe' ? defaultWingCafeSubcategories : []);
+
+    if (subCats.length > 0 && (!activeSubcategory || !subCats.includes(activeSubcategory))) {
+      setActiveSubcategory(subCats[0]);
+    } else if (subCats.length === 0) {
       setActiveSubcategory('');
     }
-  }, [activeCategory, activeSubcategory]);
+  }, [activeCategory, apiCategories]);
 
   const handleFlavorCategorySelect = (productId: string, category: string) => {
     setSelectedFlavorCategory(prev => ({
@@ -390,12 +434,12 @@ export default function OrderPage() {
         const itemDrinkKey = Array.isArray(item.drink) ? item.drink.join(',') : item.drink;
 
         return item.id === product.id &&
-               itemFlavorKey === flavorKey &&
-               item.size === size &&
-               itemRiceKey === riceKey &&
-               itemDrinkKey === drinkKey &&
-               item.milkshake === milkshake &&
-               item.cake === cake;
+          itemFlavorKey === flavorKey &&
+          item.size === size &&
+          itemRiceKey === riceKey &&
+          itemDrinkKey === drinkKey &&
+          item.milkshake === milkshake &&
+          item.cake === cake;
       }
     );
 
@@ -485,22 +529,30 @@ export default function OrderPage() {
         </div>
       </section>
 
-      {/* Wing Cafe Subcategory Tabs */}
-      {activeCategory === 'Wing Cafe' && (
-        <section className="px-4 md:px-8 lg:px-16 mb-4">
-          <div className="flex gap-2 md:gap-3 overflow-x-auto pb-4 scrollbar-hide">
-            {wingCafeSubcategories.map((subcat) => (
-              <button
-                key={subcat}
-                onClick={() => setActiveSubcategory(subcat)}
-                className={`order-flavor-btn ${activeSubcategory === subcat ? 'active' : ''}`}
-              >
-                {subcat}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Subcategory Tabs (Dynamic) */}
+      {(() => {
+        const activeCatData = apiCategories.find(c => c.name === activeCategory);
+        const subCats = activeCatData?.subcategories?.map((s: any) => s.name) ||
+          (activeCategory === 'Wing Cafe' ? defaultWingCafeSubcategories : []);
+
+        if (subCats.length === 0) return null;
+
+        return (
+          <section className="px-4 md:px-8 lg:px-16 mb-4">
+            <div className="flex gap-2 md:gap-3 overflow-x-auto pb-4 scrollbar-hide">
+              {subCats.map((subcat: string) => (
+                <button
+                  key={subcat}
+                  onClick={() => setActiveSubcategory(subcat)}
+                  className={`order-flavor-btn ${activeSubcategory === subcat ? 'active' : ''}`}
+                >
+                  {subcat}
+                </button>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* Products and Cart Grid */}
       <section className="px-4 md:px-8 lg:px-16 py-8">
@@ -518,365 +570,365 @@ export default function OrderPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredProducts.map((product) => (
-                <div key={product.id} className="order-product-card">
-                  {/* Product Image */}
-                  <div className="relative mb-4">
-                    {product.badge && (
-                      <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded">
-                        {product.badge}
-                      </span>
-                    )}
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full aspect-[4/3] object-cover rounded-lg"
-                    />
-                  </div>
+                  <div key={product.id} className="order-product-card">
+                    {/* Product Image */}
+                    <div className="relative mb-4">
+                      {product.badge && (
+                        <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded">
+                          {product.badge}
+                        </span>
+                      )}
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-full aspect-[4/3] object-cover rounded-lg"
+                      />
+                    </div>
 
-                  {/* Product Name */}
-                  <div className="mb-3">
-                    <h3 className="font-bold text-lg">{product.name}</h3>
-                    {product.wingCount && (
-                      <p className="text-sm font-normal text-gray-600">{product.wingCount}</p>
-                    )}
-                  </div>
-
-                  {/* Select Flavor */}
-                  {(product.flavors.length > 1 || (product.flavorCount && product.flavorCount > 1)) && (
-                    <div className="mb-4">
-                      {/* Category-based selection for products with many flavor options */}
-                      {product.flavors.length >= 10 ? (
-                        <>
-                          <div className="mb-2">
-                            <p className="text-sm font-semibold text-gray-700">
-                              Select Flavor Category
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Choose a category to see available flavors
-                            </p>
-                          </div>
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            {Object.keys(flavorCategories).map((category) => {
-                              const isOpen = selectedFlavorCategory[product.id] === category;
-                              const hasSelectedFlavors = categoryHasSelectedFlavors(product.id, category);
-                              return (
-                                <button
-                                  key={category}
-                                  onClick={() => handleFlavorCategorySelect(product.id, category)}
-                                  className={`order-flavor-btn ${isOpen ? 'active' : ''} flex items-center gap-1`}
-                                  style={hasSelectedFlavors && !isOpen ? { backgroundColor: '#FEF3C7' } : undefined}
-                                >
-                                  <span>{category}</span>
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="14"
-                                    height="14"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    style={{
-                                      transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                                      transition: 'transform 0.2s ease'
-                                    }}
-                                  >
-                                    <polyline points="6 9 12 15 18 9"></polyline>
-                                  </svg>
-                                </button>
-                              );
-                            })}
-                          </div>
-
-                          {/* Show flavors dropdown when category is selected */}
-                          {selectedFlavorCategory[product.id] && (
-                            <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                              <p className="text-xs font-semibold text-gray-700 mb-2">
-                                {selectedFlavorCategory[product.id]} Flavors:
-                              </p>
-                              <div className="flex flex-wrap gap-2">
-                                {flavorCategories[selectedFlavorCategory[product.id] as keyof typeof flavorCategories].map((flavor) => {
-                                  const selectedCount = (selectedFlavors[product.id] || []).filter(f => f === flavor).length;
-                                  const isSelected = selectedCount > 0;
-
-                                  return (
-                                    <div key={flavor} className="relative inline-flex items-center gap-1">
-                                      <button
-                                        onClick={() => handleFlavorSelect(product.id, flavor, product.flavorCount || 1)}
-                                        className={`order-flavor-btn ${isSelected ? 'active' : ''}`}
-                                      >
-                                        {flavor}
-                                        {selectedCount > 1 && (
-                                          <span className="ml-1.5 text-xs font-bold bg-yellow-500 text-black rounded-full px-1.5 py-0.5 min-w-[20px] inline-block text-center">
-                                            {selectedCount}
-                                          </span>
-                                        )}
-                                      </button>
-                                      {isSelected && (product.flavorCount && product.flavorCount > 1) && (
-                                        <button
-                                          onClick={() => handleFlavorRemove(product.id, flavor)}
-                                          className="text-gray-400 hover:text-red-500 transition-colors"
-                                          aria-label="Remove one"
-                                        >
-                                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <circle cx="12" cy="12" r="10"></circle>
-                                            <line x1="8" y1="12" x2="16" y2="12"></line>
-                                          </svg>
-                                        </button>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        /* Default flavor selection for other products */
-                        <>
-                          <div className="mb-2">
-                            <p className="text-sm font-semibold text-gray-700">
-                              {product.flavorLabel || `Select Flavor${product.flavorCount && product.flavorCount > 1 ? 's' : ''}`}
-                            </p>
-                            {product.flavorCount && product.flavorCount > 1 && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                Pick {product.flavorCount} - mix & match as you like! ({(selectedFlavors[product.id] || []).length}/{product.flavorCount})
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {product.flavors.map((flavor) => {
-                              const selectedCount = (selectedFlavors[product.id] || []).filter(f => f === flavor).length;
-                              const isSelected = selectedCount > 0;
-
-                              return (
-                                <div key={flavor} className="relative inline-flex items-center gap-1">
-                                  <button
-                                    onClick={() => handleFlavorSelect(product.id, flavor, product.flavorCount || 1)}
-                                    className={`order-flavor-btn ${isSelected ? 'active' : ''}`}
-                                  >
-                                    {flavor}
-                                    {selectedCount > 1 && (
-                                      <span className="ml-1.5 text-xs font-bold bg-yellow-500 text-black rounded-full px-1.5 py-0.5 min-w-[20px] inline-block text-center">
-                                        {selectedCount}
-                                      </span>
-                                    )}
-                                  </button>
-                                  {isSelected && (product.flavorCount && product.flavorCount > 1) && (
-                                    <button
-                                      onClick={() => handleFlavorRemove(product.id, flavor)}
-                                      className="text-gray-400 hover:text-red-500 transition-colors"
-                                      aria-label="Remove one"
-                                    >
-                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <line x1="8" y1="12" x2="16" y2="12"></line>
-                                      </svg>
-                                    </button>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </>
+                    {/* Product Name */}
+                    <div className="mb-3">
+                      <h3 className="font-bold text-lg">{product.name}</h3>
+                      {product.wingCount && (
+                        <p className="text-sm font-normal text-gray-600">{product.wingCount}</p>
                       )}
                     </div>
-                  )}
 
-                  {/* Size */}
-                  {product.sizes.length > 1 && (
-                    <div className="mb-4">
-                      <p className="text-sm font-semibold text-gray-700 mb-2">Size:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {product.sizes.map((size) => (
-                          <button
-                            key={size.name}
-                            onClick={() => handleSizeSelect(product.id, size.name)}
-                            className={`order-size-btn ${(selectedSizes[product.id]) === size.name ? 'active' : ''}`}
-                          >
-                            {size.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                    {/* Select Flavor */}
+                    {(product.flavors.length > 1 || (product.flavorCount && product.flavorCount > 1)) && (
+                      <div className="mb-4">
+                        {/* Category-based selection for products with many flavor options */}
+                        {product.flavors.length >= 10 ? (
+                          <>
+                            <div className="mb-2">
+                              <p className="text-sm font-semibold text-gray-700">
+                                Select Flavor Category
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Choose a category to see available flavors
+                              </p>
+                            </div>
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              {Object.keys(flavorCategories).map((category) => {
+                                const isOpen = selectedFlavorCategory[product.id] === category;
+                                const hasSelectedFlavors = categoryHasSelectedFlavors(product.id, category);
+                                return (
+                                  <button
+                                    key={category}
+                                    onClick={() => handleFlavorCategorySelect(product.id, category)}
+                                    className={`order-flavor-btn ${isOpen ? 'active' : ''} flex items-center gap-1`}
+                                    style={hasSelectedFlavors && !isOpen ? { backgroundColor: '#FEF3C7' } : undefined}
+                                  >
+                                    <span>{category}</span>
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="14"
+                                      height="14"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      style={{
+                                        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                        transition: 'transform 0.2s ease'
+                                      }}
+                                    >
+                                      <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                  </button>
+                                );
+                              })}
+                            </div>
 
-                  {/* Rice Selection */}
-                  {product.riceOptions && product.riceOptions.length > 0 && (
-                    <div className="mb-4">
-                      <div className="mb-2">
-                        <p className="text-sm font-semibold text-gray-700">Choose Your Rice:</p>
-                        {product.riceCount && product.riceCount > 1 && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            Pick {product.riceCount} - mix & match as you like! ({Array.isArray(selectedRice[product.id]) ? selectedRice[product.id].length : (selectedRice[product.id] ? 1 : 0)}/{product.riceCount})
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {product.riceOptions.map((rice) => {
-                          const current: string[] = Array.isArray(selectedRice[product.id]) ? selectedRice[product.id] : [];
-                          const selectedCount = current.filter((r: string) => r === rice.name).length;
-                          const isSelected = selectedCount > 0;
-                          const isSingleSelect = !product.riceCount || product.riceCount === 1;
+                            {/* Show flavors dropdown when category is selected */}
+                            {selectedFlavorCategory[product.id] && (
+                              <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <p className="text-xs font-semibold text-gray-700 mb-2">
+                                  {selectedFlavorCategory[product.id]} Flavors:
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                  {flavorCategories[selectedFlavorCategory[product.id] as keyof typeof flavorCategories].map((flavor) => {
+                                    const selectedCount = (selectedFlavors[product.id] || []).filter(f => f === flavor).length;
+                                    const isSelected = selectedCount > 0;
 
-                          return (
-                            <div key={rice.name} className="relative inline-flex items-center gap-1">
-                              <button
-                                onClick={() => handleRiceSelect(product.id, rice.name, product.riceCount || 1)}
-                                className={`order-size-btn ${isSingleSelect ? ((selectedRice[product.id] && selectedRice[product.id][0]) === rice.name ? 'active' : '') : (isSelected ? 'active' : '')}`}
-                              >
-                                {rice.name}
-                                {rice.price > 0 && <span className="text-xs ml-1">(+₦{rice.price})</span>}
-                                {selectedCount > 1 && (
-                                  <span className="ml-1.5 text-xs font-bold bg-yellow-500 text-black rounded-full px-1.5 py-0.5 min-w-[20px] inline-block text-center">
-                                    {selectedCount}
-                                  </span>
-                                )}
-                              </button>
-                              {isSelected && product.riceCount && product.riceCount > 1 && (
-                                <button
-                                  onClick={() => handleRiceRemove(product.id, rice.name)}
-                                  className="text-gray-400 hover:text-red-500 transition-colors"
-                                  aria-label="Remove one"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="8" y1="12" x2="16" y2="12"></line>
-                                  </svg>
-                                </button>
+                                    return (
+                                      <div key={flavor} className="relative inline-flex items-center gap-1">
+                                        <button
+                                          onClick={() => handleFlavorSelect(product.id, flavor, product.flavorCount || 1)}
+                                          className={`order-flavor-btn ${isSelected ? 'active' : ''}`}
+                                        >
+                                          {flavor}
+                                          {selectedCount > 1 && (
+                                            <span className="ml-1.5 text-xs font-bold bg-yellow-500 text-black rounded-full px-1.5 py-0.5 min-w-[20px] inline-block text-center">
+                                              {selectedCount}
+                                            </span>
+                                          )}
+                                        </button>
+                                        {isSelected && (product.flavorCount && product.flavorCount > 1) && (
+                                          <button
+                                            onClick={() => handleFlavorRemove(product.id, flavor)}
+                                            className="text-gray-400 hover:text-red-500 transition-colors"
+                                            aria-label="Remove one"
+                                          >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                              <circle cx="12" cy="12" r="10"></circle>
+                                              <line x1="8" y1="12" x2="16" y2="12"></line>
+                                            </svg>
+                                          </button>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          /* Default flavor selection for other products */
+                          <>
+                            <div className="mb-2">
+                              <p className="text-sm font-semibold text-gray-700">
+                                {product.flavorLabel || `Select Flavor${product.flavorCount && product.flavorCount > 1 ? 's' : ''}`}
+                              </p>
+                              {product.flavorCount && product.flavorCount > 1 && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Pick {product.flavorCount} - mix & match as you like! ({(selectedFlavors[product.id] || []).length}/{product.flavorCount})
+                                </p>
                               )}
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                            <div className="flex flex-wrap gap-2">
+                              {product.flavors.map((flavor) => {
+                                const selectedCount = (selectedFlavors[product.id] || []).filter(f => f === flavor).length;
+                                const isSelected = selectedCount > 0;
 
-                  {/* Drink Selection */}
-                  {product.drinkOptions && product.drinkOptions.length > 0 && (
-                    <div className="mb-4">
-                      <div className="mb-2">
-                        <p className="text-sm font-semibold text-gray-700">Choose Your Drink:</p>
-                        {product.drinkCount && product.drinkCount > 1 && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            Pick {product.drinkCount} - mix & match as you like! ({Array.isArray(selectedDrinks[product.id]) ? selectedDrinks[product.id].length : (selectedDrinks[product.id] ? 1 : 0)}/{product.drinkCount})
-                          </p>
+                                return (
+                                  <div key={flavor} className="relative inline-flex items-center gap-1">
+                                    <button
+                                      onClick={() => handleFlavorSelect(product.id, flavor, product.flavorCount || 1)}
+                                      className={`order-flavor-btn ${isSelected ? 'active' : ''}`}
+                                    >
+                                      {flavor}
+                                      {selectedCount > 1 && (
+                                        <span className="ml-1.5 text-xs font-bold bg-yellow-500 text-black rounded-full px-1.5 py-0.5 min-w-[20px] inline-block text-center">
+                                          {selectedCount}
+                                        </span>
+                                      )}
+                                    </button>
+                                    {isSelected && (product.flavorCount && product.flavorCount > 1) && (
+                                      <button
+                                        onClick={() => handleFlavorRemove(product.id, flavor)}
+                                        className="text-gray-400 hover:text-red-500 transition-colors"
+                                        aria-label="Remove one"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <circle cx="12" cy="12" r="10"></circle>
+                                          <line x1="8" y1="12" x2="16" y2="12"></line>
+                                        </svg>
+                                      </button>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </>
                         )}
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {product.drinkOptions.map((drink) => {
-                          const current: string[] = Array.isArray(selectedDrinks[product.id]) ? selectedDrinks[product.id] : [];
-                          const selectedCount = current.filter((d: string) => d === drink).length;
-                          const isSelected = selectedCount > 0;
-                          const isSingleSelect = !product.drinkCount || product.drinkCount === 1;
+                    )}
 
-                          return (
-                            <div key={drink} className="relative inline-flex items-center gap-1">
-                              <button
-                                onClick={() => handleDrinkSelect(product.id, drink, product.drinkCount || 1)}
-                                className={`order-size-btn ${isSingleSelect ? (selectedDrinks[product.id] && selectedDrinks[product.id][0] === drink ? 'active' : '') : (isSelected ? 'active' : '')}`}
-                              >
-                                {drink}
-                                {selectedCount > 1 && (
-                                  <span className="ml-1.5 text-xs font-bold bg-yellow-500 text-black rounded-full px-1.5 py-0.5 min-w-[20px] inline-block text-center">
-                                    {selectedCount}
-                                  </span>
-                                )}
-                              </button>
-                              {isSelected && product.drinkCount && product.drinkCount > 1 && (
+                    {/* Size */}
+                    {product.sizes.length > 1 && (
+                      <div className="mb-4">
+                        <p className="text-sm font-semibold text-gray-700 mb-2">Size:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {product.sizes.map((size) => (
+                            <button
+                              key={size.name}
+                              onClick={() => handleSizeSelect(product.id, size.name)}
+                              className={`order-size-btn ${(selectedSizes[product.id]) === size.name ? 'active' : ''}`}
+                            >
+                              {size.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Rice Selection */}
+                    {product.riceOptions && product.riceOptions.length > 0 && (
+                      <div className="mb-4">
+                        <div className="mb-2">
+                          <p className="text-sm font-semibold text-gray-700">Choose Your Rice:</p>
+                          {product.riceCount && product.riceCount > 1 && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Pick {product.riceCount} - mix & match as you like! ({Array.isArray(selectedRice[product.id]) ? selectedRice[product.id].length : (selectedRice[product.id] ? 1 : 0)}/{product.riceCount})
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {product.riceOptions.map((rice) => {
+                            const current: string[] = Array.isArray(selectedRice[product.id]) ? selectedRice[product.id] : [];
+                            const selectedCount = current.filter((r: string) => r === rice.name).length;
+                            const isSelected = selectedCount > 0;
+                            const isSingleSelect = !product.riceCount || product.riceCount === 1;
+
+                            return (
+                              <div key={rice.name} className="relative inline-flex items-center gap-1">
                                 <button
-                                  onClick={() => handleDrinkRemove(product.id, drink)}
-                                  className="text-gray-400 hover:text-red-500 transition-colors"
-                                  aria-label="Remove one"
+                                  onClick={() => handleRiceSelect(product.id, rice.name, product.riceCount || 1)}
+                                  className={`order-size-btn ${isSingleSelect ? ((selectedRice[product.id] && selectedRice[product.id][0]) === rice.name ? 'active' : '') : (isSelected ? 'active' : '')}`}
                                 >
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="8" y1="12" x2="16" y2="12"></line>
-                                  </svg>
+                                  {rice.name}
+                                  {rice.price > 0 && <span className="text-xs ml-1">(+₦{rice.price})</span>}
+                                  {selectedCount > 1 && (
+                                    <span className="ml-1.5 text-xs font-bold bg-yellow-500 text-black rounded-full px-1.5 py-0.5 min-w-[20px] inline-block text-center">
+                                      {selectedCount}
+                                    </span>
+                                  )}
                                 </button>
-                              )}
-                            </div>
-                          );
-                        })}
+                                {isSelected && product.riceCount && product.riceCount > 1 && (
+                                  <button
+                                    onClick={() => handleRiceRemove(product.id, rice.name)}
+                                    className="text-gray-400 hover:text-red-500 transition-colors"
+                                    aria-label="Remove one"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <circle cx="12" cy="12" r="10"></circle>
+                                      <line x1="8" y1="12" x2="16" y2="12"></line>
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Drink Selection */}
+                    {product.drinkOptions && product.drinkOptions.length > 0 && (
+                      <div className="mb-4">
+                        <div className="mb-2">
+                          <p className="text-sm font-semibold text-gray-700">Choose Your Drink:</p>
+                          {product.drinkCount && product.drinkCount > 1 && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Pick {product.drinkCount} - mix & match as you like! ({Array.isArray(selectedDrinks[product.id]) ? selectedDrinks[product.id].length : (selectedDrinks[product.id] ? 1 : 0)}/{product.drinkCount})
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {product.drinkOptions.map((drink) => {
+                            const current: string[] = Array.isArray(selectedDrinks[product.id]) ? selectedDrinks[product.id] : [];
+                            const selectedCount = current.filter((d: string) => d === drink).length;
+                            const isSelected = selectedCount > 0;
+                            const isSingleSelect = !product.drinkCount || product.drinkCount === 1;
+
+                            return (
+                              <div key={drink} className="relative inline-flex items-center gap-1">
+                                <button
+                                  onClick={() => handleDrinkSelect(product.id, drink, product.drinkCount || 1)}
+                                  className={`order-size-btn ${isSingleSelect ? (selectedDrinks[product.id] && selectedDrinks[product.id][0] === drink ? 'active' : '') : (isSelected ? 'active' : '')}`}
+                                >
+                                  {drink}
+                                  {selectedCount > 1 && (
+                                    <span className="ml-1.5 text-xs font-bold bg-yellow-500 text-black rounded-full px-1.5 py-0.5 min-w-[20px] inline-block text-center">
+                                      {selectedCount}
+                                    </span>
+                                  )}
+                                </button>
+                                {isSelected && product.drinkCount && product.drinkCount > 1 && (
+                                  <button
+                                    onClick={() => handleDrinkRemove(product.id, drink)}
+                                    className="text-gray-400 hover:text-red-500 transition-colors"
+                                    aria-label="Remove one"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <circle cx="12" cy="12" r="10"></circle>
+                                      <line x1="8" y1="12" x2="16" y2="12"></line>
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Milkshake Selection */}
+                    {product.milkshakeOptions && product.milkshakeOptions.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-sm font-semibold text-gray-700 mb-2">Choose Your Milkshake:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {product.milkshakeOptions.map((milkshake) => (
+                            <button
+                              key={milkshake}
+                              onClick={() => handleMilkshakeSelect(product.id, milkshake)}
+                              className={`order-size-btn ${selectedMilkshakes[product.id] === milkshake ? 'active' : ''}`}
+                            >
+                              {milkshake}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Cake Selection */}
+                    {product.cakeOptions && product.cakeOptions.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-sm font-semibold text-gray-700 mb-2">Choose Your Cake Slice:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {product.cakeOptions.map((cake) => (
+                            <button
+                              key={cake}
+                              onClick={() => handleCakeSelect(product.id, cake)}
+                              className={`order-size-btn ${selectedCakes[product.id] === cake ? 'active' : ''}`}
+                            >
+                              {cake}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Price and Quantity */}
+                    <div className="flex items-center justify-between mb-4 mt-[30px]">
+                      <span className="text-xl font-bold">{formatPrice(getProductPrice(product))}</span>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => handleQuantityChange(product.id, -1)}
+                          className="order-qty-btn"
+                        >
+                          −
+                        </button>
+                        <span className="font-semibold w-6 text-center">{quantities[product.id] || 1}</span>
+                        <button
+                          onClick={() => handleQuantityChange(product.id, 1)}
+                          className="order-qty-btn order-qty-btn-plus"
+                        >
+                          +
+                        </button>
                       </div>
                     </div>
-                  )}
 
-                  {/* Milkshake Selection */}
-                  {product.milkshakeOptions && product.milkshakeOptions.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-sm font-semibold text-gray-700 mb-2">Choose Your Milkshake:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {product.milkshakeOptions.map((milkshake) => (
-                          <button
-                            key={milkshake}
-                            onClick={() => handleMilkshakeSelect(product.id, milkshake)}
-                            className={`order-size-btn ${selectedMilkshakes[product.id] === milkshake ? 'active' : ''}`}
-                          >
-                            {milkshake}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Cake Selection */}
-                  {product.cakeOptions && product.cakeOptions.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-sm font-semibold text-gray-700 mb-2">Choose Your Cake Slice:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {product.cakeOptions.map((cake) => (
-                          <button
-                            key={cake}
-                            onClick={() => handleCakeSelect(product.id, cake)}
-                            className={`order-size-btn ${selectedCakes[product.id] === cake ? 'active' : ''}`}
-                          >
-                            {cake}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Price and Quantity */}
-                  <div className="flex items-center justify-between mb-4 mt-[30px]">
-                    <span className="text-xl font-bold">{formatPrice(getProductPrice(product))}</span>
-                    <div className="flex items-center gap-3">
-                      <button 
-                        onClick={() => handleQuantityChange(product.id, -1)}
-                        className="order-qty-btn"
-                      >
-                        −
-                      </button>
-                      <span className="font-semibold w-6 text-center">{quantities[product.id] || 1}</span>
-                      <button 
-                        onClick={() => handleQuantityChange(product.id, 1)}
-                        className="order-qty-btn order-qty-btn-plus"
-                      >
-                        +
-                      </button>
-                    </div>
+                    {/* Add Button */}
+                    <button
+                      onClick={() => addToCart(product)}
+                      className="order-add-btn mt-[20px]"
+                    >
+                      Add
+                    </button>
                   </div>
-
-                  {/* Add Button */}
-                  <button
-                    onClick={() => addToCart(product)}
-                    className="order-add-btn mt-[20px]"
-                  >
-                    Add
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Cart Sidebar */}
           <div className="lg:w-80">
             <div className="order-cart-card sticky top-4">
               <h3 className="font-bold text-lg mb-4">Your Cart</h3>
-              
+
               {cart.length === 0 ? (
                 <p className="text-gray-500 text-sm mb-6">
                   Your cart is empty… but your cravings aren’t!

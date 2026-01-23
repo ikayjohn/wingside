@@ -15,9 +15,10 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
+    const includeInactive = searchParams.get('includeInactive') === 'true'
     const cacheKey = category
       ? CACHE_KEYS.PRODUCTS_BY_CATEGORY(category)
-      : CACHE_KEYS.PRODUCTS
+      : (includeInactive ? 'products_all' : CACHE_KEYS.PRODUCTS)
 
     // Check for cache-busting headers
     const cacheControl = request.headers.get('cache-control')
@@ -79,8 +80,12 @@ export async function GET(request: NextRequest) {
         sizes:product_sizes(*),
         addons:product_addons(*)
       `)
-      .eq('is_active', true)
       .order('created_at', { ascending: false })
+
+    // Filter by active status unless requested otherwise
+    if (!includeInactive) {
+      query = query.eq('is_active', true)
+    }
 
     // Filter by category if provided
     if (category) {
