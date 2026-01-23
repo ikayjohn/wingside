@@ -159,6 +159,16 @@ export default function CustomerDetailsPage() {
   const [syncMessage, setSyncMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [deletingCustomer, setDeletingCustomer] = useState(false);
 
+  // Points Management State
+  const [showPointsManagement, setShowPointsManagement] = useState(false);
+  const [pointsDetails, setPointsDetails] = useState<any>(null);
+  const [loadingPointsDetails, setLoadingPointsDetails] = useState(false);
+  const [pointsAction, setPointsAction] = useState<'award' | 'deduct'>('award');
+  const [pointsAmount, setPointsAmount] = useState('');
+  const [pointsReason, setPointsReason] = useState('');
+  const [processingPoints, setProcessingPoints] = useState(false);
+  const [pointsMessage, setPointsMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   const fetchCustomerDetails = useCallback(async () => {
     try {
       setLoading(true);
@@ -302,6 +312,99 @@ export default function CustomerDetailsPage() {
     } finally {
       setDeletingCustomer(false);
     }
+  }
+
+  async function fetchPointsDetails() {
+    try {
+      setLoadingPointsDetails(true);
+      const res = await fetch(`/api/admin/points/${customerId}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error('Failed to fetch points details:', data.error);
+        return;
+      }
+
+      setPointsDetails(data);
+    } catch (error) {
+      console.error('Error fetching points details:', error);
+    } finally {
+      setLoadingPointsDetails(false);
+    }
+  }
+
+  async function handlePointsSubmit(e: React.FormEvent) {
+    e.preventDefault();
+
+    const amount = parseInt(pointsAmount);
+    if (!amount || amount <= 0) {
+      setPointsMessage({ type: 'error', text: 'Please enter a valid points amount' });
+      return;
+    }
+
+    if (!pointsReason.trim()) {
+      setPointsMessage({ type: 'error', text: 'Please provide a reason' });
+      return;
+    }
+
+    try {
+      setProcessingPoints(true);
+      setPointsMessage(null);
+
+      const endpoint = pointsAction === 'award'
+        ? '/api/admin/points/award'
+        : '/api/admin/points/deduct';
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: customerId,
+          points: amount,
+          reason: pointsReason,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setPointsMessage({ type: 'error', text: data.error || `Failed to ${pointsAction} points` });
+        return;
+      }
+
+      setPointsMessage({
+        type: 'success',
+        text: `Successfully ${pointsAction === 'award' ? 'awarded' : 'deducted'} ${amount} points!`
+      });
+
+      // Reset form
+      setPointsAmount('');
+      setPointsReason('');
+
+      // Refresh points details and customer info
+      await fetchPointsDetails();
+      await fetchCustomerDetails();
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setPointsMessage(null), 3000);
+    } catch (error) {
+      console.error('Points operation error:', error);
+      setPointsMessage({ type: 'error', text: 'An error occurred' });
+    } finally {
+      setProcessingPoints(false);
+    }
+  }
+
+  function openPointsManagement() {
+    setShowPointsManagement(true);
+    fetchPointsDetails();
+  }
+
+  function closePointsManagement() {
+    setShowPointsManagement(false);
+    setPointsAmount('');
+    setPointsReason('');
+    setPointsMessage(null);
   }
 
   const exportOrdersToCSV = useCallback(async () => {
@@ -703,6 +806,207 @@ export default function CustomerDetailsPage() {
             </div>
           </div>
         )}
+
+        {/* Points Management Section */}
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-lg p-6 border-2 border-purple-200">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-[#552627] flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-600">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
+                <path d="M12 18V6"></path>
+              </svg>
+              Points Management
+            </h3>
+            {!showPointsManagement && (
+              <button
+                onClick={openPointsManagement}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
+              >
+                Manage Points
+              </button>
+            )}
+          </div>
+
+          {!showPointsManagement ? (
+            <div className="bg-white rounded-lg p-4">
+              <div className="text-center">
+                <p className="text-gray-600 mb-2">Current Balance</p>
+                <p className="text-3xl font-bold text-purple-600">
+                  {customer.loyalty_points?.toLocaleString() || 0} pts
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Tier: <span className="font-medium">{getTierStatus(customer.loyalty_points)}</span>
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="bg-white rounded-lg p-4 flex-1">
+                  <p className="text-sm text-gray-600 mb-1">Current Balance</p>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {pointsDetails?.totalPoints?.toLocaleString() || customer.loyalty_points?.toLocaleString() || 0} pts
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Tier: {getTierStatus(pointsDetails?.totalPoints || customer.loyalty_points)}
+                  </p>
+                </div>
+                <button
+                  onClick={closePointsManagement}
+                  className="ml-4 text-gray-500 hover:text-gray-700"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+
+              {pointsMessage && (
+                <div className={`px-4 py-3 rounded ${pointsMessage.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                  {pointsMessage.text}
+                </div>
+              )}
+
+              {loadingPointsDetails ? (
+                <div className="text-center py-8 text-gray-600">Loading points details...</div>
+              ) : (
+                <>
+                  {/* Points Summary */}
+                  {pointsDetails && (
+                    <div className="grid grid-cols-3 gap-3 bg-white rounded-lg p-4">
+                      <div>
+                        <p className="text-xs text-gray-500">Total Earned</p>
+                        <p className="text-lg font-bold text-green-600">+{pointsDetails.summary.totalEarned?.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Total Redeemed</p>
+                        <p className="text-lg font-bold text-red-600">-{pointsDetails.summary.totalRedeemed?.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Expired</p>
+                        <p className="text-lg font-bold text-gray-500">-{pointsDetails.summary.totalExpired?.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Award/Deduct Form */}
+                  <div className="bg-white rounded-lg p-4">
+                    <form onSubmit={handlePointsSubmit} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Action
+                        </label>
+                        <div className="flex gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setPointsAction('award')}
+                            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                              pointsAction === 'award'
+                                ? 'bg-green-600 text-white'
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            }`}
+                          >
+                            Award Points
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPointsAction('deduct')}
+                            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                              pointsAction === 'deduct'
+                                ? 'bg-red-600 text-white'
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            }`}
+                          >
+                            Deduct Points
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Points Amount
+                        </label>
+                        <input
+                          type="number"
+                          value={pointsAmount}
+                          onChange={(e) => setPointsAmount(e.target.value)}
+                          min="1"
+                          placeholder="Enter points amount"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Reason
+                        </label>
+                        <textarea
+                          value={pointsReason}
+                          onChange={(e) => setPointsReason(e.target.value)}
+                          placeholder="e.g., Compensation for delivery delay, Contest winner, etc."
+                          rows={3}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          required
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={processingPoints}
+                        className={`w-full py-2 px-4 rounded-lg font-medium text-white transition-colors ${
+                          pointsAction === 'award'
+                            ? 'bg-green-600 hover:bg-green-700'
+                            : 'bg-red-600 hover:bg-red-700'
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        {processingPoints
+                          ? `${pointsAction === 'award' ? 'Awarding' : 'Deducting'}...`
+                          : `${pointsAction === 'award' ? 'Award' : 'Deduct'} ${pointsAmount || '0'} Points`
+                        }
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Recent Transactions */}
+                  {pointsDetails?.recentTransactions && pointsDetails.recentTransactions.length > 0 && (
+                    <div className="bg-white rounded-lg p-4">
+                      <h4 className="font-semibold text-gray-900 mb-3">Recent Transactions</h4>
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {pointsDetails.recentTransactions.map((txn: any) => (
+                          <div key={txn.id} className="flex justify-between items-start p-3 bg-gray-50 rounded border border-gray-200">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className={`font-bold ${txn.points > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  {txn.points > 0 ? '+' : ''}{txn.points}
+                                </span>
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-700">
+                                  {txn.source}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-600 mt-1">{txn.description}</p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                {new Date(txn.created_at).toLocaleString('en-NG', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Integration Status */}
         <div className="bg-gray-50 rounded-lg p-6">
