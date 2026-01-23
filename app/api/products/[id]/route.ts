@@ -19,7 +19,8 @@ export async function GET(
         sizes:product_sizes(*),
         flavors:product_flavors(
           flavor:flavors(*)
-        )
+        ),
+        addons:product_addons(*)
       `)
       .eq('id', id)
       .single()
@@ -32,7 +33,49 @@ export async function GET(
     const transformedProduct = {
       ...product,
       flavors: product.flavors?.map((pf: any) => pf.flavor.name) || [],
+      flavor_ids: product.flavors?.map((pf: any) => pf.flavor.id) || [],
     }
+
+    // Transform addons from product_addons table into the format expected by order page
+    const riceOptions: { name: string; price: number }[] = []
+    const drinkOptions: string[] = []
+    const milkshakeOptions: string[] = []
+    const cakeOptions: string[] = []
+    let riceCount = 1
+    let drinkCount = 1
+
+    // Process addons
+    if (product.addons && product.addons.length > 0) {
+      product.addons.forEach((addon: any) => {
+        switch (addon.type) {
+          case 'rice':
+            riceOptions.push({
+              name: addon.name,
+              price: addon.price || 0
+            })
+            riceCount = addon.max_selections || 1
+            break
+          case 'drink':
+            drinkOptions.push(addon.name)
+            drinkCount = addon.max_selections || 1
+            break
+          case 'milkshake':
+            milkshakeOptions.push(addon.name)
+            break
+          case 'cake':
+            cakeOptions.push(addon.name)
+            break
+        }
+      })
+    }
+
+    transformedProduct.riceOptions = riceOptions.length > 0 ? riceOptions : undefined
+    transformedProduct.riceCount = riceCount
+    transformedProduct.drinkOptions = drinkOptions.length > 0 ? drinkOptions : undefined
+    transformedProduct.drinkCount = drinkCount
+    transformedProduct.milkshakeOptions = milkshakeOptions.length > 0 ? milkshakeOptions : undefined
+    transformedProduct.cakeOptions = cakeOptions.length > 0 ? cakeOptions : undefined
+
 
     return NextResponse.json({ product: transformedProduct })
   } catch (error) {
@@ -145,23 +188,116 @@ export async function PUT(
       console.log('[Products API] No sizes provided in update')
     }
 
+    // Update addons if provided
+    if (body.addons && body.addons.length > 0) {
+      console.log('[Products API] Updating addons:', body.addons)
+
+      // Delete existing addons
+      const { error: deleteAddonsError } = await supabase
+        .from('product_addons')
+        .delete()
+        .eq('product_id', id)
+
+      if (deleteAddonsError) {
+        console.error('[Products API] Error deleting addons:', deleteAddonsError)
+      } else {
+        console.log('[Products API] Deleted existing addons')
+      }
+
+      // Insert new addons
+      const addonsToInsert = body.addons.map((addon: any) => ({
+        product_id: id,
+        type: addon.type,
+        name: addon.name,
+        price: addon.price || 0,
+        max_selections: addon.max_selections || 1,
+      }))
+      console.log('[Products API] Inserting new addons:', addonsToInsert)
+
+      const { error: insertAddonsError } = await supabase
+        .from('product_addons')
+        .insert(addonsToInsert)
+
+      if (insertAddonsError) {
+        console.error('[Products API] Error inserting addons:', insertAddonsError)
+      } else {
+        console.log('[Products API] Addons updated successfully')
+      }
+    } else {
+      console.log('[Products API] No addons provided in update')
+    }
+
+    // Update flavors if provided
+    if (body.flavor_ids && body.flavor_ids.length > 0) {
+      console.log('[Products API] Updating flavors:', body.flavor_ids)
+
+      // Delete existing flavors
+      const { error: deleteFlavorsError } = await supabase
+        .from('product_flavors')
+        .delete()
+        .eq('product_id', id)
+
+      if (deleteFlavorsError) {
+        console.error('[Products API] Error deleting flavors:', deleteFlavorsError)
+      } else {
+        console.log('[Products API] Deleted existing flavors')
+      }
+
+      // Insert new flavors
+      const flavorsToInsert = body.flavor_ids.map((flavorId: string) => ({
+        product_id: id,
+        flavor_id: flavorId,
+      }))
+      console.log('[Products API] Inserting new flavors:', flavorsToInsert)
+
+      const { error: insertFlavorsError } = await supabase
+        .from('product_flavors')
+        .insert(flavorsToInsert)
+
+      if (insertFlavorsError) {
+        console.error('[Products API] Error inserting flavors:', insertFlavorsError)
+      } else {
+        console.log('[Products API] Flavors updated successfully')
+      }
+    } else if (body.flavor_ids && body.flavor_ids.length === 0) {
+      // If empty array is provided, delete all existing flavors
+      console.log('[Products API] Removing all flavors from product')
+      await supabase
+        .from('product_flavors')
+        .delete()
+        .eq('product_id', id)
+    } else {
+      console.log('[Products API] No flavor_ids provided in update')
+    }
+
     // Invalidate cache so the updated product is fetched
     await CacheInvalidation.products()
 
-    // Fetch the updated product with sizes to return to client
+    // Fetch the updated product with sizes, addons, and flavors to return to client
     const { data: updatedProduct } = await supabase
       .from('products')
       .select(`
         *,
         category:categories(id, name, slug),
-        sizes:product_sizes(*)
+        sizes:product_sizes(*),
+        addons:product_addons(*),
+        flavors:product_flavors(
+          flavor:flavors(*)
+        )
       `)
       .eq('id', id)
       .single()
 
     console.log('[Products API] Updated product with sizes:', updatedProduct)
 
-    return NextResponse.json({ product: updatedProduct })
+    // Transform the response to include flavor_ids
+    const transformedProduct = updatedProduct ? {
+      ...updatedProduct,
+      flavors: updatedProduct.flavors?.map((pf: any) => pf.flavor.name) || [],
+      flavor_ids: updatedProduct.flavors?.map((pf: any) => pf.flavor.id) || [],
+    } : null
+
+    return NextResponse.json({ product: transformedProduct })
   } catch (error) {
     console.error('Error:', error)
     return NextResponse.json(

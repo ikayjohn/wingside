@@ -126,6 +126,7 @@ export default function Footer() {
               <span className="font-bold text-xs uppercase tracking-wide text-gray-900">COMPANY</span>
               <Link href="/about" className="footer-link">About Us</Link>
               <Link href="/hotspots" className="footer-link">Wingside Hotspots</Link>
+              <Link href="/wingside-to-go" className="footer-link">Wingside To-Go</Link>
               <Link href="/support" className="footer-link">Support</Link>
               <Link href="/blog" className="footer-link">Blog</Link>
               <Link href="/flavors" className="footer-link">Flavors</Link>

@@ -83,18 +83,19 @@ export async function GET(request: NextRequest) {
         total_orders: number
         total_spent: number
         last_order_date: string | null
+        last_visit_date: string | null
         default_address?: string
       }
     > = {}
 
     userIds.forEach((id) => {
-      byUser[id] = { total_orders: 0, total_spent: 0, last_order_date: null, default_address: undefined }
+      byUser[id] = { total_orders: 0, total_spent: 0, last_order_date: null, last_visit_date: null, default_address: undefined }
     })
 
     if (userIds.length > 0) {
       const { data: orders, error: ordersError } = await admin
         .from('orders')
-        .select('user_id,total,created_at')
+        .select('user_id,total,created_at,status')
         .in('user_id', userIds)
         .order('created_at', { ascending: false })
 
@@ -106,8 +107,19 @@ export async function GET(request: NextRequest) {
           const agg = byUser[order.user_id]
           if (!agg) continue
           agg.total_orders += 1
-          agg.total_spent += Number(order.total || 0)
-          if (!agg.last_order_date) {
+
+          // Only add to total_spent if not cancelled
+          if (order.status !== 'cancelled') {
+            agg.total_spent += Number(order.total || 0)
+          }
+
+          // Track last visit date (most recent order of any status)
+          if (!agg.last_visit_date) {
+            agg.last_visit_date = order.created_at
+          }
+
+          // Track last order date (most recent non-cancelled order)
+          if (order.status !== 'cancelled' && !agg.last_order_date) {
             agg.last_order_date = order.created_at
           }
         }
@@ -138,12 +150,13 @@ export async function GET(request: NextRequest) {
     }
 
     const customers = (profiles || []).map((p) => {
-      const agg = byUser[p.id] || { total_orders: 0, total_spent: 0, last_order_date: null, default_address: null }
+      const agg = byUser[p.id] || { total_orders: 0, total_spent: 0, last_order_date: null, last_visit_date: null, default_address: null }
       return {
         ...p,
         total_orders: agg.total_orders,
         total_spent: agg.total_spent,
         last_order_date: agg.last_order_date,
+        last_visit_date: agg.last_visit_date,
         default_address: agg.default_address || null,
       }
     })

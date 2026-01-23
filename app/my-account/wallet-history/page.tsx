@@ -25,14 +25,48 @@ export default function WalletHistoryPage() {
     const fetchTransactions = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/user/wallet-history');
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch wallet history');
+        // Fetch from both local wallet_transactions and Embedly
+        const [localResponse, embedlyResponse] = await Promise.all([
+          fetch('/api/user/wallet-history'),
+          fetch('/api/embedly/wallets/history').catch(() => null) // May fail if no Embedly wallet
+        ]);
+
+        let allTransactions: Transaction[] = [];
+
+        // Add local transactions
+        if (localResponse.ok) {
+          const localData = await localResponse.json();
+          allTransactions = [...allTransactions, ...(localData.transactions || [])];
         }
 
-        const data = await response.json();
-        setTransactions(data.transactions || []);
+        // Add Embedly transactions
+        if (embedlyResponse && embedlyResponse.ok) {
+          const embedlyData = await embedlyResponse.json();
+          if (embedlyData.success && embedlyData.transactions) {
+            // Convert Embedly transactions to the expected format
+            const embedlyTransactions = Object.values(embedlyData.transactions)
+              .flat()
+              .map((txn: any) => ({
+                id: txn.reference || txn.id || `embedly-${Date.now()}`,
+                type: txn.type === 'debit' ? 'Payment' : 'Wallet Funding',
+                description: txn.description || txn.remarks,
+                amount: txn.type === 'debit' ? -Math.abs(txn.amount) : Math.abs(txn.amount),
+                status: 'completed',
+                paymentMethod: 'wallet',
+                createdAt: txn.date || new Date().toISOString(),
+                orderNumber: undefined
+              }));
+            allTransactions = [...allTransactions, ...embedlyTransactions];
+          }
+        }
+
+        // Sort all transactions by date (newest first)
+        allTransactions.sort((a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+        setTransactions(allTransactions);
       } catch (err: any) {
         console.error('Error fetching wallet history:', err);
         setError(err.message || 'Failed to load wallet history');

@@ -20,6 +20,8 @@ interface Location {
 }
 
 export default function WingpostPage() {
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [loadingLocations, setLoadingLocations] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [isPartnerFormOpen, setIsPartnerFormOpen] = useState(false);
@@ -35,99 +37,26 @@ export default function WingpostPage() {
     message: '',
   });
 
-  const locations: Location[] = [
-    {
-      id: 1,
-      name: 'Microsoft Nigeria',
-      badge: 'Popular',
-      address: 'Walter Carrington Crescent',
-      city: 'Victoria Island, Lagos',
-      rating: 4.9,
-      reviews: 1245,
-      distance: '0.5 km',
-      thumbnail: '/wingpost-location-1.jpg',
-      image: '/wingpost-location-1.jpg',
-      phone: '08090191999',
-      hours: '8:00 AM - 10:00 PM Daily',
-      mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Microsoft+Nigeria+Walter+Carrington+Crescent+Victoria+Island+Lagos',
-    },
-    {
-      id: 2,
-      name: 'J Signature Hotel',
-      address: '146 Omerelu Isiokpo Road',
-      city: 'Port Harcourt',
-      rating: 4.9,
-      reviews: 1245,
-      distance: '0.8 km',
-      thumbnail: '/wingpost-location-2.jpg',
-      image: '/wingpost-location-2.jpg',
-      phone: '08090191999',
-      hours: '8:00 AM - 10:00 PM Daily',
-      mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Js+Nightcare+Hotel+146+Omerelu+Isiokpo+Road+Port+Harcourt',
-    },
-    {
-      id: 3,
-      name: 'Alliance Hotel',
-      address: 'Ikwerre Road',
-      city: 'Port Harcourt',
-      rating: 4.9,
-      reviews: 1245,
-      distance: '1.2 km',
-      thumbnail: '/wingpost-location-3.jpg',
-      image: '/wingpost-location-3.jpg',
-      phone: '08090191999',
-      hours: '8:00 AM - 10:00 PM Daily',
-      mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Alliance+Hotel+Ikwerre+Road+Port+Harcourt',
-    },
-    {
-      id: 4,
-      name: 'Erastus Hotels',
-      address: 'Ikwerre Road',
-      city: 'Port Harcourt',
-      rating: 4.9,
-      reviews: 1245,
-      distance: '1.5 km',
-      thumbnail: '/wingpost-location-4.jpg',
-      image: '/wingpost-location-4.jpg',
-      phone: '08090191999',
-      hours: '8:00 AM - 10:00 PM Daily',
-      mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Erastus+Hotels+Ikwerre+Road+Port+Harcourt',
-    },
-    {
-      id: 5,
-      name: 'Serenity Lodge',
-      address: 'Elechi',
-      city: 'Diobu, Rivers State',
-      rating: 4.9,
-      reviews: 1245,
-      distance: '2.0 km',
-      thumbnail: '/wingpost-location-5.jpg',
-      image: '/wingpost-location-5.jpg',
-      phone: '08090191999',
-      hours: '8:00 AM - 10:00 PM Daily',
-      mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Serenity+Lodge+Elechi+Diobu+Rivers+State',
-    },
-    {
-      id: 6,
-      name: 'Palm Valley Hotel',
-      address: 'Airport Road',
-      city: 'Port Harcourt',
-      rating: 4.9,
-      reviews: 1245,
-      distance: '2.5 km',
-      thumbnail: '/wingpost-location-6.jpg',
-      image: '/wingpost-location-6.jpg',
-      phone: '08090191999',
-      hours: '8:00 AM - 10:00 PM Daily',
-      mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Palm+Valley+Hotel+Airport+Road+Port+Harcourt',
-    },
-  ];
-
-  // Auto-select first location on mount
+  // Fetch locations from API
   React.useEffect(() => {
-    if (locations.length > 0 && !selectedLocation) {
-      setSelectedLocation(locations[0]);
-    }
+    const fetchLocations = async () => {
+      try {
+        const response = await fetch('/api/wingpost-locations');
+        if (!response.ok) throw new Error('Failed to fetch locations');
+        const data = await response.json();
+        setLocations(data.locations || []);
+        // Auto-select first location
+        if (data.locations && data.locations.length > 0) {
+          setSelectedLocation(data.locations[0]);
+        }
+      } catch (error) {
+        console.error('Error fetching locations:', error);
+      } finally {
+        setLoadingLocations(false);
+      }
+    };
+
+    fetchLocations();
   }, []);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -203,6 +132,17 @@ ${formData.message}
       location.city.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
+  if (loadingLocations) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#F7C400] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading Wingpost Locations...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       {/* Back Button */}
@@ -237,12 +177,12 @@ ${formData.message}
           <div className="w-full max-w-6xl">
             {/* Heading */}
             <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 leading-tight">
-              Wings, sandwiches & more <br />anytime, anywhere.
+              Salad, sandwiches & more
             </h1>
 
             {/* Description */}
             <p className="text-sm md:text-base lg:text-lg text-white mb-8 max-w-3xl leading-relaxed">
-              With WingPost, get a grab-and-go spot for fresh, ready-to-eat wings, sandwiches, and more. 24/7, right where you need it.
+              Set up a WingPost for ready-to-eat light meals right where you need it.
             </p>
 
             {/* CTA Buttons */}
@@ -271,25 +211,19 @@ ${formData.message}
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-black mb-3">
               BRING WINGPOST TO<br />YOUR SPACE
             </h2>
-            <p className="text-gray-700">
-              Whether it's an office, hospital, school, or residential complex - <br />WingPost brings hassle-free fresh food to your location.
-            </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
             {/* Text Content */}
             <div className="bg-[#FDEDB2] rounded-l-3xl p-8 md:p-12 flex flex-col justify-center">
               <h3 className="text-2xl md:text-3xl font-bold text-black mb-4">
-                YOUR FAVOURITE FOOD<br />SPOT, REIMAGINED.
+                Food made simple.
               </h3>
               <p className="text-gray-800 mb-4">
-                Wingpost is our fun, smart, and convenient way to enjoy good food on the go — anytime you crave it.
+                WingPost is our convenient way to enjoy fresh meals.
               </p>
               <p className="text-gray-800 mb-4">
-                Think of it as your go-to kiosk for fresh meals — placed in offices, hospitals, campuses, and complex buildings.
-              </p>
-              <p className="text-gray-800 mb-4">
-                Each Post is restocked daily with a mix of delicious meals.
+                Think of it as your go-to kiosk placed in offices, hospitals, campuses and complex buildings. Each post is refreshed daily.
               </p>
               <p className="text-gray-800">
                 Walk up, choose what you crave, pay instantly, and enjoy. It's food made simple.
@@ -320,9 +254,12 @@ ${formData.message}
       {/* Collaboration Section */}
       <div className="bg-white py-16 md:py-24 px-4 md:px-8 lg:px-16" id="partner">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center text-black mb-12 max-w-4xl mx-auto leading-tight">
-            We collaborate with organizations and communities to make fresh food easy to access. You provide the space.
+          <h2 className="text-3xl md:text-4xl font-bold text-center text-black mb-4 max-w-4xl mx-auto leading-tight">
+            We collaborate with organizations and communities to make fresh food easy to access.
           </h2>
+          <p className="text-center text-gray-700 mb-12 text-lg">
+            For Spaces where people work, live, and connect.
+          </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-0 mb-8 h-[540px]">
             {/* Left Image */}

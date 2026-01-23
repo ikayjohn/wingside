@@ -76,7 +76,8 @@ export async function GET(request: NextRequest) {
       .select(`
         *,
         category:categories(id, name, slug),
-        sizes:product_sizes(*)
+        sizes:product_sizes(*),
+        addons:product_addons(*)
       `)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
@@ -147,11 +148,57 @@ export async function GET(request: NextRequest) {
         ? product.simple_flavors
         : (flavorMap[product.id] || [])
 
+      // Get flavor IDs for this product
+      const productFlavorIds = productFlavors?.map((flavorName: string) => {
+        const flavor = flavors?.find((f: any) => f.name === flavorName)
+        return flavor?.id
+      }).filter(Boolean) || []
+
+      // Transform addons from product_addons table into the format expected by order page
+      const riceOptions: { name: string; price: number }[] = []
+      const drinkOptions: string[] = []
+      const milkshakeOptions: string[] = []
+      const cakeOptions: string[] = []
+      let riceCount = 1
+      let drinkCount = 1
+
+      // Process addons
+      if (product.addons && product.addons.length > 0) {
+        product.addons.forEach((addon: any) => {
+          switch (addon.type) {
+            case 'rice':
+              riceOptions.push({
+                name: addon.name,
+                price: addon.price || 0
+              })
+              riceCount = addon.max_selections || 1
+              break
+            case 'drink':
+              drinkOptions.push(addon.name)
+              drinkCount = addon.max_selections || 1
+              break
+            case 'milkshake':
+              milkshakeOptions.push(addon.name)
+              break
+            case 'cake':
+              cakeOptions.push(addon.name)
+              break
+          }
+        })
+      }
+
       return {
         ...product,
         flavors: productFlavors,
+        flavor_ids: productFlavorIds,
         flavorLabel: product.flavor_label || undefined,
         sizes: product.sizes || [],
+        riceOptions: riceOptions.length > 0 ? riceOptions : undefined,
+        riceCount: riceCount,
+        drinkOptions: drinkOptions.length > 0 ? drinkOptions : undefined,
+        drinkCount: drinkCount,
+        milkshakeOptions: milkshakeOptions.length > 0 ? milkshakeOptions : undefined,
+        cakeOptions: cakeOptions.length > 0 ? cakeOptions : undefined,
       }
     })
 
@@ -269,6 +316,17 @@ export async function POST(request: NextRequest) {
 
       if (flavorsError) {
         console.error('Error linking flavors:', flavorsError)
+      }
+    }
+
+    // Insert product addons (rice, drinks, milkshakes, cakes)
+    if (body.addons && body.addons.length > 0) {
+      const { error: addonsError } = await supabase
+        .from('product_addons')
+        .insert(body.addons)
+
+      if (addonsError) {
+        console.error('Error creating addons:', addonsError)
       }
     }
 

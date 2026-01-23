@@ -109,13 +109,12 @@ async function handlePayoutWebhook(data: any, supabase: any) {
         .single();
 
       if (profile) {
-        // Update wallet balance in profile (this might be better handled by fetching from Embedly)
-        await supabase
-          .from('profiles')
-          .update({
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', profile.id);
+        // Get current balance
+        const { data: currentBalanceResult } = await supabase.rpc('get_wallet_balance', {
+          p_user_id: profile.id
+        });
+        const currentBalance = currentBalanceResult || 0;
+        const newBalance = currentBalance - parseFloat(amount);
 
         // Create transaction record
         await supabase
@@ -123,11 +122,17 @@ async function handlePayoutWebhook(data: any, supabase: any) {
           .insert({
             user_id: profile.id,
             type: 'debit',
-            amount,
-            currency,
-            reference: paymentReference,
+            amount: parseFloat(amount),
+            balance_after: newBalance,
+            transaction_type: 'funding', // Interbank transfer out
             description: `Interbank transfer to ${creditAccountNumber}`,
             status: 'completed',
+            metadata: {
+              payment_method: 'bank_transfer',
+              credit_account: creditAccountNumber,
+              reference: paymentReference,
+              webhook_event: 'payout'
+            },
             created_at: dateOfTransaction ? new Date(dateOfTransaction).toISOString() : new Date().toISOString()
           });
       }
@@ -157,29 +162,34 @@ async function handleNipWebhook(data: any, supabase: any) {
       .single();
 
     if (profile) {
+      // Get current balance
+      const { data: currentBalanceResult } = await supabase.rpc('get_wallet_balance', {
+        p_user_id: profile.id
+      });
+      const currentBalance = currentBalanceResult || 0;
+      const newBalance = currentBalance + parseFloat(amount);
+
       // Create credit transaction record
       await supabase
         .from('wallet_transactions')
         .insert({
           user_id: profile.id,
           type: 'credit',
-          amount,
-          currency: 'NGN',
-          reference,
-          description: description || `Inflow from ${senderName}`,
+          amount: parseFloat(amount),
+          balance_after: newBalance,
+          transaction_type: 'funding',
+          description: description || `Wallet funding from ${senderName || 'bank transfer'}`,
           status: 'completed',
+          metadata: {
+            payment_method: 'bank_transfer',
+            sender_name: senderName,
+            reference,
+            webhook_event: 'nip'
+          },
           created_at: dateOfTransaction ? new Date(dateOfTransaction).toISOString() : new Date().toISOString()
         });
 
-      // Update wallet balance (in a real implementation, you'd fetch the latest balance from Embedly)
-      await supabase
-        .from('profiles')
-        .update({
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', profile.id);
-
-      console.log(`Processed inflow for user ${profile.full_name}: ₦${amount}`);
+      console.log(`Processed inflow for user ${profile.full_name}: ₦${amount} (Balance: ₦${newBalance})`);
     }
 
   } catch (error) {
@@ -262,31 +272,57 @@ async function handleWalletTransferWebhook(data: any, supabase: any) {
       .single();
 
     if (fromProfile) {
+      // Get current balance
+      const { data: currentBalanceResult } = await supabase.rpc('get_wallet_balance', {
+        p_user_id: fromProfile.id
+      });
+      const currentBalance = currentBalanceResult || 0;
+      const newBalance = currentBalance - parseFloat(amount);
+
       await supabase
         .from('wallet_transactions')
         .insert({
           user_id: fromProfile.id,
           type: 'debit',
-          amount,
-          currency: 'NGN',
-          reference,
+          amount: parseFloat(amount),
+          balance_after: newBalance,
+          transaction_type: 'funding', // Transfer out
           description: toProfile ? `Transfer to ${toProfile.full_name}` : 'Wallet transfer',
           status: status.toLowerCase(),
+          metadata: {
+            payment_method: 'wallet_transfer',
+            to_account: toAccount,
+            reference,
+            webhook_event: 'wallet.transfer'
+          },
           created_at: timestamp ? new Date(timestamp).toISOString() : new Date().toISOString()
         });
     }
 
     if (toProfile) {
+      // Get current balance
+      const { data: currentBalanceResult } = await supabase.rpc('get_wallet_balance', {
+        p_user_id: toProfile.id
+      });
+      const currentBalance = currentBalanceResult || 0;
+      const newBalance = currentBalance + parseFloat(amount);
+
       await supabase
         .from('wallet_transactions')
         .insert({
           user_id: toProfile.id,
           type: 'credit',
-          amount,
-          currency: 'NGN',
-          reference,
+          amount: parseFloat(amount),
+          balance_after: newBalance,
+          transaction_type: 'funding', // Transfer in
           description: fromProfile ? `Transfer from ${fromProfile.full_name}` : 'Wallet transfer',
           status: status.toLowerCase(),
+          metadata: {
+            payment_method: 'wallet_transfer',
+            from_account: fromAccount,
+            reference,
+            webhook_event: 'wallet.transfer'
+          },
           created_at: timestamp ? new Date(timestamp).toISOString() : new Date().toISOString()
         });
     }

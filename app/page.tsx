@@ -73,7 +73,7 @@ export default function WingsideLanding() {
   const deliverySlides = [
     {
       title: 'WINGSIDE\nONLINE DELIVERY',
-      description: 'Stay in. We\'ll bring the wings to you. Flavors that sing with every wing Delivered before you blink.',
+      description: 'Stay in, we\'ll bring the wings to you. Flavors that sing with every wing Delivered\n- before you blink.',
       ctaText: 'Order Now',
       ctaLink: '/order',
       image: '/bikewingside1.png',
@@ -224,7 +224,7 @@ export default function WingsideLanding() {
               <img
                 src="/thinkbox.png"
                 alt="Wingside Box"
-                className="w-full max-w-md xl:max-w-xl h-auto float-hover"
+                className="w-full max-w-[540px] xl:max-w-[660px] h-auto float-hover"
                   />
             </div>
           </div>
@@ -247,7 +247,7 @@ export default function WingsideLanding() {
               <img
                 src="/thinkbox.png"
                 alt="Wingside Box"
-                className="w-full max-w-xs h-auto float-hover"
+                className="w-full max-w-[336px] h-auto float-hover"
                   />
             </div>
           </div>
@@ -270,7 +270,7 @@ export default function WingsideLanding() {
               <img
                 src="/thinkbox.png"
                 alt="Wingside Box"
-                className="w-full max-w-[220px] h-auto float-hover"
+                className="w-full max-w-[317px] h-auto float-hover"
                   />
             </div>
           </div>
@@ -285,19 +285,16 @@ export default function WingsideLanding() {
             <div className="section-badge mb-3 md:mb-4">
               Our Flavors
             </div>
-            <h2 className="section-title mb-1">
-              20 Amazing Flavors, 6 categories.
+            <h2 className="section-title mb-3 md:mb-4">
+              Explore Our Flavors
             </h2>
-            <p className="section-title mb-3 md:mb-4">
-              Infinite Cravings.
-            </p>
             <p className="text-gray-600 text-xs sm:text-sm md:text-base max-w-3xl leading-relaxed">
               From hot and fiery, to sweet and crispy, every bite an explosion of taste meant to spark unrestrained crave spells.
             </p>
           </div>
 
           {/* Category Tabs */}
-          <div className="flex gap-2 mb-8 md:mb-12 overflow-x-auto pb-3 scrollbar-hide">
+          <div className="flex gap-5 mb-8 md:mb-12 overflow-x-auto pb-3 scrollbar-hide md:max-w-[80%] md:justify-between">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -323,8 +320,8 @@ export default function WingsideLanding() {
                 {filteredFlavors.map((flavor) => {
                   const { description1, description2 } = parseDescription(flavor.description);
                   return (
-                    <div key={flavor.id} className="flex flex-col gap-2 md:gap-4 md:grid md:grid-cols-2 md:items-center">
-                      <div className="order-2 md:order-1">
+                    <div key={flavor.id} className="flavor-card flex flex-col gap-2 md:gap-4 md:grid md:grid-cols-2 md:items-center md:max-w-[80%]">
+                      <div className="order-2 md:order-1 md:ml-[30px]">
                         <h3 className="text-lg sm:text-xl md:text-4xl lg:text-5xl font-bold mb-1 md:mb-4">{renderFlavorName(flavor.name)}</h3>
                         <p className="text-gray-600 text-xs md:text-lg mb-1 md:mb-1 font-semibold">
                           {description1}
@@ -332,15 +329,20 @@ export default function WingsideLanding() {
                         <p className="text-gray-600 text-xs md:text-lg mb-2 md:mb-6">
                           {description2}
                         </p>
-                        <Link href="/order" className="btn-outline text-xs md:text-sm hidden md:block" style={{ padding: '0.5rem 0.8rem', width: 'fit-content' }}>
-                          Order Now
-                        </Link>
+                        <div className="hidden md:flex gap-2">
+                          <Link href="/order" className="flavor-order-btn text-xs md:text-sm">
+                            Order Now
+                          </Link>
+                          <Link href={`/flavors/${flavor.id}`} className="flavor-learn-more-btn text-xs md:text-sm">
+                            Learn More
+                          </Link>
+                        </div>
                       </div>
-                      <div className="order-1 md:order-2 flex justify-center md:block">
+                      <div className="order-1 md:order-2 flex justify-center md:block md:ml-[80px]">
                         <img
                           src={flavor.image_url}
                           alt={flavor.name}
-                          className="w-auto h-[120px] sm:h-[140px] md:h-[300px] lg:h-[400px] flavor-image"
+                          className="w-auto h-[100px] sm:h-[120px] md:h-[260px] lg:h-[360px] flavor-image"
                           loading="lazy"
                         />
                       </div>
@@ -366,8 +368,8 @@ export default function WingsideLanding() {
 
       {/* Delivery Section */}
       <section className="bg-white overflow-hidden" style={{ paddingTop: '90px', paddingBottom: '100px' }}>
-        {/* Yellow rounded box - 80% width, centered */}
-        <div className="mx-auto px-4 sm:px-6 lg:px-8" style={{ width: '80%', maxWidth: '1200px' }}>
+        {/* Yellow rounded box - 95% width on mobile, 80% on larger screens, centered */}
+        <div className="mx-auto px-4 sm:px-6 lg:px-8 w-[95%] sm:w-[80%]" style={{ maxWidth: '1200px' }}>
           {/* Header section above yellow box */}
           <div className="mb-5 grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             {/* Left: Title */}
@@ -423,8 +425,7 @@ export default function WingsideLanding() {
               <img
                 src={deliverySlides[0].image}
                 alt={deliverySlides[0].alt}
-                className="max-h-[600px] w-auto object-contain"
-                style={{ marginTop: '-150px' }}
+                className="max-h-[425px] sm:max-h-[340px] md:max-h-[450px] lg:max-h-[580px] w-auto object-contain mt-[85px] sm:mt-[-30px] md:mt-[-100px] lg:mt-[-195px]"
               />
             </div>
 
@@ -439,8 +440,7 @@ export default function WingsideLanding() {
               <img
                 src={deliverySlides[1].image}
                 alt={deliverySlides[1].alt}
-                className="max-h-[600px] w-auto object-contain"
-                style={{ marginTop: '-150px' }}
+                className="max-h-[425px] sm:max-h-[340px] md:max-h-[450px] lg:max-h-[580px] w-auto object-contain mt-[85px] sm:mt-[-30px] md:mt-[-100px] lg:mt-[-195px]"
               />
             </div>
 
@@ -455,14 +455,13 @@ export default function WingsideLanding() {
               <img
                 src={deliverySlides[2].image}
                 alt={deliverySlides[2].alt}
-                className="max-h-[600px] w-auto object-contain"
-                style={{ marginTop: '-150px' }}
+                className="max-h-[425px] sm:max-h-[340px] md:max-h-[450px] lg:max-h-[580px] w-auto object-contain mt-[85px] sm:mt-[-30px] md:mt-[-100px] lg:mt-[-195px]"
               />
             </div>
 
             {/* Clone of Section 1 for infinite loop */}
             <div
-              className="absolute inset-0 flex items-center justify-center"
+              className="absolute inset-0 flex items-center justify-center transition-opacity duration-700 ease-in-out"
               style={{
                 opacity: activeDeliverySection === 3 ? 1 : 0,
                 zIndex: activeDeliverySection === 3 ? 10 : 0
@@ -471,8 +470,7 @@ export default function WingsideLanding() {
               <img
                 src={deliverySlides[0].image}
                 alt={deliverySlides[0].alt}
-                className="max-h-[600px] w-auto object-contain"
-                style={{ marginTop: '-150px' }}
+                className="max-h-[425px] sm:max-h-[340px] md:max-h-[450px] lg:max-h-[580px] w-auto object-contain mt-[85px] sm:mt-[-30px] md:mt-[-100px] lg:mt-[-195px]"
               />
             </div>
           </div>
@@ -502,18 +500,17 @@ export default function WingsideLanding() {
             <div className="flex gap-3">
               <button
                 onClick={() => {
-                  if (activeDeliverySection >= 2) {
-                    setActiveDeliverySection(3);
-                    setTimeout(() => setActiveDeliverySection(0), 700);
+                  if (activeDeliverySection === 0) {
+                    setActiveDeliverySection(2);
                   } else {
-                    setActiveDeliverySection(activeDeliverySection + 1);
+                    setActiveDeliverySection(activeDeliverySection - 1);
                   }
                 }}
                 className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg"
                 style={{ backgroundColor: '#5D3131' }}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6"></polyline>
+                  <polyline points="15 18 9 12 15 6"></polyline>
                 </svg>
               </button>
               <button
@@ -539,13 +536,16 @@ export default function WingsideLanding() {
       </section>
 
       {/* Wingclub Section */}
-      <section className="py-8 md:py-16 bg-white">
+      <section className="py-8 md:py-16 bg-white" style={{ paddingTop: '180px' }}>
         <div className="wc-container">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-6 md:mb-8">
             <div>
+              <div className="section-badge mb-2 md:mb-3">
+                Eat & Earn
+              </div>
               <h2 className="section-title mb-2 md:mb-3 leading-tight">
-                Enjoy huge discounts by<br />
-                joining the <span className="text-yellow-400">WINGCLUB</span>
+                Enjoy Exclusive Benefits<br />
+                When You Join The <span className="text-yellow-400">WINGCLUB</span>
               </h2>
               <p className="text-gray-600 text-sm md:text-lg">Get on our side, Get Rewarded.</p>
             </div>

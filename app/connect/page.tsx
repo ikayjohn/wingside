@@ -60,7 +60,7 @@ export default function WingsideConnectPage() {
         throw new Error(data.error || 'Failed to submit form');
       }
 
-      setSubmitMessage({ type: 'success', text: data.message || 'Welcome to the WingFam! We\'ll be in touch soon.' });
+      setSubmitMessage({ type: 'success', text: data.message || 'Welcome to Wingconnect! We\'ll be in touch soon.' });
       setFormData({ fullName: '', email: '', phone: '', interest: '' });
 
       setTimeout(() => setSubmitMessage(null), 5000);
@@ -113,32 +113,29 @@ export default function WingsideConnectPage() {
             <span className="text-yellow-400">Wingside</span> CONNECT
           </h1>
           <p className="connect-hero-tagline">
-            MORE THAN FOOD. A MOVEMENT. A COMMUNITY. <span className="text-yellow-400">LET'S VIBE</span>
-          </p>
-          <p className="connect-hero-description">
-            Wingside Connect is our way of bringing you into the flavor of the moment — not just through what you eat, but how you live, play, move and connect.
+            MORE THAN FOOD. A MOVEMENT. A COMMUNITY.
           </p>
 
           {/* Tags */}
           <div className="connect-hero-tags">
             <span className="connect-tag">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
+              <img src="/running.svg" alt="" width="18" height="18" style={{filter: 'brightness(0) invert(1)'}} />
               Run Clubs
             </span>
             <span className="connect-tag">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+              <img src="/game.svg" alt="" width="18" height="18" style={{filter: 'brightness(0) invert(1)'}} />
               Game Nights
             </span>
             <span className="connect-tag">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+              <img src="/jam.svg" alt="" width="18" height="18" style={{filter: 'brightness(0) invert(1)'}} />
               Jam Sessions
             </span>
             <span className="connect-tag">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+              <img src="/talks.svg" alt="" width="18" height="18" style={{filter: 'brightness(0) invert(1)'}} />
               Talks & Events
             </span>
             <span className="connect-tag">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"></path><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"></path><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z"></path></svg>
+              <img src="/gifts.svg" alt="" width="18" height="18" style={{filter: 'brightness(0) invert(1)'}} />
               Freebies & First Dips Access
             </span>
           </div>
@@ -172,7 +169,7 @@ export default function WingsideConnectPage() {
             </div>
             <div className="connect-benefit connect-benefit-2">
               <span className="connect-benefit-icon yellow">★</span>
-              <span className="connect-benefit-text">VIP meetups & exclusive vibes</span>
+              <span className="connect-benefit-text">Exclusive events</span>
             </div>
             <div className="connect-benefit connect-benefit-3">
               <span className="connect-benefit-icon orange">≡</span>
@@ -195,7 +192,7 @@ export default function WingsideConnectPage() {
       <section className="connect-events-section">
         <div className="connect-events-container">
           <span className="connect-events-badge">Upcoming events</span>
-          <h2 className="connect-events-title">What's Popping Soon?</h2>
+          <h2 className="connect-events-title">What's Popping?</h2>
 
           {eventsLoading ? (
             <div className="flex justify-center items-center py-12">
@@ -248,7 +245,7 @@ export default function WingsideConnectPage() {
                 ))}
               </div>
 
-              <button className="connect-calendar-btn">See full calendar</button>
+              <Link href="/connect/events" className="connect-calendar-btn">See full calendar</Link>
             </>
           )}
         </div>
@@ -258,10 +255,10 @@ export default function WingsideConnectPage() {
       <section id="join-form" className="connect-join-section">
         <div className="connect-join-container">
           <h2 className="connect-join-title">
-            Join the <span className="text-yellow-400">WingFam</span>
+            Join <span className="text-yellow-400">Wingconnect</span>
           </h2>
           <p className="connect-join-subtitle">
-            Find your people, Taste the culture, Every table connects a tribe. Join in 30 seconds
+            Find your people, taste the culture, sign up in 30 seconds
           </p>
 
           <form onSubmit={handleSubmit} className="connect-join-form">
@@ -351,8 +348,8 @@ export default function WingsideConnectPage() {
 
           <div className="connect-footer">
             <p>
-              Follow us <a href="https://instagram.com/mywingside" className="connect-footer-link">@mywingside</a> |
-              Contact: <a href="mailto:connect@wingside.ng" className="connect-footer-link">connect@wingside.ng</a> |
+              Follow us <a href="https://instagram.com/mywingside" className="connect-footer-link connect-footer-link-brown">@mywingside</a> |
+              Contact: <a href="mailto:connect@wingside.ng" className="connect-footer-link connect-footer-link-brown">connect@wingside.ng</a> |
               Powered by <a href="/" className="connect-footer-link highlight">Wingside</a>
             </p>
           </div>

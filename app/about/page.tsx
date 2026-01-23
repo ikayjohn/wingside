@@ -73,7 +73,7 @@ export default function AboutPage() {
       <div className="py-12 md:py-25 bg-[#FFF8E1]">
         <div className="w-[90%] max-w-[1200px] mx-auto text-center">
           <p className="text-xl md:text-2xl text-gray-800">
-            We do one thing really, really well: <strong>CHICKEN WINGS</strong>.
+            We do one thing really well: <strong>CHICKEN WINGS</strong>.
           </p>
           <p className="text-xl md:text-2xl text-gray-800">
             Tossed, sauced, and dripping in flavor. With 20 wild and<br></br> exciting varieties, we've got something for every craving.
@@ -166,7 +166,7 @@ export default function AboutPage() {
                     </div>
                     <h4 className="font-bold text-lg mb-2 text-[#552627]">Flagship Store Opens</h4>
                     <p className="text-gray-700 text-sm">
-                      Our flagship store opened its doors, and suddenly cravings were officially satisfied. From ghost kitchen to real storefront - the dream was becoming reality.
+                      Our flagship store opened its doors, and suddenly cravings were officially satisfied. From ghost kitchen to real storefront - the dream was becoming a reality.
                     </p>
                   </div>
                 </div>
@@ -230,7 +230,7 @@ export default function AboutPage() {
               <h3 className="text-2xl md:text-3xl font-bold mb-2">Unforgettable</h3>
               <p className="text-base md:text-lg font-semibold mb-4">We are flavor architects</p>
               <p className="text-gray-600 text-sm md:text-base">
-                Creating taste memories that keep you coming back for more amazing experiences.
+                Creating amazing experiences that keep you coming back for more.
               </p>
             </div>
           </div>

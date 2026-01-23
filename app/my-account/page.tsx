@@ -428,15 +428,6 @@ export default function MyAccountPage() {
 
         {/* Right Side - Form */}
         <div className="wingclub-form-section">
-          {/* Close Button */}
-          <Link href="/" className="wingclub-close-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="15" y1="9" x2="9" y2="15"></line>
-              <line x1="9" y1="9" x2="15" y2="15"></line>
-            </svg>
-          </Link>
-
           {/* Tabs */}
           <div className="wingclub-tabs">
             <button
@@ -542,7 +533,7 @@ export default function MyAccountPage() {
                         className={`wingclub-phone-input rounded-l-none flex-1 ${fieldErrors.phone ? 'error' : ''}`}
                       />
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">Enter Nigerian number without the leading 0</p>
+                    <p className="text-xs text-gray-400 mt-1 sm:text-[10px]">Enter Nigerian number without the leading 0</p>
                     {fieldErrors.phone && (
                       <span className="wingclub-error">{fieldErrors.phone}</span>
                     )}
@@ -552,7 +543,7 @@ export default function MyAccountPage() {
                 {/* Date of Birth and Gender */}
                 <div className="wingclub-field">
                   <label className="wingclub-label">Date of Birth & Gender <span className="text-red-500">*</span></label>
-                  <div className="grid grid-cols-[1fr_1fr_1fr_0.7fr] gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_0.7fr] gap-4">
                     {/* Day */}
                     <div>
                       <label className="text-xs text-gray-600 mb-1 block">Day *</label>

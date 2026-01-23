@@ -41,13 +41,43 @@ export async function GET() {
       )
     }
 
+    // Transform transactions to match frontend interface
+    const formattedTransactions = transactions?.map((t: any) => {
+      // Map transaction_type to user-friendly type
+      const typeMap: Record<string, string> = {
+        'refund': 'Refund',
+        'funding': 'Wallet Funding',
+        'order_payment': 'Order Payment',
+        'referral_reward': 'Referral Reward',
+        'first_order_bonus': 'First Order Bonus',
+        'purchase_points': 'Purchase Points',
+        'promo_credit': 'Promo Credit',
+        'social_verification': 'Social Verification',
+        'streak_bonus': 'Streak Bonus',
+        'manual_adjustment': 'Manual Adjustment',
+        'affiliate_commission': 'Affiliate Commission',
+        'cashback': 'Cashback'
+      }
+
+      return {
+        id: t.id,
+        type: typeMap[t.transaction_type] || t.transaction_type,
+        description: t.description,
+        amount: t.type === 'debit' ? -Math.abs(t.amount) : Math.abs(t.amount),
+        status: t.status,
+        paymentMethod: t.metadata?.payment_method || 'wallet',
+        createdAt: t.created_at,
+        orderNumber: t.order_id,
+      }
+    }) || []
+
     // Get current balance from the latest transaction
     const currentBalance = transactions && transactions.length > 0
       ? transactions[0].balance_after
       : 0
 
     return NextResponse.json({
-      transactions: transactions || [],
+      transactions: formattedTransactions,
       balance: currentBalance
     })
   } catch (error) {

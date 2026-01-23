@@ -4,15 +4,37 @@ const nextConfig: NextConfig = {
   // Standard Next.js build (for Vercel, Node.js, or Hostinger VPS)
   trailingSlash: true,
 
+  // Redirects for unified authentication
+  async redirects() {
+    return [
+      {
+        source: '/login',
+        destination: '/my-account',
+        permanent: true,
+      },
+      {
+        source: '/login/',
+        destination: '/my-account/',
+        permanent: true,
+      },
+    ]
+  },
+
   // Image optimization with Supabase storage
   images: {
     remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'cxbqochxrhokdscgijxe.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
       {
         protocol: 'https',
         hostname: '**.supabase.co',
         pathname: '/storage/v1/object/public/**',
       },
     ],
+    unoptimized: false,
   },
 
   // Optimize for production

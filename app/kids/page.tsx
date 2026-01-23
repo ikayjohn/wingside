@@ -217,14 +217,6 @@ This request was submitted through the Wingside Kids page.
                 Building early brand affinity and family loyalty through fun, food,<br />
                 and unforgettable experiences.
               </p>
-              <div className="flex flex-wrap gap-4">
-                <button
-                  onClick={handleScrollToMenu}
-                  className="bg-[#F7C400] text-black px-8 py-4 rounded-full font-semibold text-lg hover:bg-[#e5b500] transition-colors"
-                >
-                  Explore kids menu
-                </button>
-              </div>
             </div>
 
             {/* Right Image */}
@@ -255,8 +247,8 @@ This request was submitted through the Wingside Kids page.
 
               {/* Right: Details */}
               <div className="p-8 md:p-12">
-                <h3 className="text-4xl md:text-5xl font-bold text-black mb-4">The Genius</h3>
-                <p className="text-xl text-gray-700 mb-6">The perfect meal for little champions!</p>
+                <h3 className="text-4xl md:text-5xl font-bold text-black mb-4">The Genius Meal</h3>
+                <p className="text-xl text-gray-700 mb-6">Perfect for little champions</p>
 
                 {/* Meal Details */}
                 <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm">

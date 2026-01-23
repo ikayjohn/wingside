@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import embedlyClient from '@/lib/embedly/client';
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -49,6 +50,39 @@ export async function GET(
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
 
+    // Fetch referrer name if referred_by exists
+    let referrerName = null;
+    if (profile.referred_by) {
+      const { data: referrer } = await admin
+        .from('profiles')
+        .select('full_name, email')
+        .eq('id', profile.referred_by)
+        .single();
+
+      if (referrer) {
+        referrerName = referrer.full_name || referrer.email;
+      }
+    }
+
+    // Fetch wallet details from Embedly if wallet exists
+    let embedlyWalletDetails = null;
+    if (profile.embedly_wallet_id) {
+      try {
+        const wallet = await embedlyClient.getWalletById(profile.embedly_wallet_id);
+        embedlyWalletDetails = {
+          accountNumber: wallet.virtualAccount?.accountNumber || wallet.mobNum || 'N/A',
+          bankName: wallet.virtualAccount?.bankName || 'N/A',
+          availableBalance: wallet.availableBalance || 0,
+          ledgerBalance: wallet.ledgerBalance || 0,
+          currencyId: wallet.currencyId,
+          walletName: wallet.name,
+        };
+      } catch (error) {
+        console.error('Error fetching Embedly wallet:', error);
+        // Don't fail the request if wallet fetch fails
+      }
+    }
+
     // Get customer's addresses
     const { data: addresses } = await admin
       .from('addresses')
@@ -70,32 +104,44 @@ export async function GET(
       .select('*', { count: 'exact', head: true })
       .eq('user_id', id);
 
-    // Calculate total spent
+    // Calculate total spent (include all orders except cancelled)
     const { data: orderTotals } = await admin
       .from('orders')
-      .select('total')
+      .select('total, status')
       .eq('user_id', id)
-      .eq('status', 'completed');
+      .neq('status', 'cancelled');
 
     const totalSpent = orderTotals?.reduce((sum, order) => sum + (order.total || 0), 0) || 0;
 
-    // Get last order date
+    // Get last order date (most recent non-cancelled order)
     const { data: lastOrder } = await admin
       .from('orders')
       .select('created_at')
       .eq('user_id', id)
-      .eq('status', 'completed')
+      .neq('status', 'cancelled')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    // Get last visit date (most recent order of any status)
+    const { data: lastVisit } = await admin
+      .from('orders')
+      .select('created_at')
+      .eq('user_id', id)
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
 
     const customerDetails = {
       ...profile,
+      referrer_name: referrerName,
+      embedly_wallet_details: embedlyWalletDetails,
       addresses: addresses || [],
       recent_orders: recentOrders || [],
       total_orders: totalOrders || 0,
       total_spent: totalSpent,
       last_order_date: lastOrder?.created_at,
+      last_visit_date: lastVisit?.created_at,
     };
 
     return NextResponse.json({ customer: customerDetails });

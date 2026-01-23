@@ -14,6 +14,78 @@ import {
   canSendSMSToUser,
   isSMSEnabled,
 } from './sms';
+import { createServiceClient } from '@/lib/supabase/server';
+
+/**
+ * User data structure returned from lookup
+ */
+export interface UserLookupResult {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  phone: string | null;
+}
+
+/**
+ * Look up user information by user ID
+ * Uses service client to bypass RLS for server-side notifications
+ */
+export async function lookupUser(userId: string): Promise<UserLookupResult | null> {
+  try {
+    const supabase = createServiceClient();
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, email, full_name, phone')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error looking up user:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Unexpected error in user lookup:', error);
+    return null;
+  }
+}
+
+/**
+ * Look up multiple users by their IDs
+ * Returns a map of userId -> user data
+ */
+export async function lookupUsers(userIds: string[]): Promise<Map<string, UserLookupResult>> {
+  const userMap = new Map<string, UserLookupResult>();
+
+  if (userIds.length === 0) return userMap;
+
+  try {
+    const supabase = createServiceClient();
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, email, full_name, phone')
+      .in('id', userIds);
+
+    if (error) {
+      console.error('Error looking up users:', error);
+      return userMap;
+    }
+
+    if (data) {
+      for (const user of data) {
+        userMap.set(user.id, user);
+      }
+    }
+
+    return userMap;
+  } catch (error) {
+    console.error('Unexpected error in users lookup:', error);
+    return userMap;
+  }
+}
 
 export interface NotificationOptions {
   channels: ('email' | 'push' | 'sms')[];
@@ -295,22 +367,46 @@ export async function notifyPromotion(
   }
 ) {
   // This is a broadcast, so we'll handle multiple users
-  const results = [];
+  const results: Promise<{
+    userId: string;
+    email: { sent: boolean; error?: string };
+    push: { sent: boolean; failed: number; error?: string };
+    sms: { sent: boolean; error?: string };
+  }>[] = [];
+
+  // Look up all users in a single query for efficiency
+  const userMap = await lookupUsers(userIds);
 
   for (const userId of userIds) {
-    // Get user email
-    // TODO: Implement user lookup
+    const user = userMap.get(userId);
+
+    if (!user) {
+      console.warn(`User ${userId} not found, skipping promotion notification`);
+      continue;
+    }
+
+    // Determine channels based on available contact info
+    const channels: ('email' | 'push' | 'sms')[] = ['push']; // Push always available
+    if (user.email) channels.push('email');
+    if (user.phone) channels.push('sms');
+
     results.push(
       sendNotification({
-        channels: ['email', 'push'],
+        channels,
         userId,
+        userEmail: user.email || undefined,
+        userName: user.full_name || undefined,
+        userPhone: user.phone || undefined,
         type: 'promotion',
         data: promoData,
-      })
+      }).then(result => ({
+        userId,
+        ...result,
+      }))
     );
   }
 
-  return results;
+  return Promise.all(results);
 }
 
 /**

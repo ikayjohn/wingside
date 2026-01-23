@@ -96,10 +96,64 @@ export default function EditProfilePage() {
     }
   };
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPasswordError('Password change functionality coming soon.');
+
+    // Validate passwords match
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError('New passwords do not match');
+      setPasswordSuccess('');
+      return;
+    }
+
+    // Validate new password length
+    if (passwordData.newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters long');
+      setPasswordSuccess('');
+      return;
+    }
+
+    // Validate old password is provided
+    if (!passwordData.oldPassword) {
+      setPasswordError('Please enter your current password');
+      setPasswordSuccess('');
+      return;
+    }
+
+    setPasswordError('');
     setPasswordSuccess('');
+
+    try {
+      const response = await fetch('/api/user/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          oldPassword: passwordData.oldPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to change password');
+      }
+
+      // Success
+      setPasswordSuccess('Password changed successfully!');
+
+      // Clear password form
+      setPasswordData({
+        oldPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+
+      setTimeout(() => setPasswordSuccess(''), 5000);
+    } catch (err: any) {
+      setPasswordError(err.message || 'Failed to change password');
+      setPasswordSuccess('');
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

@@ -16,8 +16,16 @@ interface Product {
   is_active: boolean
   sizes: { name: string; price: number }[]
   flavors: string[]
+  flavor_ids?: string[]
   simple_flavors?: string[]
   flavor_label?: string
+  addons?: Array<{
+    id: string
+    type: 'rice' | 'drink' | 'milkshake' | 'cake'
+    name: string
+    price: number
+    max_selections: number
+  }>
 }
 
 interface Category {
@@ -26,14 +34,22 @@ interface Category {
   slug: string
 }
 
+interface Flavor {
+  id: string
+  name: string
+  category: string
+}
+
 export default function AdminProductsPage() {
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [flavors, setFlavors] = useState<Flavor[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [showForm, setShowForm] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [selectedFlavorIds, setSelectedFlavorIds] = useState<string[]>([])
   const [formData, setFormData] = useState({
     name: '',
     category_id: '',
@@ -46,6 +62,10 @@ export default function AdminProductsPage() {
     simple_flavors: '',
     flavor_label: '',
     is_active: true,
+    rice_options: '',
+    rice_count: 1,
+    drink_options: '',
+    drink_count: 1,
   })
   const [uploadingImage, setUploadingImage] = useState(false)
   const [imagePreview, setImagePreview] = useState<string>('')
@@ -77,12 +97,13 @@ export default function AdminProductsPage() {
   useEffect(() => {
     fetchProducts()
     fetchCategories()
+    fetchFlavors()
   }, [])
 
   const fetchProducts = async () => {
     try {
-      // Add cache-busting header for admin pages
-      const response = await fetch('/api/products', {
+      // Add cache-busting header and timestamp for admin pages
+      const response = await fetch(`/api/products/?_t=${Date.now()}`, {
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache',
@@ -112,6 +133,18 @@ export default function AdminProductsPage() {
     }
   }
 
+  const fetchFlavors = async () => {
+    try {
+      const response = await fetch('/api/flavors')
+      const data = await response.json()
+      if (data.flavors) {
+        setFlavors(data.flavors)
+      }
+    } catch (error) {
+      console.error('Error fetching flavors:', error)
+    }
+  }
+
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return
 
@@ -136,8 +169,40 @@ export default function AdminProductsPage() {
     console.log('[Product Edit] Loading product:', product.name)
     console.log('[Product Edit] Product subcategory:', product.subcategory)
     console.log('[Product Edit] Category:', product.category.name)
+    console.log('[Product Edit] Product addons:', product.addons)
+
+    // Transform addons into form format
+    const riceAddons = product.addons?.filter(a => a.type === 'rice') || []
+    const drinkAddons = product.addons?.filter(a => a.type === 'drink') || []
+    const riceCount = riceAddons.length > 0 ? riceAddons[0].max_selections : 1
+    const drinkCount = drinkAddons.length > 0 ? drinkAddons[0].max_selections : 1
+
+    // Convert rice addons to "Name:Price" format
+    const riceOptionsString = riceAddons
+      .map(a => a.price > 0 ? `${a.name}:${a.price}` : a.name)
+      .join(', ')
+
+    // Convert drink addons to "Name:Price" format (for future use)
+    const drinkOptionsString = drinkAddons
+      .map(a => a.price > 0 ? `${a.name}:${a.price}` : a.name)
+      .join(', ')
 
     setEditingProduct(product)
+
+    // Set selected flavor IDs if available
+    if (product.flavor_ids && product.flavor_ids.length > 0) {
+      setSelectedFlavorIds(product.flavor_ids)
+    } else {
+      // Match flavor names to IDs if flavor_ids not available
+      const flavorIds = product.flavors
+        .map(flavorName => {
+          const flavor = flavors.find(f => f.name === flavorName)
+          return flavor?.id
+        })
+        .filter(Boolean) as string[]
+      setSelectedFlavorIds(flavorIds)
+    }
+
     setFormData({
       name: product.name,
       category_id: product.category.id,
@@ -150,6 +215,10 @@ export default function AdminProductsPage() {
       simple_flavors: product.simple_flavors?.join(', ') || '',
       flavor_label: product.flavor_label || '',
       is_active: product.is_active,
+      rice_options: riceOptionsString,
+      rice_count: riceCount,
+      drink_options: drinkOptionsString,
+      drink_count: drinkCount,
     })
 
     console.log('[Product Edit] formData.subcategory set to:', product.subcategory || '')
@@ -223,6 +292,45 @@ export default function AdminProductsPage() {
     console.log('[Product Submit] Form data being submitted:', formData)
     console.log('[Product Submit] image_url in formData:', formData.image_url)
 
+    // Transform rice and drink options into addons
+    const addons: Array<{
+      type: 'rice' | 'drink' | 'milkshake' | 'cake'
+      name: string
+      price: number
+      max_selections: number
+    }> = []
+
+    // Add rice addons
+    if (formData.rice_options) {
+      const riceOptions = formData.rice_options.split(',').map(r => r.trim()).filter(r => r)
+      riceOptions.forEach(riceOption => {
+        // Parse "Name:Price" format
+        const parts = riceOption.split(':')
+        const name = parts[0].trim()
+        const price = parts.length > 1 ? parseInt(parts[1].trim()) || 0 : 0
+
+        addons.push({
+          type: 'rice',
+          name: name,
+          price: price,
+          max_selections: formData.rice_count || 1,
+        })
+      })
+    }
+
+    // Add drink addons
+    if (formData.drink_options) {
+      const drinkOptions = formData.drink_options.split(',').map(d => d.trim()).filter(d => d)
+      drinkOptions.forEach(drinkName => {
+        addons.push({
+          type: 'drink',
+          name: drinkName,
+          price: 0, // Drink options don't have individual prices in the current implementation
+          max_selections: formData.drink_count || 1,
+        })
+      })
+    }
+
     const productData = {
       name: formData.name,
       category_id: formData.category_id,
@@ -236,6 +344,8 @@ export default function AdminProductsPage() {
         : null,
       flavor_label: formData.flavor_label || null,
       is_active: formData.is_active,
+      flavor_ids: selectedFlavorIds,
+      addons: addons.length > 0 ? addons : undefined,
       sizes: [
         {
           name: 'Regular',
@@ -246,7 +356,10 @@ export default function AdminProductsPage() {
     }
 
     console.log('[Product Submit] productData being sent to API:', { ...productData, image_url: productData.image_url?.substring(0, 50) + '...' })
+    console.log('[Product Submit] flavor_ids being sent:', productData.flavor_ids)
+    console.log('[Product Submit] flavor_ids length:', productData.flavor_ids?.length)
     console.log('[Product Submit] sizes array:', productData.sizes)
+    console.log('[Product Submit] addons array:', productData.addons)
 
     try {
       const url = editingProduct
@@ -269,6 +382,7 @@ export default function AdminProductsPage() {
         alert(`Product ${editingProduct ? 'updated' : 'created'} successfully`)
         setShowForm(false)
         setEditingProduct(null)
+        setSelectedFlavorIds([])
         setFormData({
           name: '',
           category_id: '',
@@ -281,6 +395,10 @@ export default function AdminProductsPage() {
           simple_flavors: '',
           flavor_label: '',
           is_active: true,
+          rice_options: '',
+          rice_count: 1,
+          drink_options: '',
+          drink_count: 1,
         })
         fetchProducts()
       } else {
@@ -323,6 +441,7 @@ export default function AdminProductsPage() {
         <button
           onClick={() => {
             setEditingProduct(null)
+            setSelectedFlavorIds([])
             setFormData({
               name: '',
               category_id: '',
@@ -335,6 +454,10 @@ export default function AdminProductsPage() {
               simple_flavors: '',
               flavor_label: '',
               is_active: true,
+              rice_options: '',
+              rice_count: 1,
+              drink_options: '',
+              drink_count: 1,
             })
             setImagePreview('')
             setShowForm(true)
@@ -497,6 +620,7 @@ export default function AdminProductsPage() {
                   onClick={() => {
                     setShowForm(false)
                     setEditingProduct(null)
+                    setSelectedFlavorIds([])
                     setImagePreview('')
                   }}
                   className="text-gray-400 hover:text-gray-600"
@@ -703,6 +827,41 @@ export default function AdminProductsPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Available Wing Flavors
+                  </label>
+                  <div className="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto">
+                    {flavors.length === 0 ? (
+                      <p className="text-sm text-gray-500">Loading flavors...</p>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2">
+                        {flavors.map((flavor) => (
+                          <label key={flavor.id} className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedFlavorIds.includes(flavor.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedFlavorIds([...selectedFlavorIds, flavor.id])
+                                } else {
+                                  setSelectedFlavorIds(selectedFlavorIds.filter(id => id !== flavor.id))
+                                }
+                              }}
+                              className="rounded border-gray-300 text-yellow-400 focus:ring-yellow-400"
+                            />
+                            <span className="text-sm text-gray-700">{flavor.name}</span>
+                            <span className="text-xs text-gray-400">({flavor.category})</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Select all wing flavors available for this product
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Simple Flavors (comma-separated)
                   </label>
                   <input
@@ -732,6 +891,72 @@ export default function AdminProductsPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Rice Options (comma-separated, use "Name:Price" format for paid options)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.rice_options}
+                    onChange={(e) => setFormData({ ...formData, rice_options: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    placeholder="Jollof Rice:0, Fried Rice:0, Coconut Rice:500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Use "Name:Price" format (e.g., "Coconut Rice:500"). Free options: "Jollof Rice:0" or just "Jollof Rice"
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Max Rice Selections
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.rice_count}
+                    onChange={(e) => setFormData({ ...formData, rice_count: parseInt(e.target.value) || 1 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    placeholder="1"
+                    min="1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    How many rice options can customer select
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Drink Options (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.drink_options}
+                    onChange={(e) => setFormData({ ...formData, drink_options: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    placeholder="Coke, Fanta, Sprite, Water"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    For meal deals with drink options
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Max Drink Selections
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.drink_count}
+                    onChange={(e) => setFormData({ ...formData, drink_count: parseInt(e.target.value) || 1 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    placeholder="1"
+                    min="1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    How many drink options can customer select
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Description
                   </label>
                   <textarea
@@ -755,6 +980,7 @@ export default function AdminProductsPage() {
                     onClick={() => {
                       setShowForm(false)
                       setEditingProduct(null)
+                      setSelectedFlavorIds([])
                       setImagePreview('')
                     }}
                     className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"

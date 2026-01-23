@@ -108,12 +108,12 @@ ${formData.moreDetails}
           <div className="w-full max-w-6xl">
             {/* Heading */}
             <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 leading-tight">
-              Throwing a party? You bring the<br />guests, we'll bring the flavors!
+              You bring the guests, we'll<br />bring the flavours
             </h1>
 
             {/* Description */}
             <p className="text-sm md:text-base lg:text-lg text-white mb-8 max-w-3xl leading-relaxed">
-              Wings, sandwiches, milkshakes and more that turn any gathering into an instant vibe. Whether it&apos;s birthdays, farewells, or &quot;just because,&quot; we&apos;ve got your party food all locked-in
+              Whether its birthdays, funerals, farewells, or "just because", we&apos;ve got you covered
             </p>
 
             {/* CTA Button */}
@@ -132,12 +132,9 @@ ${formData.moreDetails}
         <div className="w-[90%] mx-auto">
           {/* Section Header */}
           <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-200 mb-4">
-              Perfect for every occassion
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black mb-4">
+              Perfect for every gatherings
             </h2>
-            <p className="text-black text-lg md:text-xl font-medium">
-              Whatever you're celebrating, we've got the wings for it
-            </p>
           </div>
 
           {/* Occasions Grid - 2 rows x 3 columns */}
@@ -216,10 +213,10 @@ ${formData.moreDetails}
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-black mb-6">
-              Ready to Make Your Event Unforgettable?
+              We are here for you
             </h2>
             <p className="text-gray-700 text-base md:text-lg leading-relaxed">
-              Get in touch with us and let's create the perfect menu for your celebration.
+              Let&apos;s create the perfect menu for your occasions.
             </p>
 
             {submitMessage && (
@@ -245,7 +242,7 @@ ${formData.moreDetails}
                   required
                   value={formData.fullName}
                   onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent bg-white"
                   placeholder="Enter your full name"
                 />
               </div>
@@ -259,7 +256,7 @@ ${formData.moreDetails}
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent bg-white"
                   placeholder="your.email@example.com"
                 />
               </div>
@@ -273,7 +270,7 @@ ${formData.moreDetails}
                   required
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent bg-white"
                   placeholder="+234 800 000 0000"
                 />
               </div>
@@ -286,7 +283,7 @@ ${formData.moreDetails}
                   required
                   value={formData.eventType}
                   onChange={(e) => setFormData({...formData, eventType: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent bg-white"
                 >
                   <option value="">Select event type</option>
                   <option value="Birthday Party">Birthday Party</option>
@@ -308,7 +305,7 @@ ${formData.moreDetails}
                   required
                   value={formData.numberOfPeople}
                   onChange={(e) => setFormData({...formData, numberOfPeople: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent bg-white"
                   placeholder="e.g., 50-100"
                 />
               </div>
@@ -322,7 +319,7 @@ ${formData.moreDetails}
                   required
                   value={formData.eventDate}
                   onChange={(e) => setFormData({...formData, eventDate: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent bg-white"
                 />
               </div>
             </div>
@@ -336,7 +333,7 @@ ${formData.moreDetails}
                 value={formData.moreDetails}
                 onChange={(e) => setFormData({...formData, moreDetails: e.target.value})}
                 rows={5}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent resize-none"
+                className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent resize-none bg-white"
                 placeholder="Tell us more about your event, dietary requirements, flavor preferences, etc."
               />
             </div>

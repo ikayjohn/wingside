@@ -119,12 +119,12 @@ ${formData.moreDetails}
           <div className="w-full max-w-6xl">
             {/* Heading */}
             <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 leading-tight">
-              Meetings just got saucier,<br />with <span className="text-[#F7C400]">WINGSIDE</span> on the table
+              Boosting team productivity one meal at a time
             </h1>
 
             {/* Description */}
             <p className="text-sm md:text-base lg:text-lg text-white mb-8 max-w-3xl leading-relaxed">
-              From quick huddles to full-blown conferences, Wingside keeps your team fired up and full of ideas (and wings). No stress, no bland bites, just pure flavor-fueled productivity.
+              From quick huddles to full-blown conferences, Wingside keeps your team full of ideas and wings to execute.
             </p>
 
             {/* CTA Button */}
@@ -132,7 +132,7 @@ ${formData.moreDetails}
               onClick={() => setIsFormOpen(true)}
               className="inline-block bg-[#F7C400] text-black px-8 py-4 rounded-full font-semibold text-lg hover:bg-[#e5b500] transition-colors"
             >
-              Let's wing it
+              Get started
             </button>
           </div>
         </div>
@@ -156,7 +156,7 @@ ${formData.moreDetails}
         <div className="mb-12 w-[90%] mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-black">
-              Built for Every Kind<br />of Gathering...
+              Built for every kind<br />of meetings.
             </h2>
             <button
               onClick={() => setIsFormOpen(true)}
@@ -248,10 +248,10 @@ ${formData.moreDetails}
       <div className="bg-[#FDF5E5] py-16 md:py-24 px-4 md:px-8 lg:px-16" id="contact">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-black mb-6">
-            Ready to Join the Wing Family?
+            Feed your team
           </h2>
           <p className="text-gray-700 text-base md:text-lg mb-8 leading-relaxed">
-            Fill out a quick form and our team will handle the rest — from start to finish, we bring the heat so you can bring the focus.
+            Fill out a quick form and our team will handle the rest
           </p>
           <button
             onClick={() => setIsFormOpen(true)}
@@ -280,12 +280,9 @@ ${formData.moreDetails}
                 <h2 className="text-3xl md:text-4xl font-bold text-black mb-4">
                   Let's spice up your meetings
                 </h2>
-                <p className="text-gray-700 text-base md:text-lg">
-                  From quick huddles to full-blown conferences, we keep your team fired up and full of ideas (and wings). No stress, no bland bites, just pure flavor-fueled productivity.
-                </p>
               </div>
 
-              <p className="text-gray-700 mb-6">
+              <p className="text-gray-700 mb-6 text-center">
                 Fill the form below, so we can reach you with your quote
               </p>
 

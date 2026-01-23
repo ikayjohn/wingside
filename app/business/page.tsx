@@ -34,7 +34,7 @@ export default function BusinessPage() {
 
             {/* Description */}
             <p className="text-sm md:text-base lg:text-lg text-white mb-8 max-w-3xl leading-relaxed">
-              We fuel creativity, how else do you think top businesses shine? Wingside Business keeps your team powered, happy, and way more productive (you can thank us later)
+              We fuel creativity. Wingside Business keeps teams fed, focused, and firing on all cylinders.
             </p>
 
             {/* CTA Button */}
@@ -42,7 +42,7 @@ export default function BusinessPage() {
               href="/order"
               className="inline-block bg-[#F7C400] text-black px-8 py-4 rounded-full font-semibold text-lg hover:bg-[#e5b500] transition-colors"
             >
-              Let's make it happen
+              Get started
             </Link>
           </div>
         </div>
@@ -52,7 +52,7 @@ export default function BusinessPage() {
       <div className="py-16 md:py-24 px-4 md:px-8 lg:px-16">
         <div className="max-w-7xl mx-auto">
           {/* Section Title */}
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-center text-gray-300 mb-16">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-center text-black mb-16">
             Our Programs
           </h2>
 
@@ -70,7 +70,7 @@ export default function BusinessPage() {
               </div>
               <h3 className="text-2xl md:text-3xl font-bold mb-3 group-hover:text-[#F7C400] transition-colors">Wingpost</h3>
               <p className="text-gray-700 text-sm md:text-base">
-                Snack station meets magic. We set up in your office (for free!) with sandwiches, salads, parfaits & more. You pick what we stock. They eat. Everyone wins.
+                Snack station meets convenience. We set up in your office (for free!) with sandwiches, salads, parfaits & more. You pick what we stock. They eat. Everyone wins.
               </p>
             </Link>
 

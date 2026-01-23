@@ -149,7 +149,7 @@ input[type="button"],
 
 /* Category Tabs */
 .category-tab {
-  padding: 0.5rem 0.875rem;
+  padding: 0.75rem 1.5rem;
   border-radius: 9999px;
   font-weight: 500;
   white-space: nowrap;
@@ -157,7 +157,7 @@ input[type="button"],
   height: auto;
   background-color: #FDF5E5;
   color: #552627;
-  font-size: 0.75rem;
+  font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -166,15 +166,16 @@ input[type="button"],
 
 @media (min-width: 640px) {
   .category-tab {
-    padding: 0.625rem 1.25rem;
-    font-size: 0.875rem;
+    padding: 1rem 2rem;
+    font-size: 16px;
   }
 }
 
 @media (min-width: 768px) {
   .category-tab {
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
+    padding: 1rem 1.5rem;
+    font-size: 18px;
+    flex: 1;
   }
 }
 
@@ -324,11 +325,81 @@ input[type="button"],
 /* Flavor Image Styling */
 .flavor-image {
   border-radius: 50px;
-  transition: transform 0.3s ease;
 }
 
-.flavor-image:hover {
-  transform: scale(1.05);
+/* Flavor Card Hover Effect */
+.flavor-card {
+  transition: background-color 1s ease;
+  padding: 1.5rem 0 1.5rem 1.5rem;
+  border-radius: 24px;
+  cursor: pointer;
+}
+
+@media (min-width: 768px) {
+  .flavor-card {
+    padding: 2rem 0 2rem 2rem;
+  }
+}
+
+.flavor-card:hover {
+  background-color: #F7C400;
+}
+
+/* Flavor Card Buttons */
+.flavor-order-btn {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  color: #000000;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 50px;
+  position: relative;
+  background: transparent;
+  z-index: 1;
+  overflow: visible;
+}
+
+.flavor-order-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 100%;
+  background-color: #552627;
+  border-radius: 50px;
+  transition: width 0.4s ease;
+  z-index: -1;
+}
+
+.flavor-card:hover .flavor-order-btn {
+  color: #ffffff;
+}
+
+.flavor-card:hover .flavor-order-btn::before {
+  width: 100%;
+}
+
+.flavor-learn-more-btn {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  color: #552627;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: opacity 0.3s ease;
+  border: 2px solid #552627;
+  border-radius: 50px;
+  background-color: transparent;
+  margin-left: 0.5rem;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+.flavor-card:hover .flavor-learn-more-btn {
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 @media (max-width: 768px) {
@@ -849,7 +920,8 @@ input[type="button"],
   position: relative;
   width: 100%;
   height: 600px;
-  overflow: hidden;
+  overflow: visible;
+  z-index: 1;
 }
 
 @media (min-width: 768px) {
@@ -895,13 +967,13 @@ input[type="button"],
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 2rem 1.5rem 80px;
+  padding: 2rem 1.5rem 140px;
   z-index: 10;
 }
 
 @media (min-width: 768px) {
   .hero-content {
-    padding: 3rem 2.5rem 150px;
+    padding: 3rem 2.5rem 180px;
   }
 }
 
@@ -1352,12 +1424,12 @@ input[type="button"],
 
 .wingclub-form-section {
   flex: 1;
-  padding: 2rem;
+  padding: 1.5rem 1rem;
   overflow-y: auto;
   position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   max-width: 500px;
   margin: 0 auto;
 }
@@ -1365,6 +1437,7 @@ input[type="button"],
 @media (min-width: 768px) {
   .wingclub-form-section {
     padding: 3rem;
+    justify-content: center;
   }
 }
 
@@ -1386,6 +1459,19 @@ input[type="button"],
   cursor: pointer;
   padding: 0.25rem;
   transition: color 0.2s;
+}
+
+@media (max-width: 767px) {
+  .wingclub-close-btn {
+    top: 1rem;
+    right: 1rem;
+    padding: 0.5rem;
+  }
+
+  .wingclub-close-btn svg {
+    width: 28px;
+    height: 28px;
+  }
 }
 
 .wingclub-close-btn:hover {
@@ -1416,6 +1502,15 @@ input[type="button"],
   margin-bottom: -1px;
 }
 
+@media (max-width: 767px) {
+  .wingclub-tab {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    font-size: 0.8125rem;
+    text-align: center;
+  }
+}
+
 .wingclub-tab:hover {
   color: #374151;
 }
@@ -1432,10 +1527,23 @@ input[type="button"],
   margin-bottom: 0.5rem;
 }
 
+@media (max-width: 767px) {
+  .wingclub-title {
+    font-size: 1.5rem;
+  }
+}
+
 .wingclub-subtitle {
   font-size: 0.875rem;
   color: #6b7280;
   margin-bottom: 1.5rem;
+}
+
+@media (max-width: 767px) {
+  .wingclub-subtitle {
+    font-size: 0.8125rem;
+    margin-bottom: 1.25rem;
+  }
 }
 
 .wingclub-row {
@@ -1444,8 +1552,21 @@ input[type="button"],
   gap: 1rem;
 }
 
+@media (max-width: 767px) {
+  .wingclub-row {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}
+
 .wingclub-field {
   margin-bottom: 1rem;
+}
+
+@media (max-width: 767px) {
+  .wingclub-field {
+    margin-bottom: 0.875rem;
+  }
 }
 
 .wingclub-label {
@@ -1465,6 +1586,13 @@ input[type="button"],
   color: #374151;
   background-color: #fff;
   transition: border-color 0.2s;
+}
+
+@media (max-width: 767px) {
+  .wingclub-input {
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+  }
 }
 
 .wingclub-input::placeholder {
@@ -1531,6 +1659,13 @@ input[type="button"],
   font-size: 0.875rem;
   color: #374151;
   outline: none;
+}
+
+@media (max-width: 767px) {
+  .wingclub-phone-input {
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+  }
 }
 
 .wingclub-phone-input::placeholder {
@@ -1625,6 +1760,14 @@ input[type="button"],
   cursor: pointer;
   transition: background-color 0.2s;
   margin-bottom: 1.5rem;
+}
+
+@media (max-width: 767px) {
+  .wingclub-submit-btn {
+    padding: 1.125rem;
+    font-size: 1.0625rem;
+    margin-bottom: 1.25rem;
+  }
 }
 
 .wingclub-submit-btn:hover {
@@ -3978,7 +4121,7 @@ input[type="button"],
 
 .connect-hero-tags {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
@@ -3987,25 +4130,28 @@ input[type="button"],
 .connect-tag {
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem;
-  padding: 0.5rem 1rem;
-  background-color: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.3);
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1.75rem;
+  background-color: transparent;
+  border: 1px solid #F7C400;
   border-radius: 9999px;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: white;
+  white-space: nowrap;
 }
 
 .connect-hero-btn {
-  padding: 0.875rem 2rem;
+  padding: 1.25rem 3rem;
   background-color: #F7C400;
   color: #1f2937;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 1.125rem;
   border: none;
   border-radius: 9999px;
   cursor: pointer;
   transition: background-color 0.2s;
+  margin-top: 30px;
 }
 
 .connect-hero-btn:hover {
@@ -4041,7 +4187,7 @@ input[type="button"],
   display: inline-block;
   padding: 0.25rem 0.75rem;
   background-color: #FEF3C7;
-  color: #000000;
+  color: #552627;
   font-size: 0.75rem;
   font-weight: 500;
   border-radius: 9999px;
@@ -4049,16 +4195,16 @@ input[type="button"],
 }
 
 .connect-why-title {
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 2.5rem;
+  font-weight: 900;
   color: #1f2937;
-  line-height: 1.2;
+  line-height: 0.85;
   margin-bottom: 1.5rem;
 }
 
 @media (min-width: 768px) {
   .connect-why-title {
-    font-size: 2.5rem;
+    font-size: 3.5rem;
   }
 }
 
@@ -4095,22 +4241,26 @@ input[type="button"],
 
 .connect-benefit-1 {
   align-self: flex-start;
-  transform: rotate(-5deg);
+  transform: rotate(-15deg);
 }
 
 .connect-benefit-2 {
   align-self: center;
   transform: rotate(3deg);
+  background-color: #552627;
+  margin-left: 30px;
 }
 
 .connect-benefit-3 {
   align-self: flex-start;
-  margin-left: 2rem;
-  transform: rotate(-3deg);
+  margin-left: calc(2rem + 10px);
+  margin-top: 40px;
+  transform: rotate(-20deg);
 }
 
 .connect-benefit-4 {
   align-self: flex-end;
+  background-color: #552627;
 }
 
 .connect-benefit-icon {
@@ -4120,7 +4270,7 @@ input[type="button"],
 .connect-benefit-icon.red { color: #EF4444; }
 .connect-benefit-icon.yellow { color: #F7C400; }
 .connect-benefit-icon.orange { color: #F97316; }
-.connect-benefit-icon.blue { color: #3B82F6; }
+.connect-benefit-icon.blue { color: #F7C400; }
 
 .connect-star {
   position: absolute;
@@ -4229,6 +4379,7 @@ input[type="button"],
 }
 
 .connect-calendar-btn {
+  display: inline-block;
   padding: 0.875rem 2.5rem;
   background-color: transparent;
   color: #F7C400;
@@ -4238,6 +4389,7 @@ input[type="button"],
   border-radius: 9999px;
   cursor: pointer;
   transition: all 0.2s;
+  text-decoration: none;
 }
 
 .connect-calendar-btn:hover {
@@ -4375,11 +4527,11 @@ input[type="button"],
 
 .connect-footer p {
   font-size: 0.75rem;
-  color: #6B7280;
+  color: #000000;
 }
 
 .connect-footer-link {
-  color: #6B7280;
+  color: #000000;
   text-decoration: none;
 }
 
@@ -4390,6 +4542,10 @@ input[type="button"],
 .connect-footer-link.highlight {
   color: #F7C400;
   font-weight: 500;
+}
+
+.connect-footer-link-brown {
+  color: #552627;
 }
 
 /* ==================== */

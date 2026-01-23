@@ -44,7 +44,7 @@ export default function HeroSlideshow() {
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % slides.length);
-    }, 6000); // Change slide every 6 seconds
+    }, 10000); // Change slide every 10 seconds (matches video length)
 
     return () => clearInterval(interval);
   }, [slides.length]);
@@ -65,7 +65,7 @@ export default function HeroSlideshow() {
 
   // Ken Burns effect: simple zoom in from 100% to 120%
   const getKenBurnsStyle = (isActive: boolean) => {
-    const scale = isActive ? 1.2 : 1;
+    const scale = 1; // No zoom effect
     return {
       position: 'absolute' as const,
       top: '50%',
@@ -104,11 +104,12 @@ export default function HeroSlideshow() {
 
   return (
     <section className="hero-video-section relative overflow-hidden">
-      {/* Slide Images */}
+      {/* Slide Images/Video */}
       <div className="absolute inset-0">
         {slides.map((slide, index) => {
           const isActive = index === currentIndex;
           const showAnimation = shouldAnimate && isActive;
+          const isFirstSlide = index === 0;
 
           return (
             <div
@@ -119,16 +120,43 @@ export default function HeroSlideshow() {
                 zIndex: isActive ? 1 : 0,
               }}
             >
-              <img
-                src={slide.image_url}
-                alt={slide.title}
-                className="hero-video"
-                style={{
-                  ...getKenBurnsStyle(showAnimation),
-                  objectFit: 'cover',
-                  objectPosition: 'center',
-                } as any}
-              />
+              {isFirstSlide ? (
+                // First slide uses hero.mp4 video
+                <video
+                  key="hero-video"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="hero-video"
+                  style={{
+                    position: 'absolute' as const,
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    minWidth: '100%',
+                    minHeight: '100%',
+                    width: 'auto',
+                    height: 'auto',
+                    objectFit: 'cover' as const,
+                  }}
+                >
+                  <source src="/hero.mp4?v=2" type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
+                // Other slides use images
+                <img
+                  src={slide.image_url}
+                  alt={slide.title}
+                  className="hero-video"
+                  style={{
+                    ...getKenBurnsStyle(showAnimation),
+                    objectFit: 'cover',
+                    objectPosition: 'center',
+                  } as any}
+                />
+              )}
             </div>
           );
         })}
@@ -139,7 +167,7 @@ export default function HeroSlideshow() {
 
       {/* Hero Content */}
       <div
-        className="hero-content relative z-20 transition-opacity duration-500 ease-in-out"
+        className="hero-content relative z-10 transition-opacity duration-500 ease-in-out"
         key={currentIndex}
       >
         <h1 className="hero-video-title">
@@ -147,9 +175,8 @@ export default function HeroSlideshow() {
         </h1>
         {currentSlide.description && (
           <p
-            className="opacity-90"
+            className="opacity-90 text-sm sm:text-base md:text-[20px]"
             style={{
-              fontSize: '20px',
               fontWeight: '300',
               color: 'white',
               marginBottom: '0.25rem',
@@ -168,7 +195,7 @@ export default function HeroSlideshow() {
 
       {/* Slide Indicators */}
       {slides.length > 1 && (
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-3 z-30 pb-5">
+        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex gap-3 z-[150] md:bottom-32">
           {slides.map((_, index) => (
             <button
               key={index}
@@ -185,53 +212,6 @@ export default function HeroSlideshow() {
         </div>
       )}
 
-      {/* Navigation Arrows */}
-      {slides.length > 1 && (
-        <>
-          <button
-            onClick={() =>
-              setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length)
-            }
-            className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-sm items-center justify-center transition-all duration-300 hover:scale-110"
-            style={{ cursor: 'pointer' }}
-            aria-label="Previous slide"
-          >
-            <svg
-              className="w-6 h-6 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-          <button
-            onClick={() => setCurrentIndex((prev) => (prev + 1) % slides.length)}
-            className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-sm items-center justify-center transition-all duration-300 hover:scale-110"
-            style={{ cursor: 'pointer' }}
-            aria-label="Next slide"
-          >
-            <svg
-              className="w-6 h-6 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </button>
-        </>
-      )}
     </section>
   );
 }

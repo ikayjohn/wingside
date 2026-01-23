@@ -101,7 +101,7 @@ export default function OrderPage() {
   const fetchProducts = useCallback(async () => {
     try {
       // Add timestamp to prevent browser caching
-      const response = await fetch(`/api/products?_t=${Date.now()}`, {
+      const response = await fetch(`/api/products/?_t=${Date.now()}`, {
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache',
@@ -125,6 +125,12 @@ export default function OrderPage() {
           wingCount: p.wing_count,
           flavorLabel: p.flavorLabel, // Use camelCase from API
           description: p.description,
+          riceOptions: p.riceOptions,
+          riceCount: p.riceCount,
+          drinkOptions: p.drinkOptions,
+          drinkCount: p.drinkCount,
+          milkshakeOptions: p.milkshakeOptions,
+          cakeOptions: p.cakeOptions,
         }));
         setProducts(transformedProducts);
       }
@@ -142,7 +148,7 @@ export default function OrderPage() {
   // Check if orders are currently accepted
   const checkOrderStatus = useCallback(async () => {
     try {
-      const response = await fetch('/api/orders/status');
+      const response = await fetch('/api/orders/status/');
       const data = await response.json();
       setAcceptingOrders(data.acceptingOrders);
       setOrderStatusMessage(data.message);

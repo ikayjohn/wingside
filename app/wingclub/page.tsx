@@ -113,7 +113,7 @@ export default function WingclubPage() {
               How it works
             </h2>
             <p className="text-white text-base md:text-lg max-w-2xl mx-auto">
-              It's basically turning your cravings into currency, best part, this currency is valid across our entire store. The Wingside universal currency we call it.
+              It's basically turning your cravings into currency, best part is, it's valid across all our stores.
             </p>
           </div>
 
@@ -178,7 +178,7 @@ export default function WingclubPage() {
       <div className="py-16 md:py-20 bg-white">
         <div className="w-[90%] mx-auto">
           {/* Section Title */}
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-12 text-gray-300">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-12" style={{color: '#552627'}}>
             Reward Tiers
           </h2>
 
@@ -272,8 +272,8 @@ export default function WingclubPage() {
             {/* Left Content */}
             <div className="relative">
               <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-8 leading-1.0">
-                Stop drooling,<br />
-                Start earning.
+                More wings,<br />
+                more wins.
               </h2>
               <Link
                 href="/my-account"

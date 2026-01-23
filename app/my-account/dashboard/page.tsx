@@ -15,8 +15,6 @@ interface UserProfile {
   phone: string;
   walletBalance: number;
   cardNumber: string;
-  bankAccount: string;
-  bankName: string;
   refId: string;
   referralCode: string;
   totalPoints: number;
@@ -98,15 +96,46 @@ export default function WingclubDashboard() {
       }
       const profileData = await profileResponse.json();
 
-      // Fetch wallet transactions
-      const transactionsResponse = await fetch('/api/user/wallet-history');
-      if (!transactionsResponse.ok) {
-        console.error('Transactions API error:', transactionsResponse.status);
+      // Fetch wallet transactions from both local and Embedly
+      const [localResponse, embedlyResponse] = await Promise.all([
+        fetch('/api/user/wallet-history'),
+        fetch('/api/embedly/wallets/history').catch(() => null)
+      ]);
+
+      let allTransactions: Transaction[] = [];
+
+      // Add local transactions
+      if (localResponse.ok) {
+        const localData = await localResponse.json();
+        allTransactions = [...allTransactions, ...(localData.transactions || [])];
       }
-      const transactionsData = await transactionsResponse.json();
+
+      // Add Embedly transactions
+      if (embedlyResponse && embedlyResponse.ok) {
+        const embedlyData = await embedlyResponse.json();
+        if (embedlyData.success && embedlyData.transactions) {
+          const embedlyTransactions = Object.values(embedlyData.transactions)
+            .flat()
+            .map((txn: any) => ({
+              id: txn.reference || txn.id || `embedly-${Date.now()}`,
+              type: txn.type === 'debit' ? 'Payment' : 'Wallet Funding',
+              description: txn.description || txn.remarks,
+              amount: txn.type === 'debit' ? -Math.abs(txn.amount) : Math.abs(txn.amount),
+              status: 'completed',
+              paymentMethod: 'wallet',
+              createdAt: txn.date || new Date().toISOString()
+            }));
+          allTransactions = [...allTransactions, ...embedlyTransactions];
+        }
+      }
+
+      // Sort by date (newest first)
+      allTransactions.sort((a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
 
       setUserData(profileData.profile);
-      setRecentTransactions(transactionsData.transactions || []);
+      setRecentTransactions(allTransactions);
 
       // Redirect admins to admin panel
       if (profileData.profile?.role === 'admin') {
@@ -431,7 +460,10 @@ export default function WingclubDashboard() {
                   </p>
 
                   <div className="dashboard-wallet-actions">
-                    <button className="dashboard-fund-btn" onClick={() => setShowFundModal(true)}>
+                    <button
+                      className="dashboard-fund-btn"
+                      onClick={() => setShowFundModal(true)}
+                    >
                       Fund wallet
                     </button>
                     <div className="dashboard-bank-info">
@@ -457,20 +489,14 @@ export default function WingclubDashboard() {
               ) : (
                 <>
                   <h2 className="dashboard-wallet-balance">₦{userData.walletBalance.toLocaleString()}</h2>
-                  <p className="dashboard-wallet-card-number">Card: {userData.cardNumber}</p>
+                  <p className="dashboard-wallet-card-number">Loading wallet...</p>
 
                   <div className="dashboard-wallet-actions">
-                    <button className="dashboard-fund-btn" onClick={() => setShowFundModal(true)}>
-                      Fund wallet
+                    <button className="dashboard-fund-btn" disabled>
+                      Setting up wallet...
                     </button>
                     <div className="dashboard-bank-info">
-                      <span>{userData.bankName}: {userData.bankAccount}</span>
-                      <button
-                        className="dashboard-copy-btn"
-                        onClick={() => copyToClipboard(userData.bankAccount, 'card')}
-                      >
-                        {copied === 'card' ? '✓' : 'Copy'}
-                      </button>
+                      <span>Please wait while we set up your wallet</span>
                     </div>
                   </div>
                 </>
@@ -798,13 +824,15 @@ export default function WingclubDashboard() {
       />
 
       {/* Fund Wallet Modal */}
-      <FundWalletModal
-        isOpen={showFundModal}
-        onClose={() => setShowFundModal(false)}
-        accountNumber={embedlyWallet?.virtualAccount.accountNumber || userData.bankAccount}
-        accountName={embedlyWallet?.name || `Wingclub / ${userData.name}`}
-        bankName={embedlyWallet?.virtualAccount.bankName || userData.bankName}
-      />
+      {embedlyWallet && (
+        <FundWalletModal
+          isOpen={showFundModal}
+          onClose={() => setShowFundModal(false)}
+          accountNumber={embedlyWallet.virtualAccount.accountNumber}
+          accountName={embedlyWallet.name}
+          bankName={embedlyWallet.virtualAccount.bankName}
+        />
+      )}
     </div>
   );
 }

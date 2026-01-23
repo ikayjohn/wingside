@@ -300,6 +300,14 @@ class EmbedlyClient {
   }
 
   async getWalletHistory(walletId: string): Promise<EmbedlyTransaction[]> {
+    // Embedly API requires From and To date parameters
+    const fromDate = new Date();
+    fromDate.setMonth(fromDate.getMonth() - 6); // Last 6 months
+    const from = fromDate.toISOString().split('T')[0];
+
+    const toDate = new Date();
+    const to = toDate.toISOString().split('T')[0];
+
     const response = await this.makeRequest<{
       code: string;
       success: boolean;
@@ -307,7 +315,7 @@ class EmbedlyClient {
       data: {
         walletHistories: EmbedlyTransaction[];
       };
-    }>(`/wallets/history?walletId=${walletId}`);
+    }>(`/wallets/history?walletId=${walletId}&from=${from}&to=${to}`);
 
     return response.data.walletHistories;
   }

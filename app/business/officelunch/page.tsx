@@ -105,8 +105,8 @@ ${formData.needs}
           {/* Text Content at Bottom */}
           <div className="w-full max-w-6xl">
             {/* Heading */}
-            <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 leading-tight">
-              Lunch without the<br />Lunchtime chaos
+            <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4" style={{ lineHeight: '1' }}>
+              Lunch without the chaos
             </h1>
 
             {/* Description */}
@@ -119,7 +119,7 @@ ${formData.needs}
               href="#contact"
               className="inline-block bg-[#F7C400] text-black px-8 py-4 rounded-full font-semibold text-lg hover:bg-[#e5b500] transition-colors"
             >
-              Talk to us
+              Order now
             </a>
           </div>
         </div>
@@ -366,7 +366,7 @@ ${formData.needs}
 
             {/* Footer Text */}
             <p className="text-center text-sm text-gray-600">
-              Our team typically responds within 24 hours. Need faster assistance? Call us at{' '}
+              Need further assistance? Call us at{' '}
               <a href="tel:08090191999" className="text-[#F7C400] font-semibold hover:underline">
                 08090191999
               </a>
