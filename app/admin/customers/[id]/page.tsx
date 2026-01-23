@@ -56,7 +56,9 @@ interface Customer {
   embedly_customer_id?: string;
   embedly_wallet_id?: string;
   wallet_balance?: number;
-  loyalty_points?: number;
+  total_points?: number; // Actual points from profiles table
+  loyalty_points?: number; // Alias for total_points
+  tier?: string; // User's tier status
   tier_status?: string;
   // Referral info
   referred_by?: string;
@@ -683,7 +685,7 @@ export default function CustomerDetailsPage() {
                 <span className="text-sm text-gray-500">Role:</span>
                 <p className="font-medium capitalize flex items-center gap-2">
                   {customer.role}
-                  <TierIcon points={customer.loyalty_points} />
+                  <TierIcon points={customer.total_points ?? customer.loyalty_points} />
                 </p>
               </div>
               <div>
@@ -782,24 +784,24 @@ export default function CustomerDetailsPage() {
                 </div>
                 <div>
                   <p className="text-lg font-bold text-[#552627]">
-                    {Math.floor(customer.embedly_wallet_details.availableBalance).toLocaleString()} pts
+                    {(customer.loyalty_points || customer.total_points || 0).toLocaleString()} pts
                   </p>
-                  <p className="text-xs text-gray-500">Based on balance</p>
+                  <p className="text-xs text-gray-500">Points earned</p>
                 </div>
               </div>
 
               {/* WingClub Tier Card */}
               <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
-                  <TierIcon points={customer.embedly_wallet_details.availableBalance} />
+                  <TierIcon points={customer.loyalty_points || customer.total_points} />
                   <span className="font-medium text-sm text-gray-700">WingClub Tier</span>
                 </div>
                 <div>
                   <p className="text-lg font-bold text-[#552627] capitalize flex items-center gap-2">
-                    {getTierStatus(customer.embedly_wallet_details.availableBalance)}
+                    {getTierStatus(customer.loyalty_points || customer.total_points)}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {getTierProgress(customer.embedly_wallet_details.availableBalance)}
+                    {getTierProgress(customer.loyalty_points || customer.total_points)}
                   </p>
                 </div>
               </div>
@@ -833,10 +835,10 @@ export default function CustomerDetailsPage() {
               <div className="text-center">
                 <p className="text-gray-600 mb-2">Current Balance</p>
                 <p className="text-3xl font-bold text-purple-600">
-                  {customer.loyalty_points?.toLocaleString() || 0} pts
+                  {(customer.total_points ?? customer.loyalty_points ?? 0).toLocaleString()} pts
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
-                  Tier: <span className="font-medium">{getTierStatus(customer.loyalty_points)}</span>
+                  Tier: <span className="font-medium">{getTierStatus(customer.total_points ?? customer.loyalty_points)}</span>
                 </p>
               </div>
             </div>
@@ -846,10 +848,10 @@ export default function CustomerDetailsPage() {
                 <div className="bg-white rounded-lg p-4 flex-1">
                   <p className="text-sm text-gray-600 mb-1">Current Balance</p>
                   <p className="text-2xl font-bold text-purple-600">
-                    {pointsDetails?.totalPoints?.toLocaleString() || customer.loyalty_points?.toLocaleString() || 0} pts
+                    {(pointsDetails?.totalPoints ?? customer.total_points ?? customer.loyalty_points ?? 0).toLocaleString()} pts
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    Tier: {getTierStatus(pointsDetails?.totalPoints || customer.loyalty_points)}
+                    Tier: {getTierStatus(pointsDetails?.totalPoints ?? customer.total_points ?? customer.loyalty_points)}
                   </p>
                 </div>
                 <button
