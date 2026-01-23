@@ -301,7 +301,7 @@ This request was submitted through the Wingside Kids page.
               Starting from ₦300,000
             </span>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
-              Make their special day unforgettable with<br />our amazing party packages!
+              Make memories that last
             </h2>
           </div>
 
@@ -408,7 +408,7 @@ This request was submitted through the Wingside Kids page.
                       type="text"
                       required
                       value={formData.fullName}
-                      onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
                       placeholder="Enter your full name"
                     />
@@ -422,7 +422,7 @@ This request was submitted through the Wingside Kids page.
                       type="email"
                       required
                       value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
                       placeholder="your.email@example.com"
                     />
@@ -436,7 +436,7 @@ This request was submitted through the Wingside Kids page.
                       type="tel"
                       required
                       value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
                       placeholder="+234 800 000 0000"
                     />
@@ -450,7 +450,7 @@ This request was submitted through the Wingside Kids page.
                       type="date"
                       required
                       value={formData.eventDate}
-                      onChange={(e) => setFormData({...formData, eventDate: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
                     />
                   </div>
@@ -463,7 +463,7 @@ This request was submitted through the Wingside Kids page.
                       type="text"
                       required
                       value={formData.numberOfKids}
-                      onChange={(e) => setFormData({...formData, numberOfKids: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, numberOfKids: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
                       placeholder="e.g., 10"
                     />
@@ -489,7 +489,7 @@ This request was submitted through the Wingside Kids page.
                   </label>
                   <textarea
                     value={formData.moreDetails}
-                    onChange={(e) => setFormData({...formData, moreDetails: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, moreDetails: e.target.value })}
                     rows={4}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent resize-none"
                     placeholder="Any special requests or dietary requirements..."

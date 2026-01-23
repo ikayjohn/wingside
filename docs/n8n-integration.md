@@ -198,7 +198,7 @@ Sync in-store orders from Embedly POS to Wingside database.
 ### Workflow 2: Order Paid → Credit Rewards → Notify
 
 1. **Webhook Trigger** - Receive `order.paid` from Wingside
-2. **Calculate** - Calculate reward points (e.g., 10 points per ₦100)
+2. **Calculate** - Calculate reward points (e.g., 1 point per ₦100)
 3. **HTTP Request** - Credit points to Embedly wallet
 4. **HTTP Request** - Update Wingside via `/api/webhooks/n8n` with `wallet.balance_update`
 5. **Email/SMS** - Send order confirmation + points earned

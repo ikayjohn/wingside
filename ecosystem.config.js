@@ -1,57 +1,53 @@
+// PM2 Ecosystem Configuration for Hostinger VPS
+// ============================================================================
+// This file configures how PM2 manages the Wingside Next.js application
+//
+// IMPORTANT: Environment variables are loaded from .env.local
+// Do NOT hardcode sensitive values here - use .env.local instead
+// ============================================================================
+
 module.exports = {
   apps: [{
     name: 'wingside',
-    script: 'npm',
+    script: 'node_modules/next/dist/bin/next',
     args: 'start',
-    cwd: '/var/www/wingside',
-    instances: 1,
+    cwd: './',  // Current directory - adjust if deployed elsewhere
+    instances: 1,  // Single instance for VPS - increase for load balancing
+    exec_mode: 'fork',  // Use 'cluster' if instances > 1
     autorestart: true,
-    watch: false,
-    max_memory_restart: '1G',
+    watch: false,  // Don't watch files in production
+    max_memory_restart: '1G',  // Restart if memory exceeds 1GB
+
+    // Environment variables
     env: {
-      NODE_ENV: 'development',
-      PORT: 3000
-    },
-    env_production: {
       NODE_ENV: 'production',
       PORT: 3000,
+    },
 
-      // ================================
-      // ⚠️  ADD YOUR PRODUCTION VALUES BELOW
-      // ================================
+    // Load additional env vars from .env.production
+    // PM2 will automatically load .env files from the cwd
+    env_file: '.env.production',
 
-      // Nomba Payment Gateway
-      NOMBA_CLIENT_ID: '9d1a85c1-212e-4418-9217-f56b769703e8',
-      NOMBA_CLIENT_SECRET: '5sZ/rzXiIzjbvvu+2PVnog76H/PKp15fud9Y8JfWdjgeFtdtQYA1zCXYECbiGj9hvaEPOlyO+3Jiqut5luaHxQ==',
-      NOMBA_ACCOUNT_ID: 'dfb21b47-8348-4aa7-9ba3-7e31021c6f69',
-      NOMBA_WEBHOOK_SECRET: '', // ⚠️ ADD YOUR WEBHOOK SECRET FROM NOMBA DASHBOARD
+    // Logging
+    error_file: './logs/pm2-error.log',
+    out_file: './logs/pm2-out.log',
+    log_file: './logs/pm2-combined.log',
+    time: true,  // Prefix logs with timestamp
+    log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
 
-      // Supabase
-      NEXT_PUBLIC_SUPABASE_URL: '', // ⚠️ ADD YOUR SUPABASE URL
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: '', // ⚠️ ADD YOUR SUPABASE ANON KEY
-      SUPABASE_SERVICE_ROLE_KEY: '', // ⚠️ ADD YOUR SERVICE ROLE KEY
+    // Restart behavior
+    min_uptime: '10s',  // Min uptime before considering restart
+    max_restarts: 10,  // Max consecutive restarts
+    restart_delay: 4000,  // Delay between restarts (ms)
 
-      // Application
-      NEXT_PUBLIC_APP_URL: 'https://www.wingside.ng',
+    // Advanced options
+    listen_timeout: 10000,  // Time to wait for app to be ready
+    kill_timeout: 5000,  // Time to wait before force killing
+    wait_ready: true,  // Wait for app to signal it's ready
 
-      // ================================
-      // Optional: Other Environment Variables
-      // ================================
-
-      // Email (Resend)
-      // RESEND_API_KEY: 'your_resend_api_key',
-
-      // Turnstile CAPTCHA
-      // NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'your_site_key',
-      // TURNSTILE_SECRET_KEY: 'your_secret_key',
-
-      // Redis (if using)
-      // REDIS_URL: 'redis://localhost:6379',
-
-      // Other services...
-      // TWILIO_ACCOUNT_SID: 'your_twilio_sid',
-      // TWILIO_AUTH_TOKEN: 'your_twilio_token',
-      // NEXT_PUBLIC_TWILIO_PHONE_NUMBER: '+1234567890'
-    }
+    // Auto-restart on file changes (disabled by default)
+    // Uncomment to enable in development
+    // watch: ['app', 'components', 'lib'],
+    // ignore_watch: ['node_modules', 'logs', '.next'],
   }]
 };

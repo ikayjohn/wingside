@@ -54,7 +54,7 @@ async function applyRetroactivePoints() {
     let totalPoints = 0;
 
     for (const order of orders) {
-      const points = Math.floor(Number(order.total) / 10);
+      const points = Math.floor(Number(order.total) / 100);
       totalPoints += points;
 
       console.log(`  Order #${order.order_number}: ₦${order.total} → ${points} points`);

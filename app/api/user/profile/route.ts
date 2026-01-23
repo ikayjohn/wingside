@@ -98,14 +98,14 @@ export async function GET() {
     if (tierProgress < 0) tierProgress = 0
     if (tierProgress > 100) tierProgress = 100
 
-    // Calculate points this month (₦100 = 10 points)
+    // Calculate points this month (₦100 = 1 point)
     const pointsThisMonth = Math.floor(
       (orders?.filter(order => {
         const orderDate = new Date(order.created_at)
         const now = new Date()
         return orderDate.getMonth() === now.getMonth() &&
                orderDate.getFullYear() === now.getFullYear()
-      })?.reduce((sum, order) => sum + Number(order.total), 0) || 0) / 10
+      })?.reduce((sum, order) => sum + Number(order.total), 0) || 0) / 100
     )
 
     // Parse date_of_birth to extract birthday day and month if not already stored

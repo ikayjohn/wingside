@@ -125,9 +125,9 @@ This guide shows how to set up n8n workflows for syncing Wingside with Zoho CRM 
 - **Mode:** Run Once for Each Item
 - **Code:**
 ```javascript
-// 10 points per ₦100 spent
+// 1 point per ₦100 spent
 const total = $input.item.json.data.total;
-const points = Math.floor(total / 10);
+const points = Math.floor(total / 100);
 
 return {
   ...items[0].json,

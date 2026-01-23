@@ -75,7 +75,12 @@
       "Bash(Select-Object -Last 20)",
       "Bash(Select-Object:*)",
       "Bash(Select-String:*)",
-      "Bash(pm2 env:*)"
+      "Bash(pm2 env:*)",
+      "Bash(nslookup:*)",
+      "Bash(ping:*)",
+      "Bash(tasklist:*)",
+      "Bash(supabase db push:*)",
+      "Bash(openssl rand:*)"
     ],
     "deny": [],
     "ask": []

@@ -50,6 +50,16 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Cache video files aggressively
+        source: '/:path*.mp4',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable'
+          },
+        ],
+      },
+      {
         source: '/:path*',
         headers: [
           {

@@ -123,7 +123,8 @@ export default function AdminSettingsPage() {
     if (key.includes('email')) return 'email';
     if (key.includes('phone') || key.includes('whatsapp')) return 'tel';
     if (key.includes('url') || key.includes('facebook') || key.includes('instagram') ||
-        key.includes('twitter') || key.includes('linkedin') || key.includes('youtube')) return 'url';
+        key.includes('twitter') || key.includes('linkedin') || key.includes('youtube') ||
+        key.includes('tiktok') || key.includes('spotify')) return 'url';
     if (key.includes('rate') || key.includes('amount') || key.includes('fee') ||
         key.includes('radius') || key.includes('threshold')) return 'number';
     return 'text';

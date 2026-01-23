@@ -66,8 +66,8 @@ async function checkOrderStatus() {
   console.log(`Paid Orders Total: ₦${paidTotal.toLocaleString()}`);
   console.log(`Confirmed Orders Total: ₦${confirmedTotal.toLocaleString()}`);
   console.log(`All Orders Total: ₦${allTotal.toLocaleString()}`);
-  console.log(`\nExpected Points (if all confirmed): ${Math.floor(confirmedTotal / 10)}`);
-  console.log(`Expected Points (only paid): ${Math.floor(paidTotal / 10)}`);
+  console.log(`\nExpected Points (if all confirmed): ${Math.floor(confirmedTotal / 100)}`);
+  console.log(`Expected Points (only paid): ${Math.floor(paidTotal / 100)}`);
 }
 
 checkOrderStatus().catch(err => {

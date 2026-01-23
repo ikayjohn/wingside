@@ -2,7 +2,7 @@
 -- Retroactively Award Points for Old Paid Orders
 -- ============================================================================
 -- This script awards points for all previously paid orders that didn't get points
--- Calculation: ₦100 = 10 points (₦10 = 1 point)
+-- Calculation: ₦100 = 1 point
 -- ============================================================================
 
 -- First, show what we're working with
@@ -14,7 +14,7 @@ SELECT
     p.total_points as current_points,
     COUNT(o.id) as paid_orders,
     SUM(o.total) as total_spent,
-    FLOOR(SUM(o.total) / 10) as expected_points
+    FLOOR(SUM(o.total) / 100) as expected_points
 FROM profiles p
 INNER JOIN orders o ON o.user_id = p.id
 WHERE o.payment_status = 'paid'
@@ -60,9 +60,9 @@ BEGIN
             AND payment_status = 'paid'
             ORDER BY created_at ASC
         LOOP
-            -- Award points for this order (₦100 = 10 points)
+            -- Award points for this order (₦100 = 1 point)
             DECLARE
-                v_order_points INTEGER := FLOOR(order_record.total / 10);
+                v_order_points INTEGER := FLOOR(order_record.total / 100);
             BEGIN
                 -- Update user's total_points
                 UPDATE profiles
@@ -149,7 +149,7 @@ SELECT
     p.total_points as new_points,
     COUNT(DISTINCT o.id) as total_orders,
     SUM(CASE WHEN o.payment_status = 'paid' THEN 1 ELSE 0 END) as paid_orders,
-    FLOOR(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total ELSE 0 END) / 10) as expected_points,
+    FLOOR(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total ELSE 0 END) / 100) as expected_points,
     COUNT(ph.id) as point_transactions
 FROM profiles p
 LEFT JOIN orders o ON o.user_id = p.id
@@ -169,7 +169,7 @@ SELECT
     COUNT(DISTINCT o.user_id) as users_with_paid_orders,
     SUM(CASE WHEN o.payment_status = 'paid' THEN 1 ELSE 0 END) as total_paid_orders,
     SUM(CASE WHEN o.payment_status = 'paid' THEN o.total ELSE 0 END) as total_amount_spent,
-    FLOOR(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total ELSE 0 END) / 10) as total_points_awarded
+    FLOOR(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total ELSE 0 END) / 100) as total_points_awarded
 FROM orders o;
 
 -- ============================================================================
@@ -185,7 +185,7 @@ SELECT
     p.total_points as current_points,
     COUNT(o.id) as orders,
     SUM(o.total) as spent,
-    FLOOR(SUM(o.total) / 10) as expected_points
+    FLOOR(SUM(o.total) / 100) as expected_points
 FROM profiles p
 LEFT JOIN orders o ON o.user_id = p.id
 WHERE p.email = 'billionaireboyscorp@gmail.com'
@@ -197,7 +197,7 @@ SELECT
     p.total_points as current_points,
     COUNT(o.id) as orders,
     SUM(o.total) as spent,
-    FLOOR(SUM(o.total) / 10) as expected_points
+    FLOOR(SUM(o.total) / 100) as expected_points
 FROM profiles p
 LEFT JOIN orders o ON o.user_id = p.id
 WHERE p.email = 'blackspacebhd@gmail.com'

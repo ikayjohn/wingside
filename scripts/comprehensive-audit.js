@@ -145,8 +145,8 @@ async function comprehensiveAudit() {
         if (!userPoints[order.user_id]) {
           userPoints[order.user_id] = 0;
         }
-        // ₦100 = 10 points (from webhook logic)
-        userPoints[order.user_id] += Math.floor(Number(order.total) / 10);
+        // ₦100 = 1 point (from webhook logic)
+        userPoints[order.user_id] += Math.floor(Number(order.total) / 100);
       });
 
       console.log(`   📊 Users with paid orders: ${Object.keys(userPoints).length}`);

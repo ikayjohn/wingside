@@ -317,7 +317,7 @@ export async function creditLoyaltyPoints(
   walletId: string,
   orderTotal: number,
   orderNumber: string,
-  pointsPerNaira: number = 0.1 // 10 points per ₦100
+  pointsPerNaira: number = 0.01 // 1 point per ₦100
 ): Promise<{ pointsEarned: number; newBalance: number } | null> {
   if (!isEmbedlyConfigured()) {
     console.warn('Embedly not configured, skipping points credit');

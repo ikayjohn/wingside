@@ -92,8 +92,8 @@ export async function POST(request: NextRequest) {
         .select()
         .single();
 
-      // Award purchase points (₦100 = 10 points)
-      const purchasePoints = Math.floor(amount / 10);
+      // Award purchase points (₦100 = 1 point)
+      const purchasePoints = Math.floor(amount / 100);
 
       if (purchasePoints > 0) {
         const { error: pointsError } = await supabase.rpc('award_points', {

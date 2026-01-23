@@ -14,7 +14,7 @@ Generated: 2025-12-19
 **Features:**
 - Customer creation in Embedly
 - Wallet creation and management
-- Loyalty points earning (10 points per ₦100 spent)
+- Loyalty points earning (1 point per ₦100 spent)
 - Points redemption
 - Balance tracking
 

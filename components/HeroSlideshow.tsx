@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 
 interface Slide {
@@ -18,6 +18,8 @@ export default function HeroSlideshow() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [shouldAnimate, setShouldAnimate] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const fetchSlides = useCallback(async () => {
     try {
@@ -122,28 +124,47 @@ export default function HeroSlideshow() {
             >
               {isFirstSlide ? (
                 // First slide uses hero.mp4 video
-                <video
-                  key="hero-video"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  className="hero-video"
-                  style={{
-                    position: 'absolute' as const,
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    minWidth: '100%',
-                    minHeight: '100%',
-                    width: 'auto',
-                    height: 'auto',
-                    objectFit: 'cover' as const,
-                  }}
-                >
-                  <source src="/hero.mp4?v=2" type="video/mp4" />
-                  Your browser does not support the video tag.
-                </video>
+                <>
+                  {/* Fallback background while video loads */}
+                  {!videoLoaded && (
+                    <div
+                      className="absolute inset-0 w-full h-full"
+                      style={{
+                        background: slide.image_url
+                          ? `url(${slide.image_url}) center/cover no-repeat`
+                          : 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #552627 100%)',
+                      }}
+                    />
+                  )}
+                  <video
+                    ref={videoRef}
+                    key="hero-video"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="auto"
+                    onLoadedData={() => setVideoLoaded(true)}
+                    onCanPlayThrough={() => setVideoLoaded(true)}
+                    className="hero-video"
+                    style={{
+                      position: 'absolute' as const,
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      minWidth: '100%',
+                      minHeight: '100%',
+                      width: 'auto',
+                      height: 'auto',
+                      objectFit: 'cover' as const,
+                      opacity: videoLoaded ? 1 : 0,
+                      transition: 'opacity 0.5s ease-in-out',
+                    }}
+                  >
+                    <source src="/hero.mp4" type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                </>
               ) : (
                 // Other slides use images
                 <img

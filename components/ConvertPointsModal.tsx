@@ -6,23 +6,23 @@ interface ConvertPointsModalProps {
   isOpen: boolean;
   onClose: () => void;
   availablePoints: number;
-  conversionRate: number; // e.g., 10 means 100 points = ₦1000
+  conversionRate?: number; // Naira per point (default: 10, meaning 1 point = ₦10)
 }
 
 export default function ConvertPointsModal({
   isOpen,
   onClose,
   availablePoints,
-  conversionRate
+  conversionRate = 10 // 1 point = ₦10
 }: ConvertPointsModalProps) {
   const [pointsToConvert, setPointsToConvert] = useState<string>('');
 
   if (!isOpen) return null;
 
   const pointsValue = parseInt(pointsToConvert) || 0;
-  const cashValue = (pointsValue / 100) * (conversionRate * 100);
+  const cashValue = pointsValue * conversionRate; // 1 point = ₦10
   const maxConvertiblePoints = availablePoints;
-  const maxConvertibleCash = (maxConvertiblePoints / 100) * (conversionRate * 100);
+  const maxConvertibleCash = maxConvertiblePoints * conversionRate;
   const minPoints = 100;
   const canConvert = pointsValue >= minPoints && pointsValue <= maxConvertiblePoints;
 
@@ -77,7 +77,7 @@ export default function ConvertPointsModal({
 
           {/* Rate Info */}
           <div className="convert-rate-banner">
-            <h3 className="convert-rate-value">100 Points = ₦{conversionRate * 100}</h3>
+            <h3 className="convert-rate-value">1 Point = ₦{conversionRate}</h3>
             <p className="convert-rate-max">
               You can convert up to {maxConvertiblePoints.toLocaleString()} points (₦{maxConvertibleCash.toLocaleString()})
             </p>

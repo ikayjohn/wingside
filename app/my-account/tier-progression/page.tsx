@@ -226,7 +226,7 @@ export default function TierProgressionPage() {
             <div className="tier-earn-card">
               <div>
                 <h4 className="tier-earn-title">Purchase Wings</h4>
-                <p className="tier-earn-description">Earn 10 points for every ₦100 spent</p>
+                <p className="tier-earn-description">Earn 1 point for every ₦100 spent</p>
               </div>
               <Link href="/order" className="tier-earn-btn yellow">
                 Order wings now

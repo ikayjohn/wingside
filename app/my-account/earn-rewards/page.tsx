@@ -291,7 +291,7 @@ export default function EarnRewardsPage() {
     {
       id: 'purchase',
       title: 'Every ₦100 Spent',
-      description: 'Earn 10 points for every ₦100 spent on orders',
+      description: 'Earn 1 point for every ₦100 spent on orders',
       points: rewardsData?.purchasePoints || 0,
       icon: 'flame',
       iconColor: 'orange',

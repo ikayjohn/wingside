@@ -24,6 +24,7 @@ export interface SiteSettings {
   social_youtube: string;
   social_tiktok: string;
   social_whatsapp: string;
+  social_spotify: string;
 
   // Business Hours
   hours_monday: string;
@@ -73,6 +74,7 @@ export const defaultSettings: SiteSettings = {
   social_youtube: 'https://www.youtube.com/@mywingside',
   social_tiktok: 'https://www.tiktok.com/@mywingside',
   social_whatsapp: '+2348090191999',
+  social_spotify: 'https://open.spotify.com/user/syumuqwbg8blrmxrgi29964y9?si=43e02ade617946a7',
 
   // Business Hours
   hours_monday: '8:00 AM - 10:00 PM',

@@ -74,8 +74,9 @@ export const REFERRAL_REWARD_AMOUNT = 500; // ₦500
 export const REFERRAL_MIN_ORDER_AMOUNT = 1000; // ₦1,000
 
 // Points System
-export const POINTS_PER_NAIRA = 1; // 1 point per ₦1
-export const MINIMUM_REDEEM_POINTS = 1000; // Minimum points to redeem
+export const POINTS_EARN_RATE = 0.01; // ₦100 = 1 point (0.01 points per ₦1)
+export const POINTS_REDEEM_RATE = 10; // 1 point = ₦10
+export const MINIMUM_REDEEM_POINTS = 100; // Minimum points to redeem
 
 // Loyalty Tiers
 export const LOYALTY_TIERS = {

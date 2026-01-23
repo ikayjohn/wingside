@@ -18,7 +18,7 @@ SELECT
     COUNT(o.id) as total_orders,
     SUM(CASE WHEN o.payment_status = 'paid' THEN 1 ELSE 0 END) as paid_orders,
     SUM(CASE WHEN o.payment_status = 'paid' THEN o.total ELSE 0 END) as total_spent,
-    FLOOR(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total ELSE 0 END) / 10) as expected_points
+    FLOOR(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total ELSE 0 END) / 100) as expected_points
 FROM profiles p
 LEFT JOIN orders o ON o.user_id = p.id
 GROUP BY p.id, p.email, p.total_points

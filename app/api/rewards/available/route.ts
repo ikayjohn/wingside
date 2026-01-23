@@ -104,7 +104,7 @@ export async function GET() {
       }
     ];
 
-    // Calculate points from purchases (₦100 = 10 points)
+    // Calculate points from purchases (₦100 = 1 point)
     const { data: orders } = await supabase
       .from('orders')
       .select('total')
@@ -112,7 +112,7 @@ export async function GET() {
       .eq('payment_status', 'paid');
 
     // Calculate purchase points using per-order rounding (matches actual awarded points)
-    const purchasePoints = orders?.reduce((sum, order) => sum + Math.floor(Number(order.total) / 10), 0) || 0;
+    const purchasePoints = orders?.reduce((sum, order) => sum + Math.floor(Number(order.total) / 100), 0) || 0;
     const totalSpent = orders?.reduce((sum, order) => sum + Number(order.total), 0) || 0;
 
     return NextResponse.json({

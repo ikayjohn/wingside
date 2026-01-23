@@ -47,13 +47,13 @@ async function testOrdersPoints() {
     console.log('\n\n=== Summary ===');
     console.log(`Total Orders: ${totalOrders}`);
     console.log(`Total Spent: ₦${totalSpent.toLocaleString()}`);
-    console.log(`Points Earned (₦100 = 10 points): ${Math.floor(totalSpent / 10).toLocaleString()} points`);
+    console.log(`Points Earned (₦100 = 1 point): ${Math.floor(totalSpent / 100).toLocaleString()} points`);
 
     // Calculate points per user
     console.log('\n\n=== Points by User ===');
     for (const [userId, userOrders] of Object.entries(ordersByUser)) {
       const userTotalSpent = userOrders.reduce((sum, order) => sum + Number(order.total), 0);
-      const userPoints = Math.floor(userTotalSpent / 10);
+      const userPoints = Math.floor(userTotalSpent / 100);
 
       // Get user profile
       const { data: profile } = await supabase

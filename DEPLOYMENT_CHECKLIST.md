@@ -51,26 +51,26 @@ SELECT email, total_points FROM profiles WHERE id = (SELECT id FROM profiles LIM
 ### 3. Verify Points Calculation Logic
 
 Current point calculation (consistent across system):
-- **₦100 spent = 10 points** (₦10 = 1 point)
+- **₦100 spent = 1 point**
 - First order bonus: **15 points**
 - Referral bonus: **200 points** (referrer + referred)
 
 Examples:
-- ₦1,000 order = 100 points
-- ₦500 order = 50 points
-- ₦268.75 order = 26 points
+- ₦1,000 order = 10 points
+- ₦500 order = 5 points
+- ₦268.75 order = 2 points
 
 This calculation is consistent across:
-- Webhooks: `Math.floor(total / 10)`
-- Dashboard: `Math.floor(total / 10)` for points this month
+- Webhooks: `Math.floor(total / 100)`
+- Dashboard: `Math.floor(total / 100)` for points this month
 
 ### 4. Points Calculation Verification
 
 All payment sources use the same calculation:
-- Nomba webhook: ✅ `/ 10`
-- Payment webhook: ✅ `/ 10`
-- Embedly wallet: ✅ `/ 10`
-- Dashboard display: ✅ `/ 10`
+- Nomba webhook: ✅ `/ 100`
+- Payment webhook: ✅ `/ 100`
+- Embedly wallet: ✅ `/ 100`
+- Dashboard display: ✅ `/ 100`
 
 ---
 

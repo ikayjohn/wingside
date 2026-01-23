@@ -12,7 +12,7 @@ SELECT
     p.total_points as current_points,
     COUNT(o.id) as paid_orders,
     SUM(o.total) as total_spent,
-    FLOOR(SUM(o.total) / 10) as expected_points
+    FLOOR(SUM(o.total) / 100) as expected_points
 FROM profiles p
 INNER JOIN orders o ON o.user_id = p.id
 WHERE o.payment_status = 'paid'
@@ -32,7 +32,7 @@ SELECT
     p.total_points as new_points,
     COUNT(DISTINCT o.id) as total_orders,
     SUM(CASE WHEN o.payment_status = 'paid' THEN 1 ELSE 0 END) as paid_orders,
-    FLOOR(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total ELSE 0 END) / 10) as expected_points,
+    FLOOR(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total ELSE 0 END) / 100) as expected_points,
     COUNT(ph.id) as point_transactions
 FROM profiles p
 LEFT JOIN orders o ON o.user_id = p.id
@@ -49,7 +49,7 @@ SELECT
     p.total_points as current_points,
     COUNT(o.id) as orders,
     SUM(CASE WHEN o.payment_status = 'paid' THEN o.total ELSE 0 END) as spent,
-    FLOOR(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total ELSE 0 END) / 10) as expected_points
+    FLOOR(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total ELSE 0 END) / 100) as expected_points
 FROM profiles p
 LEFT JOIN orders o ON o.user_id = p.id
 WHERE p.email IN ('billionaireboyscorp@gmail.com', 'blackspacebhd@gmail.com')

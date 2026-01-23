@@ -82,6 +82,8 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.png" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        {/* Preload hero video for faster loading */}
+        <link rel="preload" href="/hero.mp4" as="video" type="video/mp4" />
       </head>
       <body className={inter.className}>
         {/* Skip Navigation Link for Keyboard Users */}

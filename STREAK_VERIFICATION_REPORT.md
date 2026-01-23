@@ -154,7 +154,7 @@ When an order payment is confirmed (`charge.success`), the webhook:
 1. ✅ Updates order status to `confirmed`
 2. ✅ Syncs customer to Zoho CRM
 3. ✅ Credits Embedly loyalty points
-4. ✅ Awards purchase points (₦100 = 10 pts)
+4. ✅ Awards purchase points (₦100 = 1 pt)
 5. ✅ Awards first order bonus (15 pts)
 6. ❌ **DOES NOT UPDATE STREAK** ← MISSING!
 
