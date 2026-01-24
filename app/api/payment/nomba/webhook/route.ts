@@ -279,7 +279,7 @@ export async function POST(request: NextRequest) {
       // 5.5. Process referral rewards (if user was referred and this is first order ≥₦1000)
       if (profileId && order.total >= 1000) {
         try {
-          const { data: rewardProcessed, error: referralError } = await admin.rpc(
+          const { data: rewardResult, error: referralError } = await admin.rpc(
             'process_referral_reward_after_first_order',
             {
               user_id: profileId,
@@ -308,10 +308,40 @@ export async function POST(request: NextRequest) {
                 error: referralError.message
               }
             })
-          } else if (rewardProcessed) {
-            console.log(`✅ Referral rewards processed successfully for user ${profileId}`)
+          } else if (rewardResult && rewardResult.length > 0) {
+            const result = rewardResult[0];
+
+            if (result.success) {
+              console.log('✅ Referral reward processing completed:', {
+                userId: profileId,
+                referrerCredited: result.referrer_credited,
+                referredCredited: result.referred_credited,
+                errorMessage: result.error_message
+              });
+
+              // Check if any wallet credit failed
+              if (!result.referrer_credited || !result.referred_credited) {
+                await admin.from('notifications').insert({
+                  user_id: null,
+                  type: 'referral_reward_partial_failure',
+                  title: 'Referral Reward Partially Failed',
+                  message: `Order ${order.order_number}: ${result.error_message}`,
+                  metadata: {
+                    user_id: profileId,
+                    order_id: order.id,
+                    order_number: order.order_number,
+                    referrer_credited: result.referrer_credited,
+                    referred_credited: result.referred_credited,
+                    error: result.error_message
+                  }
+                });
+                console.warn('⚠️ Referral reward partially failed:', result.error_message);
+              }
+            } else {
+              console.log('ℹ️ No referral reward to process:', result.error_message);
+            }
           } else {
-            console.log(`ℹ️ No referral reward to process (not referred or already processed)`)
+            console.log('ℹ️ No referral reward data returned');
           }
         } catch (error) {
           console.error('❌ Error in referral processing:', error)

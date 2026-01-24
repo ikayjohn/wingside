@@ -232,8 +232,8 @@ export async function POST(request: NextRequest) {
     // Process referral rewards if user is logged in and this is their first order
     if (user?.id && total >= 1000) { // Minimum order amount for referral rewards
       try {
-        // Call the referral reward processing function (now awards points directly)
-        const { data: rewardProcessed, error: rewardError } = await supabase.rpc(
+        // Call the referral reward processing function with detailed status tracking
+        const { data: rewardResult, error: rewardError } = await supabase.rpc(
           'process_referral_reward_after_first_order',
           {
             user_id: user.id,
@@ -264,11 +264,42 @@ export async function POST(request: NextRequest) {
           });
 
           // Don't fail the order, but ensure error is visible
-        } else if (rewardProcessed) {
-          console.log('✅ Referral rewards (points) processed successfully for user:', user.id)
-          // Points are now automatically credited to both users' profiles by the database function
+        } else if (rewardResult && rewardResult.length > 0) {
+          const result = rewardResult[0];
+
+          if (result.success) {
+            // Log detailed status
+            console.log('✅ Referral reward processing completed:', {
+              userId: user.id,
+              referrerCredited: result.referrer_credited,
+              referredCredited: result.referred_credited,
+              errorMessage: result.error_message
+            });
+
+            // Check if any wallet credit failed
+            if (!result.referrer_credited || !result.referred_credited) {
+              // Create notification for partial failure
+              await supabase.from('notifications').insert({
+                user_id: null,
+                type: 'referral_reward_partial_failure',
+                title: 'Referral Reward Partially Failed',
+                message: `Order ${order.order_number}: ${result.error_message}`,
+                metadata: {
+                  user_id: user.id,
+                  order_id: order.id,
+                  order_number: order.order_number,
+                  referrer_credited: result.referrer_credited,
+                  referred_credited: result.referred_credited,
+                  error: result.error_message
+                }
+              });
+              console.warn('⚠️ Referral reward partially failed:', result.error_message);
+            }
+          } else {
+            console.log('ℹ️ No referral reward to process:', result.error_message);
+          }
         } else {
-          console.log('ℹ️ No referral reward to process (not referred or already processed)')
+          console.log('ℹ️ No referral reward data returned');
         }
       } catch (error) {
         console.error('❌ Error in referral processing:', {
