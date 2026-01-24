@@ -330,7 +330,7 @@ This request was submitted through the Wingside Kids page.
                   <h3 className="text-4xl md:text-5xl font-bold text-black mb-6">{kidsProduct.name}</h3>
 
                   {/* What's Included - Dynamic from product data */}
-                  <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm">
+                  <div className="bg-white rounded-2xl p-6 mb-6">
                     <h4 className="text-lg font-bold text-black mb-3">What's Included:</h4>
 
                     {/* Product Description */}
@@ -369,7 +369,7 @@ This request was submitted through the Wingside Kids page.
                   </div>
 
                   {/* Selection Options */}
-                  <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm space-y-4">
+                  <div className="bg-white rounded-2xl p-6 mb-6 space-y-4">
                     {/* Wing Flavor Selection */}
                     {kidsProduct.flavors && kidsProduct.flavors.length > 0 && (
                       <div>
