@@ -311,12 +311,17 @@ This request was submitted through the Wingside Kids page.
                       {kidsProduct.badge}
                     </span>
                   )}
-                  <h3 className="text-4xl md:text-5xl font-bold text-black mb-4">{kidsProduct.name}</h3>
-                  <p className="text-xl text-gray-700 mb-6">{kidsProduct.description || 'Perfect for little champions'}</p>
+                  <h3 className="text-4xl md:text-5xl font-bold text-black mb-6">{kidsProduct.name}</h3>
 
                   {/* What's Included - Dynamic from product data */}
                   <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm">
                     <h4 className="text-lg font-bold text-black mb-3">What's Included:</h4>
+
+                    {/* Product Description */}
+                    {kidsProduct.description && (
+                      <p className="text-gray-700 mb-4 leading-relaxed">{kidsProduct.description}</p>
+                    )}
+
                     <ul className="space-y-2">
                       {kidsProduct.wing_count && (
                         <li className="flex items-start">
