@@ -21,6 +21,7 @@ interface Product {
 export default function KidsPage() {
   const [kidsProduct, setKidsProduct] = React.useState<Product | null>(null);
   const [selectedFlavor, setSelectedFlavor] = React.useState('');
+  const [selectedFlavorCategory, setSelectedFlavorCategory] = React.useState('');
   const [selectedCake, setSelectedCake] = React.useState('');
   const [selectedSize, setSelectedSize] = React.useState('');
   const [cartCount, setCartCount] = React.useState(0);
@@ -36,6 +37,16 @@ export default function KidsPage() {
     packageType: '',
     moreDetails: ''
   });
+
+  // Flavor category mapping (same as order page)
+  const flavorCategories = {
+    'HOT': ['Wingferno', 'Dragon Breath', 'Braveheart', 'Mango Heat'],
+    'BBQ': ['BBQ Rush', 'BBQ Fire'],
+    'DRY RUB': ['Lemon Pepper', 'Cameroon Rub', 'Caribbean Jerk', 'Yaji'],
+    'BOLD & FUN': ['The Italian', 'Wing of the North', 'Tokyo', 'Hot Nuts', 'The Slayer'],
+    'SWEET': ['Sweet Dreams', 'Yellow Gold'],
+    'BOOZY': ['Whiskey Vibes', 'Tequila Wingrise', 'Gustavo']
+  };
 
   // Fetch Kids product from API
   React.useEffect(() => {
@@ -357,21 +368,75 @@ This request was submitted through the Wingside Kids page.
                     {/* Wing Flavor Selection */}
                     {kidsProduct.flavors && kidsProduct.flavors.length > 0 && (
                       <div>
-                        <label className="block text-sm font-bold text-black mb-2">
-                          Choose Wing Flavor *
-                        </label>
-                        <select
-                          value={selectedFlavor}
-                          onChange={(e) => setSelectedFlavor(e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
-                        >
-                          <option value="">Select a flavor...</option>
-                          {kidsProduct.flavors.map((flavor) => (
-                            <option key={flavor} value={flavor}>
-                              {flavor}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="mb-3">
+                          <p className="text-sm font-bold text-black mb-1">
+                            Choose Wing Flavor *
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Choose a category to see available flavors
+                          </p>
+                        </div>
+
+                        {/* Flavor Categories */}
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {Object.keys(flavorCategories).map((category) => {
+                            const isOpen = selectedFlavorCategory === category;
+                            const categoryHasFlavor = selectedFlavor &&
+                              flavorCategories[category as keyof typeof flavorCategories].includes(selectedFlavor);
+                            return (
+                              <button
+                                key={category}
+                                onClick={() => setSelectedFlavorCategory(isOpen ? '' : category)}
+                                className={`order-flavor-btn ${isOpen ? 'active' : ''}`}
+                                style={categoryHasFlavor && !isOpen ? { backgroundColor: '#FEF3C7' } : undefined}
+                              >
+                                {category}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Flavors within selected category */}
+                        {selectedFlavorCategory && (
+                          <div className="border border-gray-200 rounded-lg p-4">
+                            <p className="text-xs text-gray-500 mb-2">
+                              Select from {selectedFlavorCategory} flavors:
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {flavorCategories[selectedFlavorCategory as keyof typeof flavorCategories].map((flavor) => {
+                                const isSelected = selectedFlavor === flavor;
+                                // Only show flavors that are in the product's flavor list
+                                if (!kidsProduct.flavors.includes(flavor)) return null;
+
+                                return (
+                                  <button
+                                    key={flavor}
+                                    onClick={() => setSelectedFlavor(isSelected ? '' : flavor)}
+                                    className={`order-flavor-btn ${isSelected ? 'active' : ''}`}
+                                  >
+                                    {flavor}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Selected Flavor Display */}
+                        {selectedFlavor && (
+                          <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p className="text-sm">
+                              <span className="font-semibold text-gray-700">Selected: </span>
+                              <span className="text-gray-900">{selectedFlavor}</span>
+                              <button
+                                onClick={() => setSelectedFlavor('')}
+                                className="ml-2 text-red-600 hover:text-red-700 text-xs"
+                              >
+                                ✕ Remove
+                              </button>
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
 
