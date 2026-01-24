@@ -72,12 +72,13 @@ export default function EmailTemplatesPage() {
     setSendResult(null);
 
     try {
-      const response = await fetch('/api/test/send-referral-email/', {
+      const response = await fetch('/api/admin/email-test', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          templateId: selectedTemplate?.id,
           recipientEmail: testData.recipientEmail,
           referrerName: testData.referrerName,
           referralCode: testData.referralCode,
