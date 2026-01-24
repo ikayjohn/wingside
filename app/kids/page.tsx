@@ -13,6 +13,9 @@ interface Product {
   cakeOptions?: string[];
   drinkOptions?: string[];
   description?: string;
+  wing_count?: string;
+  max_flavors?: number;
+  badge?: string;
 }
 
 export default function KidsPage() {
@@ -303,8 +306,46 @@ This request was submitted through the Wingside Kids page.
 
                 {/* Right: Details */}
                 <div className="p-8 md:p-12">
+                  {kidsProduct.badge && (
+                    <span className="inline-block bg-[#F7C400] text-black px-4 py-1 rounded-full text-sm font-semibold mb-4">
+                      {kidsProduct.badge}
+                    </span>
+                  )}
                   <h3 className="text-4xl md:text-5xl font-bold text-black mb-4">{kidsProduct.name}</h3>
                   <p className="text-xl text-gray-700 mb-6">{kidsProduct.description || 'Perfect for little champions'}</p>
+
+                  {/* What's Included - Dynamic from product data */}
+                  <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm">
+                    <h4 className="text-lg font-bold text-black mb-3">What's Included:</h4>
+                    <ul className="space-y-2">
+                      {kidsProduct.wing_count && (
+                        <li className="flex items-start">
+                          <span className="text-[#F7C400] mr-2 text-xl">✓</span>
+                          <span className="text-gray-700">
+                            {kidsProduct.wing_count} (choice of {kidsProduct.flavors?.length || 0} flavors)
+                          </span>
+                        </li>
+                      )}
+                      {kidsProduct.drinkOptions && kidsProduct.drinkOptions.length > 0 && (
+                        <li className="flex items-start">
+                          <span className="text-[#F7C400] mr-2 text-xl">✓</span>
+                          <span className="text-gray-700">
+                            {kidsProduct.drinkOptions.length === 1
+                              ? kidsProduct.drinkOptions[0]
+                              : `Choice of ${kidsProduct.drinkOptions.length} drinks`}
+                          </span>
+                        </li>
+                      )}
+                      {kidsProduct.cakeOptions && kidsProduct.cakeOptions.length > 0 && (
+                        <li className="flex items-start">
+                          <span className="text-[#F7C400] mr-2 text-xl">✓</span>
+                          <span className="text-gray-700">
+                            1 Cake Slice ({kidsProduct.cakeOptions.join(', ')})
+                          </span>
+                        </li>
+                      )}
+                    </ul>
+                  </div>
 
                   {/* Selection Options */}
                   <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm space-y-4">
