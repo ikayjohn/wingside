@@ -5,29 +5,43 @@ import { createAdminClient } from '@/lib/supabase/admin'
 // POST /api/admin/referral-fraud/scan - Run fraud detection scan
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    // Check for cron secret first (for automated scans)
+    const authHeader = request.headers.get('authorization')
+    const cronSecret = process.env.CRON_SECRET
 
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError
-    } = await supabase.auth.getUser()
+    let isAuthorized = false
 
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Option 1: CRON_SECRET authentication (for cron jobs)
+    if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+      isAuthorized = true
+    }
+    // Option 2: Admin session authentication (for manual use)
+    else {
+      const supabase = await createClient()
+
+      const {
+        data: { user },
+        error: authError
+      } = await supabase.auth.getUser()
+
+      if (!authError && user) {
+        // Check if user is admin
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+
+        if (profile?.role === 'admin') {
+          isAuthorized = true
+        }
+      }
     }
 
-    // Check if user is admin
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (profile?.role !== 'admin') {
+    if (!isAuthorized) {
       return NextResponse.json(
-        { error: 'Forbidden - Admin access required' },
-        { status: 403 }
+        { error: 'Unauthorized - Admin access or valid cron secret required' },
+        { status: 401 }
       )
     }
 
