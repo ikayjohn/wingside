@@ -2674,16 +2674,16 @@ input[type="button"],
 .earn-rewards-stat-value {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #552627;
   margin-bottom: 0.25rem;
 }
 
 .earn-rewards-stat-yellow {
-  color: #f59e0b;
+  color: #F7C400;
 }
 
 .earn-rewards-stat-blue {
-  color: #3b82f6;
+  color: #552627;
 }
 
 .earn-rewards-stat-label {
@@ -2742,41 +2742,23 @@ input[type="button"],
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-}
-
-.earn-rewards-task-icon.blue {
-  background-color: #dbeafe;
-  color: #3b82f6;
-}
-
-.earn-rewards-task-icon.purple {
-  background-color: #f3e8ff;
-  color: #a855f7;
-}
-
-.earn-rewards-task-icon.yellow {
-  background-color: #fef3c7;
-  color: #f59e0b;
-}
-
-.earn-rewards-task-icon.red {
-  background-color: #fee2e2;
-  color: #ef4444;
-}
-
-.earn-rewards-task-icon.black {
   background-color: #f3f4f6;
   color: #000000;
 }
 
+.earn-rewards-task-icon.blue,
+.earn-rewards-task-icon.purple,
+.earn-rewards-task-icon.yellow,
+.earn-rewards-task-icon.red,
+.earn-rewards-task-icon.black,
 .earn-rewards-task-icon.pink {
-  background-color: #fce7f3;
-  color: #ec4899;
+  background-color: #f3f4f6;
+  color: #000000;
 }
 
 .earn-rewards-task-icon.orange {
   background-color: #ffedd5;
-  color: #f97316;
+  color: #ef4444;
 }
 
 .earn-rewards-task-info {

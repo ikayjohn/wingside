@@ -19,7 +19,7 @@ export async function GET() {
     // Fetch user's profile with points
     const { data: profile } = await supabase
       .from('profiles')
-      .select('points')
+      .select('total_points, email')
       .eq('id', user.id)
       .single();
 
@@ -45,18 +45,18 @@ export async function GET() {
       .select('*')
       .eq('user_id', user.id);
 
-    // Calculate available points from orders (₦100 = 1 point)
+    // Calculate total spent from orders (match by email to include guest orders)
     const { data: orders } = await supabase
       .from('orders')
       .select('total, payment_status')
-      .eq('user_id', user.id)
+      .eq('customer_email', profile?.email || user.email)
       .eq('payment_status', 'paid');
 
     const totalSpent = orders?.reduce((sum, order) => sum + Number(order.total), 0) || 0;
     const purchasePoints = Math.floor(totalSpent / 100);
 
     return NextResponse.json({
-      points: profile?.points || 0,
+      points: profile?.total_points || 0,
       purchasePoints,
       totalSpent,
       rewards: rewards || [],

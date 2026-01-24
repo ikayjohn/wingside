@@ -215,32 +215,32 @@ export default function ReferralSection() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Total Referrals</p>
-          <p className="text-2xl font-bold text-gray-900">{stats.totalReferrals}</p>
+          <p className="text-2xl font-bold text-[#552627]">{stats.totalReferrals}</p>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Pending</p>
-          <p className="text-2xl font-bold text-yellow-600">{stats.pendingReferrals}</p>
+          <p className="text-2xl font-bold text-[#F7C400]">{stats.pendingReferrals}</p>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Completed</p>
-          <p className="text-2xl font-bold text-green-600">{stats.completedReferrals}</p>
+          <p className="text-2xl font-bold text-[#552627]">{stats.completedReferrals}</p>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Total Earnings</p>
-          <p className="text-2xl font-bold text-green-600">₦{stats.totalEarnings.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-[#552627]">₦{stats.totalEarnings.toLocaleString()}</p>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Pending Rewards</p>
-          <p className="text-2xl font-bold text-yellow-600">₦{stats.pendingRewards.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-[#F7C400]">₦{stats.pendingRewards.toLocaleString()}</p>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Credited</p>
-          <p className="text-2xl font-bold text-blue-600">₦{stats.creditedRewards.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-[#552627]">₦{stats.creditedRewards.toLocaleString()}</p>
         </div>
       </div>
 

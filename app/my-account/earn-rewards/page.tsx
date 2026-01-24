@@ -216,7 +216,9 @@ export default function EarnRewardsPage() {
       points: 15,
       icon: 'cart',
       iconColor: 'blue',
-      type: 'one-time'
+      type: 'one-time',
+      actionLink: '/order',
+      actionText: 'Order Now'
     },
     {
       id: 'referral',
@@ -413,6 +415,13 @@ export default function EarnRewardsPage() {
                     </button>
                   ) : claimed ? (
                     <span className="text-gray-500 text-sm py-2 px-4">Claimed</span>
+                  ) : task.actionLink ? (
+                    <Link
+                      href={task.actionLink}
+                      className="bg-[#F7C400] text-gray-900 py-2 px-4 rounded-full font-medium text-sm hover:bg-[#e5b500] transition-colors inline-block"
+                    >
+                      {task.actionText || 'Claim Now'}
+                    </Link>
                   ) : (
                     <button
                       onClick={() => claimReward(task.id, task.points)}

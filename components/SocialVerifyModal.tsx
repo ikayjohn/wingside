@@ -72,6 +72,24 @@ export default function SocialVerifyModal({
     window.open(platformUrl, '_blank');
   };
 
+  // Platform-specific button styles
+  const getPlatformButtonClass = () => {
+    switch (platform) {
+      case 'instagram':
+        return 'bg-gradient-to-tr from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600';
+      case 'twitter':
+        return 'bg-black hover:bg-gray-900';
+      case 'tiktok':
+        return 'bg-black hover:bg-gray-900';
+      case 'facebook':
+        return 'bg-[#1877F2] hover:bg-[#0d65d9]';
+      case 'youtube':
+        return 'bg-[#FF0000] hover:bg-[#cc0000]';
+      default:
+        return 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600';
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl max-w-md w-full p-6 relative">
@@ -137,7 +155,7 @@ export default function SocialVerifyModal({
                 <button
                   type="button"
                   onClick={handleFollowClick}
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-2.5 px-4 rounded-lg font-medium hover:from-purple-600 hover:to-pink-600 transition-all"
+                  className={`w-full text-white py-2.5 px-4 rounded-lg font-medium transition-all ${getPlatformButtonClass()}`}
                 >
                   Follow @{platformUrl.split('/').pop()}
                 </button>

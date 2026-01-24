@@ -17,8 +17,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Clean and normalize the referral code
-    const cleanedCode = referralCode.trim().toUpperCase();
+    // Clean and normalize the referral code (lowercase for consistency)
+    const cleanedCode = referralCode.trim().toLowerCase();
 
     // Check if referral code exists and get referrer info
     const { data: referrerData, error: referrerError } = await supabase

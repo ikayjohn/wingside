@@ -271,8 +271,50 @@ export async function POST(request: NextRequest) {
           if (!firstOrderError) {
             console.log(`✅ Awarded 15 points for first order`)
           } else {
-            console.error('Error awarding first order bonus:', firstOrderError)
+            console.error('❌ Error awarding first order bonus:', firstOrderError)
           }
+        }
+      }
+
+      // 5.5. Process referral rewards (if user was referred and this is first order ≥₦1000)
+      if (profileId && order.total >= 1000) {
+        try {
+          const { data: rewardProcessed, error: referralError } = await admin.rpc(
+            'process_referral_reward_after_first_order',
+            {
+              user_id: profileId,
+              order_amount: order.total
+            }
+          )
+
+          if (referralError) {
+            console.error('❌ Referral reward processing failed:', {
+              userId: profileId,
+              orderId: order.id,
+              orderNumber: order.order_number,
+              error: referralError
+            })
+
+            // Create admin notification
+            await admin.from('notifications').insert({
+              user_id: null,
+              type: 'referral_reward_failed',
+              title: 'Referral Reward Processing Failed',
+              message: `Failed to process referral reward for order ${order.order_number}`,
+              metadata: {
+                user_id: profileId,
+                order_id: order.id,
+                order_number: order.order_number,
+                error: referralError.message
+              }
+            })
+          } else if (rewardProcessed) {
+            console.log(`✅ Referral rewards processed successfully for user ${profileId}`)
+          } else {
+            console.log(`ℹ️ No referral reward to process (not referred or already processed)`)
+          }
+        } catch (error) {
+          console.error('❌ Error in referral processing:', error)
         }
       }
 

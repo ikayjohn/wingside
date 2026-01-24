@@ -30,7 +30,7 @@ function generateReferralCode(firstName: string, lastName: string): string {
   let code = `${firstPart}${lastPart}${randomDigits}`;
 
   if (code.length < 5) {
-    const extraRandom = Math.random().toString(36).substring(2, 4).toUpperCase();
+    const extraRandom = Math.random().toString(36).substring(2, 4).toLowerCase();
     code = `${code}${extraRandom}`;
   }
 
@@ -237,15 +237,43 @@ export async function POST(request: Request) {
       const { error: referralError } = await supabase.from('referrals').insert({
         referrer_id: referredByUserId,
         referred_user_id: authData.user.id,
-        referral_code_used: referralId.trim().toUpperCase(),
-        status: 'pending_signup',
+        referral_code_used: referralId.trim().toLowerCase(),
+        status: 'signed_up', // Changed from 'pending_signup' to 'signed_up' since signup is complete
         reward_amount: 1000, // Updated to ₦1000 naira reward
         referred_email: email.toLowerCase().trim(),
       });
 
       if (referralError) {
-        console.error('Referral creation error:', referralError);
+        console.error('❌ Referral creation error:', {
+          newUserId: authData.user.id,
+          newUserEmail: email,
+          referrerId: referredByUserId,
+          referralCode: referralId,
+          error: referralError
+        });
+
+        // Create admin notification for failed referral creation
+        try {
+          await supabase.from('notifications').insert({
+            user_id: null, // Admin notification
+            type: 'referral_creation_failed',
+            title: 'Referral Creation Failed',
+            message: `Failed to create referral record for new user ${email} using code ${referralId}`,
+            metadata: {
+              new_user_id: authData.user.id,
+              new_user_email: email,
+              referrer_id: referredByUserId,
+              referral_code: referralId,
+              error: referralError.message
+            }
+          });
+        } catch (notifError) {
+          console.error('Failed to create notification:', notifError);
+        }
+
         // Don't fail signup if referral record creation fails
+      } else {
+        console.log(`✅ Referral created: User ${authData.user.id} referred by ${referredByUserId}`);
       }
     }
 

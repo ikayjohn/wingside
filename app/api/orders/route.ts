@@ -242,14 +242,41 @@ export async function POST(request: NextRequest) {
         )
 
         if (rewardError) {
-          console.error('Error processing referral reward:', rewardError)
-          // Don't fail the order, just log the error
+          console.error('❌ Error processing referral reward:', {
+            userId: user.id,
+            orderId: order.id,
+            orderNumber: order.order_number,
+            error: rewardError
+          });
+
+          // Create admin notification for failed referral reward
+          await supabase.from('notifications').insert({
+            user_id: null, // Admin notification
+            type: 'referral_reward_failed',
+            title: 'Referral Reward Processing Failed',
+            message: `Failed to process referral reward for order ${order.order_number}. User: ${order.customer_email}`,
+            metadata: {
+              user_id: user.id,
+              order_id: order.id,
+              order_number: order.order_number,
+              error: rewardError.message
+            }
+          });
+
+          // Don't fail the order, but ensure error is visible
         } else if (rewardProcessed) {
-          console.log('Referral rewards (points) processed successfully for user:', user.id)
+          console.log('✅ Referral rewards (points) processed successfully for user:', user.id)
           // Points are now automatically credited to both users' profiles by the database function
+        } else {
+          console.log('ℹ️ No referral reward to process (not referred or already processed)')
         }
       } catch (error) {
-        console.error('Error in referral processing:', error)
+        console.error('❌ Error in referral processing:', {
+          userId: user.id,
+          orderId: order.id,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+
         // Don't fail the order, just log the error
       }
     }
