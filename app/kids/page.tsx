@@ -3,12 +3,27 @@
 import React from 'react';
 import Link from 'next/link';
 
+interface Product {
+  id: string;
+  name: string;
+  category: { name: string };
+  image_url: string;
+  flavors: string[];
+  sizes: { name: string; price: number }[];
+  cakeOptions?: string[];
+  drinkOptions?: string[];
+  description?: string;
+}
+
 export default function KidsPage() {
+  const [kidsProduct, setKidsProduct] = React.useState<Product | null>(null);
   const [selectedFlavor, setSelectedFlavor] = React.useState('');
   const [selectedCake, setSelectedCake] = React.useState('');
+  const [selectedSize, setSelectedSize] = React.useState('');
   const [cartCount, setCartCount] = React.useState(0);
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [selectedPackage, setSelectedPackage] = React.useState('');
+  const [loading, setLoading] = React.useState(true);
   const [formData, setFormData] = React.useState({
     fullName: '',
     email: '',
@@ -19,21 +34,78 @@ export default function KidsPage() {
     moreDetails: ''
   });
 
+  // Fetch Kids product from API
+  React.useEffect(() => {
+    const fetchKidsProduct = async () => {
+      try {
+        const response = await fetch(`/api/products/?_t=${Date.now()}`, {
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+          },
+          cache: 'no-store',
+        });
+        const data = await response.json();
+
+        // Find the Kids category product
+        const kidsItem = data.products?.find((p: Product) =>
+          p.category?.name === 'Kids'
+        );
+
+        if (kidsItem) {
+          setKidsProduct(kidsItem);
+          // Set default size if available
+          if (kidsItem.sizes && kidsItem.sizes.length > 0) {
+            setSelectedSize(kidsItem.sizes[0].name);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching kids product:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchKidsProduct();
+  }, []);
+
   const handleAddToCart = () => {
-    if (!selectedFlavor || !selectedCake) {
-      alert('Please select both a wing flavor and cake slice');
+    if (!kidsProduct) {
+      alert('Product not available');
+      return;
+    }
+
+    if (!selectedFlavor) {
+      alert('Please select a wing flavor');
+      return;
+    }
+
+    if (kidsProduct.cakeOptions && kidsProduct.cakeOptions.length > 0 && !selectedCake) {
+      alert('Please select a cake slice');
+      return;
+    }
+
+    if (!selectedSize) {
+      alert('Please select a size');
+      return;
+    }
+
+    const selectedSizeData = kidsProduct.sizes.find(s => s.name === selectedSize);
+    if (!selectedSizeData) {
+      alert('Invalid size selected');
       return;
     }
 
     // Create cart item matching order page structure
     const cartItem = {
-      id: Date.now(),
-      name: `The Genius (${selectedCake})`,
+      id: Date.now().toString(),
+      name: kidsProduct.name,
       flavor: selectedFlavor,
-      size: 'Kids Meal',
-      price: 5000,
+      size: selectedSize,
+      price: selectedSizeData.price,
       quantity: 1,
-      image: '/kids-the-genius.jpg'
+      image: kidsProduct.image_url,
+      cake: selectedCake || undefined
     };
 
     // Get existing cart from localStorage (using same key as order page)
@@ -52,7 +124,7 @@ export default function KidsPage() {
     setSelectedFlavor('');
     setSelectedCake('');
 
-    alert('The Genius added to cart!');
+    alert(`${kidsProduct.name} added to cart!`);
   };
 
   // Load cart count on component mount
@@ -114,34 +186,6 @@ This request was submitted through the Wingside Kids page.
     setIsFormOpen(false);
   };
 
-  const wingFlavors = [
-    'BBQ Fire',
-    'BBQ Rush',
-    'Braveheart',
-    'Cameroon Rub',
-    'Caribbean Jerk',
-    'Dragon Breath',
-    'Gustavo',
-    'Hot Nuts',
-    'Italian',
-    'Lemon Pepper',
-    'Mango Heat',
-    'Sweet Dreams',
-    'Tequila Wingrise',
-    'The Slayer',
-    'Tokyo',
-    'Wing of the North',
-    'Wingferno',
-    'Whiskey Vibes',
-    'Yaji',
-    'Yellow Gold'
-  ];
-
-  const cakeOptions = [
-    "Banana Cake Slice",
-    "Chocolate Cake Slice",
-    "Vanilla Cake Slice"
-  ];
 
   const partyPackages = [
     {
@@ -232,64 +276,125 @@ This request was submitted through the Wingside Kids page.
         <div className="max-w-7xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-black mb-12">Kids' Favorite Meals</h2>
 
-          {/* Full Width Banner */}
-          <div className="bg-gradient-to-r from-[#FDF5E5] to-[#FFE4CC] rounded-3xl overflow-hidden">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              {/* Left: Image */}
-              <div className="h-full min-h-[400px] md:min-h-[500px]">
-                <img
-                  src="/kids-the-genius.jpg"
-                  alt="The Genius"
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-
-              {/* Right: Details */}
-              <div className="p-8 md:p-12">
-                <h3 className="text-4xl md:text-5xl font-bold text-black mb-4">The Genius Meal</h3>
-                <p className="text-xl text-gray-700 mb-6">Perfect for little champions</p>
-
-                {/* Meal Details */}
-                <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm">
-                  <h4 className="text-lg font-bold text-black mb-3">What's Included:</h4>
-                  <ul className="space-y-2">
-                    <li className="flex items-start">
-                      <span className="text-[#F7C400] mr-2 text-xl">✓</span>
-                      <span className="text-gray-700">3 Wings (choice of 20 flavors)</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-[#F7C400] mr-2 text-xl">✓</span>
-                      <span className="text-gray-700">French Fries</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-[#F7C400] mr-2 text-xl">✓</span>
-                      <span className="text-gray-700">1 Juice Box</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-[#F7C400] mr-2 text-xl">✓</span>
-                      <span className="text-gray-700">1 Cake Slice (Banana, Chocolate, or Vanilla)</span>
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Price and CTA */}
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">Only</p>
-                    <p className="text-4xl font-bold text-black">₦5,000</p>
-                  </div>
-                </div>
-
-                <Link
-                  href="/order#Kids"
-                  className="inline-block w-full md:w-auto bg-[#F7C400] text-black px-10 py-4 rounded-full font-semibold text-lg hover:bg-[#e5b500] transition-colors text-center"
-                >
-                  Order Now
-                </Link>
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mb-4"></div>
+                <p className="text-gray-600">Loading...</p>
               </div>
             </div>
-          </div>
+          ) : !kidsProduct ? (
+            <div className="text-center py-20">
+              <p className="text-gray-600 text-lg">Kids meal coming soon!</p>
+            </div>
+          ) : (
+            /* Full Width Banner */
+            <div className="bg-gradient-to-r from-[#FDF5E5] to-[#FFE4CC] rounded-3xl overflow-hidden">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                {/* Left: Image */}
+                <div className="h-full min-h-[400px] md:min-h-[500px]">
+                  <img
+                    src={kidsProduct.image_url || '/kids-the-genius.jpg'}
+                    alt={kidsProduct.name}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+
+                {/* Right: Details */}
+                <div className="p-8 md:p-12">
+                  <h3 className="text-4xl md:text-5xl font-bold text-black mb-4">{kidsProduct.name}</h3>
+                  <p className="text-xl text-gray-700 mb-6">{kidsProduct.description || 'Perfect for little champions'}</p>
+
+                  {/* Selection Options */}
+                  <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm space-y-4">
+                    {/* Wing Flavor Selection */}
+                    {kidsProduct.flavors && kidsProduct.flavors.length > 0 && (
+                      <div>
+                        <label className="block text-sm font-bold text-black mb-2">
+                          Choose Wing Flavor *
+                        </label>
+                        <select
+                          value={selectedFlavor}
+                          onChange={(e) => setSelectedFlavor(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
+                        >
+                          <option value="">Select a flavor...</option>
+                          {kidsProduct.flavors.map((flavor) => (
+                            <option key={flavor} value={flavor}>
+                              {flavor}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Cake Selection */}
+                    {kidsProduct.cakeOptions && kidsProduct.cakeOptions.length > 0 && (
+                      <div>
+                        <label className="block text-sm font-bold text-black mb-2">
+                          Choose Cake Slice *
+                        </label>
+                        <select
+                          value={selectedCake}
+                          onChange={(e) => setSelectedCake(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
+                        >
+                          <option value="">Select a cake...</option>
+                          {kidsProduct.cakeOptions.map((cake) => (
+                            <option key={cake} value={cake}>
+                              {cake}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Size Selection (if multiple sizes) */}
+                    {kidsProduct.sizes && kidsProduct.sizes.length > 1 && (
+                      <div>
+                        <label className="block text-sm font-bold text-black mb-2">
+                          Choose Size *
+                        </label>
+                        <select
+                          value={selectedSize}
+                          onChange={(e) => setSelectedSize(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
+                        >
+                          {kidsProduct.sizes.map((size) => (
+                            <option key={size.name} value={size.name}>
+                              {size.name} - ₦{size.price.toLocaleString()}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Price and CTA */}
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">
+                        {kidsProduct.sizes && kidsProduct.sizes.length === 1 ? 'Only' : 'From'}
+                      </p>
+                      <p className="text-4xl font-bold text-black">
+                        ₦{kidsProduct.sizes && kidsProduct.sizes.length > 0
+                          ? Math.min(...kidsProduct.sizes.map(s => s.price)).toLocaleString()
+                          : '0'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleAddToCart}
+                    className="inline-block w-full md:w-auto bg-[#F7C400] text-black px-10 py-4 rounded-full font-semibold text-lg hover:bg-[#e5b500] transition-colors text-center"
+                  >
+                    Order Now
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
