@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { BarChart3, Mail } from 'lucide-react';
+import { BarChart3, Mail, Send } from 'lucide-react';
 import NotificationDashboard from '@/components/admin/NotificationDashboard';
 import EmailTemplatesManager from '@/components/admin/EmailTemplatesManager';
+import EmailServiceManager from '@/components/admin/EmailServiceManager';
 
 export default function AdminNotificationsPage() {
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'templates'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'templates' | 'service'>('dashboard');
 
   const handleSendTestEmail = async () => {
     try {
@@ -133,11 +134,24 @@ export default function AdminNotificationsPage() {
                 <Mail className="w-5 h-5" />
                 Email Templates
               </button>
+              <button
+                onClick={() => setActiveTab('service')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+                  activeTab === 'service'
+                    ? 'border-yellow-500 text-yellow-600'
+                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                }`}
+              >
+                <Send className="w-5 h-5" />
+                Email Service
+              </button>
             </nav>
           </div>
         </div>
 
-        {activeTab === 'dashboard' ? <NotificationDashboard /> : <EmailTemplatesManager />}
+        {activeTab === 'dashboard' && <NotificationDashboard />}
+        {activeTab === 'templates' && <EmailTemplatesManager />}
+        {activeTab === 'service' && <EmailServiceManager />}
 
         {activeTab === 'dashboard' && (
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">

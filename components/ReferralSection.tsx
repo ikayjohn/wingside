@@ -77,10 +77,12 @@ export default function ReferralSection() {
     }
   };
 
-  const copyToClipboard = (text: string) => {
+  const [copiedType, setCopiedType] = useState<'link' | 'code' | null>(null);
+
+  const copyToClipboard = (text: string, type: 'link' | 'code' = 'link') => {
     navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 3000);
+    setCopiedType(type);
+    setTimeout(() => setCopiedType(null), 3000);
   };
 
   const getReferralUrl = () => {
@@ -200,7 +202,24 @@ export default function ReferralSection() {
           <p className="text-sm text-yellow-700">Your friend also gets ₦1,000 after their first order. You'll earn your reward when your friend places their first order.</p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-6">
+          <div className="flex-1">
+            <div className="flex flex-col">
+              <label className="text-sm text-gray-600 mb-2">Your referral code</label>
+              <div className="flex">
+                <div className="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg bg-[#552627] text-white font-bold tracking-widest flex items-center justify-center text-lg">
+                  {referralCode}
+                </div>
+                <button
+                  onClick={() => copyToClipboard(referralCode, 'code')}
+                  className="px-4 py-2 bg-yellow-400 text-black rounded-r-lg hover:bg-yellow-500 font-medium transition-colors text-sm whitespace-nowrap"
+                >
+                  {copiedType === 'code' ? '✓ Copied' : 'Copy Code'}
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div className="flex-1">
             <div className="flex flex-col">
               <label className="text-sm text-gray-600 mb-2">Your referral link</label>
@@ -213,10 +232,10 @@ export default function ReferralSection() {
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
                 />
                 <button
-                  onClick={() => copyToClipboard(getReferralUrl())}
+                  onClick={() => copyToClipboard(getReferralUrl(), 'link')}
                   className="px-4 py-2 bg-yellow-400 text-black rounded-r-lg hover:bg-yellow-500 font-medium transition-colors text-sm whitespace-nowrap"
                 >
-                  {copied ? '✓ Copied' : 'Copy Link'}
+                  {copiedType === 'link' ? '✓ Copied' : 'Copy Link'}
                 </button>
               </div>
             </div>
@@ -338,11 +357,10 @@ export default function ReferralSection() {
                   <button
                     key={method}
                     onClick={() => setShareMethod(method)}
-                    className={`p-3 rounded-lg border-2 transition-colors ${
-                      shareMethod === method
+                    className={`p-3 rounded-lg border-2 transition-colors ${shareMethod === method
                         ? 'border-yellow-400 bg-yellow-50'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <div className="text-2xl mb-1">{icon}</div>
                     <p className="text-sm font-medium">{label}</p>

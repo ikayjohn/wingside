@@ -263,8 +263,8 @@ export default function WingclubDashboard() {
         <div className="text-center">
           <div className="text-red-600 mb-4">Error loading dashboard</div>
           <p className="text-gray-600 mb-4">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="bg-yellow-400 text-black px-6 py-2 rounded-lg hover:bg-yellow-500"
           >
             Try Again
@@ -288,7 +288,7 @@ export default function WingclubDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-[1200px] mx-auto px-4 py-8 md:px-6 lg:px-8">
-        
+
         {/* Welcome Header */}
         <div className="flex items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
@@ -388,9 +388,8 @@ export default function WingclubDashboard() {
                         {notifications.map((notification) => (
                           <div
                             key={notification.id}
-                            className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${
-                              !notification.read ? 'bg-yellow-50' : ''
-                            }`}
+                            className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${!notification.read ? 'bg-yellow-50' : ''
+                              }`}
                           >
                             <div className="flex gap-3">
                               {/* Icon */}
@@ -508,26 +507,6 @@ export default function WingclubDashboard() {
             </div>
           </div>
 
-          <div className="flex justify-end mt-4">
-            <div className="dashboard-ref-id-inline">
-              <span>Referral Code: {userData.referralCode || userData.refId}</span>
-              <button
-                className="dashboard-copy-btn-dark"
-                onClick={() => copyToClipboard(userData.referralCode || userData.refId, 'ref')}
-              >
-                {copied === 'ref' ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
-                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2v2"></path>
-                  </svg>
-                )}
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Quick Actions */}
@@ -615,8 +594,8 @@ export default function WingclubDashboard() {
                   <div className="absolute inset-0 blur-xl bg-yellow-400 opacity-50 animate-pulse"></div>
                   <div className="relative flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full border-2 border-white/40">
                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="currentColor" className="text-white drop-shadow-lg">
-                      <path d="M12 2c.5 0 .4.6.4.9-.2 2.2-1 4.4-1 6.6 0 1.8.5 3.5 1.5 5 1-1.5 1.5-3.2 1.5-5 0-2.2-.8-4.4-1-6.6 0-.3-.1-.9.4-.9 1.6 0 3 1.4 3 3v1c0 3.3-2.7 6-6 6s-6-2.7-6-6v-1c0-1.6 1.4-3 3-3z"/>
-                      <path d="M12 22c-1.7 0-3-1.3-3-3 0-.7.2-1.4.6-2l.4-.6c.5-.8 1-1.7 1-2.7 0-1-.5-1.9-1-2.7l-.4-.6c-.4-.6-.6-1.3-.6-2 0-1.7 1.3-3 3-3s3 1.3 3 3c0 .7-.2 1.4-.6 2l-.4.6c-.5.8-1 1.7-1 2.7 0 1 .5 1.9 1 2.7l.4.6c.4.6.6 1.3.6 2 0 1.7-1.3 3-3 3z"/>
+                      <path d="M12 2c.5 0 .4.6.4.9-.2 2.2-1 4.4-1 6.6 0 1.8.5 3.5 1.5 5 1-1.5 1.5-3.2 1.5-5 0-2.2-.8-4.4-1-6.6 0-.3-.1-.9.4-.9 1.6 0 3 1.4 3 3v1c0 3.3-2.7 6-6 6s-6-2.7-6-6v-1c0-1.6 1.4-3 3-3z" />
+                      <path d="M12 22c-1.7 0-3-1.3-3-3 0-.7.2-1.4.6-2l.4-.6c.5-.8 1-1.7 1-2.7 0-1-.5-1.9-1-2.7l-.4-.6c-.4-.6-.6-1.3-.6-2 0-1.7 1.3-3 3-3s3 1.3 3 3c0 .7-.2 1.4-.6 2l-.4.6c-.5.8-1 1.7-1 2.7 0 1 .5 1.9 1 2.7l.4.6c.4.6.6 1.3.6 2 0 1.7-1.3 3-3 3z" />
                     </svg>
                   </div>
                 </div>
@@ -628,8 +607,8 @@ export default function WingclubDashboard() {
                     {userData.current_streak >= 7
                       ? '🔥 You\'re on fire! Keep it up!'
                       : userData.current_streak >= 3
-                      ? 'Great streak! Keep ordering!'
-                      : 'Start building your streak!'}
+                        ? 'Great streak! Keep ordering!'
+                        : 'Start building your streak!'}
                   </p>
                 </div>
               </div>
@@ -697,7 +676,7 @@ export default function WingclubDashboard() {
               <h3 className="dashboard-recent-title">My Recent Orders</h3>
               <Link href="/my-account/orders" className="dashboard-view-all">View All</Link>
             </div>
-            
+
             {userData.recentOrders && userData.recentOrders.length > 0 ? (
               <div className="space-y-3">
                 {userData.recentOrders.slice(0, 3).map((order) => (
@@ -720,16 +699,15 @@ export default function WingclubDashboard() {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-gray-900">₦{Number(order.total).toLocaleString()}</p>
-                        <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                          order.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                          order.status === 'confirmed' ? 'bg-indigo-100 text-indigo-700' :
-                          order.status === 'preparing' ? 'bg-blue-100 text-blue-700' :
-                          order.status === 'out_for_delivery' ? 'bg-yellow-100 text-yellow-700' :
-                          order.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                          order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                          order.status === 'failed' ? 'bg-red-200 text-red-800' :
-                          'bg-gray-100 text-gray-700'
-                        }`}>
+                        <span className={`inline-block px-2 py-1 text-xs rounded-full ${order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                            order.status === 'confirmed' ? 'bg-indigo-100 text-indigo-700' :
+                              order.status === 'preparing' ? 'bg-blue-100 text-blue-700' :
+                                order.status === 'out_for_delivery' ? 'bg-yellow-100 text-yellow-700' :
+                                  order.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                                    order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                      order.status === 'failed' ? 'bg-red-200 text-red-800' :
+                                        'bg-gray-100 text-gray-700'
+                          }`}>
                           {order.status.replace('_', ' ').toUpperCase()}
                         </span>
                       </div>
@@ -758,7 +736,7 @@ export default function WingclubDashboard() {
               <h3 className="dashboard-recent-title">Recent Transactions</h3>
               <Link href="/my-account/wallet-history" className="dashboard-view-all">View All</Link>
             </div>
-            
+
             {recentTransactions && recentTransactions.length > 0 ? (
               <div className="space-y-3">
                 {recentTransactions.slice(0, 3).map((transaction) => (
@@ -778,15 +756,13 @@ export default function WingclubDashboard() {
                         )}
                       </div>
                       <div className="text-right">
-                        <p className={`font-semibold ${
-                          transaction.amount < 0 ? 'text-red-600' : 'text-green-600'
-                        }`}>
+                        <p className={`font-semibold ${transaction.amount < 0 ? 'text-red-600' : 'text-green-600'
+                          }`}>
                           {transaction.amount < 0 ? '-' : '+'} ₦{Math.abs(transaction.amount).toLocaleString()}
                         </p>
-                        <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                          transaction.status === 'completed' ? 'bg-green-100 text-green-700' :
-                          'bg-yellow-100 text-yellow-700'
-                        }`}>
+                        <span className={`inline-block px-2 py-1 text-xs rounded-full ${transaction.status === 'completed' ? 'bg-green-100 text-green-700' :
+                            'bg-yellow-100 text-yellow-700'
+                          }`}>
                           {transaction.status.toUpperCase()}
                         </span>
                       </div>
