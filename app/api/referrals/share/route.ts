@@ -54,26 +54,26 @@ export async function POST(request: NextRequest) {
 
     const shareMessages = {
       email: {
-        subject: `Join Wingside and get 200 points on signup!`,
-        body: `Hey! I've been enjoying Wingside's amazing chicken wings and thought you'd love them too. Use my referral code ${userProfile.referral_code} to get 200 points when you sign up.
+        subject: `Join Wingside and get ₦1,000!`,
+        body: `Hey! I've been enjoying Wingside's amazing chicken wings and thought you'd love them too. Use my referral code ${userProfile.referral_code} to get ₦1,000 when you sign up.
 
 ${referralLink}
 
-${customMessage || `I've been earning points through referrals - join me and start earning too!`}
+${customMessage || `I've been earning ₦1,000 through referrals - join me and start earning too!`}
 
 Enjoy the wings!
 ${userProfile.full_name}`
       },
       whatsapp: {
-        message: `Hey! I've been enjoying Wingside's amazing chicken wings and thought you'd love them too. Use my referral code ${userProfile.referral_code} to get 200 points when you sign up: ${referralLink}
+        message: `Hey! I've been enjoying Wingside's amazing chicken wings and thought you'd love them too. Use my referral code ${userProfile.referral_code} to get ₦1,000 when you sign up: ${referralLink}
 
-${customMessage || `I've been earning points through referrals - join me and start earning too!`}`
+${customMessage || `I've been earning ₦1,000 through referrals - join me and start earning too!`}`
       },
       twitter: {
-        message: `Get 200 points when you join Wingside! 🍗 Use my referral code ${userProfile.referral_code} to enjoy amazing chicken wings. ${referralLink} #Wingside #ChickenWings #FoodieNG`
+        message: `Get ₦1,000 when you join Wingside! Use my referral code ${userProfile.referral_code} to enjoy amazing chicken wings. ${referralLink} #Wingside #ChickenWings #FoodieNG`
       },
       facebook: {
-        message: `Love chicken wings? Get 200 points when you join Wingside using my referral code ${userProfile.referral_code}! 🍗✨ ${referralLink}
+        message: `Love chicken wings? Get ₦1,000 when you join Wingside using my referral code ${userProfile.referral_code}! ${referralLink}
 
 ${customMessage || `I've been enjoying their amazing flavors and you can too!`}`
       }

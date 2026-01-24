@@ -236,7 +236,7 @@ export default function TierProgressionPage() {
             <div className="tier-earn-card">
               <div>
                 <h4 className="tier-earn-title">Refer Friends</h4>
-                <p className="tier-earn-description">Get 200 points for every friend you refer</p>
+                <p className="tier-earn-description">Earn ₦1,000 for every friend you refer</p>
               </div>
               <Link href="/my-account/referrals" className="tier-earn-btn purple">
                 Refer & Earn
