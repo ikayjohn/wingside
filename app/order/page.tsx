@@ -123,7 +123,9 @@ export default function OrderPage() {
           subcategory: p.subcategory,
           image: p.image_url || p.image,
           flavors: p.flavors || [],
-          sizes: p.sizes || [],
+          sizes: (p.sizes || []).filter((size: any, index: number, self: any[]) =>
+            index === self.findIndex((s) => s.name === size.name && s.price === size.price)
+          ),
           badge: p.badge,
           flavorCount: p.max_flavors || 1,
           wingCount: p.wing_count,
@@ -741,9 +743,9 @@ export default function OrderPage() {
                       <div className="mb-4">
                         <p className="text-sm font-semibold text-gray-700 mb-2">Size:</p>
                         <div className="flex flex-wrap gap-2">
-                          {product.sizes.map((size) => (
+                          {product.sizes.map((size, index) => (
                             <button
-                              key={size.name}
+                              key={`${size.name}-${index}`}
                               onClick={() => handleSizeSelect(product.id, size.name)}
                               className={`order-size-btn ${(selectedSizes[product.id]) === size.name ? 'active' : ''}`}
                             >
