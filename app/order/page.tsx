@@ -92,13 +92,22 @@ export default function OrderPage() {
   useEffect(() => {
     const savedCart = localStorage.getItem('wingside-cart');
     if (savedCart) {
-      setCart(JSON.parse(savedCart));
+      try {
+        const parsedCart = JSON.parse(savedCart);
+        if (Array.isArray(parsedCart) && parsedCart.length > 0) {
+          setCart(parsedCart);
+        }
+      } catch (error) {
+        console.error('Error parsing cart from localStorage:', error);
+      }
     }
-  }, [setCart]);
+  }, []);
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('wingside-cart', JSON.stringify(cart));
+    if (cart.length > 0 || typeof window !== 'undefined') {
+      localStorage.setItem('wingside-cart', JSON.stringify(cart));
+    }
   }, [cart]);
 
   // Fetch products from API on mount
@@ -590,8 +599,13 @@ export default function OrderPage() {
                     {/* Product Name */}
                     <div className="mb-3">
                       <h3 className="font-bold text-lg">{product.name}</h3>
-                      {product.wingCount && (
+                      {product.wingCount && (!product.description || !product.description.includes(product.wingCount)) && (
                         <p className="text-sm font-normal text-gray-600">{product.wingCount}</p>
+                      )}
+                      {product.description && (
+                        <p className="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">
+                          {product.description}
+                        </p>
                       )}
                     </div>
 

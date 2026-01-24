@@ -111,16 +111,20 @@ export default function KidsPage() {
     }
 
     // Create cart item matching order page structure
-    const cartItem = {
-      id: Date.now().toString(),
+    const cartItem: any = {
+      id: kidsProduct.id, // Use product ID instead of timestamp
       name: kidsProduct.name,
       flavor: selectedFlavor,
       size: selectedSize,
       price: selectedSizeData.price,
       quantity: 1,
       image: kidsProduct.image_url,
-      cake: selectedCake || undefined
     };
+
+    // Only add cake if selected (matching order page pattern)
+    if (selectedCake) {
+      cartItem.cake = selectedCake;
+    }
 
     // Get existing cart from localStorage (using same key as order page)
     const existingCart = JSON.parse(localStorage.getItem('wingside-cart') || '[]');
@@ -137,6 +141,7 @@ export default function KidsPage() {
     // Reset selections
     setSelectedFlavor('');
     setSelectedCake('');
+    setSelectedFlavorCategory('');
 
     alert(`${kidsProduct.name} added to cart!`);
   };
