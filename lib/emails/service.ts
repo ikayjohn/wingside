@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 // Email configuration
 const FROM_EMAIL = process.env.FROM_EMAIL || 'Wingside <noreply@wingside.ng>';
@@ -53,6 +54,69 @@ export async function sendEmail({ to, subject, html, replyTo }: EmailParams) {
     console.error('Error sending email:', error);
     return { success: false, error: error.message };
   }
+}
+
+/**
+ * Fetch email template from database
+ */
+async function getEmailTemplate(templateKey: string) {
+  const supabase = createAdminClient();
+
+  const { data: template, error } = await supabase
+    .from('email_templates')
+    .select('*')
+    .eq('template_key', templateKey)
+    .eq('is_active', true)
+    .single();
+
+  if (error || !template) {
+    console.error(`Template ${templateKey} not found:`, error);
+    return null;
+  }
+
+  return template;
+}
+
+/**
+ * Replace variables in template
+ * Supports {{variable}} and {{#conditional}}...{{/conditional}} syntax
+ */
+function replaceVariables(template: string, variables: Record<string, any>): string {
+  let result = template;
+
+  // Replace conditional blocks {{#variable}}...{{/variable}}
+  result = result.replace(/\{\{#(\w+)\}\}([\s\S]*?)\{\{\/\1\}\}/g, (match, key, content) => {
+    return variables[key] ? content : '';
+  });
+
+  // Replace simple variables {{variable}}
+  result = result.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+    return variables[key] !== undefined ? String(variables[key]) : match;
+  });
+
+  return result;
+}
+
+/**
+ * Send email using database template
+ */
+async function sendTemplatedEmail(
+  templateKey: string,
+  to: string | string[],
+  variables: Record<string, any>,
+  replyTo?: string
+) {
+  const template = await getEmailTemplate(templateKey);
+
+  if (!template) {
+    console.error(`Template ${templateKey} not found in database`);
+    return { success: false, error: `Template ${templateKey} not found` };
+  }
+
+  const subject = replaceVariables(template.subject, variables);
+  const html = replaceVariables(template.html_content, variables);
+
+  return sendEmail({ to, subject, html, replyTo });
 }
 
 /**
@@ -477,6 +541,10 @@ export async function sendOrderNotification(data: {
 /**
  * Send referral invitation email
  */
+/**
+ * Send referral invitation email
+ * Uses database template: referral_invitation
+ */
 export async function sendReferralInvitation(data: {
   recipientEmail: string;
   referrerName: string;
@@ -484,150 +552,14 @@ export async function sendReferralInvitation(data: {
   referralLink: string;
   customMessage?: string;
 }) {
-  const html = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #F7C400 0%, #ffdb4d 100%); padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0; }
-          .header h1 { margin: 0; color: #552627; font-size: 32px; font-weight: bold; }
-          .header p { margin: 10px 0 0; color: #552627; font-size: 16px; }
-          .wings-icon { font-size: 64px; margin-bottom: 10px; }
-          .content { background: #fff; padding: 40px 30px; border: 1px solid #e0e0e0; border-top: none; }
-          .message { background: #FDF5E5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #F7C400; }
-          .message p { margin: 0; color: #552627; font-size: 15px; line-height: 1.8; }
-          .referral-code { background: #552627; color: #F7C400; padding: 20px; text-align: center; border-radius: 8px; margin: 30px 0; }
-          .referral-code-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; opacity: 0.9; }
-          .referral-code-value { font-size: 32px; font-weight: bold; letter-spacing: 3px; font-family: 'Courier New', monospace; }
-          .benefits { background: #f9f9f9; padding: 25px; border-radius: 8px; margin: 25px 0; }
-          .benefit-item { display: flex; align-items: start; margin: 15px 0; }
-          .benefit-icon { font-size: 24px; margin-right: 15px; min-width: 30px; }
-          .benefit-text { flex: 1; }
-          .benefit-title { font-weight: bold; color: #552627; margin-bottom: 3px; }
-          .benefit-desc { font-size: 14px; color: #666; }
-          .cta-button { display: inline-block; background: #F7C400; color: #552627; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 18px; margin: 20px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s; }
-          .cta-button:hover { transform: translateY(-2px); }
-          .footer { background: #f9f9f9; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0; border-radius: 0 0 12px 12px; }
-          .footer-text { font-size: 13px; color: #666; margin: 5px 0; }
-          .footer-link { color: #F7C400; text-decoration: none; font-weight: bold; }
-          .social-icons { margin: 20px 0; }
-          .social-icon { display: inline-block; margin: 0 10px; text-decoration: none; font-size: 24px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <div class="wings-icon">🍗</div>
-            <h1>You've Been Invited!</h1>
-            <p>Your friend ${data.referrerName} wants to share the Wingside experience</p>
-          </div>
-
-          <div class="content">
-            <p style="font-size: 16px; color: #552627; margin-bottom: 20px;">
-              Hello! 👋
-            </p>
-
-            <p style="font-size: 15px; color: #333; line-height: 1.8; margin-bottom: 20px;">
-              <strong>${data.referrerName}</strong> thinks you'd love Wingside's amazing chicken wings and wants you to join our community!
-            </p>
-
-            ${data.customMessage ? `
-            <div class="message">
-              <p><strong>Personal Message:</strong></p>
-              <p style="margin-top: 10px; font-style: italic;">"${data.customMessage}"</p>
-            </div>
-            ` : ''}
-
-            <div class="benefits">
-              <h3 style="color: #552627; margin-top: 0; margin-bottom: 20px; text-align: center;">What You'll Get 🎁</h3>
-
-              <div class="benefit-item">
-                <div class="benefit-icon">🎯</div>
-                <div class="benefit-text">
-                  <div class="benefit-title">₦1,000 Welcome Bonus</div>
-                  <div class="benefit-desc">Get ₦1,000 credited to your wallet after your first order of ₦1,000 or more</div>
-                </div>
-              </div>
-
-              <div class="benefit-item">
-                <div class="benefit-icon">⭐</div>
-                <div class="benefit-text">
-                  <div class="benefit-title">15 Bonus Points</div>
-                  <div class="benefit-desc">Start earning rewards right from your first order</div>
-                </div>
-              </div>
-
-              <div class="benefit-item">
-                <div class="benefit-icon">🍗</div>
-                <div class="benefit-text">
-                  <div class="benefit-title">20+ Amazing Flavors</div>
-                  <div class="benefit-desc">From classic BBQ to bold Suya Spice and everything in between</div>
-                </div>
-              </div>
-
-              <div class="benefit-item">
-                <div class="benefit-icon">🚀</div>
-                <div class="benefit-text">
-                  <div class="benefit-title">Fast Delivery</div>
-                  <div class="benefit-desc">Hot, fresh wings delivered straight to your door</div>
-                </div>
-              </div>
-            </div>
-
-            <div style="text-align: center; margin: 30px 0;">
-              <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Use this referral code when signing up:</p>
-
-              <div class="referral-code">
-                <div class="referral-code-label">Your Referral Code</div>
-                <div class="referral-code-value">${data.referralCode}</div>
-              </div>
-
-              <a href="${data.referralLink}" class="cta-button">
-                Join Wingside & Get ₦1,000
-              </a>
-
-              <p style="font-size: 13px; color: #999; margin-top: 15px;">
-                Or copy this link: <br>
-                <a href="${data.referralLink}" style="color: #F7C400; word-break: break-all;">${data.referralLink}</a>
-              </p>
-            </div>
-
-            <div style="background: #FDF5E5; padding: 20px; border-radius: 8px; margin-top: 30px; text-align: center;">
-              <p style="margin: 0; color: #552627; font-size: 14px;">
-                <strong>Bonus:</strong> ${data.referrerName} will also get ₦1,000 when you complete your first order! 🎉
-              </p>
-            </div>
-          </div>
-
-          <div class="footer">
-            <div class="social-icons">
-              <a href="https://instagram.com/mywingside" class="social-icon" style="color: #E4405F;">📷</a>
-              <a href="https://twitter.com/mywingside" class="social-icon" style="color: #1DA1F2;">🐦</a>
-              <a href="https://facebook.com/mywingside" class="social-icon" style="color: #1877F2;">👍</a>
-            </div>
-
-            <p class="footer-text">
-              Questions? Contact us at <a href="mailto:reachus@wingside.ng" class="footer-link">reachus@wingside.ng</a>
-            </p>
-
-            <p class="footer-text" style="margin-top: 15px;">
-              © ${new Date().getFullYear()} Wingside. All rights reserved.
-            </p>
-
-            <p class="footer-text" style="font-size: 11px; color: #999; margin-top: 15px;">
-              You received this email because ${data.referrerName} invited you to join Wingside.
-            </p>
-          </div>
-        </div>
-      </body>
-    </html>
-  `;
-
-  return sendEmail({
-    to: data.recipientEmail,
-    subject: `${data.referrerName} invited you to Wingside - Get ₦1,000!`,
-    html,
-  });
+  return sendTemplatedEmail(
+    'referral_invitation',
+    data.recipientEmail,
+    {
+      referrerName: data.referrerName,
+      referralCode: data.referralCode,
+      referralLink: data.referralLink,
+      customMessage: data.customMessage || '',
+    }
+  );
 }
