@@ -54,6 +54,8 @@ export default function ReferralSection() {
   const [shareMethod, setShareMethod] = useState<'email' | 'whatsapp' | 'twitter' | 'facebook' | 'copy_link'>('copy_link');
   const [emailAddress, setEmailAddress] = useState('');
   const [customMessage, setCustomMessage] = useState('');
+  const [emailSent, setEmailSent] = useState(false);
+  const [sharingError, setSharingError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchReferralData();
@@ -87,6 +89,9 @@ export default function ReferralSection() {
   };
 
   const handleShare = async () => {
+    setSharingError(null);
+    setEmailSent(false);
+
     try {
       const response = await fetch('/api/referrals/share', {
         method: 'POST',
@@ -100,33 +105,48 @@ export default function ReferralSection() {
         }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.wingside.ng';
-        const referralLink = `${baseUrl}/signup?ref=${referralCode}`;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to share referral');
+      }
 
-        if (shareMethod === 'copy_link') {
-          copyToClipboard(referralLink);
-        } else if (shareMethod === 'whatsapp') {
-          const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(data.messages.whatsapp.message)}`;
-          window.open(whatsappUrl, '_blank');
-        } else if (shareMethod === 'twitter') {
-          const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(data.messages.twitter.message)}`;
-          window.open(twitterUrl, '_blank');
-        } else if (shareMethod === 'facebook') {
-          const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralLink)}&quote=${encodeURIComponent(data.messages.facebook.message)}`;
-          window.open(facebookUrl, '_blank');
-        } else if (shareMethod === 'email' && emailAddress) {
-          // Email would be handled by backend service
-          console.log('Email sent to:', emailAddress);
-        }
+      const data = await response.json();
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.wingside.ng';
+      const referralLink = `${baseUrl}/signup?ref=${referralCode}`;
 
+      if (shareMethod === 'copy_link') {
+        copyToClipboard(referralLink);
         setShowShareModal(false);
+      } else if (shareMethod === 'whatsapp') {
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(data.messages.whatsapp.message)}`;
+        window.open(whatsappUrl, '_blank');
+        setShowShareModal(false);
+      } else if (shareMethod === 'twitter') {
+        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(data.messages.twitter.message)}`;
+        window.open(twitterUrl, '_blank');
+        setShowShareModal(false);
+      } else if (shareMethod === 'facebook') {
+        const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralLink)}&quote=${encodeURIComponent(data.messages.facebook.message)}`;
+        window.open(facebookUrl, '_blank');
+        setShowShareModal(false);
+      } else if (shareMethod === 'email' && emailAddress) {
+        // Email sent successfully via backend
+        setEmailSent(true);
+        setTimeout(() => {
+          setShowShareModal(false);
+          setEmailAddress('');
+          setCustomMessage('');
+          setEmailSent(false);
+        }, 2000);
+      }
+
+      if (shareMethod !== 'email') {
         setEmailAddress('');
         setCustomMessage('');
       }
     } catch (error) {
       console.error('Error sharing referral:', error);
+      setSharingError(error instanceof Error ? error.message : 'Failed to share referral');
     }
   };
 
@@ -343,6 +363,18 @@ export default function ReferralSection() {
                   placeholder="friend@example.com"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
                 />
+              </div>
+            )}
+
+            {sharingError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700">❌ {sharingError}</p>
+              </div>
+            )}
+
+            {emailSent && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-700">✅ Email sent successfully to {emailAddress}!</p>
               </div>
             )}
 

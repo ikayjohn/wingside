@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { sendReferralInvitation } from '@/lib/emails/service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -78,10 +79,36 @@ ${customMessage || `I've been enjoying their amazing flavors and you can too!`}`
       }
     };
 
-    // If sharing via email, you would integrate with an email service here
+    // If sharing via email, send the referral invitation
     if (shareMethod === 'email' && recipientEmail) {
-      // TODO: Integrate with email service (SendGrid, etc.)
-      console.log(`Would send referral email to ${recipientEmail}`);
+      try {
+        const emailResult = await sendReferralInvitation({
+          recipientEmail,
+          referrerName: userProfile.full_name || 'A Wingside customer',
+          referralCode: userProfile.referral_code,
+          referralLink,
+          customMessage: customMessage || undefined,
+        });
+
+        if (!emailResult.success) {
+          console.error('Failed to send referral email:', emailResult.error);
+          return NextResponse.json(
+            {
+              error: 'Failed to send referral email',
+              details: emailResult.error
+            },
+            { status: 500 }
+          );
+        }
+
+        console.log(`✅ Referral email sent successfully to ${recipientEmail}`);
+      } catch (emailError) {
+        console.error('Error sending referral email:', emailError);
+        return NextResponse.json(
+          { error: 'Failed to send referral email' },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({
