@@ -68,6 +68,35 @@ export default function AdminNotificationsPage() {
     }
   };
 
+  const handleSendTestSMS = async () => {
+    try {
+      const phoneNumber = prompt('Enter phone number to send test SMS (e.g., +2348031234567 or 08031234567):');
+      if (!phoneNumber) return;
+
+      setSending(true);
+      setMessage(null);
+
+      const response = await fetch('/api/admin/sms-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNumber }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({ type: 'success', text: `SMS sent successfully to ${data.phoneNumber}` });
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Failed to send SMS' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to send test SMS' });
+    } finally {
+      setSending(false);
+      setTimeout(() => setMessage(null), 5000);
+    }
+  };
+
   const handleCreateCampaign = () => {
     window.open('/admin/promo-codes', '_blank');
   };
@@ -158,6 +187,14 @@ export default function AdminNotificationsPage() {
                 className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-yellow-50 hover:border-yellow-300 border-2 border-transparent rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
               >
                 <span>🔔 Send Test Push Notification</span>
+                {sending && <span className="text-xs">Sending...</span>}
+              </button>
+              <button
+                onClick={handleSendTestSMS}
+                disabled={sending}
+                className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-yellow-50 hover:border-yellow-300 border-2 border-transparent rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
+              >
+                <span>📱 Send Test SMS</span>
                 {sending && <span className="text-xs">Sending...</span>}
               </button>
               <button

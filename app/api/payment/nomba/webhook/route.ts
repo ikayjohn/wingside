@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { syncNewCustomer, syncOrderCompletion } from '@/lib/integrations'
 import { sendPaymentConfirmation, sendOrderNotification } from '@/lib/emails/service'
+import { sendPaymentConfirmationSMS, isSMSEnabled } from '@/lib/notifications/sms'
 import crypto from 'crypto'
 
 interface NombaWebhookEvent {
@@ -465,8 +466,23 @@ export async function POST(request: NextRequest) {
         console.error('Error sending order notification email:', emailError);
       }
 
-      // TODO: Send SMS notification to customer
-      // Note: SMS integration requires a service like Twilio, AfricasTalking, or Termii
+      // Send SMS notification to customer
+      if (isSMSEnabled() && order.customer_phone) {
+        try {
+          const smsResult = await sendPaymentConfirmationSMS(order.customer_phone, {
+            orderNumber: order.order_number,
+            amount: data.transaction.transactionAmount.toLocaleString(),
+          });
+
+          if (smsResult.success) {
+            console.log('✅ Payment confirmation SMS sent to', order.customer_phone);
+          } else {
+            console.error('Failed to send payment confirmation SMS:', smsResult.error);
+          }
+        } catch (smsError) {
+          console.error('Error sending payment confirmation SMS:', smsError);
+        }
+      }
     }
 
     return NextResponse.json({ received: true })
