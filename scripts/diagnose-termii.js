@@ -81,7 +81,7 @@ async function diagnoseAccount() {
         api_key: TERMII_API_KEY,
         to: testPhone,
         from: 'Termii', // Use Termii's default sender ID
-        sms: `🎉 Wingside Test from Numeric Sender! Timestamp: ${new Date().toISOString()}`,
+        sms: `Wingside Test from Numeric Sender! Timestamp: ${new Date().toISOString()}`,
         type: 'plain',
         channel: 'dnd',
       }),

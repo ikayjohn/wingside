@@ -93,7 +93,7 @@ async function testTermiiSMS() {
   console.log('\n🚀 Testing Termii SMS API...');
   console.log('='.repeat(50));
 
-  const testMessage = `🎉 Wingside SMS Test Successful! Your Termii integration is working perfectly. Timestamp: ${new Date().toISOString()}`;
+  const testMessage = `Wingside SMS Test Successful! Your Termii integration is working perfectly. Timestamp: ${new Date().toISOString()}`;
 
   try {
     const response = await fetch(`${TERMII_BASE_URL}/api/sms/send`, {

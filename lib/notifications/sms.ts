@@ -380,9 +380,9 @@ export async function sendOrderStatusSMS(
   const statusMessages: Record<string, string> = {
     preparing: `Wingside: Order #${orderData.orderNumber} is being prepared. We'll notify you when it's ready!`,
     ready: `Wingside: Order #${orderData.orderNumber} is READY for pickup! Track at wingside.com/my-account/dashboard`,
-    picked_up: `Wingside: Order #${orderData.orderNumber} has been picked up. Enjoy your wings! 🍗`,
+    picked_up: `Wingside: Order #${orderData.orderNumber} has been picked up. Enjoy your wings!`,
     out_for_delivery: `Wingside: Order #${orderData.orderNumber} is out for delivery! Track at wingside.com/my-account/dashboard`,
-    delivered: `Wingside: Order #${orderData.orderNumber} has been delivered. Enjoy your wings! 🍗`,
+    delivered: `Wingside: Order #${orderData.orderNumber} has been delivered. Enjoy your wings!`,
   };
 
   const message = statusMessages[orderData.status] ||
@@ -402,7 +402,7 @@ export async function sendPaymentConfirmationSMS(
   }
 ): Promise<SMSResult> {
   const formattedPhone = formatPhoneNumber(phoneNumber);
-  const message = `Wingside: Payment of ₦${orderData.amount} received for Order #${orderData.orderNumber}. We'll start preparing your order shortly! 🍗`;
+  const message = `Wingside: Payment of ₦${orderData.amount} received for Order #${orderData.orderNumber}. We'll start preparing your order shortly!`;
 
   return sendSMS(formattedPhone, message);
 }

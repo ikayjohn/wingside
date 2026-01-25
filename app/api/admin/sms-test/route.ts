@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     // Default test message
     const testMessage = message ||
-      `🎉 Wingside SMS Test! Your SMS integration is working perfectly. Sent at ${new Date().toLocaleTimeString()}`;
+      `Wingside SMS Test! Your SMS integration is working perfectly. Sent at ${new Date().toLocaleTimeString()}`;
 
     console.log('📧 Sending test SMS...');
     console.log('To:', formattedPhone);

@@ -227,7 +227,7 @@ export async function sendOrderConfirmationPush(
   }
 ) {
   return sendPushNotification(userId, {
-    title: 'Order Confirmed! 🎉',
+    title: 'Order Confirmed!',
     body: `Your order #${orderData.orderNumber} has been confirmed. Estimated time: ${orderData.estimatedTime} minutes.`,
     icon: '/logo.png',
     badge: '/badge-icon.png',
@@ -253,11 +253,11 @@ export async function sendOrderStatusPush(
     preparing: `Your order #${orderData.orderNumber} is being prepared!`,
     ready: `Your order #${orderData.orderNumber} is ready!`,
     out_for_delivery: `Your order is on the way!${orderData.driverName ? ` Driver: ${orderData.driverName}` : ''}`,
-    delivered: `Your order #${orderData.orderNumber} has been delivered! Enjoy! 🍗`,
+    delivered: `Your order #${orderData.orderNumber} has been delivered! Enjoy!`,
   };
 
   return sendPushNotification(userId, {
-    title: status === 'delivered' ? 'Delivered! 🎉' : 'Order Update',
+    title: status === 'delivered' ? 'Delivered!' : 'Order Update',
     body: messages[status] || `Your order status has been updated to: ${status}`,
     icon: '/logo.png',
     badge: '/badge-icon.png',
@@ -311,7 +311,7 @@ export async function sendRewardPush(
   }
 ) {
   return sendPushNotification(userId, {
-    title: 'Rewards Earned! 🎁',
+    title: 'Rewards Earned!',
     body: rewardData.rewardMessage || `You earned ${rewardData.pointsEarned} points! Total: ${rewardData.totalPoints}`,
     icon: '/logo.png',
     badge: '/badge-icon.png',
