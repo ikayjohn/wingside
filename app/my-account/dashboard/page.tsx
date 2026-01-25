@@ -450,10 +450,24 @@ export default function WingclubDashboard() {
         <div className="dashboard-wallet-card">
           <div className="dashboard-wallet-top">
             <div className="dashboard-wallet-left">
-              <p className="dashboard-wallet-label">Wallet Balance</p>
+              {/* Wallet and Points Row */}
+              <div className="flex items-start justify-between gap-4 mb-3">
+                <div className="flex-1">
+                  <p className="dashboard-wallet-label">Wallet Balance</p>
+                  {embedlyWallet ? (
+                    <h2 className="dashboard-wallet-balance">₦{embedlyWallet.availableBalance.toLocaleString()}</h2>
+                  ) : (
+                    <h2 className="dashboard-wallet-balance">₦{userData.walletBalance.toLocaleString()}</h2>
+                  )}
+                </div>
+                <div className="flex-1 text-right">
+                  <p className="dashboard-wallet-label">Total Points</p>
+                  <h2 className="dashboard-wallet-balance text-[#F7C400]">{userData.totalPoints.toLocaleString()}</h2>
+                </div>
+              </div>
+
               {embedlyWallet ? (
                 <>
-                  <h2 className="dashboard-wallet-balance">₦{embedlyWallet.availableBalance.toLocaleString()}</h2>
                   <p className="dashboard-wallet-card-number">
                     Your Wingside Account: {embedlyWallet.virtualAccount.accountNumber}
                   </p>
@@ -487,7 +501,6 @@ export default function WingclubDashboard() {
                 </>
               ) : (
                 <>
-                  <h2 className="dashboard-wallet-balance">₦{userData.walletBalance.toLocaleString()}</h2>
                   <p className="dashboard-wallet-card-number">Loading wallet...</p>
 
                   <div className="dashboard-wallet-actions">

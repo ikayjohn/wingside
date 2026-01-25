@@ -511,7 +511,7 @@ export default function OrderPage() {
       )}
 
       {/* Hero Section */}
-      <section className="relative h-[400px] overflow-hidden mb-[50px]">
+      <section className="relative h-[500px] overflow-hidden mb-[50px]">
         <img
           src="/order-hero.png"
           alt="Wings and more"
