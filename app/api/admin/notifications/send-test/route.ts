@@ -157,14 +157,63 @@ export async function POST(request: Request) {
         });
       }
 
-      // For now, just return info about subscriptions
-      // Full push notification requires web-push library which may have issues in serverless
-      return NextResponse.json({
-        success: true,
-        message: `Found ${subscriptions.length} active push subscriptions. Push notifications require client-side service worker.`,
-        sent: 0,
-        subscriptionCount: subscriptions.length,
-      });
+      // Send test push notification using the push library
+      try {
+        const { sendBroadcastPush } = await import('@/lib/notifications/push');
+
+        const testPayload = {
+          title: 'Test Notification from Wingside',
+          body: 'This is a test push notification. If you see this, push notifications are working!',
+          icon: '/logo.png',
+          badge: '/logo.png',
+          url: '/my-account/dashboard',
+          requireInteraction: false,
+        };
+
+        const result = await sendBroadcastPush(testPayload);
+
+        // Log the test notification
+        await supabaseAdmin.from('notification_logs').insert({
+          user_id: user.id,
+          notification_type: 'push',
+          template_key: 'test_push',
+          channel: 'test_push',
+          status: 'sent',
+          metadata: {
+            subscriptionCount: subscriptions.length,
+            sent: result.success,
+            failed: result.failed,
+          },
+          sent_at: new Date().toISOString(),
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: `Test push notification sent! Delivered to ${result.success} subscription(s), ${result.failed} failed.`,
+          sent: result.success,
+          failed: result.failed,
+          subscriptionCount: subscriptions.length,
+        });
+      } catch (pushError: unknown) {
+        const errorMessage = pushError instanceof Error ? pushError.message : 'Unknown error';
+        console.error('Push notification error:', pushError);
+
+        // Log the failed notification
+        await supabaseAdmin.from('notification_logs').insert({
+          user_id: user.id,
+          notification_type: 'push',
+          template_key: 'test_push',
+          channel: 'test_push',
+          status: 'failed',
+          error_message: errorMessage,
+          metadata: { subscriptionCount: subscriptions.length },
+        });
+
+        return NextResponse.json(
+          { error: `Push notification error: ${errorMessage}` },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json(

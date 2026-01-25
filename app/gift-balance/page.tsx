@@ -8,16 +8,57 @@ export default function GiftBalancePage() {
   const [pin, setPin] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const [balanceResult, setBalanceResult] = useState<{
+    success: boolean;
+    balance?: number;
+    currency?: string;
+    cardNumber?: string;
+    expiresAt?: string;
+    error?: string;
+  } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setBalanceResult(null);
 
-    // Simulate API call - replace with actual API
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/gift-cards/balance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cardNumber: cardNumber.replace(/\s/g, ''),
+          pin,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setBalanceResult({
+          success: false,
+          error: data.error || 'Failed to check balance',
+        });
+      } else {
+        setBalanceResult({
+          success: true,
+          balance: data.balance,
+          currency: data.currency,
+          cardNumber: data.cardNumber,
+          expiresAt: data.expiresAt,
+        });
+      }
+    } catch (error) {
+      console.error('Error checking gift card balance:', error);
+      setBalanceResult({
+        success: false,
+        error: 'Failed to connect to server. Please try again.',
+      });
+    } finally {
       setIsLoading(false);
-      alert(`Checking balance for card: ${cardNumber}`);
-    }, 1000);
+    }
   };
 
   const handleQRScanSuccess = (decodedText: string) => {
@@ -118,16 +159,98 @@ export default function GiftBalancePage() {
             </div>
           </form>
 
+          {/* Balance Result */}
+          {balanceResult && (
+            <div className="mt-8 max-w-2xl mx-auto">
+              {balanceResult.success ? (
+                <div className="bg-green-50 border-2 border-green-500 rounded-2xl p-8 text-center">
+                  <div className="mb-4">
+                    <svg
+                      className="w-16 h-16 text-green-500 mx-auto"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                    Gift Card Balance
+                  </h3>
+                  <div className="text-5xl font-black text-[#F7C400] mb-4">
+                    {balanceResult.currency === 'NGN' ? '₦' : balanceResult.currency}
+                    {balanceResult.balance?.toLocaleString()}
+                  </div>
+                  <p className="text-gray-600 mb-2">
+                    Card: {balanceResult.cardNumber}
+                  </p>
+                  {balanceResult.expiresAt && (
+                    <p className="text-sm text-gray-500">
+                      Expires: {new Date(balanceResult.expiresAt).toLocaleDateString()}
+                    </p>
+                  )}
+                  <button
+                    onClick={() => {
+                      setBalanceResult(null);
+                      setCardNumber('');
+                      setPin('');
+                    }}
+                    className="mt-6 px-6 py-2 bg-gray-800 text-white rounded-full hover:bg-gray-700 transition-colors"
+                  >
+                    Check Another Card
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-red-50 border-2 border-red-500 rounded-2xl p-8 text-center">
+                  <div className="mb-4">
+                    <svg
+                      className="w-16 h-16 text-red-500 mx-auto"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                    Error
+                  </h3>
+                  <p className="text-red-600 mb-4">{balanceResult.error}</p>
+                  <button
+                    onClick={() => {
+                      setBalanceResult(null);
+                    }}
+                    className="mt-4 px-6 py-2 bg-gray-800 text-white rounded-full hover:bg-gray-700 transition-colors"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* QR Code Button */}
-          <div className="mt-12">
-            <button
-              type="button"
-              className="px-10 py-4 border-2 border-gray-700 text-gray-800 font-semibold rounded-full hover:bg-gray-50 transition-colors bg-transparent text-center cursor-pointer"
-              onClick={() => setIsQRScannerOpen(true)}
-            >
-              Use camera to scan QR Code behind your card
-            </button>
-          </div>
+          {!balanceResult && (
+            <div className="mt-12">
+              <button
+                type="button"
+                className="px-10 py-4 border-2 border-gray-700 text-gray-800 font-semibold rounded-full hover:bg-gray-50 transition-colors bg-transparent text-center cursor-pointer"
+                onClick={() => setIsQRScannerOpen(true)}
+              >
+                Use camera to scan QR Code behind your card
+              </button>
+            </div>
+          )}
         </div>
       </main>
 
