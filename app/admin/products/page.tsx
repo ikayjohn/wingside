@@ -474,8 +474,8 @@ export default function AdminProductsPage() {
         <button
           onClick={() => setSelectedCategory('all')}
           className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${selectedCategory === 'all'
-              ? 'bg-yellow-400 text-black'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            ? 'bg-yellow-400 text-black'
+            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
         >
           All ({products.length})
@@ -487,8 +487,8 @@ export default function AdminProductsPage() {
               key={category.id}
               onClick={() => setSelectedCategory(category.name)}
               className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${selectedCategory === category.name
-                  ? 'bg-yellow-400 text-black'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-yellow-400 text-black'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               {category.name} ({count})
@@ -572,8 +572,8 @@ export default function AdminProductsPage() {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
                     className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.is_active
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
                       }`}
                   >
                     {product.is_active ? 'Active' : 'Inactive'}
@@ -824,9 +824,28 @@ export default function AdminProductsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Available Wing Flavors
-                  </label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Available Wing Flavors
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedFlavorIds(flavors.map(f => f.id))}
+                        className="text-[10px] font-bold text-blue-600 hover:text-blue-800 uppercase tracking-wider"
+                      >
+                        Select All
+                      </button>
+                      <span className="text-gray-300">|</span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedFlavorIds([])}
+                        className="text-[10px] font-bold text-red-600 hover:text-red-800 uppercase tracking-wider"
+                      >
+                        Deselect All
+                      </button>
+                    </div>
+                  </div>
                   <div className="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto">
                     {flavors.length === 0 ? (
                       <p className="text-sm text-gray-500">Loading flavors...</p>
