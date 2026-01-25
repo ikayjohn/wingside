@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { sendReferralInvitation } from '@/lib/emails/service';
+import { validateBotProtection } from '@/lib/bot-protection';
 
 export async function POST(request: NextRequest) {
   try {

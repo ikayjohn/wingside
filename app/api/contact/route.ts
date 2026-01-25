@@ -11,6 +11,7 @@ import {
 } from '@/lib/security';
 import { checkRateLimitByIp, rateLimitErrorResponse } from '@/lib/rate-limit';
 import { csrfProtection } from '@/lib/csrf';
+import { comprehensiveBotProtection } from '@/lib/bot-protection';
 
 // Validation schema
 const contactSchema = z.object({
@@ -26,19 +27,7 @@ const contactSchema = z.object({
 // POST /api/contact - Handle contact form submissions
 export async function POST(request: NextRequest) {
   try {
-    // Check CSRF token
-    const csrfError = await csrfProtection(request)
-    if (csrfError) {
-      return csrfError
-    }
-
-    // Check rate limit (3 submissions per hour)
-    const { rateLimit } = await checkRateLimitByIp({ limit: 3, window: 60 * 60 * 1000 });
-    if (!rateLimit.success) {
-      return rateLimitErrorResponse(rateLimit);
-    }
-
-    // Parse request body
+    // Parse request body first (needed for bot protection)
     let body;
     try {
       body = await request.json();
@@ -50,6 +39,36 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
+    }
+
+    // Check for bot behavior (honeypot + timing + patterns)
+    const botCheck = await comprehensiveBotProtection(request, body, {
+      honeypotField: 'website',
+      minSubmissionTime: 2000,  // 2 seconds minimum
+      maxSubmissionTime: 3600000, // 1 hour maximum
+    });
+
+    if (!botCheck.valid) {
+      console.warn('Bot detected in contact form:', {
+        ip: request.headers.get('x-forwarded-for'),
+        userAgent: request.headers.get('user-agent'),
+      });
+      return NextResponse.json(
+        { error: botCheck.error || 'Invalid submission' },
+        { status: botCheck.status || 400 }
+      );
+    }
+
+    // Check CSRF token
+    const csrfError = await csrfProtection(request)
+    if (csrfError) {
+      return csrfError
+    }
+
+    // Check rate limit (3 submissions per hour)
+    const { rateLimit } = await checkRateLimitByIp({ limit: 3, window: 60 * 60 * 1000 });
+    if (!rateLimit.success) {
+      return rateLimitErrorResponse(rateLimit);
     }
 
     // Validate input using Zod schema

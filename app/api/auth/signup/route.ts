@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { syncNewCustomer } from '@/lib/integrations';
 import { sendWelcomeEmail } from '@/lib/notifications/email';
+import { comprehensiveBotProtection } from '@/lib/bot-protection';
 
 // Validate environment variables
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -37,9 +38,29 @@ function generateReferralCode(firstName: string, lastName: string): string {
   return code.slice(0, 15);
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+
+    // Check for bot behavior (honeypot + timing + patterns)
+    const botCheck = await comprehensiveBotProtection(request, body, {
+      honeypotField: 'website_verify',
+      minSubmissionTime: 3000,  // 3 seconds minimum for signup
+      maxSubmissionTime: 1800000, // 30 minutes maximum
+    });
+
+    if (!botCheck.valid) {
+      console.warn('Bot detected in signup form:', {
+        ip: request.headers.get('x-forwarded-for'),
+        userAgent: request.headers.get('user-agent'),
+        email: body.email,
+      });
+      return NextResponse.json(
+        { error: botCheck.error || 'Invalid submission. Please try again.' },
+        { status: botCheck.status || 400 }
+      );
+    }
+
     const {
       email,
       password,
