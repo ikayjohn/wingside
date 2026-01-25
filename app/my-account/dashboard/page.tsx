@@ -461,7 +461,7 @@ export default function WingclubDashboard() {
                   )}
                 </div>
                 <div className="flex-1 text-right">
-                  <p className="dashboard-wallet-label">Total Points</p>
+                  <p className="dashboard-wallet-label">Points Balance</p>
                   <h2 className="dashboard-wallet-balance text-[#F7C400]">{userData.totalPoints.toLocaleString()}</h2>
                 </div>
               </div>
@@ -579,7 +579,7 @@ export default function WingclubDashboard() {
         {/* Stats Cards */}
         <div className="dashboard-stats-grid">
           <div className="dashboard-stat-card">
-            <p className="dashboard-stat-label">Total Points</p>
+            <p className="dashboard-stat-label">Points Balance</p>
             <h3 className="dashboard-stat-value">{userData.totalPoints.toLocaleString()}</h3>
             <p className="dashboard-stat-sub">+{userData.pointsThisMonth} this month</p>
           </div>
