@@ -274,7 +274,7 @@ export default function EmailTemplatesManager() {
                   </div>
 
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-sm font-medium text-blue-900 mb-2">💡 Tips:</p>
+                    <p className="text-sm font-medium text-blue-900 mb-2">Tips:</p>
                     <ul className="text-sm text-blue-800 space-y-1">
                       <li>• Use {'{{variable_name}}'} syntax for dynamic content</li>
                       <li>• Click variable buttons to insert them into your template</li>

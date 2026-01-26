@@ -6,14 +6,14 @@ require('dotenv').config({ path: '.env' }); // Fallback to .env
 
 // Verify required env vars are set
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-  console.error('❌ Error: NEXT_PUBLIC_SUPABASE_URL is not set');
-  console.error('💡 Make sure environment variables are set in .env or .env.local');
+  console.error('Error: NEXT_PUBLIC_SUPABASE_URL is not set');
+  console.error('Make sure environment variables are set in .env or .env.local');
   process.exit(1);
 }
 
 if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  console.error('❌ Error: SUPABASE_SERVICE_ROLE_KEY is not set');
-  console.error('💡 Make sure environment variables are set in .env or .env.local');
+  console.error('Error: SUPABASE_SERVICE_ROLE_KEY is not set');
+  console.error('Make sure environment variables are set in .env or .env.local');
   process.exit(1);
 }
 
@@ -268,7 +268,7 @@ Twitter: https://twitter.com/wingside.ng
 ];
 
 async function addTemplates() {
-  console.log('📧 Adding Email Templates...\n');
+  console.log('Adding Email Templates...\n');
 
   for (const template of templates) {
     try {
@@ -297,7 +297,7 @@ async function addTemplates() {
 
         if (error) throw error;
         result = data;
-        console.log(`✅ Updated: ${template.name} (${template.template_key})`);
+        console.log(`Updated: ${template.name} (${template.template_key})`);
       } else {
         // Insert new template
         const { data, error } = await supabase
@@ -314,14 +314,14 @@ async function addTemplates() {
 
         if (error) throw error;
         result = data;
-        console.log(`✅ Added: ${template.name} (${template.template_key})`);
+        console.log(`Added: ${template.name} (${template.template_key})`);
       }
     } catch (error) {
-      console.error(`❌ Error with ${template.template_key}:`, error.message);
+      console.error(`Error with ${template.template_key}:`, error.message);
     }
   }
 
-  console.log('\n✨ Email templates setup complete!\n');
+  console.log('\nEmail templates setup complete!\n');
 }
 
 addTemplates().catch(console.error);
