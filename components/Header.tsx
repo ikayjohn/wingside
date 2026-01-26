@@ -98,30 +98,27 @@ export default function Header() {
     <>
       {/* Header */}
       <header
-        className={`w-full z-50 transition-all duration-300 ${
-          isOrderPage
+        className={`w-full z-50 transition-all duration-300 ${isOrderPage
             ? 'bg-white pt-2.5'
             : isHomepage
               ? isScrolled
                 ? 'bg-white sticky top-0 shadow-md -pt-[30px] -pb-2.5'
                 : 'bg-transparent absolute top-0 left-0 right-0 pt-2.5'
               : 'bg-white sticky top-0 shadow-md -pt-[30px] -pb-2.5'
-        }`}
+          }`}
       >
         <div className="w-full gutter-x">
-          <div className={`flex justify-between items-center ${
-            (isHomepage && isScrolled) || (!isHomepage && !isOrderPage)
+          <div className={`flex justify-between items-center ${(isHomepage && isScrolled) || (!isHomepage && !isOrderPage)
               ? 'lg:h-25 h-20'
               : 'h-34'
-          }`}>
+            }`}>
             {/* Menu Button */}
             <button
               onClick={() => setMenuOpen(true)}
-              className={`flex items-center gap-2 cursor-pointer transition-colors ${
-                isHomepage && !isScrolled
+              className={`flex items-center gap-2 cursor-pointer transition-colors ${isHomepage && !isScrolled
                   ? 'text-white hover:text-gray-200'
                   : 'text-gray-800 hover:text-gray-600'
-              }`}
+                }`}
               aria-label="Open navigation menu"
               aria-expanded={menuOpen}
             >
@@ -138,11 +135,10 @@ export default function Header() {
               <img
                 src={isHomepage && !isScrolled ? "/logo-white.png?v=2" : "/logo.png?v=2"}
                 alt="Wingside Logo"
-                className={`w-auto transition-all duration-300 ${
-                  (isHomepage && isScrolled) || (!isHomepage && !isOrderPage)
+                className={`w-auto transition-all duration-300 ${(isHomepage && isScrolled) || (!isHomepage && !isOrderPage)
                     ? 'h-16'
                     : 'h-24'
-                }`}
+                  }`}
                 loading="eager"
               />
             </Link>
@@ -262,11 +258,10 @@ export default function Header() {
               ) : (
                 <Link
                   href="/wingclub"
-                  className={`text-sm font-bold hidden sm:block transition-colors ${
-                    isHomepage && !isScrolled
+                  className={`text-sm font-bold hidden sm:block transition-colors ${isHomepage && !isScrolled
                       ? 'text-white hover:text-gray-200'
                       : 'text-gray-700 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   Join the Wingclub
                 </Link>
@@ -344,6 +339,16 @@ export default function Header() {
                 )}
                 <li role="none">
                   <Link
+                    href="/wingclub"
+                    className="sidebar-link"
+                    onClick={handleClose}
+                    role="menuitem"
+                  >
+                    Wingclub
+                  </Link>
+                </li>
+                <li role="none">
+                  <Link
                     href="/business"
                     className="sidebar-link"
                     onClick={handleClose}
@@ -400,16 +405,6 @@ export default function Header() {
                     role="menuitem"
                   >
                     Wingside Sports
-                  </Link>
-                </li>
-                <li role="none">
-                  <Link
-                    href="/wingclub"
-                    className="sidebar-link"
-                    onClick={handleClose}
-                    role="menuitem"
-                  >
-                    Wingclub
                   </Link>
                 </li>
               </ul>

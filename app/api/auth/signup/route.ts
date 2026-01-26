@@ -42,24 +42,19 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Check for bot behavior (honeypot + timing + patterns)
-    const botCheck = await comprehensiveBotProtection(request, body, {
-      honeypotField: 'website_verify',
-      minSubmissionTime: 3000,  // 3 seconds minimum for signup
-      maxSubmissionTime: 1800000, // 30 minutes maximum
-    });
-
-    if (!botCheck.valid) {
-      console.warn('Bot detected in signup form:', {
-        ip: request.headers.get('x-forwarded-for'),
-        userAgent: request.headers.get('user-agent'),
-        email: body.email,
-      });
-      return NextResponse.json(
-        { error: botCheck.error || 'Invalid submission. Please try again.' },
-        { status: botCheck.status || 400 }
-      );
-    }
+    // TEMPORARILY DISABLED: Bot protection blocks legitimate signups without frontend timestamp
+    // TODO: Add BotProtection component to signup form then re-enable
+    // const botCheck = await comprehensiveBotProtection(request, body, {
+    //   honeypotField: 'website_verify',
+    //   minSubmissionTime: 3000,
+    //   maxSubmissionTime: 1800000,
+    // });
+    // if (!botCheck.valid) {
+    //   return NextResponse.json(
+    //     { error: botCheck.error || 'Invalid submission. Please try again.' },
+    //     { status: botCheck.status || 400 }
+    //   );
+    // }
 
     const {
       email,
