@@ -236,123 +236,65 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 4. Award purchase points (₦100 = 1 point)
-      const purchasePoints = Math.floor(Number(order.total) / 100)
-
-      if (purchasePoints > 0 && profileId) {
-        const { error: pointsError } = await admin.rpc('award_points', {
+      // 4. Process all rewards atomically (points, bonuses, referrals) with rollback on failure
+      if (profileId) {
+        const { data: paymentResult, error: paymentError } = await admin.rpc('process_payment_atomically', {
+          p_order_id: order.id,
           p_user_id: profileId,
-          p_reward_type: 'purchase',
-          p_points: purchasePoints,
-          p_amount_spent: Number(order.total),
-          p_description: `Points earned from order #${order.order_number}`,
-          p_metadata: { order_id: order.id, order_number: order.order_number }
+          p_order_total: Number(order.total)
         })
 
-        if (!pointsError) {
-          console.log(`✅ Awarded ${purchasePoints} points for ₦${order.total} spent`)
-        } else {
-          console.error('Error awarding points:', pointsError)
-        }
-      }
+        if (paymentError || !paymentResult || paymentResult.length === 0) {
+          console.error('❌ Payment processing failed:', paymentError)
 
-      // 5. Check and award first order bonus
-      if (profileId) {
-        const { data: existingClaim } = await admin
-          .from('reward_claims')
-          .select('id')
-          .eq('user_id', profileId)
-          .eq('reward_type', 'first_order')
-          .maybeSingle()
-
-        if (!existingClaim) {
-          // Award first order bonus (15 points)
-          const { error: firstOrderError } = await admin.rpc('claim_reward', {
-            p_user_id: profileId,
-            p_reward_type: 'first_order',
-            p_points: 15,
-            p_description: 'First order bonus',
-            p_metadata: { order_id: order.id, order_number: order.order_number }
+          // Create admin notification
+          await admin.from('notifications').insert({
+            user_id: null,
+            type: 'payment_processing_failed',
+            title: 'Payment Processing Failed',
+            message: `Failed to process rewards for order ${order.order_number}`,
+            metadata: {
+              user_id: profileId,
+              order_id: order.id,
+              order_number: order.order_number,
+              error: paymentError?.message || 'Unknown error'
+            }
           })
 
-          if (!firstOrderError) {
-            console.log(`✅ Awarded 15 points for first order`)
-          } else {
-            console.error('❌ Error awarding first order bonus:', firstOrderError)
-          }
-        }
-      }
+          // Rollback order status since rewards failed
+          await admin.from('orders').update({
+            payment_status: 'pending',
+            status: 'pending'
+          }).eq('id', order.id)
 
-      // 5.5. Process referral rewards (if user was referred and this is first order ≥₦1000)
-      if (profileId && order.total >= 1000) {
-        try {
-          const { data: rewardResult, error: referralError } = await admin.rpc(
-            'process_referral_reward_after_first_order',
-            {
-              user_id: profileId,
-              order_amount: order.total
-            }
+          return NextResponse.json(
+            { error: 'Payment processing failed, order rolled back' },
+            { status: 500 }
           )
-
-          if (referralError) {
-            console.error('❌ Referral reward processing failed:', {
-              userId: profileId,
-              orderId: order.id,
-              orderNumber: order.order_number,
-              error: referralError
-            })
-
-            // Create admin notification
-            await admin.from('notifications').insert({
-              user_id: null,
-              type: 'referral_reward_failed',
-              title: 'Referral Reward Processing Failed',
-              message: `Failed to process referral reward for order ${order.order_number}`,
-              metadata: {
-                user_id: profileId,
-                order_id: order.id,
-                order_number: order.order_number,
-                error: referralError.message
-              }
-            })
-          } else if (rewardResult && rewardResult.length > 0) {
-            const result = rewardResult[0];
-
-            if (result.success) {
-              console.log('✅ Referral reward processing completed:', {
-                userId: profileId,
-                referrerCredited: result.referrer_credited,
-                referredCredited: result.referred_credited,
-                errorMessage: result.error_message
-              });
-
-              // Check if any wallet credit failed
-              if (!result.referrer_credited || !result.referred_credited) {
-                await admin.from('notifications').insert({
-                  user_id: null,
-                  type: 'referral_reward_partial_failure',
-                  title: 'Referral Reward Partially Failed',
-                  message: `Order ${order.order_number}: ${result.error_message}`,
-                  metadata: {
-                    user_id: profileId,
-                    order_id: order.id,
-                    order_number: order.order_number,
-                    referrer_credited: result.referrer_credited,
-                    referred_credited: result.referred_credited,
-                    error: result.error_message
-                  }
-                });
-                console.warn('⚠️ Referral reward partially failed:', result.error_message);
-              }
-            } else {
-              console.log('ℹ️ No referral reward to process:', result.error_message);
-            }
-          } else {
-            console.log('ℹ️ No referral reward data returned');
-          }
-        } catch (error) {
-          console.error('❌ Error in referral processing:', error)
         }
+
+        const result = paymentResult[0]
+
+        if (!result.success) {
+          console.error('❌ Rewards processing failed:', result.error_message)
+
+          // Rollback order
+          await admin.from('orders').update({
+            payment_status: 'pending',
+            status: 'pending'
+          }).eq('id', order.id)
+
+          return NextResponse.json(
+            { error: result.error_message },
+            { status: 500 }
+          )
+        }
+
+        console.log(`✅ Payment processed atomically:`, {
+          points: result.points_awarded,
+          firstOrderBonus: result.first_order_bonus_claimed,
+          referralProcessed: result.referral_processed
+        })
       }
 
       // 6. Update customer streak
