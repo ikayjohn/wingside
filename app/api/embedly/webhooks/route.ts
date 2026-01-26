@@ -189,6 +189,12 @@ async function handleNipWebhook(data: any, supabase: any) {
           created_at: dateOfTransaction ? new Date(dateOfTransaction).toISOString() : new Date().toISOString()
         });
 
+      // Sync balance to profiles table
+      await supabase
+        .from('profiles')
+        .update({ wallet_balance: newBalance })
+        .eq('id', profile.id);
+
       console.log(`Processed inflow for user ${profile.full_name}: ₦${amount} (Balance: ₦${newBalance})`);
     }
 

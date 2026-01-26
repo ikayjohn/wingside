@@ -90,6 +90,12 @@ export async function creditWallet(
     return { success: false, error: error.message };
   }
 
+  // Sync balance to profiles table
+  await supabase
+    .from('profiles')
+    .update({ wallet_balance: newBalance })
+    .eq('id', userId);
+
   return { success: true, transactionId: data.id };
 }
 
@@ -142,6 +148,12 @@ export async function debitWallet(
     console.error('Error debiting wallet:', error);
     return { success: false, error: error.message };
   }
+
+  // Sync balance to profiles table
+  await supabase
+    .from('profiles')
+    .update({ wallet_balance: newBalance })
+    .eq('id', userId);
 
   return { success: true, transactionId: data.id, newBalance };
 }
