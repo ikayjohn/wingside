@@ -139,8 +139,8 @@ export async function GET() {
       pointsThisMonth,
       currentTier,
       memberSince,
-      availableToConvert: Math.floor(totalPoints * 0.5) * 10, // 50% of points × ₦10 per point
-      convertiblePoints: Math.floor(totalPoints * 0.5), // Convertible points
+      availableToConvert: totalPoints * 10, // 100% of points × ₦10 per point
+      convertiblePoints: totalPoints, // All points are convertible
       minConversion: 100,
       tierProgress: {
         current: totalPoints,
