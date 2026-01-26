@@ -62,35 +62,67 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // For MVP, we'll just record the wallet payment without actual transfer
-      // In production, you would transfer funds to your merchant wallet
-      // For now, we'll deduct from available balance and track the transaction
       console.log(`Processing wallet payment of ₦${amount} from wallet ${profile.embedly_wallet_id}`);
 
-      // TODO: Set up merchant wallet and implement actual wallet-to-wallet transfer
+      // Create local wallet transaction record (debit)
+      const transactionReference = `ORDER-${order_id}-${Date.now()}`;
+      const { error: transactionError } = await supabase
+        .from('wallet_transactions')
+        .insert({
+          user_id: user.id,
+          type: 'debit',
+          amount: amount,
+          currency: 'NGN',
+          reference: transactionReference,
+          description: remarks || `Payment for order ${order_id}`,
+          status: 'completed',
+          metadata: {
+            order_id,
+            wallet_id: profile.embedly_wallet_id,
+            payment_method: 'wallet'
+          }
+        });
+
+      if (transactionError) {
+        console.error('Error creating wallet transaction record:', transactionError);
+        throw new Error('Failed to record wallet transaction');
+      }
+
+      // TODO: Implement actual wallet-to-wallet transfer to merchant wallet
+      // This requires setting up a merchant wallet in Embedly
       // const merchantWalletId = process.env.EMBEDLY_MERCHANT_WALLET_ID;
-      //
-      // if (merchantWalletId && merchantWalletId !== 'placeholder-merchant-wallet-id') {
-      //   await embedlyClient.walletToWalletTransfer({
-      //     fromWalletId: profile.embedly_wallet_id,
-      //     toWalletId: merchantWalletId,
-      //     amount: amount,
-      //     remarks: remarks || `Payment for order ${order_id}`,
-      //     reference: `ORDER-${order_id}-${Date.now()}`
-      //   });
-      // }
+      // const merchantWallet = await embedlyClient.getWalletById(merchantWalletId);
+      // await embedlyClient.walletToWalletTransfer({
+      //   fromAccount: wallet.virtualAccount.accountNumber,
+      //   toAccount: merchantWallet.virtualAccount.accountNumber,
+      //   amount: amount,
+      //   transactionReference: transactionReference,
+      //   remarks: remarks || `Payment for order ${order_id}`
+      // });
 
       // Update order status to paid
-      const { data: order } = await supabase
+      const { data: order, error: orderUpdateError } = await supabase
         .from('orders')
         .update({
           payment_status: 'paid',
           status: 'confirmed',
+          payment_reference: transactionReference,
           paid_at: new Date().toISOString()
         })
         .eq('id', order_id)
         .select()
         .single();
+
+      if (orderUpdateError) {
+        console.error('Error updating order status:', orderUpdateError);
+        throw new Error('Failed to update order status after payment');
+      }
+
+      if (!order) {
+        throw new Error('Order not found or could not be updated');
+      }
+
+      console.log(`✅ Order ${order_id} marked as paid and confirmed`);
 
       // Award purchase points (₦100 = 1 point)
       const purchasePoints = Math.floor(amount / 100);
