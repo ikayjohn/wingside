@@ -46,7 +46,7 @@ export async function getWalletBalance(userId: string): Promise<number> {
 }
 
 /**
- * Credit wallet (add money)
+ * Credit wallet (add money) - Uses atomic database function to prevent race conditions
  */
 export async function creditWallet(
   userId: string,
@@ -57,50 +57,45 @@ export async function creditWallet(
     referral_reward_id?: string;
     reward_claim_id?: string;
     promo_code_id?: string;
+    order_id?: string;
+    reference?: string;
     metadata?: any;
   } = {}
-): Promise<{ success: boolean; transactionId?: string; error?: string }> {
+): Promise<{ success: boolean; transactionId?: string; error?: string; newBalance?: number }> {
   const supabase = await createClient();
 
-  // Get current balance
-  const currentBalance = await getWalletBalance(userId);
-  const newBalance = currentBalance + amount;
-
-  // Insert transaction
-  const { data, error } = await supabase
-    .from('wallet_transactions')
-    .insert({
-      user_id: userId,
-      type: 'credit',
-      amount,
-      balance_after: newBalance,
-      transaction_type: transactionType,
-      description,
-      referral_reward_id: options.referral_reward_id,
-      reward_claim_id: options.reward_claim_id,
-      promo_code_id: options.promo_code_id,
-      metadata: options.metadata || {},
-      status: 'completed',
-    })
-    .select('id')
-    .single();
+  // Use atomic database function to prevent race conditions
+  const { data, error } = await supabase.rpc('atomic_credit_wallet', {
+    p_user_id: userId,
+    p_amount: amount,
+    p_transaction_type: transactionType,
+    p_description: description,
+    p_referral_reward_id: options.referral_reward_id || null,
+    p_reward_claim_id: options.reward_claim_id || null,
+    p_promo_code_id: options.promo_code_id || null,
+    p_order_id: options.order_id || null,
+    p_reference: options.reference || null,
+    p_metadata: options.metadata || {}
+  });
 
   if (error) {
     console.error('Error crediting wallet:', error);
     return { success: false, error: error.message };
   }
 
-  // Sync balance to profiles table
-  await supabase
-    .from('profiles')
-    .update({ wallet_balance: newBalance })
-    .eq('id', userId);
+  if (!data || data.length === 0) {
+    return { success: false, error: 'No result returned from database' };
+  }
 
-  return { success: true, transactionId: data.id };
+  return {
+    success: true,
+    transactionId: data[0].transaction_id,
+    newBalance: data[0].new_balance
+  };
 }
 
 /**
- * Debit wallet (remove money)
+ * Debit wallet (remove money) - Uses atomic database function to prevent race conditions
  */
 export async function debitWallet(
   userId: string,
@@ -109,53 +104,46 @@ export async function debitWallet(
   description: string,
   options: {
     order_id?: string;
+    reference?: string;
     metadata?: any;
   } = {}
 ): Promise<{ success: boolean; transactionId?: string; error?: string; newBalance?: number }> {
   const supabase = await createClient();
 
-  // Get current balance
-  const currentBalance = await getWalletBalance(userId);
-
-  // Check sufficient balance
-  if (currentBalance < amount) {
-    return {
-      success: false,
-      error: `Insufficient wallet balance. Current: ₦${currentBalance.toLocaleString()}, Required: ₦${amount.toLocaleString()}`
-    };
-  }
-
-  const newBalance = currentBalance - amount;
-
-  // Insert transaction
-  const { data, error } = await supabase
-    .from('wallet_transactions')
-    .insert({
-      user_id: userId,
-      type: 'debit',
-      amount,
-      balance_after: newBalance,
-      transaction_type: transactionType,
-      description,
-      order_id: options.order_id,
-      metadata: options.metadata || {},
-      status: 'completed',
-    })
-    .select('id')
-    .single();
+  // Use atomic database function to prevent race conditions
+  const { data, error } = await supabase.rpc('atomic_debit_wallet', {
+    p_user_id: userId,
+    p_amount: amount,
+    p_transaction_type: transactionType,
+    p_description: description,
+    p_order_id: options.order_id || null,
+    p_reference: options.reference || null,
+    p_metadata: options.metadata || {}
+  });
 
   if (error) {
     console.error('Error debiting wallet:', error);
     return { success: false, error: error.message };
   }
 
-  // Sync balance to profiles table
-  await supabase
-    .from('profiles')
-    .update({ wallet_balance: newBalance })
-    .eq('id', userId);
+  if (!data || data.length === 0) {
+    return { success: false, error: 'No result returned from database' };
+  }
 
-  return { success: true, transactionId: data.id, newBalance };
+  const result = data[0];
+
+  if (!result.success) {
+    return {
+      success: false,
+      error: result.error_message || 'Insufficient balance'
+    };
+  }
+
+  return {
+    success: true,
+    transactionId: result.transaction_id,
+    newBalance: result.new_balance
+  };
 }
 
 /**

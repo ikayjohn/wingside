@@ -162,40 +162,27 @@ async function handleNipWebhook(data: any, supabase: any) {
       .single();
 
     if (profile) {
-      // Get current balance
-      const { data: currentBalanceResult } = await supabase.rpc('get_wallet_balance', {
-        p_user_id: profile.id
+      // Use atomic credit function to prevent race conditions
+      const { data: creditResult, error: creditError } = await supabase.rpc('atomic_credit_wallet', {
+        p_user_id: profile.id,
+        p_amount: parseFloat(amount),
+        p_transaction_type: 'funding',
+        p_description: description || `Wallet funding from ${senderName || 'bank transfer'}`,
+        p_reference: reference,
+        p_metadata: {
+          payment_method: 'bank_transfer',
+          sender_name: senderName,
+          webhook_event: 'nip',
+          date_of_transaction: dateOfTransaction
+        }
       });
-      const currentBalance = currentBalanceResult || 0;
-      const newBalance = currentBalance + parseFloat(amount);
 
-      // Create credit transaction record
-      await supabase
-        .from('wallet_transactions')
-        .insert({
-          user_id: profile.id,
-          type: 'credit',
-          amount: parseFloat(amount),
-          balance_after: newBalance,
-          transaction_type: 'funding',
-          description: description || `Wallet funding from ${senderName || 'bank transfer'}`,
-          status: 'completed',
-          metadata: {
-            payment_method: 'bank_transfer',
-            sender_name: senderName,
-            reference,
-            webhook_event: 'nip'
-          },
-          created_at: dateOfTransaction ? new Date(dateOfTransaction).toISOString() : new Date().toISOString()
-        });
-
-      // Sync balance to profiles table
-      await supabase
-        .from('profiles')
-        .update({ wallet_balance: newBalance })
-        .eq('id', profile.id);
-
-      console.log(`Processed inflow for user ${profile.full_name}: ₦${amount} (Balance: ₦${newBalance})`);
+      if (creditError) {
+        console.error('Error crediting wallet:', creditError);
+      } else if (creditResult && creditResult.length > 0) {
+        const newBalance = creditResult[0].new_balance;
+        console.log(`Processed inflow for user ${profile.full_name}: ₦${amount} (Balance: ₦${newBalance})`);
+      }
     }
 
   } catch (error) {
