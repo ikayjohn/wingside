@@ -169,7 +169,9 @@ export async function POST(request: NextRequest) {
     )
     const deliveryFee = body.delivery_fee || 0
     const tax = body.tax || 0
-    const total = subtotal + deliveryFee + tax
+    const discountAmount = body.discount_amount || 0
+    const referralDiscount = body.referral_discount || 0
+    const total = subtotal + deliveryFee + tax - discountAmount - referralDiscount
 
     // Create order
     const { data: order, error: orderError } = await supabase
@@ -192,6 +194,8 @@ export async function POST(request: NextRequest) {
         notes: body.notes,
         promo_code_id: body.promo_code_id || null,
         discount_amount: body.discount_amount || 0,
+        referral_code: body.referral_code || null,
+        referral_discount: body.referral_discount || 0,
       })
       .select()
       .single()
