@@ -38,11 +38,29 @@ export default function ConvertPointsModal({
     }
   };
 
-  const handleConvert = () => {
-    if (canConvert) {
-      console.log('Converting points:', pointsValue);
-      // Add conversion logic here
+  const handleConvert = async () => {
+    if (!canConvert) return;
+
+    try {
+      const response = await fetch('/api/points/convert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ points: pointsValue })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result.error || 'Conversion failed');
+        return;
+      }
+
+      alert(`✅ Converted ${pointsValue} points to ₦${cashValue}`);
       onClose();
+      window.location.reload(); // Refresh to show updated balance
+    } catch (error) {
+      console.error('Conversion error:', error);
+      alert('Failed to convert points. Please try again.');
     }
   };
 

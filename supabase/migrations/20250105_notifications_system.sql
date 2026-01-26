@@ -189,7 +189,7 @@ INSERT INTO email_templates (template_key, name, subject, html_content, text_con
       <h1 style="color: #F7C400; margin: 0; font-size: 32px;">Wingside</h1>
     </div>
     <div style="background-color: white; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-      <h2 style="color: #552627; margin-top: 0;">Order Confirmed! 🎉</h2>
+      <h2 style="color: #552627; margin-top: 0;">Order Confirmed!</h2>
       <p style="color: #333; line-height: 1.6;">
         Hi {{customer_name}},
       </p>
@@ -246,14 +246,14 @@ INSERT INTO email_templates (template_key, name, subject, html_content, text_con
 (
   'order_ready',
   'Order Ready for Pickup/Delivery',
-  'Your Wingside Order is Ready! 🍗',
+  'Your Wingside Order is Ready!',
   '
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
     <div style="background-color: #552627; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
       <h1 style="color: #F7C400; margin: 0; font-size: 32px;">Wingside</h1>
     </div>
     <div style="background-color: white; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-      <h2 style="color: #552627; margin-top: 0;">Your Order is Ready! 🎉</h2>
+      <h2 style="color: #552627; margin-top: 0;">Your Order is Ready!</h2>
       <p style="color: #333; line-height: 1.6;">
         Hi {{customer_name}},
       </p>
@@ -306,14 +306,14 @@ INSERT INTO email_templates (template_key, name, subject, html_content, text_con
 (
   'order_delivered',
   'Order Delivered',
-  'Order Delivered - Enjoy Your Wings! 🍗',
+  'Order Delivered - Enjoy Your Wings!',
   '
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
     <div style="background-color: #552627; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
       <h1 style="color: #F7C400; margin: 0; font-size: 32px;">Wingside</h1>
     </div>
     <div style="background-color: white; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-      <h2 style="color: #552627; margin-top: 0;">Delivered! Enjoy Your Wings! 🎉</h2>
+      <h2 style="color: #552627; margin-top: 0;">Delivered! Enjoy Your Wings!</h2>
       <p style="color: #333; line-height: 1.6;">
         Hi {{customer_name}},
       </p>
@@ -356,7 +356,7 @@ INSERT INTO email_templates (template_key, name, subject, html_content, text_con
 (
   'promotion',
   'Special Promotion',
-  'Special Offer from Wingside! 🔥',
+  'Special Offer from Wingside!',
   '
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
     <div style="background-color: #552627; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
@@ -401,14 +401,14 @@ INSERT INTO email_templates (template_key, name, subject, html_content, text_con
 (
   'reward_earned',
   'Reward Earned',
-  'You Earned Rewards! 🎁',
+  'You Earned Rewards!',
   '
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
     <div style="background-color: #552627; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
       <h1 style="color: #F7C400; margin: 0; font-size: 32px;">Wingside</h1>
     </div>
     <div style="background-color: white; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-      <h2 style="color: #552627; margin-top: 0;">Congratulations! 🎉</h2>
+      <h2 style="color: #552627; margin-top: 0;">Congratulations!</h2>
       <p style="color: #333; line-height: 1.6;">
         Hi {{customer_name}},
       </p>

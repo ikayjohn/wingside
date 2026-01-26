@@ -26,7 +26,7 @@ const templates = [
   {
     template_key: 'welcome',
     name: 'Welcome Email',
-    subject: 'Welcome to Wingside! 🍗',
+    subject: 'Welcome to Wingside!',
     html_content: `
 <!DOCTYPE html>
 <html>
@@ -66,7 +66,7 @@ const templates = [
       {{#referral_code}}
       <!-- Referral Section -->
       <div style="background-color: #FDF5E5; border: 2px dashed #F7C400; border-radius: 8px; padding: 25px; margin: 30px 0; text-align: center;">
-        <h3 style="margin: 0 0 15px 0; color: #552627; font-size: 20px;">🎁 Share & Earn ₦1,000!</h3>
+        <h3 style="margin: 0 0 15px 0; color: #552627; font-size: 20px;">Share & Earn ₦1,000!</h3>
         <p style="margin: 0 0 15px 0; color: #555555; font-size: 15px;">
           Invite your friends and earn ₦1,000 for each friend who places their first order!
         </p>
@@ -83,7 +83,7 @@ const templates = [
       <!-- CTA -->
       <div style="text-align: center; margin: 35px 0;">
         <a href="https://wingside.ng/order" style="display: inline-block; background-color: #F7C400; color: #000000; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 18px;">
-          Order Now 🍗
+          Order Now
         </a>
       </div>
 
@@ -111,7 +111,7 @@ const templates = [
 </html>
     `,
     text_content: `
-Welcome to Wingside! 🍗
+Welcome to Wingside!
 
 Hi {{customer_name}},
 
@@ -148,7 +148,7 @@ Twitter: https://twitter.com/wingside.ng
   {
     template_key: 'referral_reward',
     name: 'Referral Reward Notification',
-    subject: 'You earned ₦{{reward_amount}}! 🎉',
+    subject: 'You earned ₦{{reward_amount}}!',
     html_content: `
 <!DOCTYPE html>
 <html>
@@ -162,7 +162,7 @@ Twitter: https://twitter.com/wingside.ng
     <!-- Header -->
     <div style="background-color: #F7C400; padding: 30px; text-align: center;">
       <img src="https://wingside.ng/logo.png" alt="Wingside" style="max-width: 150px; margin-bottom: 10px;">
-      <h1 style="margin: 0; color: #000000; font-size: 28px;">🎉 Congratulations!</h1>
+      <h1 style="margin: 0; color: #000000; font-size: 28px;">Congratulations!</h1>
     </div>
 
     <!-- Content -->
@@ -207,7 +207,7 @@ Twitter: https://twitter.com/wingside.ng
       <!-- CTA -->
       <div style="text-align: center; margin: 35px 0;">
         <a href="https://wingside.ng/order" style="display: inline-block; background-color: #F7C400; color: #000000; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 18px;">
-          Order Now 🍗
+          Order Now
         </a>
       </div>
 
@@ -235,7 +235,7 @@ Twitter: https://twitter.com/wingside.ng
 </html>
     `,
     text_content: `
-🎉 Congratulations!
+Congratulations!
 
 Hi {{customer_name}},
 

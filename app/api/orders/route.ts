@@ -190,6 +190,8 @@ export async function POST(request: NextRequest) {
         tax,
         total,
         notes: body.notes,
+        promo_code_id: body.promo_code_id || null,
+        discount_amount: body.discount_amount || 0,
       })
       .select()
       .single()
