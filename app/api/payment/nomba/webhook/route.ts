@@ -211,26 +211,17 @@ export async function POST(request: NextRequest) {
         console.log(`✅ Created Zoho deal: ${syncResult.zoho_deal_id}`)
       }
 
-      // 3. Increment promo code usage if a promo code was used
+      // 3. Increment promo code usage atomically
       if (order.promo_code_id) {
         try {
-          const { data: promoCode } = await admin
-            .from('promo_codes')
-            .select('used_count')
-            .eq('id', order.promo_code_id)
-            .single()
+          const { error: promoError } = await admin.rpc('increment_promo_usage', {
+            promo_id: order.promo_code_id
+          })
 
-          if (promoCode) {
-            const { error: promoError } = await admin
-              .from('promo_codes')
-              .update({ used_count: (promoCode.used_count || 0) + 1 })
-              .eq('id', order.promo_code_id)
-
-            if (!promoError) {
-              console.log(`✅ Incremented promo code usage for: ${order.promo_code_id}`)
-            } else {
-              console.error('Error incrementing promo code usage:', promoError)
-            }
+          if (!promoError) {
+            console.log(`✅ Incremented promo code usage for: ${order.promo_code_id}`)
+          } else {
+            console.error('Error incrementing promo code usage:', promoError)
           }
         } catch (promoError) {
           console.error('Error incrementing promo code usage:', promoError)
