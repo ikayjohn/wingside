@@ -86,6 +86,13 @@ export async function POST(request: NextRequest) {
             .eq('id', orderId)
             .single()
 
+          // Idempotency: Skip if already processed (check again after update)
+          if (order && order.payment_status === 'paid' && order.paid_at &&
+              new Date(order.paid_at).getTime() < Date.now() - 5000) {
+            console.log(`✓ Order ${orderId} already processed earlier`)
+            return NextResponse.json({ success: true })
+          }
+
           if (order) {
             // 1. Check if customer profile exists, create and sync if not
             const { data: existingProfile } = await admin

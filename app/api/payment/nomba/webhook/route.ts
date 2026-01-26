@@ -101,6 +101,12 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      // Idempotency: Skip if already paid
+      if (order.payment_status === 'paid') {
+        console.log(`✓ Order ${order.order_number} already processed`)
+        return NextResponse.json({ success: true, message: 'Already processed' })
+      }
+
       // Update order payment status
       const { error: updateError } = await supabase
         .from('orders')
