@@ -88,17 +88,34 @@ export async function POST(request: NextRequest) {
         throw new Error('Failed to record wallet transaction');
       }
 
-      // TODO: Implement actual wallet-to-wallet transfer to merchant wallet
-      // This requires setting up a merchant wallet in Embedly
-      // const merchantWalletId = process.env.EMBEDLY_MERCHANT_WALLET_ID;
-      // const merchantWallet = await embedlyClient.getWalletById(merchantWalletId);
-      // await embedlyClient.walletToWalletTransfer({
-      //   fromAccount: wallet.virtualAccount.accountNumber,
-      //   toAccount: merchantWallet.virtualAccount.accountNumber,
-      //   amount: amount,
-      //   transactionReference: transactionReference,
-      //   remarks: remarks || `Payment for order ${order_id}`
-      // });
+      // Perform actual wallet-to-wallet transfer to merchant wallet
+      const merchantWalletId = process.env.EMBEDLY_MERCHANT_WALLET_ID;
+
+      if (merchantWalletId && merchantWalletId !== 'placeholder-merchant-wallet-id') {
+        console.log(`💸 Transferring ₦${amount} from customer wallet to merchant wallet...`);
+
+        try {
+          // Get merchant wallet details
+          const merchantWallet = await embedlyClient.getWalletById(merchantWalletId);
+
+          // Transfer from customer wallet to merchant wallet
+          await embedlyClient.walletToWalletTransfer({
+            fromAccount: wallet.virtualAccount.accountNumber,
+            toAccount: merchantWallet.virtualAccount.accountNumber,
+            amount: amount,
+            transactionReference: transactionReference,
+            remarks: remarks || `Payment for order ${order_id}`
+          });
+
+          console.log(`✅ Successfully transferred ₦${amount} to merchant wallet (${merchantWalletId})`);
+        } catch (transferError) {
+          console.error('❌ Wallet transfer failed:', transferError);
+          throw new Error(`Failed to transfer funds to merchant wallet: ${transferError instanceof Error ? transferError.message : 'Unknown error'}`);
+        }
+      } else {
+        console.warn('⚠️ Merchant wallet not configured. Skipping actual transfer.');
+        throw new Error('Merchant wallet not configured. Please set EMBEDLY_MERCHANT_WALLET_ID in environment variables.');
+      }
 
       // Update order status to paid
       const { data: order, error: orderUpdateError } = await supabase
