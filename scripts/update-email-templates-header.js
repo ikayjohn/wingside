@@ -48,7 +48,7 @@ async function updateEmailTemplates() {
         if (updateError) {
           console.error(`Failed to update template "${template.name}":`, updateError.message);
         } else {
-          console.log(`✓ Updated template: ${template.name} (${template.template_key})`);
+          console.log(`Updated template: ${template.name} (${template.template_key})`);
           updatedCount++;
         }
       } else {
@@ -56,7 +56,7 @@ async function updateEmailTemplates() {
       }
     }
 
-    console.log(`\n✅ Successfully updated ${updatedCount} email templates!`);
+    console.log(`\nSuccessfully updated ${updatedCount} email templates!`);
     console.log('\nAll email templates now have a yellow header bar with the Wingside logo.');
 
   } catch (error) {

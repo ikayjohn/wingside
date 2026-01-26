@@ -15,7 +15,7 @@ async function checkTemplates() {
 
     if (error) throw error;
 
-    console.log('\n📧 Current Email Templates:\n');
+    console.log('\nCurrent Email Templates:\n');
     templates.forEach(t => {
       console.log(`• ${t.name} (${t.template_key})`);
     });
@@ -31,12 +31,12 @@ async function checkTemplates() {
       // Extract just the header part
       const headerMatch = sample.html_content.match(/<div style="background-color: #[\w]+;[^>]*>[\s\S]*?<\/div>\s*<div style="background-color: white/);
       if (headerMatch) {
-        console.log('\n📋 Sample Header (Order Confirmation):');
+        console.log('\nSample Header (Order Confirmation):');
         console.log(headerMatch[0].substring(0, 300) + '...\n');
       }
     }
 
-    console.log('✅ All templates use: https://wingside.ng/logo.png');
+    console.log('All templates use: https://wingside.ng/logo.png');
     console.log('   This serves the logo.png from your public folder.\n');
 
   } catch (error) {
