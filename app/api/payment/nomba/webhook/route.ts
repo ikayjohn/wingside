@@ -130,7 +130,9 @@ export async function POST(request: NextRequest) {
 
       const admin = createAdminClient()
 
-      // 1. Check if customer profile exists, create and sync if not
+      // PHASE 1: CRITICAL DATABASE OPERATIONS (with transaction/rollback)
+
+      // 1. Get or create customer profile
       const { data: existingProfile } = await admin
         .from('profiles')
         .select('id, zoho_contact_id, embedly_customer_id')
@@ -138,12 +140,11 @@ export async function POST(request: NextRequest) {
         .single()
 
       let profileId = existingProfile?.id
+      let needsSync = false
 
-      // If customer doesn't exist or hasn't been synced to integrations
       if (!existingProfile) {
         console.log(`Creating profile for new customer: ${order.customer_email}`)
 
-        // Create guest profile for order tracking
         const { data: newProfile } = await admin
           .from('profiles')
           .insert({
@@ -156,62 +157,12 @@ export async function POST(request: NextRequest) {
           .single()
 
         profileId = newProfile?.id
-
-        // Auto-sync new customer to integrations
-        if (profileId) {
-          console.log(`Auto-syncing new customer to integrations...`)
-          const syncResult = await syncNewCustomer({
-            id: profileId,
-            email: order.customer_email,
-            full_name: order.customer_name,
-            phone: order.customer_phone,
-            address: order.delivery_address_text,
-          })
-
-          if (syncResult.zoho?.contact_id) {
-            console.log(`✅ Synced to Zoho CRM: ${syncResult.zoho.contact_id}`)
-          }
-          if (syncResult.embedly?.customer_id) {
-            console.log(`✅ Synced to Embedly: ${syncResult.embedly.customer_id}`)
-          }
-        }
+        needsSync = true
       } else if (!existingProfile.zoho_contact_id && !existingProfile.embedly_customer_id) {
-        // Customer exists but never synced - sync them now
-        console.log(`Auto-syncing existing customer to integrations...`)
-        const syncResult = await syncNewCustomer({
-          id: existingProfile.id,
-          email: order.customer_email,
-          full_name: order.customer_name,
-          phone: order.customer_phone,
-          address: order.delivery_address_text,
-        })
-
-        if (syncResult.zoho?.contact_id) {
-          console.log(`✅ Synced to Zoho CRM: ${syncResult.zoho.contact_id}`)
-        }
-        if (syncResult.embedly?.customer_id) {
-          console.log(`✅ Synced to Embedly: ${syncResult.embedly.customer_id}`)
-        }
+        needsSync = true
       }
 
-      // 2. Sync order to Zoho CRM and credit Embedly loyalty points
-      const syncResult = await syncOrderCompletion({
-        id: order.id,
-        order_number: order.order_number,
-        customer_email: order.customer_email,
-        customer_name: order.customer_name,
-        total: order.total,
-        status: 'confirmed',
-      })
-
-      if (syncResult.points_earned) {
-        console.log(`✅ Credited ${syncResult.points_earned} loyalty points`)
-      }
-      if (syncResult.zoho_deal_id) {
-        console.log(`✅ Created Zoho deal: ${syncResult.zoho_deal_id}`)
-      }
-
-      // 3. Increment promo code usage atomically
+      // 2. Increment promo code usage atomically
       if (order.promo_code_id) {
         try {
           const { error: promoError } = await admin.rpc('increment_promo_usage', {
@@ -289,7 +240,7 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      // 6. Update customer streak
+      // 5. Update customer streak
       if (profileId) {
         try {
           await updateOrderStreak(profileId)
@@ -298,7 +249,57 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Send payment confirmation email to customer
+      // PHASE 2: EXTERNAL SERVICE SYNCS (best effort, failures logged but don't block)
+
+      // 6. Sync customer to external services (Zoho CRM, Embedly)
+      if (profileId && needsSync) {
+        try {
+          console.log(`Syncing customer to external integrations...`)
+          const customerSyncResult = await syncNewCustomer({
+            id: profileId,
+            email: order.customer_email,
+            full_name: order.customer_name,
+            phone: order.customer_phone,
+            address: order.delivery_address_text,
+          })
+
+          if (customerSyncResult.zoho?.contact_id) {
+            console.log(`✅ Synced to Zoho CRM: ${customerSyncResult.zoho.contact_id}`)
+          }
+          if (customerSyncResult.embedly?.customer_id) {
+            console.log(`✅ Synced to Embedly: ${customerSyncResult.embedly.customer_id}`)
+          }
+        } catch (syncError) {
+          console.error('⚠️ Customer sync failed (non-critical):', syncError)
+          // Log for manual retry but don't fail the webhook
+        }
+      }
+
+      // 7. Sync order to external services
+      try {
+        const orderSyncResult = await syncOrderCompletion({
+          id: order.id,
+          order_number: order.order_number,
+          customer_email: order.customer_email,
+          customer_name: order.customer_name,
+          total: order.total,
+          status: 'confirmed',
+        })
+
+        if (orderSyncResult.points_earned) {
+          console.log(`✅ Credited ${orderSyncResult.points_earned} Embedly loyalty points`)
+        }
+        if (orderSyncResult.zoho_deal_id) {
+          console.log(`✅ Created Zoho deal: ${orderSyncResult.zoho_deal_id}`)
+        }
+      } catch (syncError) {
+        console.error('⚠️ Order sync failed (non-critical):', syncError)
+        // Log for manual retry but don't fail the webhook
+      }
+
+      // PHASE 3: NOTIFICATIONS (best effort)
+
+      // 8. Send payment confirmation email to customer
       try {
         const emailResult = await sendPaymentConfirmation({
           orderNumber: order.order_number,
