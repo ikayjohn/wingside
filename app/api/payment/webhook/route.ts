@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { syncNewCustomer, syncOrderCompletion } from '@/lib/integrations'
 import { sendPaymentConfirmation, sendOrderNotification } from '@/lib/emails/service'
 import { sendPaymentConfirmationSMS, isSMSEnabled } from '@/lib/notifications/sms'
+import { updateOrderStreak } from '@/lib/streak/helper'
 import crypto from 'crypto'
 
 // POST /api/payment/webhook - Handle Paystack webhook events
@@ -252,73 +253,7 @@ export async function POST(request: NextRequest) {
             // 5. Update customer streak
             if (profileId) {
               try {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-
-                const { data: profile } = await admin
-                  .from('profiles')
-                  .select('current_streak, longest_streak, last_order_date, streak_start_date')
-                  .eq('id', profileId)
-                  .single();
-
-                if (profile) {
-                  const lastOrderDate = profile.last_order_date
-                    ? new Date(profile.last_order_date)
-                    : null;
-
-                  if (lastOrderDate) {
-                    lastOrderDate.setHours(0, 0, 0, 0);
-                  }
-
-                  const oneDayMs = 24 * 60 * 60 * 1000;
-                  const daysDiff = lastOrderDate
-                    ? Math.floor((today.getTime() - lastOrderDate.getTime()) / oneDayMs)
-                    : null;
-
-                  let currentStreak = profile.current_streak || 0;
-                  let longestStreak = profile.longest_streak || 0;
-                  let streakStartDate = profile.streak_start_date
-                    ? new Date(profile.streak_start_date)
-                    : today;
-
-                  if (!lastOrderDate) {
-                    // First order ever
-                    currentStreak = 1;
-                    streakStartDate = today;
-                  } else if (daysDiff === 0) {
-                    // Same day - already updated
-                    console.log('📊 Streak already updated today');
-                  } else if (daysDiff === 1) {
-                    // Consecutive day - increment streak
-                    currentStreak += 1;
-                  } else {
-                    // Streak broken - start new streak
-                    currentStreak = 1;
-                    streakStartDate = today;
-                  }
-
-                  // Update longest streak if needed
-                  if (currentStreak > longestStreak) {
-                    longestStreak = currentStreak;
-                  }
-
-                  // Update profile
-                  const { error: streakError } = await admin
-                    .from('profiles')
-                    .update({
-                      current_streak: currentStreak,
-                      longest_streak: longestStreak,
-                      last_order_date: today.toISOString().split('T')[0],
-                      streak_start_date: streakStartDate.toISOString().split('T')[0],
-                    })
-                    .eq('id', profileId);
-
-                  if (!streakError) {
-                    console.log(`🔥 Streak updated: ${currentStreak} day${currentStreak !== 1 ? 's' : ''} ${currentStreak > 1 ? '(new best!' + (currentStreak > longestStreak ? '' : '') : ''}`);
-                  } else {
-                    console.error('Error updating streak:', streakError);
-                  }
-                }
+                await updateOrderStreak(profileId);
               } catch (streakError) {
                 console.error('Error in streak update:', streakError);
               }
