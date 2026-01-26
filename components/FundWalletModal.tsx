@@ -79,7 +79,7 @@ export default function FundWalletModal({
           <div>
             <h2 className="fund-wallet-title">Fund Wallet</h2>
             <p className="fund-wallet-subtitle">
-              Transfer to your wingside bank account from any of your bank.
+              Transfer to your Wingside® Bank Account from any of your bank.
             </p>
           </div>
           <button onClick={onClose} className="fund-wallet-close">
@@ -92,11 +92,10 @@ export default function FundWalletModal({
 
         {/* Current Balance Display */}
         {currentBalance !== undefined && (
-          <div className={`mx-6 mb-4 p-4 rounded-lg transition-all duration-300 ${
-            balanceUpdated
+          <div className={`mx-6 mb-4 p-4 rounded-lg transition-all duration-300 ${balanceUpdated
               ? 'bg-green-100 border-2 border-green-500'
               : 'bg-gray-100'
-          }`}>
+            }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Current Balance</p>
@@ -113,11 +112,10 @@ export default function FundWalletModal({
                 <button
                   onClick={handleRefresh}
                   disabled={isRefreshing}
-                  className={`p-3 rounded-full transition-all ${
-                    isRefreshing
+                  className={`p-3 rounded-full transition-all ${isRefreshing
                       ? 'bg-gray-200 cursor-not-allowed'
                       : 'bg-white hover:bg-gray-50 border border-gray-300'
-                  }`}
+                    }`}
                   title="Refresh balance"
                 >
                   <svg
@@ -139,7 +137,7 @@ export default function FundWalletModal({
               )}
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              Auto-refreshes every 30 seconds while this modal is open
+              Balance updates automatically every 30 seconds
             </p>
           </div>
         )}

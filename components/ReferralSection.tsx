@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import Image from 'next/image';
-import { Link as LinkIcon, Mail } from 'lucide-react';
+import { Link as LinkIcon, Mail, Gift } from 'lucide-react';
 
 const WhatsAppIcon = () => (
   <svg viewBox="0 0 24 24" className="w-6 h-6 fill-[#25D366]">
@@ -217,7 +217,10 @@ export default function ReferralSection() {
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Refer & Earn</h2>
 
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-          <p className="text-yellow-800 font-medium mb-2">🎉 Earn ₦1,000 for each referral!</p>
+          <p className="text-yellow-800 font-medium mb-2 flex items-center gap-2">
+            <Gift className="w-5 h-5 text-yellow-600" />
+            Earn ₦1,000 for each referral!
+          </p>
           <p className="text-sm text-yellow-700">Your friend also gets ₦1,000 after their first order. You'll earn your reward when your friend places their first order.</p>
         </div>
 

@@ -139,7 +139,7 @@ export async function GET() {
       pointsThisMonth,
       currentTier,
       memberSince,
-      availableToConvert: profile.wallet_balance || 0,
+      availableToConvert: Math.floor(totalPoints * 0.5) * 10, // 50% of points × ₦10 per point
       convertiblePoints: Math.floor(totalPoints * 0.5), // Convertible points
       minConversion: 100,
       tierProgress: {
