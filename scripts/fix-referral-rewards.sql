@@ -1,6 +1,9 @@
 -- Fix: Actually credit referral rewards to wallet
 -- This replaces the process_referral_reward_after_first_order function to actually credit wallets
 
+-- Drop existing function first
+DROP FUNCTION IF EXISTS process_referral_reward_after_first_order(uuid, numeric);
+
 CREATE OR REPLACE FUNCTION process_referral_reward_after_first_order(
     user_id UUID,
     order_amount DECIMAL
