@@ -227,10 +227,6 @@ function OrderConfirmationContent() {
                 <span className="text-gray-600">Delivery Fee</span>
                 <span className="font-medium">{formatPrice(order.delivery_fee)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Tax (7.5%)</span>
-                <span className="font-medium">{formatPrice(order.tax)}</span>
-              </div>
               <div className="flex justify-between text-lg font-bold pt-2 border-t border-gray-200">
                 <span>Total</span>
                 <span>{formatPrice(order.total)}</span>

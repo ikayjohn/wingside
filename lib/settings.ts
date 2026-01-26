@@ -44,7 +44,6 @@ export interface SiteSettings {
   // Payment
   currency: string;
   currency_symbol: string;
-  tax_rate: string;
   accept_cash: string;
   accept_card: string;
   accept_wallet: string;
@@ -94,7 +93,6 @@ export const defaultSettings: SiteSettings = {
   // Payment
   currency: 'NGN',
   currency_symbol: '₦',
-  tax_rate: '5',
   accept_cash: 'false',
   accept_card: 'true',
   accept_wallet: 'true',

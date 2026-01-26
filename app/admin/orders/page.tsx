@@ -521,12 +521,6 @@ export default function AdminOrdersPage() {
                         <span className="text-gray-600">Delivery Fee:</span>
                         <span className="font-medium">{formatPrice(selectedOrder.delivery_fee)}</span>
                       </div>
-                      {selectedOrder.tax > 0 && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Tax:</span>
-                          <span className="font-medium">{formatPrice(selectedOrder.tax)}</span>
-                        </div>
-                      )}
                       <div className="border-t border-gray-300 pt-2 mt-2">
                         <div className="flex justify-between text-lg font-bold">
                           <span>Total:</span>

@@ -29,14 +29,14 @@ try {
   embedlyClient = {
     getCountries: async () => {
       const response = await fetch('https://waas-staging.embedly.ng/api/v1/utilities/countries/get', {
-        headers: { 'x-api-key': 'process.env.EMBEDLY_API_KEY' }
+        headers: { 'x-api-key': process.env.EMBEDLY_API_KEY }
       });
       const data = await response.json();
       return data.data;
     },
     getCustomerTypes: async () => {
       const response = await fetch('https://waas-staging.embedly.ng/api/v1/customers/types/all', {
-        headers: { 'x-api-key': 'process.env.EMBEDLY_API_KEY' }
+        headers: { 'x-api-key': process.env.EMBEDLY_API_KEY }
       });
       const data = await response.json();
       return data.data;
@@ -46,7 +46,7 @@ try {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': 'process.env.EMBEDLY_API_KEY'
+          'x-api-key': process.env.EMBEDLY_API_KEY
         },
         body: JSON.stringify(customerData)
       });
@@ -55,7 +55,7 @@ try {
     },
     getCustomerByEmail: async (email) => {
       const response = await fetch('https://waas-staging.embedly.ng/api/v1/customers/get/all', {
-        headers: { 'x-api-key': 'process.env.EMBEDLY_API_KEY' }
+        headers: { 'x-api-key': process.env.EMBEDLY_API_KEY }
       });
       const data = await response.json();
       const customers = data.data.filter(customer =>

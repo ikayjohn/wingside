@@ -330,7 +330,6 @@ export async function POST(request: NextRequest) {
         })),
         subtotal,
         deliveryFee,
-        tax,
         total,
         deliveryAddress: body.delivery_address_text,
         status: order.status,

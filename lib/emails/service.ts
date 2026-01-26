@@ -160,7 +160,6 @@ export async function sendOrderConfirmation(data: {
   items: any[];
   subtotal: number;
   deliveryFee: number;
-  tax: number;
   total: number;
   deliveryAddress?: string;
   status: string;

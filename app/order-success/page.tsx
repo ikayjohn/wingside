@@ -211,10 +211,6 @@ function OrderSuccessContent() {
               <span>Delivery Fee</span>
               <span>{formatPrice(order.delivery_fee)}</span>
             </div>
-            <div className="flex justify-between text-gray-600">
-              <span>Tax</span>
-              <span>{formatPrice(order.tax)}</span>
-            </div>
             <div className="flex justify-between text-xl font-bold text-gray-900 pt-3 border-t border-gray-200">
               <span>Total</span>
               <span>{formatPrice(order.total)}</span>

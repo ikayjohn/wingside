@@ -205,14 +205,21 @@ export default function AdminSettingsPage() {
         {/* Render all categories except order_availability */}
         {Object.entries(settingsByCategory)
           .filter(([category]) => category !== 'order_availability')
-          .map(([category, items]) => (
+          .map(([category, items]) => {
+            // Filter out tax_rate from payment settings
+            const filteredItems = items.filter(item => item.key !== 'tax_rate');
+
+            // Skip rendering if no items remain after filtering
+            if (filteredItems.length === 0) return null;
+
+            return (
           <div key={category} className="bg-white shadow-md rounded-lg p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-6">
               {getCategoryTitle(category)}
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {items.map((item) => (
+              {filteredItems.map((item) => (
                 <div key={item.key} className={
                   category === 'business' || item.key.includes('address_line') || item.key.includes('description')
                     ? 'md:col-span-2'
@@ -231,7 +238,8 @@ export default function AdminSettingsPage() {
               ))}
             </div>
           </div>
-        ))}
+            );
+          })}
 
         {/* Order Availability Section - Always Last */}
         {settingsByCategory['order_availability'] && (

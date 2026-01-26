@@ -73,7 +73,6 @@ export default function CheckoutPage() {
   const [wallet, setWallet] = useState<any>(null);
   const [loadingWallet, setLoadingWallet] = useState(false);
   const [settings, setSettings] = useState<any>({
-    tax_rate: '7.5',
     currency_symbol: '₦',
     min_order_amount: '2000',
   });
@@ -307,12 +306,10 @@ export default function CheckoutPage() {
   };
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const taxRate = parseFloat(settings.tax_rate || '0') / 100;
-  const tax = subtotal * taxRate;
   const deliveryFee = getDeliveryFee();
   const discount = appliedPromo ? appliedPromo.discountAmount : 0;
-  const referralDiscount = referralValidated && subtotal + tax + deliveryFee >= 1000 ? (referralInfo?.rewards?.referredReward || 500) : 0;
-  const total = subtotal + tax + deliveryFee - discount - referralDiscount;
+  const referralDiscount = referralValidated && subtotal + deliveryFee >= 1000 ? (referralInfo?.rewards?.referredReward || 500) : 0;
+  const total = subtotal + deliveryFee - discount - referralDiscount;
 
   const formatPrice = (price: number) => {
     const symbol = settings.currency_symbol || '₦';
@@ -347,7 +344,7 @@ export default function CheckoutPage() {
     setPromoError('');
 
     try {
-      const orderAmount = subtotal + tax + deliveryFee;
+      const orderAmount = subtotal + deliveryFee;
 
       const response = await fetch('/api/promo-codes/validate', {
         method: 'POST',
@@ -653,7 +650,7 @@ export default function CheckoutPage() {
         delivery_address_text: deliveryAddressText,
         payment_method: paymentMethod, // Use selected payment method
         delivery_fee: deliveryFee,
-        tax: tax,
+        tax: 0,
         notes: '',
         promo_code_id: appliedPromo?.promoCode?.id || null,
         discount_amount: discount,
@@ -1230,12 +1227,6 @@ export default function CheckoutPage() {
                   <div className="flex justify-between mb-2">
                     <span className="text-sm text-gray-600">Subtotal</span>
                     <span className="text-sm font-medium">{formatPrice(subtotal)}</span>
-                  </div>
-
-                  {/* Tax */}
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm text-gray-600">Tax ({settings.tax_rate || '0'}%)</span>
-                    <span className="text-sm font-medium">{formatPrice(tax)}</span>
                   </div>
 
                   {/* Delivery Fee / Pickup */}
