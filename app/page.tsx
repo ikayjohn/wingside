@@ -286,10 +286,10 @@ export default function WingsideLanding() {
                 Our Flavors
               </div>
               <h2 className="section-title mb-3 md:mb-4">
-                Explore Our Flavors
+                20 Amazing Flavors. Infinite Cravings.
               </h2>
               <p className="text-gray-600 text-xs sm:text-sm md:text-base max-w-3xl leading-relaxed">
-                From hot and fiery, to sweet and crispy, every bite an explosion of taste meant to spark unrestrained crave spells.
+                Sweet, Hot or Fun - there’s a flavor to match every mood.
               </p>
             </div>
 

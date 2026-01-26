@@ -189,6 +189,8 @@ export default function AdminOrdersPage() {
         return 'bg-orange-100 text-orange-800';
       case 'delivered':
         return 'bg-green-100 text-green-800';
+      case 'picked_up':
+        return 'bg-teal-100 text-teal-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
       default:
@@ -210,63 +212,84 @@ export default function AdminOrdersPage() {
       <div className="flex gap-2 mb-6">
         <button
           onClick={() => setFilter('all')}
-          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-            filter === 'all'
-              ? 'bg-[#F7C400] text-black'
-              : 'bg-white text-gray-600 border border-gray-200'
-          }`}
+          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${filter === 'all'
+            ? 'bg-[#F7C400] text-black'
+            : 'bg-white text-gray-600 border border-gray-200'
+            }`}
         >
           All Orders
         </button>
         <button
           onClick={() => setFilter('pending')}
-          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-            filter === 'pending'
-              ? 'bg-[#F7C400] text-black'
-              : 'bg-white text-gray-600 border border-gray-200'
-          }`}
+          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${filter === 'pending'
+            ? 'bg-[#F7C400] text-black'
+            : 'bg-white text-gray-600 border border-gray-200'
+            }`}
         >
           Pending
         </button>
         <button
           onClick={() => setFilter('confirmed')}
-          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-            filter === 'confirmed'
-              ? 'bg-[#F7C400] text-black'
-              : 'bg-white text-gray-600 border border-gray-200'
-          }`}
+          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${filter === 'confirmed'
+            ? 'bg-[#F7C400] text-black'
+            : 'bg-white text-gray-600 border border-gray-200'
+            }`}
         >
           Confirmed
         </button>
         <button
           onClick={() => setFilter('preparing')}
-          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-            filter === 'preparing'
-              ? 'bg-[#F7C400] text-black'
-              : 'bg-white text-gray-600 border border-gray-200'
-          }`}
+          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${filter === 'preparing'
+            ? 'bg-[#F7C400] text-black'
+            : 'bg-white text-gray-600 border border-gray-200'
+            }`}
         >
           Preparing
         </button>
         <button
           onClick={() => setFilter('ready')}
-          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-            filter === 'ready'
-              ? 'bg-[#F7C400] text-black'
-              : 'bg-white text-gray-600 border border-gray-200'
-          }`}
+          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${filter === 'ready'
+            ? 'bg-[#F7C400] text-black'
+            : 'bg-white text-gray-600 border border-gray-200'
+            }`}
         >
           Ready
         </button>
         <button
           onClick={() => setFilter('out_for_delivery')}
-          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-            filter === 'out_for_delivery'
-              ? 'bg-[#F7C400] text-black'
-              : 'bg-white text-gray-600 border border-gray-200'
-          }`}
+          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${filter === 'out_for_delivery'
+            ? 'bg-[#F7C400] text-black'
+            : 'bg-white text-gray-600 border border-gray-200'
+            }`}
         >
           Out for Delivery
+        </button>
+        <button
+          onClick={() => setFilter('delivered')}
+          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${filter === 'delivered'
+            ? 'bg-[#F7C400] text-black'
+            : 'bg-white text-gray-600 border border-gray-200'
+            }`}
+        >
+          Delivered
+        </button>
+        <button
+          onClick={() => setFilter('picked_up')}
+          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${filter === 'picked_up'
+              ? 'bg-[#F7C400] text-black'
+              : 'bg-white text-gray-600 border border-gray-200'
+            }`}
+        >
+          Picked Up
+        </button>
+        <button
+          onClick={() => setFilter('cancelled')}
+          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${filter === 'cancelled'
+              ? 'bg-[#F7C400] text-black'
+              : 'bg-white text-gray-600 border border-gray-200'
+            }`}
+        >
+          Cancelled
         </button>
       </div>
 
@@ -324,61 +347,61 @@ export default function AdminOrdersPage() {
                   );
                 })
                 .map((order) => (
-                <tr
-                  key={order.id}
-                  className={`hover:bg-gray-50 ${
-                    highlightedOrderNumber === order.order_number
+                  <tr
+                    key={order.id}
+                    className={`hover:bg-gray-50 ${highlightedOrderNumber === order.order_number
                       ? 'bg-yellow-50 ring-2 ring-[#F7C400] ring-inset'
                       : ''
-                  }`}
-                >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {order.order_number}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    <div>{order.customer_name}</div>
-                    <div className="text-xs text-gray-500">{order.customer_phone}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                    {formatPrice(order.total)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
-                        order.status
-                      )}`}
-                    >
-                      {order.status.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {new Date(order.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => fetchOrderDetails(order.id)}
-                        className="text-blue-600 hover:text-blue-800 font-medium"
+                      }`}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {order.order_number}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      <div>{order.customer_name}</div>
+                      <div className="text-xs text-gray-500">{order.customer_phone}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                      {formatPrice(order.total)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
+                          order.status
+                        )}`}
                       >
-                        View
-                      </button>
-                      <select
-                        value={order.status}
-                        onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                        className="border border-gray-300 rounded px-2 py-1 text-sm"
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="confirmed">Confirmed</option>
-                        <option value="preparing">Preparing</option>
-                        <option value="ready">Ready</option>
-                        <option value="out_for_delivery">Out for Delivery</option>
-                        <option value="delivered">Delivered</option>
-                        <option value="cancelled">Cancelled</option>
-                      </select>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {order.status.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => fetchOrderDetails(order.id)}
+                          className="text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          View
+                        </button>
+                        <select
+                          value={order.status}
+                          onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                          className="border border-gray-300 rounded px-2 py-1 text-sm"
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="confirmed">Confirmed</option>
+                          <option value="preparing">Preparing</option>
+                          <option value="ready">Ready</option>
+                          <option value="out_for_delivery">Out for Delivery</option>
+                          <option value="delivered">Delivered</option>
+                          <option value="picked_up">Picked Up</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
@@ -425,9 +448,8 @@ export default function AdminOrdersPage() {
                     </div>
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <p className="text-xs text-gray-500 mb-1">Payment Status</p>
-                      <span className={`px-3 py-1 inline-flex text-sm font-semibold rounded-full ${
-                        selectedOrder.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                      }`}>
+                      <span className={`px-3 py-1 inline-flex text-sm font-semibold rounded-full ${selectedOrder.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
                         {selectedOrder.payment_status}
                       </span>
                       {selectedOrder.payment_method && (

@@ -39,19 +39,6 @@ interface Product {
   description?: string;
 }
 
-const defaultWingCafeSubcategories = [
-  'Coffee Classics',
-  'Everyday Sips',
-  'Toasted & Spiced Lattes',
-  'Gourmet & Dessert-Inspired Lattes',
-  'Matcha Lattes',
-  'Chai Lattes',
-  'Hot Smelts',
-  'Teas',
-  'Wingfreshers',
-  'Milkshakes',
-  'Signature Pairings'
-];
 
 export default function OrderPage() {
   const [activeCategory, setActiveCategory] = useState('Wings');
@@ -80,10 +67,10 @@ export default function OrderPage() {
 
   // Flavor category mapping
   const flavorCategories = {
-    'HOT': ['Wingferno', 'Dragon Breath', 'Braveheart', 'Mango Heat'],
-    'BBQ': ['BBQ Rush', 'BBQ Fire'],
-    'DRY RUB': ['Lemon Pepper', 'Cameroon Rub', 'Caribbean Jerk', 'Yaji'],
     'BOLD & FUN': ['The Italian', 'Wing of the North', 'Tokyo', 'Hot Nuts', 'The Slayer'],
+    'BBQ': ['BBQ Rush', 'BBQ Fire'],
+    'HOT': ['Wingferno', 'Dragon Breath', 'Braveheart', 'Mango Heat'],
+    'DRY RUB': ['Lemon Pepper', 'Cameroon Rub', 'Caribbean Jerk', 'Yaji'],
     'SWEET': ['Sweet Dreams', 'Yellow Gold'],
     'BOOZY': ['Whiskey Vibes', 'Tequila Wingrise', 'Gustavo']
   };
@@ -159,7 +146,13 @@ export default function OrderPage() {
   // Fetch categories from API
   const fetchCategories = useCallback(async () => {
     try {
-      const response = await fetch(`/api/categories?_t=${Date.now()}`);
+      const response = await fetch(`/api/categories?_t=${Date.now()}`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+        cache: 'no-store',
+      });
       const data = await response.json();
       if (data.categories) {
         setApiCategories(data.categories);
@@ -240,8 +233,7 @@ export default function OrderPage() {
   // Reset subcategory when changing main category
   useEffect(() => {
     const activeCatData = apiCategories.find(c => c.name === activeCategory);
-    const subCats = activeCatData?.subcategories?.map((s: any) => s.name) ||
-      (activeCategory === 'Wing Cafe' ? defaultWingCafeSubcategories : []);
+    const subCats = activeCatData?.subcategories?.map((s: any) => s.name) || [];
 
     if (subCats.length > 0 && (!activeSubcategory || !subCats.includes(activeSubcategory))) {
       setActiveSubcategory(subCats[0]);
@@ -543,8 +535,7 @@ export default function OrderPage() {
       {/* Subcategory Tabs (Dynamic) */}
       {(() => {
         const activeCatData = apiCategories.find(c => c.name === activeCategory);
-        const subCats = activeCatData?.subcategories?.map((s: any) => s.name) ||
-          (activeCategory === 'Wing Cafe' ? defaultWingCafeSubcategories : []);
+        const subCats = activeCatData?.subcategories?.map((s: any) => s.name) || [];
 
         if (subCats.length === 0) return null;
 
@@ -598,10 +589,25 @@ export default function OrderPage() {
 
                     {/* Product Name */}
                     <div className="mb-3">
-                      <h3 className="font-bold text-lg">{product.name}</h3>
-                      {product.wingCount && (!product.description || !product.description.includes(product.wingCount)) && (
-                        <p className="text-sm font-normal text-gray-600">{product.wingCount}</p>
-                      )}
+                      <h3 className="font-bold text-xl">{product.name}</h3>
+                      {(() => {
+                        const normalizeText = (text: string) => {
+                          if (!text) return '';
+                          // Remove anything in parentheses
+                          let normalized = text.replace(/\([^)]*\)/g, '');
+                          // Remove all non-alphanumeric characters and convert to lowercase
+                          return normalized.replace(/[^a-z0-9]/gi, '').toLowerCase();
+                        };
+
+                        const shouldShowWingCount = product.wingCount && (
+                          !product.description ||
+                          !normalizeText(product.description).includes(normalizeText(product.wingCount))
+                        );
+
+                        return shouldShowWingCount ? (
+                          <p className="text-sm font-normal text-gray-600">{product.wingCount}</p>
+                        ) : null;
+                      })()}
                       {product.description && (
                         <p className="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">
                           {product.description}
@@ -617,10 +623,7 @@ export default function OrderPage() {
                           <>
                             <div className="mb-2">
                               <p className="text-sm font-semibold text-gray-700">
-                                Select Flavor Category
-                              </p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                Choose a category to see available flavors
+                                {product.flavorCount && product.flavorCount > 1 ? `Pick ${product.flavorCount} Flavors` : 'Pick a Flavor'}
                               </p>
                             </div>
                             <div className="flex flex-wrap gap-2 mb-3">
@@ -635,23 +638,6 @@ export default function OrderPage() {
                                     style={hasSelectedFlavors && !isOpen ? { backgroundColor: '#FEF3C7' } : undefined}
                                   >
                                     <span>{category}</span>
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      width="14"
-                                      height="14"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth="2"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      style={{
-                                        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                                        transition: 'transform 0.2s ease'
-                                      }}
-                                    >
-                                      <polyline points="6 9 12 15 18 9"></polyline>
-                                    </svg>
                                   </button>
                                 );
                               })}
@@ -705,13 +691,10 @@ export default function OrderPage() {
                           <>
                             <div className="mb-2">
                               <p className="text-sm font-semibold text-gray-700">
-                                {product.flavorLabel || `Select Flavor${product.flavorCount && product.flavorCount > 1 ? 's' : ''}`}
+                                {product.flavorLabel || (product.flavorCount && product.flavorCount > 1
+                                  ? `Pick ${product.flavorCount} Flavors (${(selectedFlavors[product.id] || []).length}/${product.flavorCount})`
+                                  : 'Pick a Flavor')}
                               </p>
-                              {product.flavorCount && product.flavorCount > 1 && (
-                                <p className="text-xs text-gray-500 mt-1">
-                                  Pick {product.flavorCount} - mix & match as you like! ({(selectedFlavors[product.id] || []).length}/{product.flavorCount})
-                                </p>
-                              )}
                             </div>
                             <div className="flex flex-wrap gap-2">
                               {product.flavors.map((flavor) => {
@@ -774,12 +757,11 @@ export default function OrderPage() {
                     {product.riceOptions && product.riceOptions.length > 0 && (
                       <div className="mb-4">
                         <div className="mb-2">
-                          <p className="text-sm font-semibold text-gray-700">Choose Your Rice:</p>
-                          {product.riceCount && product.riceCount > 1 && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              Pick {product.riceCount} - mix & match as you like! ({Array.isArray(selectedRice[product.id]) ? selectedRice[product.id].length : (selectedRice[product.id] ? 1 : 0)}/{product.riceCount})
-                            </p>
-                          )}
+                          <p className="text-sm font-semibold text-gray-700">
+                            {product.riceCount && product.riceCount > 1
+                              ? `Pick ${product.riceCount} Rice (${Array.isArray(selectedRice[product.id]) ? selectedRice[product.id].length : (selectedRice[product.id] ? 1 : 0)}/${product.riceCount})`
+                              : 'Pick a Rice'}
+                          </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {product.riceOptions.map((rice) => {
@@ -825,12 +807,11 @@ export default function OrderPage() {
                     {product.drinkOptions && product.drinkOptions.length > 0 && (
                       <div className="mb-4">
                         <div className="mb-2">
-                          <p className="text-sm font-semibold text-gray-700">Choose Your Drink:</p>
-                          {product.drinkCount && product.drinkCount > 1 && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              Pick {product.drinkCount} - mix & match as you like! ({Array.isArray(selectedDrinks[product.id]) ? selectedDrinks[product.id].length : (selectedDrinks[product.id] ? 1 : 0)}/{product.drinkCount})
-                            </p>
-                          )}
+                          <p className="text-sm font-semibold text-gray-700">
+                            {product.drinkCount && product.drinkCount > 1
+                              ? `Pick ${product.drinkCount} Drinks (${Array.isArray(selectedDrinks[product.id]) ? selectedDrinks[product.id].length : (selectedDrinks[product.id] ? 1 : 0)}/${product.drinkCount})`
+                              : 'Pick a Drink'}
+                          </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {product.drinkOptions.map((drink) => {
@@ -874,7 +855,7 @@ export default function OrderPage() {
                     {/* Milkshake Selection */}
                     {product.milkshakeOptions && product.milkshakeOptions.length > 0 && (
                       <div className="mb-4">
-                        <p className="text-sm font-semibold text-gray-700 mb-2">Choose Your Milkshake:</p>
+                        <p className="text-sm font-semibold text-gray-700 mb-2">Pick a Milkshake</p>
                         <div className="flex flex-wrap gap-2">
                           {product.milkshakeOptions.map((milkshake) => (
                             <button

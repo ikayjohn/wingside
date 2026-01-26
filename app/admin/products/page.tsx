@@ -32,6 +32,7 @@ interface Category {
   id: string
   name: string
   slug: string
+  subcategories?: { id: string; name: string }[]
 }
 
 interface Flavor {
@@ -70,28 +71,12 @@ export default function AdminProductsPage() {
   const [uploadingImage, setUploadingImage] = useState(false)
   const [imagePreview, setImagePreview] = useState<string>('')
 
-  // Subcategory options by category (must match order page)
-  const subcategoryOptions: Record<string, string[]> = {
-    'Wing Cafe': [
-      'Coffee Classics',
-      'Everyday Sips',
-      'Toasted & Spiced Lattes',
-      'Gourmet & Dessert-Inspired Lattes',
-      'Matcha Lattes',
-      'Chai Lattes',
-      'Hot Smelts',
-      'Teas',
-      'Wingfreshers',
-      'Milkshakes',
-      'Signature Pairings'
-    ],
-  }
 
   // Get subcategory options for selected category
   const getSubcategoryOptions = () => {
     const selectedCat = categories.find(c => c.id === formData.category_id)
     if (!selectedCat) return []
-    return subcategoryOptions[selectedCat.name] || []
+    return selectedCat.subcategories?.map(s => s.name) || []
   }
 
   useEffect(() => {
@@ -124,7 +109,13 @@ export default function AdminProductsPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/categories')
+      const response = await fetch(`/api/categories?_t=${Date.now()}`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+        cache: 'no-store',
+      })
       const data = await response.json()
       if (data.categories) {
         setCategories(data.categories)
