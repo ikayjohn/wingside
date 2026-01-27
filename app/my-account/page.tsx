@@ -58,18 +58,38 @@ export default function MyAccountPage() {
     gender?: string;
   }>({});
 
-  const [signupData, setSignupData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    password: '',
-    referralId: '',
-    agreePrivacy: false,
-    dobDay: '',
-    dobMonth: '',
-    dobYear: '',
-    gender: '',
+  // Initialize referralId from URL query params
+  const [signupData, setSignupData] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const refCode = searchParams.get('ref') || '';
+      return {
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        password: '',
+        referralId: refCode,
+        agreePrivacy: false,
+        dobDay: '',
+        dobMonth: '',
+        dobYear: '',
+        gender: '',
+      };
+    }
+    return {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      password: '',
+      referralId: '',
+      agreePrivacy: false,
+      dobDay: '',
+      dobMonth: '',
+      dobYear: '',
+      gender: '',
+    };
   });
 
   const [loginData, setLoginData] = useState({
