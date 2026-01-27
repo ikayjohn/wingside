@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { email, type = 'gifts_launch' } = body;
+    const { email, type = 'gifts_launch', source = 'gifts_page' } = body;
 
     // Validate email
     if (!email) {
@@ -41,11 +41,6 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
 
-    // Check if newsletter_submissions table exists, if not create it
-    const { data: existingTables } = await supabase.rpc('check_table_exists', {
-      table_name: 'newsletter_submissions'
-    });
-
     // Store in database
     const { data: submission, error: insertError } = await supabase
       .from('contact_submissions')
@@ -54,8 +49,8 @@ export async function POST(request: NextRequest) {
         email,
         name: email.split('@')[0], // Use email username as name
         phone: '', // Not provided
-        message: `Newsletter signup: ${type}`,
-        form_data: { newsletter_type: type, source: 'gifts_page' },
+        message: `Newsletter signup: ${type} (${source})`,
+        form_data: { newsletter_type: type, source },
         status: 'new',
         created_at: new Date().toISOString(),
       })
@@ -77,7 +72,7 @@ export async function POST(request: NextRequest) {
         message: `Newsletter Signup - ${type}`,
         formData: {
           newsletter_type: type,
-          source: 'gifts_page',
+          source,
           timestamp: new Date().toISOString()
         },
       });
@@ -91,9 +86,13 @@ export async function POST(request: NextRequest) {
       console.error('Error sending newsletter email:', emailError);
     }
 
+    const successMessage = type === 'gifts_launch'
+      ? 'Thank you for signing up! We\'ll notify you when we launch.'
+      : 'Thank you for subscribing to our newsletter!';
+
     return NextResponse.json({
       success: true,
-      message: 'Thank you for signing up! We\'ll notify you when we launch.',
+      message: successMessage,
       submission,
     });
   } catch (error) {
