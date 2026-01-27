@@ -52,6 +52,7 @@ export default function OrderPage() {
   const [selectedMilkshakes, setSelectedMilkshakes] = useState<Record<string, string>>({});
   const [selectedCakes, setSelectedCakes] = useState<Record<string, string>>({});
   const [selectedFlavorCategory, setSelectedFlavorCategory] = useState<Record<string, string>>({});
+  const [errorMessages, setErrorMessages] = useState<Record<string, string>>({});
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [acceptingOrders, setAcceptingOrders] = useState(true);
@@ -256,6 +257,11 @@ export default function OrderPage() {
   };
 
   const handleFlavorSelect = (productId: string, flavor: string, maxCount: number = 1) => {
+    setErrorMessages(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[productId];
+      return newErrors;
+    });
     setSelectedFlavors(prev => {
       const current = prev[productId] || [];
 
@@ -282,6 +288,11 @@ export default function OrderPage() {
   };
 
   const handleFlavorRemove = (productId: string, flavor: string) => {
+    setErrorMessages(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[productId];
+      return newErrors;
+    });
     setSelectedFlavors(prev => {
       const current = prev[productId] || [];
       const index = current.indexOf(flavor);
@@ -297,10 +308,20 @@ export default function OrderPage() {
   };
 
   const handleSizeSelect = (productId: string, size: string) => {
+    setErrorMessages(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[productId];
+      return newErrors;
+    });
     setSelectedSizes(prev => ({ ...prev, [productId]: size }));
   };
 
   const handleRiceSelect = (productId: string, rice: string, maxCount: number = 1) => {
+    setErrorMessages(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[productId];
+      return newErrors;
+    });
     setSelectedRice(prev => {
       const current = Array.isArray(prev[productId]) ? prev[productId] : (prev[productId] ? [prev[productId] as string] : []);
 
@@ -319,6 +340,11 @@ export default function OrderPage() {
   };
 
   const handleRiceRemove = (productId: string, rice: string) => {
+    setErrorMessages(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[productId];
+      return newErrors;
+    });
     setSelectedRice(prev => {
       const current = Array.isArray(prev[productId]) ? prev[productId] : [];
       const index = current.indexOf(rice);
@@ -333,6 +359,11 @@ export default function OrderPage() {
   };
 
   const handleDrinkSelect = (productId: string, drink: string, maxCount: number = 1) => {
+    setErrorMessages(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[productId];
+      return newErrors;
+    });
     setSelectedDrinks(prev => {
       const current = Array.isArray(prev[productId]) ? prev[productId] : (prev[productId] ? [prev[productId] as string] : []);
 
@@ -351,6 +382,11 @@ export default function OrderPage() {
   };
 
   const handleDrinkRemove = (productId: string, drink: string) => {
+    setErrorMessages(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[productId];
+      return newErrors;
+    });
     setSelectedDrinks(prev => {
       const current = Array.isArray(prev[productId]) ? prev[productId] : [];
       const index = current.indexOf(drink);
@@ -365,10 +401,20 @@ export default function OrderPage() {
   };
 
   const handleMilkshakeSelect = (productId: string, milkshake: string) => {
+    setErrorMessages(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[productId];
+      return newErrors;
+    });
     setSelectedMilkshakes(prev => ({ ...prev, [productId]: milkshake }));
   };
 
   const handleCakeSelect = (productId: string, cake: string) => {
+    setErrorMessages(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[productId];
+      return newErrors;
+    });
     setSelectedCakes(prev => ({ ...prev, [productId]: cake }));
   };
 
@@ -399,22 +445,97 @@ export default function OrderPage() {
   };
 
   const addToCart = (product: Product) => {
+    // Clear any previous error for this product
+    setErrorMessages(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[product.id];
+        return newErrors;
+    });
+
     let selectedFlavorArray = selectedFlavors[product.id] || [];
     const flavorCount = product.flavorCount || 1;
 
-    // Auto-select flavor for simple items (single flavor products)
-    if (selectedFlavorArray.length === 0 && product.flavors.length === 1) {
+    // Auto-select flavor for simple items (single flavor products) that are not drinks
+    if (product.category !== 'Drinks' && selectedFlavorArray.length === 0 && product.flavors.length === 1) {
       selectedFlavorArray = [product.flavors[0]];
     }
 
-    // Check if at least one flavor is selected (only for products with flavors)
-    if (product.flavors.length > 0 && selectedFlavorArray.length === 0) {
-      return; // Silently prevent adding to cart
+    // Handle Meal Deal validation
+    if (product.category === 'Meal Deals') {
+        const missingOptions = [];
+        if (product.flavors && product.flavors.length > 0 && (!selectedFlavors[product.id] || selectedFlavors[product.id].length === 0)) {
+            missingOptions.push('flavor');
+        }
+        if (product.riceOptions && product.riceOptions.length > 0 && (!selectedRice[product.id] || selectedRice[product.id].length === 0)) {
+            missingOptions.push('rice');
+        }
+        if (product.drinkOptions && product.drinkOptions.length > 0 && (!selectedDrinks[product.id] || selectedDrinks[product.id].length === 0)) {
+            missingOptions.push('drink');
+        }
+
+        if (missingOptions.length > 0) {
+            let errorMessage;
+            if (missingOptions.length > 1) {
+                errorMessage = `Please select ${missingOptions.join(', ')}.`;
+            } else {
+                errorMessage = `Please select a ${missingOptions[0]}.`;
+            }
+            setErrorMessages(prev => ({ ...prev, [product.id]: errorMessage }));
+            return;
+        }
+    } else if (product.name === 'Pairfect Combo') {
+        const missingOptions = [];
+        if (product.flavors && product.flavors.length > 0 && (!selectedFlavors[product.id] || selectedFlavors[product.id].length === 0)) {
+            missingOptions.push('flavor');
+        }
+        if (product.milkshakeOptions && product.milkshakeOptions.length > 0 && !selectedMilkshakes[product.id]) {
+            missingOptions.push('milkshake');
+        }
+
+        if (missingOptions.length > 0) {
+            let errorMessage;
+            if (missingOptions.length > 1) {
+                errorMessage = `Please select ${missingOptions.join(', ')}.`;
+            } else {
+                errorMessage = `Please select a ${missingOptions[0]}.`;
+            }
+            setErrorMessages(prev => ({ ...prev, [product.id]: errorMessage }));
+            return;
+        }
+    } else if (product.category === 'Drinks') {
+        // For drinks, options are in 'flavors' array
+        if (!selectedFlavors[product.id] || selectedFlavors[product.id].length === 0) {
+            setErrorMessages(prev => ({ ...prev, [product.id]: 'Please select a drink.' }));
+            return;
+        }
+    } else { // For all other categories
+        // General validation
+        if (product.flavors.length > 0 && selectedFlavorArray.length === 0) {
+            setErrorMessages(prev => ({ ...prev, [product.id]: 'Please select a flavor.' }));
+            return;
+        }
+        if (product.riceOptions && product.riceOptions.length > 0 && (!selectedRice[product.id] || selectedRice[product.id].length === 0)) {
+            setErrorMessages(prev => ({ ...prev, [product.id]: 'Please select a rice option.' }));
+            return;
+        }
+        if (product.drinkOptions && product.drinkOptions.length > 0 && (!selectedDrinks[product.id] || selectedDrinks[product.id].length === 0)) {
+            setErrorMessages(prev => ({ ...prev, [product.id]: 'Please select a drink.' }));
+            return;
+        }
+        if (product.milkshakeOptions && product.milkshakeOptions.length > 0 && !selectedMilkshakes[product.id]) {
+            setErrorMessages(prev => ({ ...prev, [product.id]: 'Please select a milkshake.' }));
+            return;
+        }
+        if (product.cakeOptions && product.cakeOptions.length > 0 && !selectedCakes[product.id]) {
+            setErrorMessages(prev => ({ ...prev, [product.id]: 'Please select a cake.' }));
+            return;
+        }
     }
 
     // Check if not exceeding max flavors
-    if (selectedFlavorArray.length > flavorCount) {
-      return; // Silently prevent adding to cart
+    if (product.flavors.length > 0 && selectedFlavorArray.length > flavorCount) {
+        setErrorMessages(prev => ({ ...prev, [product.id]: `You can select a maximum of ${flavorCount} flavors.` }));
+        return;
     }
 
     const flavor = flavorCount === 1 ? selectedFlavorArray[0] : selectedFlavorArray;
@@ -691,9 +812,10 @@ export default function OrderPage() {
                           <>
                             <div className="mb-2">
                               <p className="text-sm font-semibold text-gray-700">
-                                {product.flavorLabel || (product.flavorCount && product.flavorCount > 1
+                                {product.category === 'Drinks' ? 'Pick a Drink' : 
+                                  (product.flavorLabel || (product.flavorCount && product.flavorCount > 1
                                   ? `Pick ${product.flavorCount} Flavors (${(selectedFlavors[product.id] || []).length}/${product.flavorCount})`
-                                  : 'Pick a Flavor')}
+                                  : 'Pick a Flavor'))}
                               </p>
                             </div>
                             <div className="flex flex-wrap gap-2">
@@ -915,6 +1037,9 @@ export default function OrderPage() {
                     >
                       Add
                     </button>
+                    {errorMessages[product.id] && (
+                      <p className="text-red-500 text-sm mt-2">{errorMessages[product.id]}</p>
+                    )}
                   </div>
                 ))}
               </div>
