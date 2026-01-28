@@ -680,6 +680,24 @@ export default function CheckoutPage() {
         });
       }
 
+      // Save address for existing logged-in users (not creating new account)
+      if (isLoggedIn && !formData.createAccount && orderType === 'delivery' && formData.streetAddress && selectedAddressId === 'new') {
+        try {
+          await supabase.from('addresses').insert({
+            user_id: (await supabase.auth.getUser()).data.user?.id,
+            label: 'Home',
+            street_address: formData.streetAddress + (formData.streetAddress2 ? ', ' + formData.streetAddress2 : ''),
+            city: formData.city,
+            state: 'Rivers',
+            is_default: false,
+          });
+          console.log('Address saved for existing user');
+        } catch (addressError) {
+          console.error('Error saving address:', addressError);
+          // Don't fail the order if address save fails
+        }
+      }
+
       if (paymentMethod === 'wallet') {
         // Process full wallet payment
         if (!wallet || walletBalance < total) {
@@ -952,9 +970,8 @@ export default function CheckoutPage() {
                         }}
                         placeholder="801 234 5678"
                         className="checkout-input rounded-l-none flex-1"
-                      />
+                       />
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">Enter Nigerian number without the leading 0</p>
                   </div>
 
                   {/* Address Selector - Only for logged-in users with saved addresses */}

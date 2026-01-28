@@ -552,9 +552,8 @@ export default function MyAccountPage() {
                         placeholder="801 234 5678"
                         className={`wingclub-phone-input rounded-l-none flex-1 ${fieldErrors.phone ? 'error' : ''}`}
                       />
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1 sm:text-[10px]">Enter Nigerian number without the leading 0</p>
-                    {fieldErrors.phone && (
+                      </div>
+                      {fieldErrors.phone && (
                       <span className="wingclub-error">{fieldErrors.phone}</span>
                     )}
                   </div>

@@ -289,7 +289,7 @@ export default function WingsideLanding() {
                 20 Amazing Flavors. Infinite Cravings.
               </h2>
               <p className="text-gray-600 text-xs sm:text-sm md:text-base max-w-3xl leading-relaxed">
-                Sweet, Hot or Fun - there’s a flavor to match every mood.
+                Sweet, Hot or Fun, there's a flavor to match every mood.
               </p>
             </div>
 
