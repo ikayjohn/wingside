@@ -50,7 +50,7 @@ export default function CardsPage() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (fetchError) {
+      if (fetchError && Object.keys(fetchError).length > 0) {
         console.error('Error fetching cards:', fetchError);
         setError('Failed to fetch cards');
       } else {
@@ -110,12 +110,10 @@ export default function CardsPage() {
             </svg>
             <div>
               <h3 className="font-semibold text-gray-900 mb-1">
-                How to Create Cards
+                How to Get a Card
               </h3>
               <p className="text-sm text-gray-600 leading-relaxed">
-                Cards are created and managed through your Embedly wallet dashboard. 
-                Once created, your cards will automatically appear here. 
-                Visit <a href="https://waas-prod.embedly.ng" target="_blank" rel="noopener noreferrer" className="text-blue-600 font-medium hover:underline">Embedly Dashboard</a> to create your first card.
+                Wingside cards are issued at our physical branches. Simply walk into any Wingside branch, request a card, and complete the activation process with our team. Your card will automatically appear here once it's been issued.
               </p>
             </div>
           </div>
@@ -130,16 +128,14 @@ export default function CardsPage() {
             </svg>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No Cards Yet</h3>
             <p className="text-gray-500 mb-6">
-              You don't have any cards yet. Create a card from your Embedly dashboard to get started.
+              You don't have any cards yet. Visit any Wingside branch to request a card and get started.
             </p>
-            <a
-              href="https://waas-prod.embedly.ng"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/contact"
               className="inline-block px-6 py-3 bg-yellow-400 text-gray-900 rounded-lg font-medium hover:bg-yellow-500 transition-colors"
             >
-              Go to Embedly Dashboard
-            </a>
+              Find a Branch
+            </Link>
           </div>
         ) : error ? (
           <div className="bg-white rounded-xl shadow-sm p-6 text-center">

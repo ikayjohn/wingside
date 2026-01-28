@@ -13,8 +13,8 @@ export default function WingclubPage() {
     },
     {
       image: '/wingclubhero2.jpg',
-      title: 'Where cravings pay you back',
-      description: 'Join the coolest club in town. Sign up today, get a FREE gift on your first purchase, and start stacking points every time you take a bite.'
+      title: 'Where the real ones belong',
+      description: 'Unlock perks, deals and VIP-only drops. Because loyalty deserves to be sauced up too.'
     }
   ];
 
