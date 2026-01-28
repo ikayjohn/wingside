@@ -257,13 +257,13 @@ export default function Header() {
                 </div>
               ) : (
                 <Link
-                  href="/wingclub"
+                  href="/my-account"
                   className={`text-sm font-bold hidden sm:block transition-colors ${isHomepage && !isScrolled
                       ? 'text-white hover:text-gray-200'
                       : 'text-gray-700 hover:text-gray-900'
                     }`}
                 >
-                  Join the Wingclub
+                  Sign In or Sign Up
                 </Link>
               )}
               <Link

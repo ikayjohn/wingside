@@ -7,6 +7,7 @@ import Image from 'next/image';
 import ConvertPointsModal from '@/components/ConvertPointsModal';
 import FundWalletModal from '@/components/FundWalletModal';
 import ReferralSection from '@/components/ReferralSection';
+import FeedbackSection from '@/components/FeedbackSection';
 
 interface UserProfile {
   id: string;
@@ -804,6 +805,11 @@ export default function WingclubDashboard() {
         {/* Referral Section */}
         <div className="mt-8">
           <ReferralSection />
+        </div>
+
+        {/* Feedback Section */}
+        <div className="mt-8">
+          <FeedbackSection />
         </div>
 
       </div>

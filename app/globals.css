@@ -2104,8 +2104,6 @@ input[type="button"],
 }
 
 .dashboard-action-active {
-  border-color: #3b82f6;
-  background-color: #eff6ff;
 }
 
 .dashboard-action-card span {
@@ -2116,7 +2114,7 @@ input[type="button"],
 }
 
 .dashboard-action-active span {
-  color: #3b82f6;
+  color: #552627;
 }
 
 .dashboard-action-icon {
@@ -2129,8 +2127,8 @@ input[type="button"],
 }
 
 .dashboard-action-icon.blue {
-  background-color: #dbeafe;
-  color: #3b82f6;
+  background-color: #FDF5E5;
+  color: #552627;
 }
 
 .dashboard-action-icon.yellow {
@@ -2146,6 +2144,16 @@ input[type="button"],
 .dashboard-action-icon.green {
   background-color: #d1fae5;
   color: #10b981;
+}
+
+.dashboard-action-icon.orange {
+  background-color: #FFFBEB;
+  color: #F97316;
+}
+
+.dashboard-action-icon.purple {
+  background-color: #F5F3FF;
+  color: #8B5CF6;
 }
 
 /* Stats Grid */
@@ -2510,7 +2518,7 @@ input[type="button"],
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  color: #3b82f6;
+  color: #552627;
   font-size: 0.875rem;
   font-weight: 500;
 }

@@ -188,6 +188,16 @@ export const CacheInvalidation = {
     memoryCache.deletePattern('wingside:flavors*');
   },
 
+  // Invalidate categories cache
+  async categories() {
+    console.log('[Cache Invalidation] Clearing categories cache')
+    await deleteFromCache(CACHE_KEYS.CATEGORIES);
+    // Also clear memory cache
+    memoryCache.delete(CACHE_KEYS.CATEGORIES);
+    memoryCache.delete('categories_all');
+    console.log('[Cache Invalidation] Categories cache cleared')
+  },
+
   // Invalidate user-specific caches
   async user(userId: string) {
     await deleteFromCache(CACHE_KEYS.USER_PROFILE(userId));

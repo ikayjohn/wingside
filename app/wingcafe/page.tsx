@@ -51,7 +51,7 @@ export default function WingcafePage() {
       {/* Hero Section */}
       <div className="relative h-[700px] md:h-[800px] lg:h-[900px]">
         <img
-          src="/wingcafe-latte.jpg" loading="eager"
+          src="/wingcafe-hero.jpg" loading="eager"
           alt="Wingcafé"
           className="w-full h-full object-cover"
         />

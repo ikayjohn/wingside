@@ -168,6 +168,23 @@ export default function OrderPage() {
     fetchCategories();
   }, [fetchProducts, fetchCategories]);
 
+  // Auto-select first flavor category for products with many flavors
+  useEffect(() => {
+    if (products.length === 0) return;
+
+    const initialSelectedCategories: Record<string, string> = {};
+
+    products.forEach((product) => {
+      // Only for products with 10+ flavors (which use category selection)
+      if (product.flavors.length >= 10) {
+        const firstCategory = Object.keys(flavorCategories)[0];
+        initialSelectedCategories[product.id] = firstCategory;
+      }
+    });
+
+    setSelectedFlavorCategory(initialSelectedCategories);
+  }, [products]);
+
   // Check if orders are currently accepted
   const checkOrderStatus = useCallback(async () => {
     try {
@@ -455,9 +472,12 @@ export default function OrderPage() {
     let selectedFlavorArray = selectedFlavors[product.id] || [];
     const flavorCount = product.flavorCount || 1;
 
-    // Auto-select flavor for simple items (single flavor products) that are not drinks
-    if (product.category !== 'Drinks' && selectedFlavorArray.length === 0 && product.flavors.length === 1) {
+    // Auto-select flavor for simple items with 1 flavor only
+    // Don't auto-select for drinks with 2+ flavors - user must choose
+    if (selectedFlavorArray.length === 0 && product.flavors.length === 1 && product.category !== 'Drinks') {
       selectedFlavorArray = [product.flavors[0]];
+      // Actually update the state for this product
+      setSelectedFlavors(prev => ({ ...prev, [product.id]: [product.flavors[0]] }));
     }
 
     // Handle Meal Deal validation
@@ -476,9 +496,9 @@ export default function OrderPage() {
         if (missingOptions.length > 0) {
             let errorMessage;
             if (missingOptions.length > 1) {
-                errorMessage = `Please select ${missingOptions.join(', ')}.`;
+                errorMessage = `Please select ${missingOptions.join(', ')}`;
             } else {
-                errorMessage = `Please select a ${missingOptions[0]}.`;
+                errorMessage = `Please select a ${missingOptions[0]}`;
             }
             setErrorMessages(prev => ({ ...prev, [product.id]: errorMessage }));
             return;
@@ -495,39 +515,104 @@ export default function OrderPage() {
         if (missingOptions.length > 0) {
             let errorMessage;
             if (missingOptions.length > 1) {
-                errorMessage = `Please select ${missingOptions.join(', ')}.`;
+                errorMessage = `Please select ${missingOptions.join(', ')}`;
             } else {
-                errorMessage = `Please select a ${missingOptions[0]}.`;
+                errorMessage = `Please select a ${missingOptions[0]}`;
             }
             setErrorMessages(prev => ({ ...prev, [product.id]: errorMessage }));
             return;
         }
     } else if (product.category === 'Drinks') {
-        // For drinks, options are in 'flavors' array
-        if (!selectedFlavors[product.id] || selectedFlavors[product.id].length === 0) {
-            setErrorMessages(prev => ({ ...prev, [product.id]: 'Please select a drink.' }));
+        // For drinks, options are in 'drinkOptions' array, not 'flavors'
+        // Require selection if there are drink options available
+        const selectedDrinkArray = selectedDrinks[product.id] || [];
+        console.log('[Drinks] Checking drink validation:', {
+            productName: product.name,
+            category: product.category,
+            drinkOptionsLength: product.drinkOptions?.length,
+            selectedDrinks: selectedDrinkArray,
+            selectedDrinksLength: selectedDrinkArray.length,
+            shouldBlock: (product.drinkOptions?.length || 0) >= 1 && selectedDrinkArray.length === 0
+        });
+        if ((product.drinkOptions?.length || 0) >= 1 && selectedDrinkArray.length === 0) {
+            setErrorMessages(prev => ({ ...prev, [product.id]: 'Please select a drink' }));
+            return;
+        }
+    }
+
+    // Handle Meal Deal validation
+    if (product.category === 'Meal Deals') {
+        const missingOptions = [];
+        if (product.flavors && product.flavors.length > 0 && (!selectedFlavors[product.id] || selectedFlavors[product.id].length === 0)) {
+            missingOptions.push('flavor');
+        }
+        if (product.riceOptions && product.riceOptions.length > 0 && (!selectedRice[product.id] || selectedRice[product.id].length === 0)) {
+            missingOptions.push('rice');
+        }
+        if (product.drinkOptions && product.drinkOptions.length > 0 && (!selectedDrinks[product.id] || selectedDrinks[product.id].length === 0)) {
+            missingOptions.push('drink');
+        }
+
+        console.log('[Drinks Validation] Product:', product.name, 'Category:', product.category, 'Flavors:', product.flavors, 'Selected:', selectedFlavors[product.id], 'Length:', selectedFlavors[product.id]?.length);
+
+        if (missingOptions.length > 0) {
+            let errorMessage;
+            if (missingOptions.length > 1) {
+                errorMessage = `Please select ${missingOptions.join(', ')}`;
+            } else {
+                errorMessage = `Please select a ${missingOptions[0]}`;
+            }
+            setErrorMessages(prev => ({ ...prev, [product.id]: errorMessage }));
+            return;
+        }
+    } else if (product.name === 'Pairfect Combo') {
+        const missingOptions = [];
+        if (product.flavors && product.flavors.length > 0 && (!selectedFlavors[product.id] || selectedFlavors[product.id].length === 0)) {
+            missingOptions.push('flavor');
+        }
+        if (product.milkshakeOptions && product.milkshakeOptions.length > 0 && !selectedMilkshakes[product.id]) {
+            missingOptions.push('milkshake');
+        }
+
+        if (missingOptions.length > 0) {
+            let errorMessage;
+            if (missingOptions.length > 1) {
+                errorMessage = `Please select ${missingOptions.join(', ')}`;
+            } else {
+                errorMessage = `Please select a ${missingOptions[0]}`;
+            }
+            setErrorMessages(prev => ({ ...prev, [product.id]: errorMessage }));
+            return;
+        }
+    } else if (product.category === 'Drinks') {
+        // For drinks, options are in 'drinkOptions' array, not 'flavors'
+        // Require selection if there are drink options available
+        const selectedDrinkArray = selectedDrinks[product.id] || [];
+        if ((product.drinkOptions?.length || 0) >= 1 && selectedDrinkArray.length === 0) {
+            setErrorMessages(prev => ({ ...prev, [product.id]: 'Please select a drink' }));
             return;
         }
     } else { // For all other categories
         // General validation
         if (product.flavors.length > 0 && selectedFlavorArray.length === 0) {
-            setErrorMessages(prev => ({ ...prev, [product.id]: 'Please select a flavor.' }));
+            setErrorMessages(prev => ({ ...prev, [product.id]: 'Please select a flavor' }));
             return;
         }
         if (product.riceOptions && product.riceOptions.length > 0 && (!selectedRice[product.id] || selectedRice[product.id].length === 0)) {
-            setErrorMessages(prev => ({ ...prev, [product.id]: 'Please select a rice option.' }));
+            setErrorMessages(prev => ({ ...prev, [product.id]: 'Please select a rice option' }));
             return;
         }
-        if (product.drinkOptions && product.drinkOptions.length > 0 && (!selectedDrinks[product.id] || selectedDrinks[product.id].length === 0)) {
-            setErrorMessages(prev => ({ ...prev, [product.id]: 'Please select a drink.' }));
+        const selectedDrinkArrayForGeneral = selectedDrinks[product.id] || [];
+        if (product.drinkOptions && product.drinkOptions.length > 0 && selectedDrinkArrayForGeneral.length === 0) {
+            setErrorMessages(prev => ({ ...prev, [product.id]: 'Please select a drink' }));
             return;
         }
         if (product.milkshakeOptions && product.milkshakeOptions.length > 0 && !selectedMilkshakes[product.id]) {
-            setErrorMessages(prev => ({ ...prev, [product.id]: 'Please select a milkshake.' }));
+            setErrorMessages(prev => ({ ...prev, [product.id]: 'Please select a milkshake' }));
             return;
         }
         if (product.cakeOptions && product.cakeOptions.length > 0 && !selectedCakes[product.id]) {
-            setErrorMessages(prev => ({ ...prev, [product.id]: 'Please select a cake.' }));
+            setErrorMessages(prev => ({ ...prev, [product.id]: 'Please select a cake' }));
             return;
         }
     }
@@ -768,7 +853,7 @@ export default function OrderPage() {
                             {selectedFlavorCategory[product.id] && (
                               <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
                                 <p className="text-xs font-semibold text-gray-700 mb-2">
-                                  {selectedFlavorCategory[product.id]} Flavors:
+                                  {selectedFlavorCategory[product.id]} Flavors
                                 </p>
                                 <div className="flex flex-wrap gap-2">
                                   {flavorCategories[selectedFlavorCategory[product.id] as keyof typeof flavorCategories].map((flavor) => {
@@ -1038,7 +1123,7 @@ export default function OrderPage() {
                       Add
                     </button>
                     {errorMessages[product.id] && (
-                      <p className="text-red-500 text-sm mt-2">{errorMessages[product.id]}</p>
+                      <p className="text-red-500 text-sm mt-2 text-center">{errorMessages[product.id]}</p>
                     )}
                   </div>
                 ))}

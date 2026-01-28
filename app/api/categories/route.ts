@@ -6,7 +6,8 @@ import {
   setCache,
   CACHE_KEYS,
   CACHE_TTL,
-  memoryCache
+  memoryCache,
+  CacheInvalidation
 } from '@/lib/redis'
 
 // GET /api/categories - Fetch all categories
@@ -143,9 +144,9 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error
 
-    // Invalidate caches
-    memoryCache.delete('categories_all')
-    memoryCache.delete(CACHE_KEYS.CATEGORIES)
+    // Invalidate caches (categories + products which reference categories)
+    await CacheInvalidation.categories()
+    await CacheInvalidation.products()
 
     return NextResponse.json({ category: data }, { status: 201 })
   } catch (error) {

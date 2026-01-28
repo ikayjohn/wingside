@@ -1396,7 +1396,7 @@ export default function CheckoutPage() {
                           </label>
                         )}
 
-                        {/* Nomba Payment Option */}
+                        {/* Card or Transfer Payment Option */}
                         {enabledGateways.nomba && (
                           <label
                             className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
@@ -1415,16 +1415,13 @@ export default function CheckoutPage() {
                                 className="w-4 h-4 text-yellow-400 focus:ring-yellow-400"
                               />
                               <div>
-                                <span className="font-medium text-gray-900">Pay with Nomba</span>
-                                <p className="text-xs text-gray-500">Pay with card or bank transfer</p>
+                                <span className="font-medium text-gray-900">Pay with Card or Transfer</span>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              <img
-                                src="/nomba.png"
-                                alt="Nomba"
-                                className="h-6 w-auto"
-                              />
+                              <img src="/visa.svg" alt="Visa" className="h-6 w-auto" />
+                              <img src="/mastercard.svg" alt="Mastercard" className="h-6 w-auto" />
+                              <img src="/verve.svg" alt="Verve" className="h-6 w-auto" />
                             </div>
                           </label>
                         )}
@@ -1458,11 +1455,7 @@ export default function CheckoutPage() {
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
-                                <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
-                                <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
-                                <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
-                              </svg>
+                              <img src="/wallet.svg" alt="Wallet" className="h-6 w-auto" />
                             </div>
                           </label>
                         )}

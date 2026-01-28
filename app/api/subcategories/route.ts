@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { CACHE_KEYS, memoryCache } from '@/lib/redis'
+import { CacheInvalidation } from '@/lib/redis'
 
 export async function POST(request: NextRequest) {
     try {
@@ -27,9 +27,9 @@ export async function POST(request: NextRequest) {
 
         if (error) throw error
 
-        // Invalidate categories cache since they include subcategories
-        memoryCache.delete('categories_all')
-        memoryCache.delete(CACHE_KEYS.CATEGORIES)
+        // Invalidate caches (categories + products)
+        await CacheInvalidation.categories()
+        await CacheInvalidation.products()
 
         return NextResponse.json({ subcategory: data }, { status: 201 })
     } catch (error) {
