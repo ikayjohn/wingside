@@ -194,6 +194,7 @@ export default function CardsPage() {
   const [showFundModal, setShowFundModal] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [hasEmbedlyAccount, setHasEmbedlyAccount] = useState<boolean | null>(null);
 
   useEffect(() => {
     fetchCards();
@@ -202,23 +203,49 @@ export default function CardsPage() {
   const fetchCards = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await fetch('/api/embedly/cards');
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Cards API error:', errorData);
+        const errorMsg = errorData.details ? `${errorData.error}: ${errorData.details}` : (errorData.error || `Failed to fetch cards (${response.status})`);
+        setError(errorMsg);
+
+        if (errorData.error?.includes('Embedly customer') || errorData.error?.includes('wallet')) {
+          setHasEmbedlyAccount(false);
+        }
+        return;
+      }
+
       const data = await response.json();
 
       if (data.success) {
         setCards(data.cards);
+        setHasEmbedlyAccount(true);
       } else {
-        setError(data.error || 'Failed to fetch cards');
+        console.error('Cards fetch error:', data);
+        const errorMsg = data.details ? `${data.error}: ${data.details}` : (data.error || 'Failed to fetch cards');
+        setError(errorMsg);
+
+        if (data.error?.includes('Embedly customer') || data.error?.includes('wallet')) {
+          setHasEmbedlyAccount(false);
+        }
       }
     } catch (err) {
       console.error('Error fetching cards:', err);
-      setError('Failed to fetch cards');
+      setError(err instanceof Error ? err.message : 'Failed to fetch cards');
     } finally {
       setLoading(false);
     }
   };
 
   const handleCreateCard = async (cardType: 'VIRTUAL' | 'PHYSICAL') => {
+    if (!hasEmbedlyAccount) {
+      alert('You need an Embedly wallet to create cards. Please contact support.');
+      return;
+    }
+
     try {
       setCreating(true);
       const response = await fetch('/api/embedly/cards', {
@@ -235,7 +262,7 @@ export default function CardsPage() {
       }
     } catch (err) {
       console.error('Error creating card:', err);
-      alert('Failed to create card');
+      alert(err instanceof Error ? err.message : 'Failed to create card');
     } finally {
       setCreating(false);
     }

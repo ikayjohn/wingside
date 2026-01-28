@@ -30,17 +30,29 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    console.log('Fetching cards for customer:', profile.embedly_customer_id);
+
     // Fetch cards from Embedly
     const cards = await embedlyClient.getCards(profile.embedly_customer_id)
+
+    console.log('Cards fetched:', cards);
 
     return NextResponse.json({
       success: true,
       cards
     })
   } catch (error) {
-    console.error('Error fetching cards:', error)
+    console.error('Error fetching cards:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+
     return NextResponse.json(
-      { error: 'Failed to fetch cards' },
+      {
+        error: 'Failed to fetch cards',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
