@@ -250,10 +250,22 @@ export async function POST(request: NextRequest) {
               }
             }
 
-            // 5. Update customer streak
+            // 5. Update customer streak (7-day system with ₦15,000 minimum)
             if (profileId) {
               try {
-                await updateOrderStreak(profileId);
+                const streakResult = await updateOrderStreak(
+                  profileId,
+                  Number(order.total), // Pass order total for qualification check
+                  true // Use admin client for webhooks
+                );
+
+                if (streakResult.streakCompleted) {
+                  console.log(`[Streak] 7-day streak completed! Awarded ${streakResult.awardedPoints} points`);
+                } else if (streakResult.qualifiesForStreak) {
+                  console.log(`[Streak] Streak updated: ${streakResult.streak} days`);
+                } else {
+                  console.log(`[Streak] Order doesn't qualify for streak: ${streakResult.message}`);
+                }
               } catch (streakError) {
                 console.error('Error in streak update:', streakError);
               }
