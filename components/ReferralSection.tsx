@@ -228,7 +228,7 @@ export default function ReferralSection() {
           <div className="flex flex-col min-w-0">
             <label className="text-sm text-gray-600 mb-2 whitespace-nowrap">Your referral code</label>
             <div className="flex h-[46px]">
-              <div className="flex-1 px-4 border border-gray-300 rounded-l-lg bg-[#552627] text-white font-bold tracking-widest flex items-center justify-center text-lg min-w-0">
+              <div className="flex-1 px-4 border border-gray-300 rounded-l-lg bg-white text-black font-bold tracking-widest flex items-center justify-center text-lg min-w-0">
                 {referralCode}
               </div>
               <button

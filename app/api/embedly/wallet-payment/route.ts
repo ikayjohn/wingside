@@ -108,6 +108,29 @@ export async function POST(request: NextRequest) {
           });
 
           console.log(`✅ Successfully transferred ₦${amount} to merchant wallet (${merchantWalletId})`);
+
+          // Fetch updated wallet balance from Embedly and update profile
+          try {
+            const updatedWallet = await embedlyClient.getWalletById(profile.embedly_wallet_id);
+            console.log(`💰 New wallet balance: ₦${updatedWallet.availableBalance}`);
+
+            // Update profile wallet_balance in Supabase
+            const { error: profileUpdateError } = await supabase
+              .from('profiles')
+              .update({
+                wallet_balance: updatedWallet.availableBalance
+              })
+              .eq('id', user.id);
+
+            if (profileUpdateError) {
+              console.error('Error updating profile wallet_balance:', profileUpdateError);
+            } else {
+              console.log(`✅ Profile wallet_balance updated to ₦${updatedWallet.availableBalance}`);
+            }
+          } catch (balanceUpdateError) {
+            console.error('Error fetching updated wallet balance:', balanceUpdateError);
+            // Don't throw error - payment was successful, just balance update failed
+          }
         } catch (transferError) {
           console.error('❌ Wallet transfer failed:', transferError);
           throw new Error(`Failed to transfer funds to merchant wallet: ${transferError instanceof Error ? transferError.message : 'Unknown error'}`);

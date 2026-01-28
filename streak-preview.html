@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>7-Day Streak System Preview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @keyframes pulse {
@@ -12,6 +15,9 @@
         }
         .animate-pulse {
             animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
         }
         .preview-container {
             max-width: 1200px;
@@ -38,152 +44,153 @@
 <body class="bg-gray-50">
     <div class="preview-container">
         <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">7-Day Streak System - All States Preview</h1>
-        <p class="text-center text-gray-600 mb-12">This shows what customers see at each day of their streak journey</p>
+        <p class="text-center text-gray-600 mb-8">This shows what customers see at each day of their streak journey</p>
 
-        <!-- Day 0: No Streak -->
-        <div class="day-preview">
-            <div class="day-label">Day 0 - No Active Streak</div>
-            <div class="rounded-2xl bg-gradient-to-r from-gray-100 to-gray-200 p-6 border-2 border-dashed border-gray-300">
-                <div class="flex flex-col gap-4">
-                    <div class="flex items-center gap-4">
-                        <div class="flex items-center justify-center w-16 h-16 bg-gray-300 rounded-full">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M5.926 20.574a7.26 7.26 0 0 0 3.039 1.511c.107.035.179-.105.107-.175-2.395-2.285-1.079-4.758-.107-5.873.693-.796 1.68-2.107 1.608-3.865 0-.176.18-.317.322-.211 1.359.703 2.288 2.25 2.538 3.515.394-.386.537-.984.537-1.511 0-.176.214-.317.393-.176 1.287 1.16 3.503 5.097-.072 8.19-.071.071 0 .212.072.177a8.761 8.761 0 0 0 3.003-1.442c5.827-4.5 2.037-12.48-.43-15.116-.321-.317-.893-.106-.893.351-.036.95-.322 2.004-1.072 2.707-.572-2.39-2.478-5.105-5.195-6.441-.357-.176-.786.105-.75.492.07 3.27-2.063 5.352-3.922 8.059-1.645 2.425-2.717 6.89.822 9.808z" fill="#6b7280"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-xl font-semibold text-gray-700">Start Your 7-Day Streak!</h3>
-                            <p class="text-gray-600">Earn 500 points by ordering for 7 consecutive days</p>
-                        </div>
-                    </div>
+        <!-- Streak and Tier Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Streak Previews Column -->
+            <div id="streak-previews" class="flex flex-col gap-6">
+            </div>
 
-                    <div class="bg-white rounded-lg p-4 border border-gray-300">
-                        <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14"></polyline>
-                            </svg>
-                            How it Works
-                        </h4>
-                        <ul class="space-y-2 text-sm text-gray-700">
-                            <li class="flex items-start gap-2">
-                                <span class="text-green-600 font-bold mt-0.5">✓</span>
-                                <span>Place orders worth <strong>₦15,000 or more</strong> on consecutive days</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <span class="text-green-600 font-bold mt-0.5">✓</span>
-                                <span>Complete <strong>7 days in a row</strong> to earn <strong>500 points</strong></span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <span class="text-green-600 font-bold mt-0.5">✓</span>
-                                <span>Streak automatically resets after completion - start a new one!</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <span class="text-orange-600 font-bold mt-0.5">!</span>
-                                <span>Missing a day or ordering less than ₦15,000 resets your streak</span>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <a href="#" class="bg-gradient-to-r from-orange-500 to-yellow-500 text-white font-semibold py-3 px-6 rounded-lg text-center hover:from-orange-600 hover:to-yellow-600 transition-all shadow-md">
-                        Start Your Streak Now
-                    </a>
+            <!-- Tier Progress Placeholder -->
+            <div class="bg-white rounded-2xl p-6 border border-gray-200">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Tier Progress</h3>
+                <div class="mb-4">
+                    <p class="text-sm text-gray-700 mb-1">Progress to Wingzard</p>
+                    <p class="text-xs text-gray-500">2,500 more points needed</p>
                 </div>
+                <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-blue-500 rounded-full" style="width: 65%"></div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">Earn 2,500 more points to reach Wingzard</p>
             </div>
         </div>
 
-        <!-- Days 1-7 -->
+        <!-- Days Preview Data -->
         <script>
             const daysData = [
-                { day: 1, message: "Building your streak!", best: 5 },
-                { day: 2, message: "Building your streak!", best: 5 },
-                { day: 3, message: "Keep going! You're halfway there!", best: 5 },
-                { day: 4, message: "Keep going! You're halfway there!", best: 5 },
-                { day: 5, message: "2 more days to 500 points!", best: 7 },
-                { day: 6, message: "1 more day to 500 points!", best: 7 },
-                { day: 7, message: "0 more days to 500 points!", best: 7 }
+                { current_streak: 0, longest_streak: 5 },
+                { current_streak: 1, longest_streak: 5 },
+                { current_streak: 2, longest_streak: 5 },
+                { current_streak: 3, longest_streak: 5 },
+                { current_streak: 4, longest_streak: 5 },
+                { current_streak: 5, longest_streak: 7 },
+                { current_streak: 6, longest_streak: 7 },
+                { current_streak: 7, longest_streak: 7 }
             ];
+
+            const getStreakMessage = (streak) => {
+                switch (streak) {
+                    case 1:
+                        return "Streak started! Let's build some momentum.";
+                    case 2:
+                        return "Nice! You're building your streak.";
+                    case 3:
+                        return "Keep going — you're halfway there!";
+                    case 4:
+                        return "Great consistency! Over halfway now.";
+                    case 5:
+                        return "Almost there — just 2 days to 500 points!";
+                    case 6:
+                        return "One more day to hit 500 points!";
+                    case 7:
+                        return "Streak complete! You've earned 500 points!";
+                    default:
+                        return "";
+                }
+            };
 
             daysData.forEach(data => {
                 const container = document.createElement('div');
-                container.className = 'day-preview';
+                container.className = 'bg-white rounded-2xl p-6 border border-gray-200';
 
-                let dayIndicators = '';
-                for (let i = 1; i <= 7; i++) {
-                    const isCompleted = data.day >= i;
-                    dayIndicators += `
-                        <div class="flex flex-col items-center ${isCompleted ? 'opacity-100' : 'opacity-50'}">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                                isCompleted ? 'bg-white text-orange-500' : 'bg-white/20 text-white'
-                            }">
-                                ${i}
+                let content = '';
+
+                if (data.current_streak === 0) {
+                    // Day 0: No Active Streak
+                    content = `
+                        <div class="text-sm text-gray-500 mb-3">Day 0 - No Active Streak</div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-700 mb-2">Start Your 7-Day Streak!</h3>
+                            <p class="text-gray-600 text-sm mb-4">Earn 500 points by ordering for 7 consecutive days</p>
+
+                            <ul class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-gray-700 mb-4">
+                                <li class="flex items-start gap-2">
+                                    <span class="text-green-600 font-bold mt-0.5">✓</span>
+                                    <span><strong>₦15,000+</strong> order each day</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span class="text-green-600 font-bold mt-0.5">✓</span>
+                                    <span><strong>7 days</strong> = 500 points</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span class="text-green-600 font-bold mt-0.5">✓</span>
+                                    <span>Streak resets after completion</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span class="text-orange-600 font-bold mt-0.5">!</span>
+                                    <span>Miss a day → streak resets</span>
+                                </li>
+                            </ul>
+
+                            <a href="#" class="bg-gradient-to-r from-orange-500 to-yellow-500 text-white font-semibold py-3 px-6 rounded-lg text-center hover:from-orange-600 hover:to-yellow-600 transition-all shadow-md block">
+                                Start Your Streak Now
+                            </a>
+                        </div>
+                    `;
+                } else {
+                    // Days 1-7: Active Streak
+                    let daysGrid = '';
+                    for (let i = 1; i <= 7; i++) {
+                        const isCompleted = data.current_streak >= i;
+                        daysGrid += `
+                            <div class="flex-1 max-w-[48px] flex flex-col items-center gap-2">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center ${
+                                    isCompleted ? '' : 'bg-white border-2 border-gray-200'
+                                }" ${isCompleted ? 'style="background-color: #F9CB0C;"' : ''}>
+                                    ${isCompleted ? `
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-white">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                    ` : ''}
+                                </div>
+                                <div class="text-[10px] font-medium text-gray-500">Day ${i}</div>
+                            </div>
+                        `;
+                    }
+
+                    content = `
+                        <div class="relative">
+                            <div class="text-sm text-gray-500 mb-3">Day ${data.current_streak} - Active Streak</div>
+                            <!-- Personal Best - Top Right -->
+                            <div class="absolute top-0 right-0 text-sm">
+                                <span class="text-gray-500 font-semibold">Personal Best: ${data.longest_streak} Days</span>
+                            </div>
+                            <!-- Header -->
+                            <div class="text-center mb-6">
+                                <div class="flex justify-center mb-3">
+                                    <svg width="32" height="32" viewBox="0 0 56 56" fill="#EF4444" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M 13.1758 32.5000 L 26.4180 32.5000 L 19.4336 51.4844 C 18.5195 53.8984 21.0273 55.1875 22.6211 53.2187 L 43.9023 26.5938 C 44.3008 26.1016 44.5117 25.6328 44.5117 25.0938 C 44.5117 24.2031 43.8320 23.5000 42.8477 23.5000 L 29.5820 23.5000 L 36.5899 4.5156 C 37.4804 2.1016 34.9961 .8125 33.4023 2.8047 L 12.1211 29.4063 C 11.7226 29.9219 11.4883 30.3906 11.4883 30.9063 C 11.4883 31.8203 12.1914 32.5000 13.1758 32.5000 Z"/>
+                                    </svg>
+                                </div>
+                                <h3 class="text-2xl font-bold text-gray-900 mb-1">
+                                    ${data.current_streak >= 7 ? '500 Points Earned!' : `Day ${data.current_streak} of 7`}
+                                </h3>
+                                <p class="text-gray-600 text-sm">
+                                    ${getStreakMessage(data.current_streak)}
+                                </p>
+                            </div>
+
+                            <!-- Days Row -->
+                            <div class="flex justify-center gap-2 mb-5">
+                                ${daysGrid}
                             </div>
                         </div>
                     `;
                 }
 
-                container.innerHTML = `
-                    <div class="day-label">Day ${data.day} - Active Streak</div>
-                    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 p-6 shadow-lg">
-                        <div class="absolute inset-0 bg-black/10"></div>
-                        <div class="relative">
-                            <!-- Header Section -->
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="flex items-center gap-4">
-                                    <div class="relative">
-                                        <div class="absolute inset-0 blur-xl bg-yellow-400 opacity-50 animate-pulse"></div>
-                                        <div class="relative flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full border-2 border-white/40">
-                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg" class="drop-shadow-lg">
-                                                <path d="M5.926 20.574a7.26 7.26 0 0 0 3.039 1.511c.107.035.179-.105.107-.175-2.395-2.285-1.079-4.758-.107-5.873.693-.796 1.68-2.107 1.608-3.865 0-.176.18-.317.322-.211 1.359.703 2.288 2.25 2.538 3.515.394-.386.537-.984.537-1.511 0-.176.214-.317.393-.176 1.287 1.16 3.503 5.097-.072 8.19-.071.071 0 .212.072.177a8.761 8.761 0 0 0 3.003-1.442c5.827-4.5 2.037-12.48-.43-15.116-.321-.317-.893-.106-.893.351-.036.95-.322 2.004-1.072 2.707-.572-2.39-2.478-5.105-5.195-6.441-.357-.176-.786.105-.75.492.07 3.27-2.063 5.352-3.922 8.059-1.645 2.425-2.717 6.89.822 9.808z" fill="white"/>
-                                            </svg>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <h2 class="text-4xl font-bold text-white drop-shadow-lg">
-                                            ${data.day} / 7 Days
-                                        </h2>
-                                        <p class="text-white/90 text-lg drop-shadow mt-1">
-                                            ${data.message}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-white/80 text-sm">Best Streak</p>
-                                    <p class="text-3xl font-bold text-white drop-shadow-lg">${data.best}</p>
-                                </div>
-                            </div>
-
-                            <!-- Progress Bar -->
-                            <div class="mb-4">
-                                <div class="h-3 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
-                                    <div class="h-full bg-white rounded-full transition-all duration-500 shadow-lg" style="width: ${(data.day / 7) * 100}%"></div>
-                                </div>
-                                <div class="flex justify-between mt-2">
-                                    ${dayIndicators}
-                                </div>
-                            </div>
-
-                            <!-- Info Section -->
-                            <div class="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                                <div class="flex items-start gap-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white flex-shrink-0 mt-0.5">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                    </svg>
-                                    <div class="flex-1">
-                                        <p class="text-white text-sm leading-relaxed">
-                                            <strong>Complete 7 consecutive days to earn 500 points!</strong><br />
-                                            Orders must be ≥ ₦15,000 to count. Your streak resets after completion, allowing you to start a new 7-day streak immediately.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                document.body.querySelector('.preview-container').appendChild(container);
+                container.innerHTML = content;
+                document.getElementById('streak-previews').appendChild(container);
             });
         </script>
 

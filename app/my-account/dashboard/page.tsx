@@ -66,6 +66,27 @@ interface EmbedlyWallet {
   isDefault: boolean;
 }
 
+const getStreakMessage = (streak: number): string => {
+  switch (streak) {
+    case 1:
+      return "Streak started! Let's build some momentum.";
+    case 2:
+      return "Nice! You're building your streak.";
+    case 3:
+      return "Keep going — you're halfway there!";
+    case 4:
+      return "Great consistency! Over halfway now.";
+    case 5:
+      return "Almost there — just 2 days to 500 points!";
+    case 6:
+      return "One more day to hit 500 points!";
+    case 7:
+      return "Streak complete! You've earned 500 points!";
+    default:
+      return "";
+  }
+};
+
 export default function WingclubDashboard() {
   const router = useRouter();
   const [copied, setCopied] = useState<'card' | 'ref' | 'account' | null>(null);
@@ -524,8 +545,6 @@ export default function WingclubDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <p className="dashboard-section-title">How can we improve your wing experience today?</p>
-
         <div className="dashboard-quick-actions">
           <button
             className="dashboard-action-card dashboard-action-active"
@@ -598,146 +617,109 @@ export default function WingclubDashboard() {
           </div>
         </div>
 
-        {/* Streak Counter - Advanced 7-Day System */}
-        {(userData.current_streak ?? 0) > 0 ? (
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 p-6 mb-8 shadow-lg">
-            <div className="absolute inset-0 bg-black/10"></div>
-            <div className="relative">
-              {/* Header Section */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <div className="absolute inset-0 blur-xl bg-yellow-400 opacity-50 animate-pulse"></div>
-                    <div className="relative flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full border-2 border-white/40">
-                      <Image src="/streak.svg" alt="Streak" width={48} height={48} className="brightness-0 invert drop-shadow-lg" />
-                    </div>
-                  </div>
-                  <div>
-                    <h2 className="text-4xl font-bold text-white drop-shadow-lg">
-                      {userData.current_streak} / 7 Days
-                    </h2>
-                    <p className="text-white/90 text-lg drop-shadow mt-1">
-                      {userData.current_streak >= 5
-                        ? `${7 - userData.current_streak} more ${7 - userData.current_streak === 1 ? 'day' : 'days'} to 500 points!`
-                        : userData.current_streak >= 3
-                          ? 'Keep going! You\'re halfway there!'
-                          : 'Building your streak!'}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-white/80 text-sm">Best Streak</p>
-                  <p className="text-3xl font-bold text-white drop-shadow-lg">{userData.longest_streak ?? 0}</p>
-                </div>
+
+
+        {/* Streak and Tier Progress - Side by Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 items-stretch">
+          {/* Streak Counter - Advanced 7-Day System */}
+          <div className="h-full">
+            {(userData.current_streak ?? 0) > 0 ? (
+              <div className="bg-white rounded-2xl p-6 border border-gray-200 relative h-full flex flex-col">
+              {/* Personal Best - Top Right */}
+              <div className="absolute top-6 right-6 text-sm">
+                <span className="text-gray-500 font-semibold">
+                  Personal Best: {userData.longest_streak ?? 0} Days
+                </span>
               </div>
 
-              {/* Progress Bar */}
-              <div className="mb-4">
-                <div className="h-3 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
-                  <div
-                    className="h-full bg-white rounded-full transition-all duration-500 shadow-lg"
-                    style={{ width: `${(userData.current_streak / 7) * 100}%` }}
-                  ></div>
+              {/* Header */}
+              <div className="text-center mb-6">
+                <div className="flex justify-center mb-3">
+                  <Image src="/streak.svg" alt="Streak" width={32} height={32} className="text-red-500" style={{ color: '#EF4444' }} />
                 </div>
-                <div className="flex justify-between mt-2">
-                  {[1, 2, 3, 4, 5, 6, 7].map((day) => (
+                <h3 className="text-2xl font-bold text-gray-900 mb-1">
+                  {userData.current_streak >= 7 ? '500 Points Earned!' : `Day ${userData.current_streak} of 7`}
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  {getStreakMessage(userData.current_streak)}
+                </p>
+              </div>
+
+              {/* Days Row */}
+              <div className="flex justify-center gap-2 mb-5">
+                {[1, 2, 3, 4, 5, 6, 7].map((day) => (
+                  <div className="flex-1 max-w-[48px] flex flex-col items-center gap-2">
                     <div
-                      key={day}
-                      className={`flex flex-col items-center ${
-                        userData.current_streak >= day ? 'opacity-100' : 'opacity-50'
+                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        userData.current_streak >= day
+                          ? ''
+                          : 'bg-white border-2 border-gray-200'
                       }`}
+                      style={userData.current_streak >= day ? { backgroundColor: '#F9CB0C' } : {}}
                     >
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                          userData.current_streak >= day
-                            ? 'bg-white text-orange-500'
-                            : 'bg-white/20 text-white'
-                        }`}
-                      >
-                        {day}
-                      </div>
+                      {userData.current_streak >= day ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      ) : null}
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Info Section */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                <div className="flex items-start gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white flex-shrink-0 mt-0.5">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                  </svg>
-                  <div className="flex-1">
-                    <p className="text-white text-sm leading-relaxed">
-                      <strong>Complete 7 consecutive days to earn 500 points!</strong><br />
-                      Orders must be ≥ ₦15,000 to count. Your streak resets after completion, allowing you to start a new 7-day streak immediately.
-                    </p>
+                    <div className="text-[10px] font-medium text-gray-500">
+                      Day {day}
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
             </div>
-          </div>
-        ) : (
-          <div className="rounded-2xl bg-gradient-to-r from-gray-100 to-gray-200 p-6 mb-8 border-2 border-dashed border-gray-300">
-            <div className="flex flex-col gap-4">
-              {/* Header */}
-              <div className="flex items-center gap-4">
-                <div className="flex items-center justify-center w-16 h-16 bg-gray-300 rounded-full">
-                  <Image src="/streak.svg" alt="Streak" width={32} height={32} />
+          ) : (
+            <div className="rounded-2xl bg-gradient-to-r from-gray-100 to-gray-200 p-6 border-2 border-dashed border-gray-300 h-full flex flex-col justify-center">
+              <div className="flex flex-col gap-4">
+                {/* Header */}
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-center w-16 h-16 bg-gray-300 rounded-full">
+                    <Image src="/streak.svg" alt="Streak" width={32} height={32} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-700">Start Your 7-Day Streak!</h3>
+                    <p className="text-gray-600">Earn 500 points by ordering for 7 consecutive days</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-700">Start Your 7-Day Streak!</h3>
-                  <p className="text-gray-600">Earn 500 points by ordering for 7 consecutive days</p>
-                </div>
-              </div>
 
-              {/* How it Works */}
-              <div className="bg-white rounded-lg p-4 border border-gray-300">
-                <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
-                  </svg>
-                  How it Works
-                </h4>
-                <ul className="space-y-2 text-sm text-gray-700">
+                <ul className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-gray-700">
                   <li className="flex items-start gap-2">
                     <span className="text-green-600 font-bold mt-0.5">✓</span>
-                    <span>Place orders worth <strong>₦15,000 or more</strong> on consecutive days</span>
+                    <span><strong>₦15,000+</strong> order each day</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-green-600 font-bold mt-0.5">✓</span>
-                    <span>Complete <strong>7 days in a row</strong> to earn <strong>500 points</strong></span>
+                    <span><strong>7 days</strong> = 500 points</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-green-600 font-bold mt-0.5">✓</span>
-                    <span>Streak automatically resets after completion - start a new one!</span>
+                    <span>Streak resets after completion</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-orange-600 font-bold mt-0.5">!</span>
-                    <span>Missing a day or ordering less than ₦15,000 resets your streak</span>
+                    <span>Miss a day → streak resets</span>
                   </li>
                 </ul>
+
+                {/* CTA */}
+                <Link
+                  href="/order"
+                  className="bg-gradient-to-r from-orange-500 to-yellow-500 text-white font-semibold py-3 px-6 rounded-lg text-center hover:from-orange-600 hover:to-yellow-600 transition-all"
+                >
+                  Start Your Streak Now
+                </Link>
               </div>
-
-              {/* CTA */}
-              <Link
-                href="/order"
-                className="bg-gradient-to-r from-orange-500 to-yellow-500 text-white font-semibold py-3 px-6 rounded-lg text-center hover:from-orange-600 hover:to-yellow-600 transition-all shadow-md hover:shadow-lg"
-              >
-                Start Your Streak Now
-              </Link>
             </div>
+          )}
           </div>
-        )}
 
-        {/* Tier Progress */}
-        <div className="dashboard-tier-section">
+          {/* Tier Progress */}
+          <div className="dashboard-tier-section lg:mb-0 h-full flex flex-col">
           <h3 className="dashboard-tier-title">Tier Progress</h3>
 
-          <div className="dashboard-tier-card">
+          <div className="dashboard-tier-card h-full flex flex-col">
             <div className="dashboard-tier-header">
               <div>
                 <p className="dashboard-tier-progress-label">Progress to {userData.tierProgress.nextTier}</p>
@@ -767,12 +749,13 @@ export default function WingclubDashboard() {
               }
             </p>
           </div>
+          </div>
         </div>
 
         {/* Recent Activity */}
-        <div className="dashboard-recent-grid">
+        <div className="dashboard-recent-grid items-stretch">
           {/* Recent Orders */}
-          <div className="dashboard-recent-section">
+          <div className="dashboard-recent-section h-full flex flex-col">
             <div className="dashboard-recent-header">
               <h3 className="dashboard-recent-title">My Recent Orders</h3>
               <Link href="/my-account/orders" className="dashboard-view-all">View All</Link>
@@ -817,7 +800,7 @@ export default function WingclubDashboard() {
                 ))}
               </div>
             ) : (
-              <div className="dashboard-empty-card">
+              <div className="dashboard-empty-card h-full flex flex-col justify-center">
                 <div className="dashboard-empty-icon">
                   <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
@@ -832,7 +815,7 @@ export default function WingclubDashboard() {
           </div>
 
           {/* Recent Transactions */}
-          <div className="dashboard-recent-section">
+          <div className="dashboard-recent-section h-full flex flex-col">
             <div className="dashboard-recent-header">
               <h3 className="dashboard-recent-title">Recent Transactions</h3>
               <Link href="/my-account/wallet-history" className="dashboard-view-all">View All</Link>
@@ -872,7 +855,7 @@ export default function WingclubDashboard() {
                 ))}
               </div>
             ) : (
-              <div className="dashboard-empty-card">
+              <div className="dashboard-empty-card h-full flex flex-col justify-center">
                 <div className="dashboard-empty-icon">
                   <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="8" width="18" height="12" rx="2"></rect>
