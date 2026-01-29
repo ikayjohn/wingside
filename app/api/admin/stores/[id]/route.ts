@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { deleteFromCache, memoryCache, CACHE_KEYS } from '@/lib/redis';
 
 // PUT /api/admin/stores/[id] - Update store
 export async function PUT(
@@ -55,6 +56,8 @@ export async function PUT(
     if (body.maps_url !== undefined) updateData.maps_url = body.maps_url;
     if (body.is_active !== undefined) updateData.is_active = body.is_active;
     if (body.display_order !== undefined) updateData.display_order = body.display_order;
+    if (body.latitude !== undefined) updateData.latitude = body.latitude;
+    if (body.longitude !== undefined) updateData.longitude = body.longitude;
 
     // Update store
     const { data: store, error } = await supabase
@@ -77,6 +80,17 @@ export async function PUT(
         { error: 'Store not found' },
         { status: 404 }
       );
+    }
+
+    // Clear cache so updated data is immediately available
+    console.log('🗑️ Clearing cache after store update...');
+    try {
+      await deleteFromCache(CACHE_KEYS.STORES);
+      memoryCache.delete(CACHE_KEYS.STORES);
+      console.log('✅ Cache cleared successfully');
+    } catch (cacheError) {
+      console.error('❌ Error clearing cache:', cacheError);
+      // Continue even if cache clear fails
     }
 
     return NextResponse.json({ store });
@@ -135,6 +149,15 @@ export async function DELETE(
         { error: 'Failed to delete store', details: error instanceof Error ? error.message : 'Unknown error' },
         { status: 500 }
       );
+    }
+
+    // Clear cache so deletion is immediately reflected
+    try {
+      await deleteFromCache(CACHE_KEYS.STORES);
+      memoryCache.delete(CACHE_KEYS.STORES);
+    } catch (cacheError) {
+      console.error('Error clearing cache:', cacheError);
+      // Continue even if cache clear fails
     }
 
     return NextResponse.json({ success: true });

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { deleteFromCache, memoryCache, CACHE_KEYS } from '@/lib/redis';
 
 // GET /api/admin/stores - Get all stores (including inactive) for admin
 export async function GET() {
@@ -114,6 +115,8 @@ export async function POST(request: Request) {
         maps_url: body.maps_url || '',
         is_active: body.is_active !== undefined ? body.is_active : true,
         display_order: body.display_order || 0,
+        latitude: body.latitude || null,
+        longitude: body.longitude || null,
       }])
       .select()
       .single();
@@ -124,6 +127,15 @@ export async function POST(request: Request) {
         { error: 'Failed to create store', details: error.message },
         { status: 500 }
       );
+    }
+
+    // Clear cache so new store is immediately available
+    try {
+      await deleteFromCache(CACHE_KEYS.STORES);
+      memoryCache.delete(CACHE_KEYS.STORES);
+    } catch (cacheError) {
+      console.error('Error clearing cache:', cacheError);
+      // Continue even if cache clear fails
     }
 
     return NextResponse.json({ store }, { status: 201 });

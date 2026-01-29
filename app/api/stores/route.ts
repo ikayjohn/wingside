@@ -15,35 +15,38 @@ export async function GET(request: NextRequest) {
   try {
     const cacheKey = CACHE_KEYS.STORES
     const clientETag = request.headers.get('if-none-match')
+    const bypassCache = request.headers.get('x-bypass-cache') === 'true'
 
     // Try to get from Redis cache first
-    const cachedData = await getFromCache<any>(cacheKey)
-    if (cachedData) {
-      const etag = generateETag(cachedData)
-      if (clientETag && etagMatches(clientETag, etag)) {
-        return new Response(null, { status: 304 })
+    if (!bypassCache) {
+      const cachedData = await getFromCache<any>(cacheKey)
+      if (cachedData) {
+        const etag = generateETag(cachedData)
+        if (clientETag && etagMatches(clientETag, etag)) {
+          return new Response(null, { status: 304 })
+        }
+        return cachedJson(cachedData, CACHE_TTL.MEDIUM, {
+          headers: {
+            'ETag': etag,
+            'X-Cache': 'HIT',
+          },
+        })
       }
-      return cachedJson(cachedData, CACHE_TTL.MEDIUM, {
-        headers: {
-          'ETag': etag,
-          'X-Cache': 'HIT',
-        },
-      })
-    }
 
-    // Check memory cache fallback
-    const memoryCached = memoryCache.get(cacheKey)
-    if (memoryCached) {
-      const etag = generateETag(memoryCached)
-      if (clientETag && etagMatches(clientETag, etag)) {
-        return new Response(null, { status: 304 })
+      // Check memory cache fallback
+      const memoryCached = memoryCache.get(cacheKey)
+      if (memoryCached) {
+        const etag = generateETag(memoryCached)
+        if (clientETag && etagMatches(clientETag, etag)) {
+          return new Response(null, { status: 304 })
+        }
+        return cachedJson(memoryCached, CACHE_TTL.MEDIUM, {
+          headers: {
+            'ETag': etag,
+            'X-Cache': 'MEMORY',
+          },
+        })
       }
-      return cachedJson(memoryCached, CACHE_TTL.MEDIUM, {
-        headers: {
-          'ETag': etag,
-          'X-Cache': 'MEMORY',
-        },
-      })
     }
 
     // Cache miss - fetch from database

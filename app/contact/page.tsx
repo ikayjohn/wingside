@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import MapboxMap from '@/components/MapboxMap';
 
 interface Location {
   id: string;
@@ -20,6 +21,8 @@ interface Location {
   services: string[];
   features: string[];
   mapsUrl: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export default function ContactPage() {
@@ -33,29 +36,41 @@ export default function ContactPage() {
   useEffect(() => {
     async function fetchStores() {
       try {
-        const response = await fetch('/api/stores');
+        const response = await fetch('/api/stores', {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+            'x-bypass-cache': 'true',
+          }
+        });
         const data = await response.json();
 
         if (data.stores) {
           // Transform API data to match Location interface
-          const transformedStores = data.stores.map((store: any) => ({
-            id: store.id,
-            name: store.name,
-            badge: store.is_headquarters ? 'Headquarters' : undefined,
-            address: store.address,
-            city: store.city,
-            state: store.state,
-            rating: store.rating || 0,
-            reviews: store.review_count || 0,
-            thumbnail: store.thumbnail_url || '/contact-location-thumb.jpg',
-            image: store.image_url || '/contact-location.jpg',
-            phone: store.phone || '',
-            email: store.email || '',
-            hours: store.opening_hours || 'Hours not available',
-            services: store.services || [],
-            features: store.features || [],
-            mapsUrl: store.maps_url || '',
-          }));
+          const transformedStores = data.stores.map((store: any) => {
+            console.log('Store from API:', store.id, store.name, 'lat:', store.latitude, 'lon:', store.longitude);
+            return {
+              id: store.id,
+              name: store.name,
+              badge: store.is_headquarters ? 'Headquarters' : undefined,
+              address: store.address,
+              city: store.city,
+              state: store.state,
+              rating: store.rating || 0,
+              reviews: store.review_count || 0,
+              thumbnail: store.thumbnail_url || '/contact-location-thumb.jpg',
+              image: store.image_url || '/contact-location.jpg',
+              phone: store.phone || '',
+              email: store.email || '',
+              hours: store.opening_hours || 'Hours not available',
+              services: store.services || [],
+              features: store.features || [],
+              mapsUrl: store.maps_url || '',
+              latitude: store.latitude || null,
+              longitude: store.longitude || null,
+            };
+          });
 
           setLocations(transformedStores);
 
@@ -203,21 +218,16 @@ export default function ContactPage() {
                     </div>
                     <p className="text-sm text-gray-600 mb-1">{location.address}</p>
                     <p className="text-sm text-gray-600 mb-3">{location.city}</p>
-                    <div className="flex items-center gap-4 text-sm">
-                      <div className="flex items-center gap-1">
-                        <svg className="w-4 h-4 fill-[#F7C400]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                        </svg>
-                        <span className="font-semibold text-black">{location.rating}</span>
-                        <span className="text-gray-500">({location.reviews})</span>
-                      </div>
-                    </div>
                   </div>
-                  <img
-                    src={location.thumbnail}
-                    alt={location.name}
-                    className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
-                  />
+                  <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                    <MapboxMap
+                      address={location.address}
+                      city={location.city}
+                      className="w-full h-full"
+                      latitude={location.latitude}
+                      longitude={location.longitude}
+                    />
+                  </div>
                 </div>
               </div>
             ))}
@@ -226,31 +236,26 @@ export default function ContactPage() {
           {/* Location Details Panel */}
           {selectedLocation && (
             <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 sticky top-8 h-fit">
-              {/* Location Image */}
-              <div className="relative aspect-[4/3]">
-                <img
-                  src={selectedLocation.image}
-                  alt={selectedLocation.name}
-                  className="w-full h-full object-cover"
+              {/* Location Map */}
+              <div className="relative h-[350px] bg-gray-100">
+                <MapboxMap
+                  address={selectedLocation.address}
+                  city={selectedLocation.city}
+                  className="w-full h-full"
+                  latitude={selectedLocation.latitude}
+                  longitude={selectedLocation.longitude}
                 />
                 {selectedLocation.badge && (
-                  <span className="absolute top-4 right-4 px-3 py-1 bg-[#F7C400] text-black text-sm font-semibold rounded">
+                  <span className="absolute top-4 right-4 px-3 py-1 bg-[#F7C400] text-black text-sm font-semibold rounded shadow-lg">
                     {selectedLocation.badge}
                   </span>
                 )}
               </div>
 
-              {/* Details Content */}
-              <div className="p-6">
-                {/* Title and Rating */}
-                <h2 className="text-2xl font-bold text-black mb-2">{selectedLocation.name}</h2>
-                <div className="flex items-center gap-1 mb-4">
-                  <svg className="w-5 h-5 fill-[#F7C400]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                  </svg>
-                  <span className="font-semibold text-black">{selectedLocation.rating}</span>
-                  <span className="text-gray-500">({selectedLocation.reviews} reviews)</span>
-                </div>
+               {/* Details Content */}
+               <div className="p-6">
+                 {/* Title */}
+                 <h2 className="text-2xl font-bold text-black mb-4">{selectedLocation.name}</h2>
 
                 {/* Address */}
                 <div className="flex items-start gap-3 mb-3">
@@ -291,34 +296,6 @@ export default function ContactPage() {
                     Hours
                   </h3>
                   <p className="text-gray-900 font-medium">{selectedLocation.hours}</p>
-                </div>
-
-                {/* Services */}
-                <div className="mb-6">
-                  <h3 className="font-semibold text-black mb-3">Services</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    {selectedLocation.services.map((service) => (
-                      <div key={service} className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-[#F7C400]"></div>
-                        <span className="text-sm text-gray-700">{service}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Features */}
-                <div className="mb-6">
-                  <h3 className="font-semibold text-black mb-3">Features</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedLocation.features.map((feature) => (
-                      <span
-                        key={feature}
-                        className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full"
-                      >
-                        {feature}
-                      </span>
-                    ))}
-                  </div>
                 </div>
 
                 {/* Action Buttons */}

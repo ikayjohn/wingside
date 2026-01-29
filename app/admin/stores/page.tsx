@@ -277,6 +277,20 @@ export default function AdminStoresPage() {
             Total Stores: <span className="font-semibold">{stores.length}</span>
           </div>
           <button
+            onClick={async () => {
+              try {
+                await fetch('/api/admin/clear-cache/stores');
+                setSuccessMessage('Cache cleared successfully');
+                setTimeout(() => setSuccessMessage(''), 2000);
+              } catch (err) {
+                console.error('Error clearing cache:', err);
+              }
+            }}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            Clear Cache
+          </button>
+          <button
             onClick={openAddModal}
             className="px-4 py-2 bg-[#F7C400] text-[#552627] font-semibold rounded hover:bg-[#e5b400] transition-colors"
           >
