@@ -4583,7 +4583,7 @@ input[type="button"],
 
 /* Spotify Section */
 .connect-spotify-section {
-  background: linear-gradient(135deg, #1DB954 0%, #191414 100%);
+  background: linear-gradient(135deg, #F9CB0C 0%, #191414 100%);
   padding: 4rem 1.5rem;
   text-align: center;
 }
@@ -4600,7 +4600,7 @@ input[type="button"],
 }
 
 .connect-spotify-icon {
-  color: #1DB954;
+  color: #F9CB0C;
   background: white;
   width: 100px;
   height: 100px;
@@ -4629,7 +4629,7 @@ input[type="button"],
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
-  background: #1DB954;
+  background: #F9CB0C;
   color: white;
   font-size: 1rem;
   font-weight: 600;
@@ -4637,13 +4637,13 @@ input[type="button"],
   border-radius: 50px;
   text-decoration: none;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 16px rgba(29, 185, 84, 0.4);
+  box-shadow: 0 4px 16px rgba(249, 203, 12, 0.4);
 }
 
 .connect-spotify-btn:hover {
-  background: #1ed760;
+  background: #F9CB0C;
   transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(29, 185, 84, 0.5);
+  box-shadow: 0 6px 24px rgba(249, 203, 12, 0.5);
 }
 
 /* ==================== */
