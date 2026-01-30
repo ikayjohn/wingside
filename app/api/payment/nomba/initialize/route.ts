@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 interface NombaAuthResponse {
   code: string
@@ -190,9 +191,10 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Nomba Initialize ${requestId}] ✅ Checkout created successfully`)
 
-    // Update order with payment reference
+    // Update order with payment reference (use admin client to bypass RLS)
     console.log(`[Nomba Initialize ${requestId}] Updating order with payment reference...`)
-    const { error: updateError } = await supabase
+    const adminClient = createAdminClient()
+    const { error: updateError } = await adminClient
       .from('orders')
       .update({
         payment_reference: orderReference,
@@ -201,10 +203,20 @@ export async function POST(request: NextRequest) {
       .eq('id', order_id)
 
     if (updateError) {
-      console.error(`[Nomba Initialize ${requestId}] ⚠️  Failed to update order:`, updateError)
-    } else {
-      console.log(`[Nomba Initialize ${requestId}] ✅ Order updated`)
+      console.error(`[Nomba Initialize ${requestId}] ❌ CRITICAL: Failed to update order:`, updateError)
+      console.error(`[Nomba Initialize ${requestId}] Order ID: ${order_id}`)
+      console.error(`[Nomba Initialize ${requestId}] Payment Reference: ${orderReference}`)
+      // Don't proceed if we can't update the order - the webhook won't be able to find it!
+      return NextResponse.json(
+        {
+          error: 'Failed to initialize payment. Please try again.',
+          details: 'Could not update order with payment reference'
+        },
+        { status: 500 }
+      )
     }
+
+    console.log(`[Nomba Initialize ${requestId}] ✅ Order updated with payment reference`)
 
     console.log(`[Nomba Initialize ${requestId}] ✅ Payment initialization complete`)
     console.log(`Checkout URL: ${checkoutData.data.checkoutLink}`)
