@@ -150,8 +150,8 @@ export async function POST(request: NextRequest) {
       const { data } = event
 
       // Handle different payload structures
-      const orderReference = data.order?.orderReference || data.orderReference || null
-      const transactionId = data.transaction?.transactionId || data.transactionId || null
+      const orderReference = data.order?.orderReference || (data as any).orderReference || null
+      const transactionId = data.transaction?.transactionId || (data as any).transactionId || null
 
       console.log(`Payment successful for order reference: ${orderReference}`)
       console.log(`Transaction ID: ${transactionId}`)
