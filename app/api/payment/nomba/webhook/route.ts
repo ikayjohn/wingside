@@ -210,9 +210,8 @@ export async function POST(request: NextRequest) {
 
       console.log(`Order ${order.id} payment confirmed via Nomba webhook`)
 
-      const admin = createAdminClient()
-
       // PHASE 1: CRITICAL DATABASE OPERATIONS (with transaction/rollback)
+      // Note: admin client already created above for order update
 
       // 1. Get or create customer profile
       const { data: existingProfile } = await admin
