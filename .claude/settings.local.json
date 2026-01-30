@@ -80,7 +80,9 @@
       "Bash(ping:*)",
       "Bash(tasklist:*)",
       "Bash(supabase db push:*)",
-      "Bash(openssl rand:*)"
+      "Bash(openssl rand:*)",
+      "Bash(git log:*)",
+      "WebFetch(domain:developer.nomba.com)"
     ],
     "deny": [],
     "ask": []

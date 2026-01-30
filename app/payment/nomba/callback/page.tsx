@@ -28,7 +28,7 @@ function NombaPaymentCallbackContent() {
 
   const verifyPayment = async () => {
     try {
-      // Get order details to check payment status
+      // Step 1: Check order status immediately
       const orderResponse = await fetch(`/api/orders/${orderId}`);
       const orderData = await orderResponse.json();
 
@@ -36,13 +36,14 @@ function NombaPaymentCallbackContent() {
         throw new Error('Order not found');
       }
 
-      const order = orderData.order;
+      let order = orderData.order;
 
-      // If order is already paid (webhook processed it), show success
+      // Step 2: If already paid, show success immediately
       if (order.payment_status === 'paid' || order.status === 'confirmed') {
         setPaymentStatus('success');
         setMessage('Payment successful! Your order has been confirmed.');
         setOrderNumber(order.order_number);
+        setVerifying(false);
 
         // Redirect to order confirmation after 3 seconds
         setTimeout(() => {
@@ -51,76 +52,53 @@ function NombaPaymentCallbackContent() {
         return;
       }
 
-      // Order not paid yet, try to verify with Nomba
-      const paymentRef = order.payment_reference;
+      // Step 3: Not paid yet - poll for webhook processing (30 seconds max)
+      console.log('[Callback] Order not paid yet, waiting for webhook...');
+      const maxAttempts = 15; // 15 attempts × 2 seconds = 30 seconds
+      let attempts = 0;
 
-      if (!paymentRef) {
-        throw new Error('Payment reference not found. Please contact support with your order ID.');
-      }
+      while (attempts < maxAttempts) {
+        // Wait 2 seconds before checking again
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Verify payment using Nomba verify endpoint
-      const verifyResponse = await fetch('/api/payment/nomba/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transactionRef: paymentRef }),
-      });
+        // Check order status
+        const checkResponse = await fetch(`/api/orders/${orderId}`);
+        const checkData = await checkResponse.json();
 
-      const verifyData = await verifyResponse.json();
+        if (checkData.order?.payment_status === 'paid' || checkData.order?.status === 'confirmed') {
+          console.log('[Callback] Webhook processed payment!');
+          setPaymentStatus('success');
+          setMessage('Payment successful! Your order has been confirmed.');
+          setOrderNumber(checkData.order.order_number);
+          setVerifying(false);
 
-      if (verifyData.success) {
-        setPaymentStatus('success');
-        setMessage('Payment successful! Your order has been confirmed.');
-        setOrderNumber(order.order_number);
-
-        // Redirect to order confirmation after 3 seconds
-        setTimeout(() => {
-          router.push(`/order-confirmation?orderNumber=${order.order_number}`);
-        }, 3000);
-      } else {
-        // Payment failed or cancelled - update order status
-        try {
-          const updateResponse = await fetch(`/api/orders/${orderId}/cancel`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              reason: 'payment_failed',
-              source: 'nomba_callback',
-            }),
-          });
-
-          if (!updateResponse.ok) {
-            console.error('Failed to update order status after payment failure');
-          }
-        } catch (updateError) {
-          console.error('Error updating order status:', updateError);
+          // Redirect to confirmation
+          setTimeout(() => {
+            router.push(`/order-confirmation?orderNumber=${checkData.order.order_number}`);
+          }, 2000);
+          return;
         }
 
-        setPaymentStatus('failed');
-        setMessage(verifyData.message || 'Payment was not completed. Please try again or contact support.');
-      }
-    } catch (error) {
-      console.error('Error verifying Nomba payment:', error);
-
-      // Try to cancel the order even if verification fails
-      if (orderId) {
-        try {
-          await fetch(`/api/orders/${orderId}/cancel`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              reason: 'verification_error',
-              source: 'nomba_callback',
-            }),
-          });
-        } catch (cancelError) {
-          console.error('Error cancelling order after verification error:', cancelError);
-        }
+        attempts++;
+        console.log(`[Callback] Attempt ${attempts}/${maxAttempts} - still waiting...`);
       }
 
-      setPaymentStatus('failed');
-      setMessage('Unable to verify payment. If you were charged, please contact support with your order number.');
-    } finally {
+      // Step 4: After 30 seconds, show pending message (don't cancel!)
+      console.log('[Callback] Timeout waiting for webhook');
+      setPaymentStatus('error');
+      setMessage('Payment is being processed. You will receive a confirmation email shortly. Please check your order history or contact support if you don\'t receive confirmation within 5 minutes.');
       setVerifying(false);
+
+      // DON'T cancel the order - the webhook might still process it!
+
+    } catch (error) {
+      console.error('Error checking payment status:', error);
+
+      setPaymentStatus('error');
+      setMessage('Unable to verify payment status. Please check your email for confirmation or contact support with your order number.');
+      setVerifying(false);
+
+      // DON'T cancel the order on errors - could be a network issue
     }
   };
 

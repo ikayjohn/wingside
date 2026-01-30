@@ -269,56 +269,60 @@ export async function POST(request: NextRequest) {
         })
 
         if (paymentError || !paymentResult || paymentResult.length === 0) {
-          console.error('❌ Payment processing failed:', paymentError)
+          console.error('❌ Rewards processing failed:', paymentError)
 
-          // Create admin notification
+          // Create admin notification for manual processing
           await admin.from('notifications').insert({
             user_id: null,
-            type: 'payment_processing_failed',
-            title: 'Payment Processing Failed',
-            message: `Failed to process rewards for order ${order.order_number}`,
+            type: 'reward_processing_failed',
+            title: 'Reward Processing Failed',
+            message: `Order ${order.order_number} was paid successfully but rewards failed. Manual processing required.`,
             metadata: {
               user_id: profileId,
               order_id: order.id,
               order_number: order.order_number,
+              customer_email: order.customer_email,
+              order_total: order.total,
               error: paymentError?.message || 'Unknown error'
             }
           })
 
-          // Rollback order status since rewards failed
-          await admin.from('orders').update({
-            payment_status: 'pending',
-            status: 'pending'
-          }).eq('id', order.id)
+          // CRITICAL: Don't rollback payment! Customer already paid.
+          // Order stays confirmed, but rewards are pending manual processing.
+          console.log(`⚠️ Order ${order.order_number} paid but rewards pending manual processing`)
 
-          return NextResponse.json(
-            { error: 'Payment processing failed, order rolled back' },
-            { status: 500 }
-          )
+          // Continue with the rest of the webhook (emails, syncs, etc.)
         }
 
-        const result = paymentResult[0]
+        if (paymentResult && paymentResult.length > 0) {
+          const result = paymentResult[0]
 
-        if (!result.success) {
-          console.error('❌ Rewards processing failed:', result.error_message)
+          if (!result.success) {
+            console.error('❌ Rewards processing failed:', result.error_message)
 
-          // Rollback order
-          await admin.from('orders').update({
-            payment_status: 'pending',
-            status: 'pending'
-          }).eq('id', order.id)
+            // Create notification but don't rollback payment
+            await admin.from('notifications').insert({
+              user_id: null,
+              type: 'reward_processing_failed',
+              title: 'Reward Processing Failed',
+              message: `Order ${order.order_number} paid but rewards failed: ${result.error_message}`,
+              metadata: {
+                user_id: profileId,
+                order_id: order.id,
+                order_number: order.order_number,
+                error: result.error_message
+              }
+            })
 
-          return NextResponse.json(
-            { error: result.error_message },
-            { status: 500 }
-          )
+            console.log(`⚠️ Order ${order.order_number} paid but rewards failed, needs manual processing`)
+          } else {
+            console.log(`✅ Payment processed atomically:`, {
+              points: result.points_awarded,
+              firstOrderBonus: result.first_order_bonus_claimed,
+              referralProcessed: result.referral_processed
+            })
+          }
         }
-
-        console.log(`✅ Payment processed atomically:`, {
-          points: result.points_awarded,
-          firstOrderBonus: result.first_order_bonus_claimed,
-          referralProcessed: result.referral_processed
-        })
       }
 
       // 5. Update customer streak (7-day system with ₦15,000 minimum)
