@@ -18,11 +18,32 @@ function PaymentCallbackContent() {
     if (reference) {
       verifyPayment();
     } else {
-      setVerifying(false);
-      setPaymentStatus('error');
-      setMessage('Invalid payment reference');
+      // No reference means user likely cancelled payment
+      handleCancellation();
     }
   }, [reference]);
+
+  const handleCancellation = async () => {
+    // User cancelled payment - mark order as cancelled
+    if (orderId) {
+      try {
+        await fetch(`/api/orders/${orderId}/cancel`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            reason: 'payment_cancelled',
+            source: 'paystack_callback',
+          }),
+        });
+      } catch (error) {
+        console.error('Error cancelling order:', error);
+      }
+    }
+
+    setVerifying(false);
+    setPaymentStatus('failed');
+    setMessage('Payment was cancelled. Your order has not been placed.');
+  };
 
   const verifyPayment = async () => {
     try {
@@ -72,8 +93,25 @@ function PaymentCallbackContent() {
       }
     } catch (error) {
       console.error('Error verifying payment:', error);
-      setPaymentStatus('error');
-      setMessage('An error occurred while verifying your payment. Please contact support.');
+
+      // Try to cancel the order even if verification fails
+      if (orderId) {
+        try {
+          await fetch(`/api/orders/${orderId}/cancel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              reason: 'verification_error',
+              source: 'paystack_callback',
+            }),
+          });
+        } catch (cancelError) {
+          console.error('Error cancelling order after verification error:', cancelError);
+        }
+      }
+
+      setPaymentStatus('failed');
+      setMessage('Unable to verify payment. If you were charged, please contact support with your payment reference.');
     } finally {
       setVerifying(false);
     }

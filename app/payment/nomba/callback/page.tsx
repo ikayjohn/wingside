@@ -19,9 +19,10 @@ function NombaPaymentCallbackContent() {
     if (orderId) {
       verifyPayment();
     } else {
+      // No order ID means invalid callback
       setVerifying(false);
-      setPaymentStatus('error');
-      setMessage('Invalid payment callback');
+      setPaymentStatus('failed');
+      setMessage('Payment was cancelled or order not found.');
     }
   }, [orderId]);
 
@@ -99,8 +100,25 @@ function NombaPaymentCallbackContent() {
       }
     } catch (error) {
       console.error('Error verifying Nomba payment:', error);
-      setPaymentStatus('error');
-      setMessage('An error occurred while verifying your payment. Please contact support.');
+
+      // Try to cancel the order even if verification fails
+      if (orderId) {
+        try {
+          await fetch(`/api/orders/${orderId}/cancel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              reason: 'verification_error',
+              source: 'nomba_callback',
+            }),
+          });
+        } catch (cancelError) {
+          console.error('Error cancelling order after verification error:', cancelError);
+        }
+      }
+
+      setPaymentStatus('failed');
+      setMessage('Unable to verify payment. If you were charged, please contact support with your order number.');
     } finally {
       setVerifying(false);
     }
