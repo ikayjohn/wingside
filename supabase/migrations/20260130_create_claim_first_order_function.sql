@@ -9,10 +9,21 @@ RETURNS BOOLEAN AS $$
 DECLARE
     v_bonus_points INTEGER := 50; -- First order bonus: 50 points
     v_already_claimed BOOLEAN;
+    v_order_total NUMERIC;
 BEGIN
     -- Validate parameters
     IF p_user_id IS NULL THEN
         RAISE EXCEPTION 'user_id cannot be NULL';
+    END IF;
+
+    -- IMPORTANT: First order bonus only applies to orders >= ₦1,000
+    SELECT total INTO v_order_total
+    FROM orders
+    WHERE id = p_order_id;
+
+    IF v_order_total < 1000 THEN
+        RAISE NOTICE 'Order #% total (₦%) is below ₦1,000 minimum for first order bonus', p_order_id, v_order_total;
+        RETURN FALSE;
     END IF;
 
     -- Check if user already claimed first order bonus
@@ -33,7 +44,7 @@ BEGIN
         'first_order',
         v_bonus_points,
         'First order bonus - thank you for your first order!',
-        jsonb_build_object('order_id', p_order_id)
+        jsonb_build_object('order_id', p_order_id, 'order_total', v_order_total)
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
