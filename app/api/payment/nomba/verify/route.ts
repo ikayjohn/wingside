@@ -81,10 +81,21 @@ export async function POST(request: NextRequest) {
 
     const verifyData: NombaVerifyResponse = await verifyResponse.json()
 
+    console.log('[Nomba Verify] API Response:', {
+      code: verifyData.code,
+      description: verifyData.description,
+      transactionRef,
+      resultsCount: verifyData.data?.results?.length || 0
+    })
+
     if (verifyData.code !== '00') {
-      console.error('Nomba verification error:', verifyData)
+      console.error('[Nomba Verify] ❌ Verification failed:', verifyData)
       return NextResponse.json(
-        { error: verifyData.description || 'Failed to verify transaction' },
+        {
+          success: false,
+          error: verifyData.description || 'Failed to verify transaction',
+          details: verifyData
+        },
         { status: 500 }
       )
     }
@@ -92,20 +103,37 @@ export async function POST(request: NextRequest) {
     const transaction = verifyData.data?.results?.[0]
 
     if (!transaction) {
+      console.error('[Nomba Verify] ❌ Transaction not found for ref:', transactionRef)
       return NextResponse.json(
-        { error: 'Transaction not found' },
+        {
+          success: false,
+          error: 'Transaction not found',
+          message: 'Payment verification failed. The transaction may still be processing. Please contact support if you were charged.',
+        },
         { status: 404 }
       )
     }
 
-    // Check if transaction was successful
-    if (transaction.status !== 'SUCCESSFUL') {
+    console.log('[Nomba Verify] Transaction found:', {
+      id: transaction.transactionId,
+      status: transaction.status,
+      amount: transaction.amount
+    })
+
+    // Check if transaction was successful (case-insensitive, handle multiple success statuses)
+    const successStatuses = ['SUCCESSFUL', 'SUCCESS', 'COMPLETED', 'APPROVED']
+    const isSuccessful = successStatuses.includes(transaction.status.toUpperCase())
+
+    if (!isSuccessful) {
+      console.log('[Nomba Verify] ⚠️  Payment not successful:', transaction.status)
       return NextResponse.json({
         success: false,
         status: transaction.status,
-        message: 'Payment was not successful',
+        message: `Payment status: ${transaction.status}`,
       })
     }
+
+    console.log('[Nomba Verify] ✅ Payment successful!')
 
     // Update order payment status in database
     const supabase = await createClient()
