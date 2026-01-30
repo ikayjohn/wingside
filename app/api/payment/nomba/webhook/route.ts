@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
 
       // Only update if not already paid
       if (order.payment_status !== 'paid') {
-        const { error: updateError } = await supabase
+        const { error: updateError } = await admin
           .from('orders')
           .update({
             status: 'cancelled',
