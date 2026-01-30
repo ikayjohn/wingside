@@ -180,7 +180,30 @@ function NombaPaymentCallbackContent() {
             <p className="text-gray-700 mb-6">{message}</p>
             <div className="flex gap-3">
               <button
-                onClick={() => router.push('/checkout')}
+                onClick={async () => {
+                  // Restore cart from failed order
+                  if (orderId) {
+                    try {
+                      const orderResponse = await fetch(`/api/orders/${orderId}`);
+                      const orderData = await orderResponse.json();
+                      if (orderData.order && orderData.order.items) {
+                        // Reconstruct cart from order items
+                        const cart = orderData.order.items.map((item: any) => ({
+                          id: item.product_id,
+                          name: item.product_name,
+                          flavor: item.flavor,
+                          size: item.size,
+                          quantity: item.quantity,
+                          price: item.unit_price,
+                        }));
+                        localStorage.setItem('wingside-cart', JSON.stringify(cart));
+                      }
+                    } catch (error) {
+                      console.error('Error restoring cart:', error);
+                    }
+                  }
+                  router.push('/checkout');
+                }}
                 className="flex-1 bg-[#F7C400] text-[#552627] px-6 py-3 rounded-lg font-semibold hover:bg-[#E5B500] transition-colors"
               >
                 Try Again
@@ -189,7 +212,7 @@ function NombaPaymentCallbackContent() {
                 onClick={() => router.push('/order')}
                 className="flex-1 border-2 border-[#F7C400] text-[#552627] px-6 py-3 rounded-lg font-semibold hover:bg-[#FDF5E5] transition-colors"
               >
-                Continue Shopping
+                Start a New Order
               </button>
             </div>
           </div>

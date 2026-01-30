@@ -418,7 +418,9 @@ export default function OrderTrackingPage() {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Total Paid</span>
+                  <span className="text-gray-500">
+                    {order.payment_status === 'paid' ? 'Total Paid' : 'Order Total'}
+                  </span>
                   <span className="text-gray-900 font-bold">{formatPrice(order.total)}</span>
                 </div>
               </div>
