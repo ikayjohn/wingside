@@ -658,7 +658,7 @@ export default function WingclubDashboard() {
               {/* Days Row */}
               <div className="flex justify-center gap-2 mb-5">
                 {[1, 2, 3, 4, 5, 6, 7].map((day) => (
-                  <div className="flex-1 max-w-[48px] flex flex-col items-center gap-2">
+                  <div key={day} className="flex-1 max-w-[48px] flex flex-col items-center gap-2">
                     <div
                       className={`w-10 h-10 rounded-full flex items-center justify-center ${
                         userData.current_streak >= day
