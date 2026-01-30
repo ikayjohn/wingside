@@ -1,4 +1,5 @@
 -- Atomic payment processing function with rollback on failure
+-- This function processes all payment-related rewards in a single transaction
 
 CREATE OR REPLACE FUNCTION process_payment_atomically(
     p_order_id UUID,
@@ -20,10 +21,17 @@ DECLARE
 BEGIN
     -- Start transaction (implicit in function)
 
-    -- 1. Award points for purchase
+    -- 1. Award points for purchase (₦100 = 1 point)
     BEGIN
         v_points_awarded := FLOOR(p_order_total / 100);
-        PERFORM award_points(p_user_id, 'purchase', v_points_awarded, p_order_total, 'Points earned from order', jsonb_build_object('order_id', p_order_id));
+        PERFORM award_points(
+            p_user_id,
+            'purchase',
+            v_points_awarded,
+            p_order_total,
+            'Points earned from order',
+            jsonb_build_object('order_id', p_order_id)
+        );
     EXCEPTION WHEN OTHERS THEN
         v_error := 'Points award failed: ' || SQLERRM;
         RAISE EXCEPTION '%', v_error;
@@ -44,7 +52,7 @@ BEGIN
         RAISE EXCEPTION '%', v_error;
     END;
 
-    -- 3. Process referral rewards if applicable
+    -- 3. Process referral rewards if applicable (minimum ₦1,000 order)
     BEGIN
         IF p_order_total >= 1000 THEN
             v_referral_processed := process_referral_reward_after_first_order(p_user_id, p_order_total);
@@ -71,6 +79,10 @@ EXCEPTION WHEN OTHERS THEN
         FALSE,
         COALESCE(v_error, SQLERRM);
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Grant execute permissions
+GRANT EXECUTE ON FUNCTION process_payment_atomically(UUID, UUID, DECIMAL) TO authenticated;
+GRANT EXECUTE ON FUNCTION process_payment_atomically(UUID, UUID, DECIMAL) TO service_role;
 
 COMMENT ON FUNCTION process_payment_atomically IS 'Atomically process all payment rewards (points, bonuses, referrals) with automatic rollback on any failure';
