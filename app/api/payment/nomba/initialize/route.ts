@@ -60,11 +60,24 @@ async function getNombaAccessToken(): Promise<string | null> {
 
 // POST /api/payment/nomba/initialize - Initialize Nomba checkout
 export async function POST(request: NextRequest) {
+  const requestId = `INIT-${Date.now()}`
+  console.log(`\n${'='.repeat(60)}`)
+  console.log(`[Nomba Initialize ${requestId}] Starting payment initialization`)
+  console.log(`${'='.repeat(60)}`)
+
   try {
     const body = await request.json()
     const { order_id, amount, email, metadata } = body
 
+    console.log(`[Nomba Initialize ${requestId}] Request body:`, {
+      order_id,
+      amount,
+      email,
+      metadata,
+    })
+
     if (!order_id || !amount || !email) {
+      console.error(`[Nomba Initialize ${requestId}] ❌ Missing required fields`)
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -74,48 +87,66 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient()
 
     // Verify order exists
+    console.log(`[Nomba Initialize ${requestId}] Fetching order ${order_id}...`)
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .select('order_number')
+      .select('order_number, total, customer_name, customer_email')
       .eq('id', order_id)
       .single()
 
     if (orderError || !order) {
+      console.error(`[Nomba Initialize ${requestId}] ❌ Order not found:`, orderError)
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
       )
     }
 
+    console.log(`[Nomba Initialize ${requestId}] ✅ Order found: ${order.order_number}`)
+
     // Check Nomba credentials
     const accountId = process.env.NOMBA_ACCOUNT_ID
 
     if (!accountId) {
-      console.error('NOMBA_ACCOUNT_ID not configured')
+      console.error(`[Nomba Initialize ${requestId}] ❌ NOMBA_ACCOUNT_ID not configured`)
       return NextResponse.json(
         { error: 'Payment gateway not configured' },
         { status: 500 }
       )
     }
 
+    console.log(`[Nomba Initialize ${requestId}] ✅ Account ID configured: ${accountId}`)
+
     // Get access token
+    console.log(`[Nomba Initialize ${requestId}] Requesting access token...`)
     const accessToken = await getNombaAccessToken()
 
     if (!accessToken) {
+      console.error(`[Nomba Initialize ${requestId}] ❌ Failed to get access token`)
       return NextResponse.json(
         { error: 'Failed to authenticate with payment gateway' },
         { status: 500 }
       )
     }
 
+    console.log(`[Nomba Initialize ${requestId}] ✅ Access token obtained: ${accessToken.substring(0, 20)}...`)
+
     // Build callback URL
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.wingside.ng'
     const callbackUrl = `${appUrl}/payment/nomba/callback?order_id=${order_id}`
 
+    console.log(`[Nomba Initialize ${requestId}] Callback URL: ${callbackUrl}`)
+
     // Generate unique order reference
     const orderReference = `WS-${order.order_number}-${Date.now()}`
+    console.log(`[Nomba Initialize ${requestId}] Order reference: ${orderReference}`)
+
+    // IMPORTANT: Convert amount to kobo (integer) for Nomba
+    const amountInKobo = Math.round(amount * 100)
+    console.log(`[Nomba Initialize ${requestId}] Amount: ₦${amount} → ${amountInKobo} kobo`)
 
     // Create checkout order
+    console.log(`[Nomba Initialize ${requestId}] Creating checkout order...`)
     const checkoutResponse = await fetch('https://api.nomba.com/v1/checkout/order', {
       method: 'POST',
       headers: {
@@ -129,25 +160,38 @@ export async function POST(request: NextRequest) {
           customerId: order_id,
           callbackUrl,
           customerEmail: email,
-          amount: amount.toFixed(2),
+          amount: amountInKobo.toString(), // Send as string in kobo
           currency: 'NGN',
         },
-        tokenizeCard: false, // Set to true if you want to save cards for future
+        tokenizeCard: false,
       }),
     })
 
     const checkoutData: NombaCheckoutResponse = await checkoutResponse.json()
 
+    console.log(`[Nomba Initialize ${requestId}] Nomba API response:`, {
+      status: checkoutResponse.status,
+      code: checkoutData.code,
+      description: checkoutData.description,
+      hasCheckoutLink: !!checkoutData.data?.checkoutLink,
+    })
+
     if (checkoutData.code !== '00' || !checkoutData.data?.checkoutLink) {
-      console.error('Nomba checkout creation error:', checkoutData)
+      console.error(`[Nomba Initialize ${requestId}] ❌ Checkout creation failed:`, checkoutData)
       return NextResponse.json(
-        { error: checkoutData.description || 'Failed to initialize payment' },
+        {
+          error: checkoutData.description || 'Failed to initialize payment',
+          details: checkoutData
+        },
         { status: 500 }
       )
     }
 
+    console.log(`[Nomba Initialize ${requestId}] ✅ Checkout created successfully`)
+
     // Update order with payment reference
-    await supabase
+    console.log(`[Nomba Initialize ${requestId}] Updating order with payment reference...`)
+    const { error: updateError } = await supabase
       .from('orders')
       .update({
         payment_reference: orderReference,
@@ -155,15 +199,31 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', order_id)
 
+    if (updateError) {
+      console.error(`[Nomba Initialize ${requestId}] ⚠️  Failed to update order:`, updateError)
+    } else {
+      console.log(`[Nomba Initialize ${requestId}] ✅ Order updated`)
+    }
+
+    console.log(`[Nomba Initialize ${requestId}] ✅ Payment initialization complete`)
+    console.log(`Checkout URL: ${checkoutData.data.checkoutLink}`)
+    console.log(`${'='.repeat(60)}\n`)
+
     return NextResponse.json({
       checkout_url: checkoutData.data.checkoutLink,
       order_reference: orderReference,
     })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    console.error('Nomba payment initialization error:', error)
+    console.error(`[Nomba Initialize ${requestId}] ❌ Exception:`, error)
+    console.error(`[Nomba Initialize ${requestId}] Error message: ${errorMessage}`)
+    console.error(`[Nomba Initialize ${requestId}] Stack:`, error instanceof Error ? error.stack : 'No stack trace')
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        error: 'Internal server error',
+        details: errorMessage
+      },
       { status: 500 }
     )
   }

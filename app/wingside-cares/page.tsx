@@ -111,53 +111,57 @@ export default function WingsideCares() {
           <div className="absolute inset-0 bg-black/50"></div>
         </div>
 
-        {/* Badge - Top */}
-        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" style={{ paddingTop: '40px' }}>
-          <span className="inline-block px-4 py-2 rounded-full text-sm font-semibold" style={{ backgroundColor: '#FEF08A', color: '#552627' }}>
-            Wingside Cares
-          </span>
-        </div>
+         {/* Badge - Top */}
+         <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8" style={{ paddingTop: '40px' }}>
+           <div className="w-[95%] mx-auto">
+             <span className="inline-block px-4 py-2 rounded-full text-sm font-semibold" style={{ backgroundColor: '#FEF08A', color: '#552627' }}>
+               Wingside Cares
+             </span>
+           </div>
+         </div>
 
-        {/* Content - Bottom */}
-        <div className="absolute bottom-0 left-0 right-0 z-10 w-full pb-16 md:pb-24">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-2xl">
-              {/* Headline */}
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight whitespace-nowrap">
-                <span className="text-white">Good wings, </span>
-                <span style={{ color: '#f4c430' }}>Greater impact.</span>
-              </h1>
+         {/* Content - Bottom */}
+         <div className="absolute bottom-0 left-0 right-0 z-10 w-full pb-16 md:pb-24">
+           <div className="px-4 sm:px-6 lg:px-8">
+             <div className="w-[95%] mx-auto">
+               <div className="max-w-2xl">
+                 {/* Headline */}
+                 <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight whitespace-nowrap">
+                   <span className="text-white">Good wings, </span>
+                   <span style={{ color: '#f4c430' }}>Greater impact.</span>
+                 </h1>
 
-              {/* Body Text */}
-              <div className="space-y-4 mb-8">
-                <p className="text-white text-base md:text-lg leading-relaxed">
-                  At Wingside, giving back isn't a campaign — it's part of who we are.
-                </p>
-                <p className="text-white text-base md:text-lg leading-relaxed">
-                  WINGSIDE CARES is our commitment to stand with communities, support those displaced by hardship, and invest in long-term community development. Through food relief, local partnerships, and hands-on service, we're showing up where it matters most.
-                </p>
-              </div>
+                 {/* Body Text */}
+                 <div className="space-y-4 mb-8">
+                   <p className="text-white text-base md:text-lg leading-relaxed">
+                     At Wingside, giving back isn't a campaign — it's part of who we are.
+                   </p>
+                   <p className="text-white text-base md:text-lg leading-relaxed">
+                     WINGSIDE CARES is our commitment to stand with communities, support those displaced by hardship, and invest in long-term community development. Through food relief, local partnerships, and hands-on service, we're showing up where it matters most.
+                   </p>
+                 </div>
 
-              {/* Buttons */}
-              <div className="flex flex-wrap gap-4">
-                <Link
-                  href="#why-we-do-this"
-                  className="inline-block px-8 py-3 rounded-full font-semibold text-base transition-all duration-300 hover:scale-105"
-                  style={{ backgroundColor: '#f4c430', color: '#552627' }}
-                >
-                  Learn more
-                </Link>
-                <Link
-                  href="#join-movement"
-                  className="inline-block px-8 py-3 rounded-full font-semibold text-base transition-all duration-300 hover:scale-105 border-2 border-white text-white hover:bg-white hover:text-[#552627]"
-                >
-                  Join the Movement
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+                 {/* Buttons */}
+                 <div className="flex flex-wrap gap-4">
+                   <Link
+                     href="#why-we-do-this"
+                     className="inline-block px-8 py-3 rounded-full font-semibold text-base transition-all duration-300 hover:scale-105"
+                     style={{ backgroundColor: '#f4c430', color: '#552627' }}
+                   >
+                     Learn more
+                   </Link>
+                   <Link
+                     href="#join-movement"
+                     className="inline-block px-8 py-3 rounded-full font-semibold text-base transition-all duration-300 hover:scale-105 border-2 border-white text-white hover:bg-white hover:text-[#552627]"
+                   >
+                     Join the Movement
+                   </Link>
+                 </div>
+               </div>
+             </div>
+           </div>
+         </div>
+       </section>
 
       {/* WHY WE DO THIS SECTION */}
       <section id="why-we-do-this" className="py-16 md:py-24 gutter-x" style={{ backgroundColor: '#FFFDF2' }}>

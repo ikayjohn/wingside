@@ -219,13 +219,11 @@ export default function ContactPage() {
                     <p className="text-sm text-gray-600 mb-1">{location.address}</p>
                     <p className="text-sm text-gray-600 mb-3">{location.city}</p>
                   </div>
-                  <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
-                    <MapboxMap
-                      address={location.address}
-                      city={location.city}
-                      className="w-full h-full"
-                      latitude={location.latitude}
-                      longitude={location.longitude}
+                   <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                    <img
+                      src={location.thumbnail}
+                      alt={location.name}
+                      className="w-full h-full object-cover"
                     />
                   </div>
                 </div>

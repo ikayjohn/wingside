@@ -72,7 +72,7 @@ export default function WingsideLanding() {
   // Slide data for delivery section
   const deliverySlides = [
     {
-      title: 'WINGSIDE\nONLINE DELIVERY',
+      title: 'WINGSIDE\nDELIVERY',
       description: 'Stay in, we\'ll bring the wings to you. Flavors that sing with every wing Delivered\n- before you blink.',
       ctaText: 'Order Now',
       ctaLink: '/order',

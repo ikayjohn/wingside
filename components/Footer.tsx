@@ -197,9 +197,9 @@ export default function Footer() {
       <footer className="bg-white py-6 md:py-8 footer-container">
         <div className="w-full">
           {/* Footer Navigation */}
-          <div className="flex flex-wrap justify-center gap-x-4 md:gap-x-8 gap-y-3 md:gap-y-4 mb-6 md:mb-8">
+          <div className="flex flex-wrap justify-center items-center gap-x-4 md:gap-x-8 gap-y-3 md:gap-y-4 mb-6 md:mb-8">
             {/* Company Section */}
-            <div className="flex flex-wrap justify-center gap-x-4 md:gap-x-6 gap-y-2">
+            <div className="flex flex-wrap justify-center items-center gap-x-4 md:gap-x-6 gap-y-2" style={{ marginTop: '10px' }}>
               <span className="font-bold text-xs uppercase tracking-wide text-gray-900">COMPANY</span>
               <Link href="/about" className="footer-link">About Us</Link>
               <Link href="/hotspots" className="footer-link">Wingside Hotspots</Link>
@@ -209,16 +209,16 @@ export default function Footer() {
               <Link href="/flavors" className="footer-link">Flavors</Link>
               <Link href="/gift-balance" className="footer-link">Gift Card Balance</Link>
             </div>
-          </div>
 
-          {/* Get Involved Section */}
-          <div className="flex flex-wrap justify-center gap-x-4 md:gap-x-8 gap-y-2 mb-6 md:mb-8">
-            <span className="font-bold text-xs uppercase tracking-wide text-gray-900">GET INVOLVED</span>
-            <Link href="/careers" className="footer-link">Careers</Link>
-            <Link href="/contact" className="footer-link">Contact Us</Link>
-            <Link href="/franchising" className="footer-link">Franchising</Link>
-            <Link href="/wingside-cares" className="footer-link">Wingside Cares</Link>
-            <Link href="/partnership" className="footer-link">Partnership</Link>
+            {/* Get Involved Section */}
+            <div className="flex flex-wrap justify-center items-center gap-x-4 md:gap-x-8 gap-y-2" style={{ marginTop: '10px' }}>
+              <span className="font-bold text-xs uppercase tracking-wide text-gray-900">GET INVOLVED</span>
+              <Link href="/careers" className="footer-link">Careers</Link>
+              <Link href="/contact" className="footer-link">Contact Us</Link>
+              <Link href="/franchising" className="footer-link">Franchising</Link>
+              <Link href="/wingside-cares" className="footer-link">Wingside Cares</Link>
+              <Link href="/partnership" className="footer-link">Partnership</Link>
+            </div>
           </div>
 
           {/* Copyright */}

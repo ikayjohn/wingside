@@ -19,6 +19,7 @@ export default function HeroSlideshow() {
   const [loading, setLoading] = useState(true);
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [fallbackImageLoaded, setFallbackImageLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const fetchSlides = useCallback(async () => {
@@ -125,17 +126,50 @@ export default function HeroSlideshow() {
               {isFirstSlide ? (
                 // First slide uses hero.mp4 video
                 <>
-                  {/* Fallback background while video loads */}
-                  {!videoLoaded && (
-                    <div
-                      className="absolute inset-0 w-full h-full"
+                  {/* Solid background while fallback image loads */}
+                  <div
+                    className="absolute inset-0 w-full h-full"
+                    style={{
+                      backgroundColor: '#1a1a1a',
+                      position: 'absolute' as const,
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      minWidth: '100%',
+                      minHeight: '100%',
+                    }}
+                  />
+
+                  {/* Fallback image - only show when fully loaded */}
+                  {!videoLoaded && fallbackImageLoaded && (
+                    <img
+                      src={slide.image_url || '/hero-fallback.jpg'}
+                      alt=""
+                      className="absolute inset-0 w-full h-full object-cover"
                       style={{
-                        background: slide.image_url
-                          ? `url(${slide.image_url}) center/cover no-repeat`
-                          : 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #552627 100%)',
+                        position: 'absolute' as const,
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        minWidth: '100%',
+                        minHeight: '100%',
+                        width: 'auto',
+                        height: 'auto',
+                        objectFit: 'cover' as const,
                       }}
                     />
                   )}
+
+                  {/* Hidden img to preload and detect when loaded */}
+                  <img
+                    src={slide.image_url || '/hero-fallback.jpg'}
+                    alt=""
+                    className="hidden"
+                    onLoad={() => setFallbackImageLoaded(true)}
+                    loading="eager"
+                    fetchPriority="high"
+                  />
+
                   <video
                     ref={videoRef}
                     key="hero-video"
@@ -144,6 +178,7 @@ export default function HeroSlideshow() {
                     loop
                     playsInline
                     preload="auto"
+                    poster={slide.image_url}
                     onLoadedData={() => setVideoLoaded(true)}
                     onCanPlayThrough={() => setVideoLoaded(true)}
                     className="hero-video"

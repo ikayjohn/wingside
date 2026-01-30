@@ -415,6 +415,27 @@ export default function AdminProductsPage() {
     }).format(price).replace('NGN', '₦')
   }
 
+  // Light colors for category tabs
+  const tabColors = [
+    { bg: '#FEF3C7', text: '#92400E' }, // amber-100 / amber-800
+    { bg: '#DBEAFE', text: '#1E40AF' }, // blue-100 / blue-800
+    { bg: '#FEE2E2', text: '#991B1B' }, // red-100 / red-800
+    { bg: '#D1FAE5', text: '#065F46' }, // green-100 / green-800
+    { bg: '#EDE9FE', text: '#5B21B6' }, // violet-100 / violet-800
+    { bg: '#FAE8FF', text: '#86198F' }, // fuchsia-100 / fuchsia-800
+    { bg: '#FFEDD5', text: '#9A3412' }, // orange-100 / orange-800
+    { bg: '#E0F2FE', text: '#075985' }, // sky-100 / sky-800
+    { bg: '#F3E8FF', text: '#6B21A8' }, // purple-100 / purple-800
+    { bg: '#CCFBF1', text: '#115E59' }, // teal-100 / teal-800
+  ]
+
+  const getTabColor = (index: number, isActive: boolean) => {
+    if (isActive) {
+      return { bg: '#F7C400', text: '#000000' }
+    }
+    return tabColors[index % tabColors.length]
+  }
+
   if (loading) {
     return (
       <div className="p-8">
@@ -461,26 +482,32 @@ export default function AdminProductsPage() {
       </div>
 
       {/* Category Filter */}
-      <div className="mb-6 flex gap-2 overflow-x-auto">
+      <div className="mb-6 flex gap-1 overflow-x-auto">
         <button
           onClick={() => setSelectedCategory('all')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${selectedCategory === 'all'
-            ? 'bg-yellow-400 text-black'
-            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+          className="px-3 py-1.5 rounded-lg font-medium transition-colors whitespace-nowrap hover:opacity-80"
+          style={{
+            fontSize: '13px',
+            backgroundColor: selectedCategory === 'all' ? '#F7C400' : '#F3F4F6',
+            color: selectedCategory === 'all' ? '#000000' : '#374151'
+          }}
         >
           All ({products.length})
         </button>
-        {categories.map((category) => {
+        {categories.map((category, index) => {
           const count = products.filter(p => p.category.name === category.name).length
+          const isActive = selectedCategory === category.name
+          const colors = getTabColor(index, isActive)
           return (
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.name)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${selectedCategory === category.name
-                ? 'bg-yellow-400 text-black'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+              className="px-3 py-1.5 rounded-lg font-medium transition-colors whitespace-nowrap hover:opacity-80"
+              style={{
+                fontSize: '13px',
+                backgroundColor: colors.bg,
+                color: colors.text
+              }}
             >
               {category.name} ({count})
             </button>
@@ -493,22 +520,19 @@ export default function AdminProductsPage() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
                 Product
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                 Category
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
                 Price
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Flavors
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
                 Status
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                 Actions
               </th>
             </tr>
@@ -516,7 +540,7 @@ export default function AdminProductsPage() {
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredProducts.map((product) => (
               <tr key={product.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-2 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="h-12 w-12 flex-shrink-0">
                       <img
@@ -525,10 +549,10 @@ export default function AdminProductsPage() {
                         alt={product.name}
                       />
                     </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                    <div className="ml-2">
+                      <div className="text-sm font-medium text-gray-900 truncate max-w-[180px]">{product.name}</div>
                       {product.subcategory && (
-                        <div className="text-sm text-gray-500">{product.subcategory}</div>
+                        <div className="text-sm text-gray-500 truncate max-w-[180px]">{product.subcategory}</div>
                       )}
                       {product.wing_count && (
                         <div className="text-xs text-gray-400">{product.wing_count}</div>
@@ -536,31 +560,15 @@ export default function AdminProductsPage() {
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm text-gray-900">{product.category.name}</span>
+                <td className="px-2 py-4 whitespace-nowrap">
+                  <span className="text-sm text-gray-900 truncate block">{product.category.name}</span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-2 py-4 whitespace-nowrap">
                   <span className="text-sm font-medium text-gray-900">
                     {formatPrice(product.sizes[0]?.price || 0)}
                   </span>
                 </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900">
-                    {product.simple_flavors && product.simple_flavors.length > 0 ? (
-                      <span className="text-xs text-gray-600">
-                        {product.simple_flavors.slice(0, 3).join(', ')}
-                        {product.simple_flavors.length > 3 && '...'}
-                      </span>
-                    ) : product.flavors.length > 0 ? (
-                      <span className="text-xs text-gray-600">
-                        {product.flavors.length} wing flavors
-                      </span>
-                    ) : (
-                      <span className="text-xs text-gray-400">No flavors</span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-2 py-4 whitespace-nowrap">
                   <span
                     className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.is_active
                       ? 'bg-green-100 text-green-800'
@@ -570,10 +578,10 @@ export default function AdminProductsPage() {
                     {product.is_active ? 'Active' : 'Inactive'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <td className="px-2 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
                     onClick={() => handleEdit(product)}
-                    className="text-blue-600 hover:text-blue-900 mr-4"
+                    className="text-blue-600 hover:text-blue-900 mr-3"
                   >
                     Edit
                   </button>
