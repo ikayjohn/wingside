@@ -141,9 +141,10 @@ export async function POST(request: NextRequest) {
     const orderReference = `WS-${order.order_number}-${Date.now()}`
     console.log(`[Nomba Initialize ${requestId}] Order reference: ${orderReference}`)
 
-    // IMPORTANT: Convert amount to kobo (integer) for Nomba
-    const amountInKobo = Math.round(amount * 100)
-    console.log(`[Nomba Initialize ${requestId}] Amount: ₦${amount} → ${amountInKobo} kobo`)
+    // IMPORTANT: Nomba expects amount in naira format (NOT kobo like Paystack!)
+    // Format as string with 2 decimal places (e.g., "250.00" for ₦250)
+    const amountInNaira = Number(amount).toFixed(2)
+    console.log(`[Nomba Initialize ${requestId}] Amount: ₦${amount} → "${amountInNaira}" (naira format)`)
 
     // Create checkout order
     console.log(`[Nomba Initialize ${requestId}] Creating checkout order...`)
@@ -160,7 +161,7 @@ export async function POST(request: NextRequest) {
           customerId: order_id,
           callbackUrl,
           customerEmail: email,
-          amount: amountInKobo.toString(), // Send as string in kobo
+          amount: amountInNaira, // Send as string in naira format with 2 decimals
           currency: 'NGN',
         },
         tokenizeCard: false,

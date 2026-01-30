@@ -47,9 +47,30 @@ export async function GET(request: NextRequest) {
     }
 
     const { data } = paystackData
+    const supabase = await createClient()
+    const orderId = data.metadata?.order_id
 
     // Check if payment was successful
     if (data.status !== 'success') {
+      // Payment failed or cancelled - update order status
+      if (orderId) {
+        const { error: cancelError } = await supabase
+          .from('orders')
+          .update({
+            status: 'cancelled',
+            payment_status: 'failed',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', orderId)
+          .eq('payment_status', 'pending') // Only update if still pending
+
+        if (cancelError) {
+          console.error('Error updating cancelled order status:', cancelError)
+        } else {
+          console.log(`Order ${orderId} marked as cancelled (payment ${data.status})`)
+        }
+      }
+
       return NextResponse.json({
         success: false,
         status: data.status,
@@ -58,8 +79,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Update order payment status in database
-    const supabase = await createClient()
-    const orderId = data.metadata?.order_id
 
     if (orderId) {
       const { error: updateError } = await supabase

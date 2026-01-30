@@ -47,8 +47,28 @@ function PaymentCallbackContent() {
           }
         }
       } else {
+        // Payment failed or cancelled - update order status
+        if (orderId) {
+          try {
+            const cancelResponse = await fetch(`/api/orders/${orderId}/cancel`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                reason: 'payment_failed',
+                source: 'paystack_callback',
+              }),
+            });
+
+            if (!cancelResponse.ok) {
+              console.error('Failed to update order status after payment failure');
+            }
+          } catch (cancelError) {
+            console.error('Error updating order status:', cancelError);
+          }
+        }
+
         setPaymentStatus('failed');
-        setMessage(data.message || 'Payment verification failed');
+        setMessage(data.message || 'Payment was not completed. Please try again or contact support.');
       }
     } catch (error) {
       console.error('Error verifying payment:', error);

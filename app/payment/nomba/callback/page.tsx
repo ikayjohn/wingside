@@ -76,8 +76,26 @@ function NombaPaymentCallbackContent() {
           router.push(`/order-confirmation?orderNumber=${order.order_number}`);
         }, 3000);
       } else {
+        // Payment failed or cancelled - update order status
+        try {
+          const updateResponse = await fetch(`/api/orders/${orderId}/cancel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              reason: 'payment_failed',
+              source: 'nomba_callback',
+            }),
+          });
+
+          if (!updateResponse.ok) {
+            console.error('Failed to update order status after payment failure');
+          }
+        } catch (updateError) {
+          console.error('Error updating order status:', updateError);
+        }
+
         setPaymentStatus('failed');
-        setMessage(verifyData.message || 'Payment verification failed');
+        setMessage(verifyData.message || 'Payment was not completed. Please try again or contact support.');
       }
     } catch (error) {
       console.error('Error verifying Nomba payment:', error);

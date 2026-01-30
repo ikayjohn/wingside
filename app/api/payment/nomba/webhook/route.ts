@@ -77,6 +77,51 @@ export async function POST(request: NextRequest) {
       console.warn('⚠️  NOMBA_WEBHOOK_SECRET not set - skipping signature verification (recommended for production)')
     }
 
+    // Handle payment failure or cancellation
+    if (event.event_type === 'payment_failed' || event.event_type === 'payment_cancelled') {
+      const { data } = event
+      const orderReference = data.order?.orderReference
+
+      console.log(`Payment ${event.event_type} for order reference: ${orderReference}`)
+
+      const supabase = await createClient()
+
+      // Find order by payment reference
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('id, order_number, payment_status, status')
+        .eq('payment_reference', orderReference)
+        .single()
+
+      if (orderError || !order) {
+        console.error('Order not found for reference:', orderReference)
+        return NextResponse.json(
+          { error: 'Order not found' },
+          { status: 404 }
+        )
+      }
+
+      // Only update if not already paid
+      if (order.payment_status !== 'paid') {
+        const { error: updateError } = await supabase
+          .from('orders')
+          .update({
+            status: 'cancelled',
+            payment_status: 'failed',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', order.id)
+
+        if (updateError) {
+          console.error('Error updating order status:', updateError)
+        } else {
+          console.log(`✅ Order ${order.order_number} marked as cancelled/failed`)
+        }
+      }
+
+      return NextResponse.json({ received: true })
+    }
+
     // Handle successful payment
     if (event.event_type === 'payment_success') {
       const { data } = event
