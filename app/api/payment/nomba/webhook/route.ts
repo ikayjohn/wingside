@@ -107,10 +107,11 @@ export async function POST(request: NextRequest) {
 
       console.log(`Payment ${event.event_type} for order reference: ${orderReference}`)
 
-      const supabase = await createClient()
+      // Use admin client to bypass RLS when querying/updating orders
+      const admin = createAdminClient()
 
       // Find order by payment reference
-      const { data: order, error: orderError } = await supabase
+      const { data: order, error: orderError } = await admin
         .from('orders')
         .select('id, order_number, payment_status, status')
         .eq('payment_reference', orderReference)
@@ -165,10 +166,11 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      const supabase = await createClient()
+      // Use admin client to bypass RLS when querying/updating orders
+      const admin = createAdminClient()
 
       // Find order by payment reference
-      const { data: order, error: orderError } = await supabase
+      const { data: order, error: orderError } = await admin
         .from('orders')
         .select('*, order_items(*)')
         .eq('payment_reference', orderReference)
@@ -189,7 +191,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Update order payment status
-      const { error: updateError } = await supabase
+      const { error: updateError } = await admin
         .from('orders')
         .update({
           payment_status: 'paid',
