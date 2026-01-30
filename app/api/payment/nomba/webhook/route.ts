@@ -45,11 +45,14 @@ export async function POST(request: NextRequest) {
 
     // Validate webhook signature (if configured)
     const webhookSecret = process.env.NOMBA_WEBHOOK_SECRET
-    const signature = request.headers.get('x-nomba-signature')
+    // Nomba sends signature in 'nomba-signature' header (not 'x-nomba-signature')
+    const signature = request.headers.get('nomba-signature') || request.headers.get('nomba-sig-value')
+    const timestamp = request.headers.get('nomba-timestamp')
 
     if (webhookSecret) {
       if (!signature) {
         console.error('Missing Nomba webhook signature')
+        console.error('Headers received:', Object.fromEntries(request.headers.entries()))
         return NextResponse.json(
           { error: 'Missing signature' },
           { status: 401 }
@@ -57,15 +60,32 @@ export async function POST(request: NextRequest) {
       }
 
       // Verify HMAC signature
-      // Nomba uses HMAC-SHA512 with the webhook secret
+      // Nomba uses HMAC-SHA256 (not SHA512!) per their documentation
+      // Format: event_type:request_id:user_id:wallet_id:transaction_id:type:time:response_code:timestamp
+      const parsedEvent = JSON.parse(rawBody)
+      const signatureString = [
+        parsedEvent.event_type || '',
+        parsedEvent.requestId || parsedEvent.request_id || '',
+        parsedEvent.data?.merchant?.userId || '',
+        parsedEvent.data?.merchant?.walletId || '',
+        parsedEvent.data?.transaction?.transactionId || '',
+        parsedEvent.data?.transaction?.type || '',
+        parsedEvent.data?.transaction?.time || '',
+        parsedEvent.data?.transaction?.responseCode || '00',
+        timestamp || ''
+      ].join(':')
+
       const expectedSignature = crypto
-        .createHmac('sha512', webhookSecret)
-        .update(rawBody)
-        .digest('hex')
+        .createHmac('sha256', webhookSecret)
+        .update(signatureString)
+        .digest('base64')
 
       // Compare signatures securely
-      if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+      if (signature !== expectedSignature) {
         console.error('Invalid Nomba webhook signature')
+        console.error('Expected:', expectedSignature)
+        console.error('Received:', signature)
+        console.error('Signature string:', signatureString)
         return NextResponse.json(
           { error: 'Invalid signature' },
           { status: 401 }
