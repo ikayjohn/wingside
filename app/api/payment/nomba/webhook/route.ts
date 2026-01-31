@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
           .createHmac('sha256', webhookSecret)
           .update([
             event.event_type || '',
-            event.requestId || event.request_id || '',
+            event.requestId || '',
             event.data?.transaction?.transactionId || '',
             timestamp || ''
           ].join(':'))
