@@ -67,28 +67,99 @@ export async function POST(request: NextRequest) {
 
     console.log('Received Embedly webhook:', event.event, event.data);
 
-    switch (event.event) {
-      case 'payout':
-        await handlePayoutWebhook(event.data, supabase);
-        break;
+    // Track handler execution with detailed error handling
+    let handlerSuccess = false;
+    let handlerError: Error | null = null;
 
-      case 'nip':
-        await handleNipWebhook(event.data, supabase);
-        break;
+    try {
+      switch (event.event) {
+        case 'payout':
+          await handlePayoutWebhook(event.data, supabase);
+          break;
 
-      case 'checkout.payment.success':
-        await handleCheckoutWebhook(event.data, supabase);
-        break;
+        case 'nip':
+          await handleNipWebhook(event.data, supabase);
+          break;
 
-      case 'wallet.transfer':
-        await handleWalletTransferWebhook(event.data, supabase);
-        break;
+        case 'checkout.payment.success':
+          await handleCheckoutWebhook(event.data, supabase);
+          break;
 
-      default:
-        console.log('Unhandled webhook event type:', event.event);
+        case 'wallet.transfer':
+          await handleWalletTransferWebhook(event.data, supabase);
+          break;
+
+        default:
+          console.log('Unhandled webhook event type:', event.event);
+          // Track unhandled event types for monitoring
+          await supabase.from('webhook_errors').insert({
+            webhook_type: 'embedly_unhandled',
+            event_data: event,
+            error_message: `Unhandled webhook event type: ${event.event}`,
+            metadata: { event_type: event.event },
+            severity: 'low',
+            created_at: new Date().toISOString()
+          });
+      }
+
+      handlerSuccess = true;
+    } catch (error) {
+      handlerError = error instanceof Error ? error : new Error('Unknown handler error');
+      console.error(`❌ Handler failed for ${event.event}:`, handlerError);
+
+      // Track handler-specific failure with retry mechanism
+      await supabase.from('webhook_errors').insert({
+        webhook_type: `embedly_${event.event}`,
+        event_data: event,
+        error_message: handlerError.message,
+        error_stack: handlerError.stack,
+        metadata: {
+          event_type: event.event,
+          error_location: 'event_handler',
+          retry_recommended: true
+        },
+        severity: 'critical',
+        status: 'pending_retry',
+        retry_count: 0,
+        created_at: new Date().toISOString()
+      });
+
+      // Create urgent admin notification for handler failures
+      await supabase.from('notifications').insert({
+        user_id: null,
+        type: 'webhook_handler_failed',
+        title: `Embedly ${event.event} Webhook Failed`,
+        message: `Critical: Webhook handler failed for ${event.event}. Financial transaction may be incomplete.`,
+        metadata: {
+          event_type: event.event,
+          error: handlerError.message,
+          event_data: event.data,
+          urgency: 'critical',
+          action_required: 'Review webhook error log and manually retry if needed'
+        },
+        is_read: false,
+        created_at: new Date().toISOString()
+      });
+
+      // Return 500 to trigger Embedly retry (they will retry failed webhooks)
+      return NextResponse.json(
+        {
+          error: 'Webhook processing failed',
+          message: handlerError.message,
+          event_type: event.event,
+          retry: true
+        },
+        { status: 500 }
+      );
     }
 
-    // Always return 200 OK to acknowledge receipt
+    // Only return 200 OK if handler succeeded
+    if (handlerSuccess) {
+      console.log(`✅ Successfully processed ${event.event} webhook`);
+      return NextResponse.json({ received: true, processed: true });
+    }
+
+    // Fallback (should not reach here)
     return NextResponse.json({ received: true });
 
   } catch (error) {
