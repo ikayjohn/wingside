@@ -91,12 +91,17 @@ export async function POST(request: NextRequest) {
       }
 
       // Check if any signature format matches
-      const isValidSignature = Object.values(signatures).some(sig =>
-        crypto.timingSafeEqual(
-          Buffer.from(signature),
-          Buffer.from(sig)
-        ).catch(() => false) || signature === sig
-      )
+      const isValidSignature = Object.values(signatures).some(sig => {
+        try {
+          return crypto.timingSafeEqual(
+            Buffer.from(signature),
+            Buffer.from(sig)
+          )
+        } catch {
+          // If timingSafeEqual throws (different buffer lengths), try string comparison
+          return signature === sig
+        }
+      })
 
       if (!isValidSignature) {
         console.error('❌ Invalid Nomba webhook signature')
