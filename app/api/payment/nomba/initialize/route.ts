@@ -85,13 +85,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate amount format
+    const numericAmount = Number(amount)
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+      console.error(`[Nomba Initialize ${requestId}] ❌ Invalid amount: ${amount}`)
+      return NextResponse.json(
+        { error: 'Invalid amount' },
+        { status: 400 }
+      )
+    }
+
     const supabase = await createClient()
 
     // Verify order exists
     console.log(`[Nomba Initialize ${requestId}] Fetching order ${order_id}...`)
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .select('order_number, total, customer_name, customer_email')
+      .select('order_number, total, status, customer_name, customer_email')
       .eq('id', order_id)
       .single()
 
@@ -104,6 +114,28 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`[Nomba Initialize ${requestId}] ✅ Order found: ${order.order_number}`)
+
+    // Check if order is already paid
+    if (order.status === 'paid' || order.status === 'completed') {
+      console.error(`[Nomba Initialize ${requestId}] ❌ Order already paid`)
+      return NextResponse.json(
+        { error: 'Order has already been paid for' },
+        { status: 400 }
+      )
+    }
+
+    // CRITICAL: Verify amount matches order total to prevent amount manipulation
+    // Allow ₦1 difference for rounding errors
+    const amountDifference = Math.abs(numericAmount - order.total)
+    if (amountDifference > 1) {
+      console.error(`[Nomba Initialize ${requestId}] ❌ Amount mismatch: sent=${numericAmount}, expected=${order.total}`)
+      return NextResponse.json(
+        { error: 'Amount does not match order total' },
+        { status: 400 }
+      )
+    }
+
+    console.log(`[Nomba Initialize ${requestId}] ✅ Amount validated: ₦${order.total}`)
 
     // Check Nomba credentials
     const accountId = process.env.NOMBA_ACCOUNT_ID
@@ -144,8 +176,9 @@ export async function POST(request: NextRequest) {
 
     // IMPORTANT: Nomba expects amount in naira format (NOT kobo like Paystack!)
     // Format as string with 2 decimal places (e.g., "250.00" for ₦250)
-    const amountInNaira = Number(amount).toFixed(2)
-    console.log(`[Nomba Initialize ${requestId}] Amount: ₦${amount} → "${amountInNaira}" (naira format)`)
+    // Use order.total (from database) instead of amount parameter to prevent manipulation
+    const amountInNaira = Number(order.total).toFixed(2)
+    console.log(`[Nomba Initialize ${requestId}] Amount: ₦${order.total} → "${amountInNaira}" (naira format)`)
 
     // Create checkout order
     console.log(`[Nomba Initialize ${requestId}] Creating checkout order...`)

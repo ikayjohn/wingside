@@ -163,7 +163,12 @@ export async function POST() {
 
       // Check if error is "Allowed number of wallets reached"
       // This means the wallet already exists in Embedly but isn't saved in our DB
-      if (error instanceof Error ? error instanceof Error ? error.message : 'Unknown error' : 'Unknown error'?.includes('Allowed number of wallets') || error instanceof Error ? error instanceof Error ? error.message : 'Unknown error' : 'Unknown error'?.includes('400')) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isWalletLimitError = errorMessage.includes('Allowed number of wallets') ||
+                                  errorMessage.includes('allowed number of wallets') ||
+                                  errorMessage.includes('400');
+
+      if (isWalletLimitError) {
         console.log('Wallet already exists in Embedly, attempting to recover...');
 
         // Since we can't list wallets by customer, we need to inform the user
@@ -184,7 +189,7 @@ export async function POST() {
       return NextResponse.json(
         {
           error: 'Failed to create wallet',
-          details: error instanceof Error ? error instanceof Error ? error.message : 'Unknown error' : 'Unknown error'
+          details: error instanceof Error ? error.message : 'Unknown error'
         },
         { status: 500 }
       );

@@ -188,16 +188,30 @@ class EmbedlyClient {
   constructor(apiKey: string, environment: 'production' | 'staging' = 'production') {
     this.apiKey = apiKey;
 
-    if (environment === 'production') {
-      this.baseUrl = 'https://waas-prod.embedly.ng/api/v1';
-      this.payoutUrl = 'https://payout-staging.embedly.ng/api/Payout'; // Note: staging URL for payout
-      this.checkoutUrl = 'https://checkout-prod.embedly.ng';
-      this.cardUrl = 'https://waas-card-middleware-api-prod.embedly.ng';
-    } else {
-      this.baseUrl = 'https://waas-staging.embedly.ng/api/v1';
-      this.payoutUrl = 'https://payout-staging.embedly.ng/api/Payout';
-      this.checkoutUrl = 'https://checkout-staging.embedly.ng';
-      this.cardUrl = 'https://waas-card-middleware-api-staging.embedly.ng';
+    // Default URLs based on environment
+    const defaultUrls = environment === 'production' ? {
+      baseUrl: 'https://waas-prod.embedly.ng/api/v1',
+      payoutUrl: 'https://payout-prod.embedly.ng/api/Payout',
+      checkoutUrl: 'https://checkout-prod.embedly.ng',
+      cardUrl: 'https://waas-card-middleware-api-prod.embedly.ng',
+    } : {
+      baseUrl: 'https://waas-staging.embedly.ng/api/v1',
+      payoutUrl: 'https://payout-staging.embedly.ng/api/Payout',
+      checkoutUrl: 'https://checkout-staging.embedly.ng',
+      cardUrl: 'https://waas-card-middleware-api-staging.embedly.ng',
+    };
+
+    // Allow environment variable overrides for flexibility
+    this.baseUrl = process.env.EMBEDLY_BASE_URL || defaultUrls.baseUrl;
+    this.payoutUrl = process.env.EMBEDLY_PAYOUT_URL || defaultUrls.payoutUrl;
+    this.checkoutUrl = process.env.EMBEDLY_CHECKOUT_URL || defaultUrls.checkoutUrl;
+    this.cardUrl = process.env.EMBEDLY_CARD_URL || defaultUrls.cardUrl;
+
+    // Log environment for debugging (only on initialization)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[Embedly] Initialized for ${environment} environment`);
+      console.log(`[Embedly] Base URL: ${this.baseUrl}`);
+      console.log(`[Embedly] Payout URL: ${this.payoutUrl}`);
     }
   }
 

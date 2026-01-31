@@ -51,6 +51,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Get current wallet details
+    let walletTransaction: any = null; // Declare outside try block for error handling access
+    let transactionReference: string = '';
+    let finalWalletBalance: number = 0; // Track actual balance after transfer
+
     try {
       const wallet = await embedlyClient.getWalletById(profile.embedly_wallet_id);
 
@@ -64,9 +68,9 @@ export async function POST(request: NextRequest) {
 
       console.log(`Processing wallet payment of ₦${amount} from wallet ${profile.embedly_wallet_id}`);
 
-      // Create local wallet transaction record (debit)
-      const transactionReference = `ORDER-${order_id}-${Date.now()}`;
-      const { error: transactionError } = await supabase
+      // Create local wallet transaction record (debit) with PENDING status
+      transactionReference = `ORDER-${order_id}-${Date.now()}`;
+      const { data: transaction, error: transactionError } = await supabase
         .from('wallet_transactions')
         .insert({
           user_id: user.id,
@@ -75,18 +79,23 @@ export async function POST(request: NextRequest) {
           currency: 'NGN',
           reference: transactionReference,
           description: remarks || `Payment for order ${order_id}`,
-          status: 'completed',
+          status: 'pending', // Mark as pending until transfer completes
           metadata: {
             order_id,
             wallet_id: profile.embedly_wallet_id,
             payment_method: 'wallet'
           }
-        });
+        })
+        .select()
+        .single();
 
-      if (transactionError) {
+      if (transactionError || !transaction) {
         console.error('Error creating wallet transaction record:', transactionError);
         throw new Error('Failed to record wallet transaction');
       }
+
+      walletTransaction = transaction; // Assign to outer scope variable
+      console.log(`📝 Created pending transaction ${walletTransaction.id} with reference ${transactionReference}`);
 
       // Perform actual wallet-to-wallet transfer to merchant wallet
       const merchantWalletId = process.env.EMBEDLY_MERCHANT_WALLET_ID;
@@ -109,34 +118,83 @@ export async function POST(request: NextRequest) {
 
           console.log(`✅ Successfully transferred ₦${amount} to merchant wallet (${merchantWalletId})`);
 
+          // Update transaction status to completed after successful transfer
+          const { error: transactionUpdateError } = await supabase
+            .from('wallet_transactions')
+            .update({
+              status: 'completed',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', walletTransaction.id);
+
+          if (transactionUpdateError) {
+            console.error('Error updating transaction status:', transactionUpdateError);
+            // Don't throw - transfer succeeded, this is just a status update issue
+          } else {
+            console.log(`✅ Transaction ${walletTransaction.id} marked as completed`);
+          }
+
           // Fetch updated wallet balance from Embedly and update profile
           try {
             const updatedWallet = await embedlyClient.getWalletById(profile.embedly_wallet_id);
-            console.log(`💰 New wallet balance: ₦${updatedWallet.availableBalance}`);
+            finalWalletBalance = updatedWallet.availableBalance; // Store actual balance
+            console.log(`💰 New wallet balance: ₦${finalWalletBalance}`);
 
             // Update profile wallet_balance in Supabase
             const { error: profileUpdateError } = await supabase
               .from('profiles')
               .update({
-                wallet_balance: updatedWallet.availableBalance
+                wallet_balance: finalWalletBalance
               })
               .eq('id', user.id);
 
             if (profileUpdateError) {
               console.error('Error updating profile wallet_balance:', profileUpdateError);
             } else {
-              console.log(`✅ Profile wallet_balance updated to ₦${updatedWallet.availableBalance}`);
+              console.log(`✅ Profile wallet_balance updated to ₦${finalWalletBalance}`);
             }
           } catch (balanceUpdateError) {
             console.error('Error fetching updated wallet balance:', balanceUpdateError);
-            // Don't throw error - payment was successful, just balance update failed
+            // Fallback: calculate expected balance if fetch fails
+            finalWalletBalance = wallet.availableBalance - amount;
+            console.warn(`⚠️ Using calculated balance: ₦${finalWalletBalance}`);
           }
         } catch (transferError) {
           console.error('❌ Wallet transfer failed:', transferError);
+
+          // Mark transaction as failed
+          await supabase
+            .from('wallet_transactions')
+            .update({
+              status: 'failed',
+              metadata: {
+                ...walletTransaction.metadata,
+                error: transferError instanceof Error ? transferError.message : 'Unknown error',
+                failed_at: new Date().toISOString()
+              },
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', walletTransaction.id);
+
           throw new Error(`Failed to transfer funds to merchant wallet: ${transferError instanceof Error ? transferError.message : 'Unknown error'}`);
         }
       } else {
         console.warn('⚠️ Merchant wallet not configured. Skipping actual transfer.');
+
+        // Mark transaction as failed
+        await supabase
+          .from('wallet_transactions')
+          .update({
+            status: 'failed',
+            metadata: {
+              ...walletTransaction.metadata,
+              error: 'Merchant wallet not configured',
+              failed_at: new Date().toISOString()
+            },
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', walletTransaction.id);
+
         throw new Error('Merchant wallet not configured. Please set EMBEDLY_MERCHANT_WALLET_ID in environment variables.');
       }
 
@@ -212,13 +270,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: 'Payment processed successfully',
-        transactionReference: `ORDER-${order_id}-${Date.now()}`,
-        newBalance: wallet.availableBalance - amount,
+        transactionReference: transactionReference, // Use the actual reference from the transaction
+        transactionId: walletTransaction.id,
+        newBalance: finalWalletBalance, // Use actual balance from Embedly after transfer
         pointsAwarded: purchasePoints
       });
 
     } catch (embedlyError) {
       console.error('Embedly wallet payment error:', embedlyError);
+
+      // If transaction was created but failed, mark it as failed
+      // This ensures financial records accurately reflect failed payments
+      if (walletTransaction) {
+        try {
+          await supabase
+            .from('wallet_transactions')
+            .update({
+              status: 'failed',
+              metadata: {
+                ...walletTransaction.metadata,
+                error: embedlyError instanceof Error ? embedlyError.message : 'Unknown error',
+                failed_at: new Date().toISOString()
+              },
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', walletTransaction.id);
+
+          console.log(`❌ Transaction ${walletTransaction.id} marked as failed`);
+        } catch (updateError) {
+          console.error('Error updating failed transaction status:', updateError);
+        }
+      }
+
       return NextResponse.json(
         {
           error: 'Failed to process wallet payment',

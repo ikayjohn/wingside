@@ -120,20 +120,54 @@ export async function POST(request: NextRequest) {
       amount: transaction.amount
     })
 
-    // Check if transaction was successful (case-insensitive, handle multiple success statuses)
-    const successStatuses = ['SUCCESSFUL', 'SUCCESS', 'COMPLETED', 'APPROVED']
-    const isSuccessful = successStatuses.includes(transaction.status.toUpperCase())
+    // Validate transaction status with clear primary/fallback logic
+    // Reference: Nomba API documentation specifies 'SUCCESSFUL' as primary success status
+    const statusUpper = transaction.status.toUpperCase()
 
-    if (!isSuccessful) {
-      console.log('[Nomba Verify] ⚠️  Payment not successful:', transaction.status)
+    // Primary success status (per Nomba documentation)
+    const PRIMARY_SUCCESS_STATUS = 'SUCCESSFUL'
+
+    // Known fallback statuses (variants observed in different environments/API versions)
+    // These generate warnings to help identify if Nomba changes their API response
+    const FALLBACK_SUCCESS_STATUSES = ['SUCCESS', 'COMPLETED', 'APPROVED']
+
+    // Known failure statuses (explicit rejection)
+    const FAILURE_STATUSES = ['FAILED', 'DECLINED', 'REJECTED', 'CANCELLED', 'EXPIRED']
+
+    // Check primary success status
+    if (statusUpper === PRIMARY_SUCCESS_STATUS) {
+      console.log('[Nomba Verify] ✅ Payment successful (primary status)')
+    }
+    // Check fallback success statuses
+    else if (FALLBACK_SUCCESS_STATUSES.includes(statusUpper)) {
+      console.warn(`[Nomba Verify] ⚠️  Payment successful but using non-standard status: "${transaction.status}"`)
+      console.warn(`[Nomba Verify] Expected: "${PRIMARY_SUCCESS_STATUS}", Got: "${transaction.status}"`)
+      console.warn(`[Nomba Verify] Please verify Nomba API documentation - status format may have changed`)
+    }
+    // Check known failure statuses
+    else if (FAILURE_STATUSES.includes(statusUpper)) {
+      console.log(`[Nomba Verify] ❌ Payment failed with status: ${transaction.status}`)
       return NextResponse.json({
         success: false,
         status: transaction.status,
-        message: `Payment status: ${transaction.status}`,
+        message: `Payment ${transaction.status.toLowerCase()}. Please try again or contact support.`,
       })
     }
+    // Unknown status (pending, processing, or new status)
+    else {
+      console.error(`[Nomba Verify] ⚠️  UNKNOWN STATUS: "${transaction.status}"`)
+      console.error(`[Nomba Verify] Transaction ID: ${transaction.transactionId}`)
+      console.error(`[Nomba Verify] Reference: ${transactionRef}`)
+      console.error(`[Nomba Verify] This status is not in our known list - manual review required`)
 
-    console.log('[Nomba Verify] ✅ Payment successful!')
+      // Don't mark as successful for unknown statuses
+      return NextResponse.json({
+        success: false,
+        status: transaction.status,
+        message: `Payment status unclear: ${transaction.status}. Please contact support with reference ${transactionRef}`,
+        warning: 'Unknown payment status received from payment gateway',
+      }, { status: 202 }) // 202 Accepted - needs manual verification
+    }
 
     // Update order payment status in database
     const supabase = await createClient()

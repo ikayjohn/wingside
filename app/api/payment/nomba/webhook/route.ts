@@ -60,44 +60,76 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Verify HMAC signature
-      // Nomba uses HMAC-SHA256 (not SHA512!) per their documentation
-      // Format: event_type:request_id:user_id:wallet_id:transaction_id:type:time:response_code:timestamp
-      const parsedEvent = JSON.parse(rawBody)
-      const signatureString = [
-        parsedEvent.event_type || '',
-        parsedEvent.requestId || parsedEvent.request_id || '',
-        parsedEvent.data?.merchant?.userId || '',
-        parsedEvent.data?.merchant?.walletId || '',
-        parsedEvent.data?.transaction?.transactionId || '',
-        parsedEvent.data?.transaction?.type || '',
-        parsedEvent.data?.transaction?.time || '',
-        parsedEvent.data?.transaction?.responseCode || '00',
-        timestamp || ''
-      ].join(':')
+      // Verify HMAC signature using Nomba's format
+      // Nomba signature verification: HMAC-SHA256 of the raw request body
+      // Reference: https://docs.nomba.com/webhooks/security
 
-      const expectedSignature = crypto
-        .createHmac('sha256', webhookSecret)
-        .update(signatureString)
-        .digest('base64')
+      // Try multiple signature formats for compatibility
+      const signatures = {
+        // Method 1: HMAC of raw body (most common)
+        rawBody: crypto
+          .createHmac('sha256', webhookSecret)
+          .update(rawBody)
+          .digest('base64'),
 
-      // Compare signatures securely
-      if (signature !== expectedSignature) {
-        console.error('Invalid Nomba webhook signature')
-        console.error('Expected:', expectedSignature)
-        console.error('Received:', signature)
-        console.error('Signature string:', signatureString)
-        console.warn('⚠️  Processing webhook anyway to allow payments (will fix signature later)')
-        // TODO: Re-enable strict verification after fixing signature format
-        // return NextResponse.json(
-        //   { error: 'Invalid signature' },
-        //   { status: 401 }
-        // )
-      } else {
-        console.log('✅ Nomba webhook signature verified')
+        // Method 2: HMAC of raw body (hex encoding)
+        rawBodyHex: crypto
+          .createHmac('sha256', webhookSecret)
+          .update(rawBody)
+          .digest('hex'),
+
+        // Method 3: Concatenated fields (legacy format)
+        concatenated: crypto
+          .createHmac('sha256', webhookSecret)
+          .update([
+            event.event_type || '',
+            event.requestId || event.request_id || '',
+            event.data?.transaction?.transactionId || '',
+            timestamp || ''
+          ].join(':'))
+          .digest('base64'),
       }
+
+      // Check if any signature format matches
+      const isValidSignature = Object.values(signatures).some(sig =>
+        crypto.timingSafeEqual(
+          Buffer.from(signature),
+          Buffer.from(sig)
+        ).catch(() => false) || signature === sig
+      )
+
+      if (!isValidSignature) {
+        console.error('❌ Invalid Nomba webhook signature')
+        console.error('Received signature:', signature)
+        console.error('Tried formats:', Object.keys(signatures))
+        console.error('Expected (rawBody base64):', signatures.rawBody)
+        console.error('Expected (rawBody hex):', signatures.rawBodyHex)
+        console.error('Event type:', event.event_type)
+        console.error('Request ID:', event.requestId)
+
+        // REJECT invalid signatures - security enforcement
+        return NextResponse.json(
+          {
+            error: 'Invalid webhook signature',
+            message: 'Webhook signature verification failed'
+          },
+          { status: 401 }
+        )
+      }
+
+      console.log('✅ Nomba webhook signature verified successfully')
     } else {
-      console.warn('⚠️  NOMBA_WEBHOOK_SECRET not set - skipping signature verification (recommended for production)')
+      console.warn('⚠️  NOMBA_WEBHOOK_SECRET not configured')
+      console.warn('⚠️  Webhooks are NOT SECURE without signature verification!')
+      console.warn('⚠️  Set NOMBA_WEBHOOK_SECRET in production immediately!')
+
+      // In production, require webhook secret
+      if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json(
+          { error: 'Webhook signature verification required in production' },
+          { status: 401 }
+        )
+      }
     }
 
     // Handle payment failure or cancellation
@@ -243,24 +275,8 @@ export async function POST(request: NextRequest) {
         needsSync = true
       }
 
-      // 2. Increment promo code usage atomically
-      if (order.promo_code_id) {
-        try {
-          const { error: promoError } = await admin.rpc('increment_promo_usage', {
-            promo_id: order.promo_code_id
-          })
-
-          if (!promoError) {
-            console.log(`✅ Incremented promo code usage for: ${order.promo_code_id}`)
-          } else {
-            console.error('Error incrementing promo code usage:', promoError)
-          }
-        } catch (promoError) {
-          console.error('Error incrementing promo code usage:', promoError)
-        }
-      }
-
-      // 4. Process all rewards atomically (points, bonuses, referrals) with rollback on failure
+      // 2. Process all rewards atomically (points, bonuses, referrals) with rollback on failure
+      // NOTE: Promo code increment moved to AFTER successful payment processing
       if (profileId) {
         const { data: paymentResult, error: paymentError } = await admin.rpc('process_payment_atomically', {
           p_order_id: order.id,
@@ -321,6 +337,26 @@ export async function POST(request: NextRequest) {
               firstOrderBonus: result.first_order_bonus_claimed,
               referralProcessed: result.referral_processed
             })
+
+            // Increment promo code usage ONLY after successful payment processing
+            // This prevents promo codes from being depleted by failed orders
+            if (order.promo_code_id) {
+              try {
+                const { error: promoError } = await admin.rpc('increment_promo_usage', {
+                  promo_id: order.promo_code_id
+                })
+
+                if (!promoError) {
+                  console.log(`✅ Incremented promo code usage for: ${order.promo_code_id}`)
+                } else {
+                  console.error('⚠️ Error incrementing promo code usage:', promoError)
+                  // Non-critical: Log for manual review but don't fail the webhook
+                }
+              } catch (promoError) {
+                console.error('⚠️ Error incrementing promo code usage:', promoError)
+                // Non-critical: Log for manual review but don't fail the webhook
+              }
+            }
           }
         }
       }
@@ -408,12 +444,85 @@ export async function POST(request: NextRequest) {
         });
 
         if (!emailResult.success) {
-          console.error('Failed to send payment confirmation email:', emailResult.error);
+          console.error('❌ Failed to send payment confirmation email:', emailResult.error);
+
+          // CRITICAL: Track email failure for manual follow-up
+          await admin.from('failed_notifications').insert({
+            notification_type: 'payment_confirmation_email',
+            order_id: order.id,
+            order_number: order.order_number,
+            recipient_email: order.customer_email,
+            recipient_phone: order.customer_phone,
+            error_message: emailResult.error || 'Unknown email error',
+            metadata: {
+              customer_name: order.customer_name,
+              order_total: order.total,
+              payment_method: 'nomba',
+              transaction_reference: transactionId,
+              attempt_count: 1
+            },
+            status: 'pending_retry',
+            created_at: new Date().toISOString()
+          });
+
+          // Create admin notification for immediate attention
+          await admin.from('notifications').insert({
+            user_id: null, // Admin notification
+            type: 'email_delivery_failed',
+            title: 'Payment Confirmation Email Failed',
+            message: `Failed to send payment confirmation to ${order.customer_email} for order ${order.order_number}`,
+            metadata: {
+              order_id: order.id,
+              order_number: order.order_number,
+              customer_email: order.customer_email,
+              customer_name: order.customer_name,
+              order_total: order.total,
+              error: emailResult.error,
+              action_required: 'Send manual confirmation or retry email delivery'
+            },
+            is_read: false,
+            created_at: new Date().toISOString()
+          });
+
+          console.log(`⚠️ Email failure tracked for manual follow-up: Order ${order.order_number}`);
         } else {
           console.log('✅ Payment confirmation email sent to', order.customer_email);
         }
       } catch (emailError) {
-        console.error('Error sending payment confirmation email:', emailError);
+        console.error('❌ Error sending payment confirmation email:', emailError);
+
+        // Track critical email system failure
+        await admin.from('failed_notifications').insert({
+          notification_type: 'payment_confirmation_email',
+          order_id: order.id,
+          order_number: order.order_number,
+          recipient_email: order.customer_email,
+          recipient_phone: order.customer_phone,
+          error_message: emailError instanceof Error ? emailError.message : 'Email system exception',
+          metadata: {
+            customer_name: order.customer_name,
+            order_total: order.total,
+            error_type: 'exception',
+            stack_trace: emailError instanceof Error ? emailError.stack : undefined
+          },
+          status: 'pending_retry',
+          created_at: new Date().toISOString()
+        });
+
+        // Alert admin of email system failure
+        await admin.from('notifications').insert({
+          user_id: null,
+          type: 'email_system_error',
+          title: 'Email System Error',
+          message: `Email system error for order ${order.order_number}. Customer did not receive confirmation.`,
+          metadata: {
+            order_id: order.id,
+            customer_email: order.customer_email,
+            error: emailError instanceof Error ? emailError.message : 'Unknown error',
+            urgency: 'high'
+          },
+          is_read: false
+        });
       }
 
       // Send order notification email to admin
@@ -449,10 +558,44 @@ export async function POST(request: NextRequest) {
           if (smsResult.success) {
             console.log('✅ Payment confirmation SMS sent to', order.customer_phone);
           } else {
-            console.error('Failed to send payment confirmation SMS:', smsResult.error);
+            console.error('❌ Failed to send payment confirmation SMS:', smsResult.error);
+
+            // Track SMS failure (lower priority than email, but still important)
+            await admin.from('failed_notifications').insert({
+              notification_type: 'payment_confirmation_sms',
+              order_id: order.id,
+              order_number: order.order_number,
+              recipient_email: order.customer_email,
+              recipient_phone: order.customer_phone,
+              error_message: smsResult.error || 'Unknown SMS error',
+              metadata: {
+                customer_name: order.customer_name,
+                order_total: order.total,
+                attempt_count: 1
+              },
+              status: 'pending_retry',
+              created_at: new Date().toISOString()
+            });
+
+            console.log(`⚠️ SMS failure tracked for retry: ${order.customer_phone}`);
           }
         } catch (smsError) {
-          console.error('Error sending payment confirmation SMS:', smsError);
+          console.error('❌ Error sending payment confirmation SMS:', smsError);
+
+          // Track SMS system error
+          await admin.from('failed_notifications').insert({
+            notification_type: 'payment_confirmation_sms',
+            order_id: order.id,
+            order_number: order.order_number,
+            recipient_email: order.customer_email,
+            recipient_phone: order.customer_phone,
+            error_message: smsError instanceof Error ? smsError.message : 'SMS system exception',
+            metadata: {
+              customer_name: order.customer_name,
+              error_type: 'exception'
+            },
+            status: 'pending_retry'
+          });
         }
       }
     }
