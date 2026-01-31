@@ -9,6 +9,8 @@ interface WebhookEvent {
 
 // POST /api/embedly/webhooks - Handle Embedly webhooks
 export async function POST(request: NextRequest) {
+  let event: WebhookEvent | undefined;
+
   try {
     const body = await request.text();
     const signature = request.headers.get('x-auth-signature');
@@ -38,7 +40,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const event: WebhookEvent = JSON.parse(body);
+    event = JSON.parse(body) as WebhookEvent;
     const supabase = await createClient();
 
     console.log('Received Embedly webhook:', event.event, event.data);
