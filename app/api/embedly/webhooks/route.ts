@@ -26,18 +26,40 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const expectedSignature = crypto
-        .createHmac('sha256', webhookSecret)
-        .update(body)
-        .digest('hex');
+      // Try multiple signature formats for compatibility
+      const signatures = {
+        // Format 1: Raw hex (most common)
+        hex: crypto
+          .createHmac('sha256', webhookSecret)
+          .update(body)
+          .digest('hex'),
 
-      if (signature !== `sha256${expectedSignature}`) {
+        // Format 2: Base64 encoding
+        base64: crypto
+          .createHmac('sha256', webhookSecret)
+          .update(body)
+          .digest('base64'),
+      };
+
+      // Check if signature matches any expected format
+      const isValidSignature =
+        signature === signatures.hex ||
+        signature === signatures.base64 ||
+        signature === `sha256${signatures.hex}` ||
+        signature === `sha256=${signatures.hex}`;
+
+      if (!isValidSignature) {
         console.error('Invalid webhook signature');
+        console.error('Received signature:', signature);
+        console.error('Expected (hex):', signatures.hex);
+        console.error('Expected (base64):', signatures.base64);
         return NextResponse.json(
           { error: 'Invalid signature' },
           { status: 401 }
         );
       }
+
+      console.log('✅ Embedly webhook signature verified successfully');
     }
 
     event = JSON.parse(body) as WebhookEvent;
