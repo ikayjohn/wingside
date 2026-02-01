@@ -2,11 +2,44 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import crypto from 'crypto'
 
-// Verify Embedly webhook signature
+/**
+ * Verifies Embedly webhook signature using HMAC-SHA256
+ *
+ * @param payload - Raw webhook payload string
+ * @param signature - Signature from x-embedly-signature header
+ * @returns True if signature is valid, false otherwise
+ */
 function verifyWebhookSignature(payload: string, signature: string | null): boolean {
-  // TODO: Implement signature verification if Embedly provides webhook secret
-  // For now, accept all webhooks
-  return true;
+  const webhookSecret = process.env.EMBEDLY_WEBHOOK_SECRET;
+
+  // If no webhook secret is configured, reject all webhooks for security
+  if (!webhookSecret) {
+    console.error('[Embedly Webhook] EMBEDLY_WEBHOOK_SECRET not configured - rejecting webhook');
+    return false;
+  }
+
+  // Signature is required
+  if (!signature) {
+    console.error('[Embedly Webhook] No signature provided');
+    return false;
+  }
+
+  try {
+    // Generate expected signature using HMAC-SHA256
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(payload)
+      .digest('hex');
+
+    // Use timing-safe comparison to prevent timing attacks
+    return crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expectedSignature)
+    );
+  } catch (error) {
+    console.error('[Embedly Webhook] Signature verification error:', error);
+    return false;
+  }
 }
 
 // POST /api/embedly/webhooks/cards - Receive card-related webhooks
@@ -17,10 +50,17 @@ export async function POST(request: NextRequest) {
 
     // Verify webhook signature
     if (!verifyWebhookSignature(payload, signature)) {
+      console.error('[Embedly Webhook] Signature verification failed', {
+        hasSignature: !!signature,
+        hasSecret: !!process.env.EMBEDLY_WEBHOOK_SECRET,
+        payloadLength: payload.length,
+        timestamp: new Date().toISOString(),
+      });
+
       return NextResponse.json(
         { error: 'Invalid webhook signature' },
         { status: 401 }
-      )
+      );
     }
 
     const event = JSON.parse(payload);
