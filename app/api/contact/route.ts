@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     const { type, name, email, phone, company, message, formData } = validationResult.data;
 
     // Security checks for injection attacks
-    const stringInputs = [name, email, phone, company, message].filter(Boolean);
+    const stringInputs = [name, email, phone, company, message].filter((v): v is string => typeof v === 'string');
     for (const input of stringInputs) {
       if (detectSqlInjection(input) || detectNoSqlInjection(input)) {
         console.error('Potential injection attack detected:', { input });
@@ -109,8 +109,8 @@ export async function POST(request: NextRequest) {
     const sanitizedName = sanitizeTextInput(name);
     const sanitizedEmail = sanitizeEmail(email);
     const sanitizedPhone = sanitizePhone(phone);
-    const sanitizedCompany = company ? sanitizeTextInput(company) : null;
-    const sanitizedMessage = message ? sanitizeTextInput(message) : null;
+    const sanitizedCompany = company ? sanitizeTextInput(company) : undefined;
+    const sanitizedMessage = message ? sanitizeTextInput(message) : undefined;
 
     const supabase = await createClient();
 

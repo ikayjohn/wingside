@@ -130,7 +130,8 @@ export function categorizedError(
     [ErrorType.VALIDATION_ERROR]: 400,
     [ErrorType.DATABASE_ERROR]: 500,
     [ErrorType.EXTERNAL_API_ERROR]: 502,
-    [ErrorType.INTERNAL_ERROR]: 500
+    [ErrorType.INTERNAL_ERROR]: 500,
+    [ErrorType.INVALID_JSON]: 400
   };
 
   return {

@@ -103,7 +103,7 @@ function MapboxMap({ address, city, className = '', latitude, longitude }: Mapbo
 
       if (latitude !== null && longitude !== null) {
         new mapboxgl.Marker({ color: '#F7C400', scale: 1.5 })
-          .setLngLat([longitude, latitude])
+          .setLngLat([longitude!, latitude!])
           .addTo(map);
       }
     });
@@ -120,7 +120,7 @@ function MapboxMap({ address, city, className = '', latitude, longitude }: Mapbo
     const map = mapInstanceRef.current;
 
     map.flyTo({
-      center: [longitude, latitude],
+      center: [longitude!, latitude!],
       zoom: 18,
       speed: 1.2,
       curve: 1.42,
@@ -132,7 +132,7 @@ function MapboxMap({ address, city, className = '', latitude, longitude }: Mapbo
     }
 
     new mapboxgl.Marker({ color: '#F7C400', scale: 1.5 })
-      .setLngLat([longitude, latitude])
+      .setLngLat([longitude!, latitude!])
       .addTo(map);
 
     // Ensure attribution is removed after animation

@@ -94,7 +94,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (result?.success || result?.sent) {
+    if (result?.success) {
       return NextResponse.json({
         success: true,
         message: 'Notification resent successfully',

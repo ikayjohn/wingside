@@ -121,7 +121,7 @@ export function withRateLimit(
     const identifier = options.identifier || extractIdentifier(context.request);
     const prefix = context.request.nextUrl.pathname;
 
-    const result = checkRateLimit(`${prefix}:${identifier}`, config);
+    const result = await checkRateLimit(`${prefix}:${identifier}`, config);
 
     // Add rate limit headers to response
     const addRateLimitHeaders = (response: NextResponse): NextResponse => {

@@ -51,9 +51,11 @@ export default function MaintenancePage() {
   useEffect(() => {
     if (!settings?.estimated_completion) return
 
+    const estimatedCompletion = settings.estimated_completion
+
     const updateCountdown = () => {
       const now = new Date().getTime()
-      const completion = new Date(settings.estimated_completion).getTime()
+      const completion = new Date(estimatedCompletion).getTime()
       const distance = completion - now
 
       if (distance < 0) {

@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 
 // Enhanced referral code generator
-function generateReferralCode(firstName, lastName, existingCodes = []) {
-  const cleanName = (name) => {
+function generateReferralCode(firstName: string, lastName: string, existingCodes: string[] = []): string {
+  const cleanName = (name: string): string => {
     return name
       .toLowerCase()
       .replace(/[^a-zA-Z0-9]/g, '')

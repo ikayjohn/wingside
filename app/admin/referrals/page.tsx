@@ -63,7 +63,7 @@ export default function ReferralsManagementPage() {
       }
 
       const json = await response.json();
-      const data = json.data || [];
+      const data: Referral[] = json.data || [];
 
       setReferrals(data);
 
@@ -71,10 +71,10 @@ export default function ReferralsManagementPage() {
       if (data) {
         setStats({
           totalReferrals: data.length,
-          pendingReferrals: data.filter(r => r.status === 'pending_signup' || r.status === 'signed_up').length,
-          completedReferrals: data.filter(r => r.status === 'first_order_completed' || r.status === 'rewarded').length,
-          totalRewardsPaid: data.filter(r => r.status === 'rewarded').length * 2, // Both referrer and referred get rewards
-          totalAmount: data.filter(r => r.status === 'rewarded').length * 2 * 1000, // ₦1,000 each
+          pendingReferrals: data.filter((r: Referral) => r.status === 'pending_signup' || r.status === 'signed_up').length,
+          completedReferrals: data.filter((r: Referral) => r.status === 'first_order_completed' || r.status === 'rewarded').length,
+          totalRewardsPaid: data.filter((r: Referral) => r.status === 'rewarded').length * 2, // Both referrer and referred get rewards
+          totalAmount: data.filter((r: Referral) => r.status === 'rewarded').length * 2 * 1000, // ₦1,000 each
         });
       }
     } catch (error: unknown) {

@@ -78,10 +78,27 @@ async function checkRateLimitRedis(
     pipeline.ttl(countKey);
     pipeline.get(resetKey);
 
-    const [[, count], [, ttl], [, resetTime]] = await pipeline.exec();
+    const results = await pipeline.exec();
+    if (!results || results.length < 3) {
+      // Fallback to default values if pipeline fails
+      return {
+        success: true,
+        limit: config.limit,
+        remaining: config.limit - 1,
+        reset: now + config.window,
+      };
+    }
+
+    const [, countResult] = results[0];
+    const [, ttlResult] = results[1];
+    const [, resetTimeResult] = results[2];
+
+    const count = typeof countResult === 'string' ? countResult : null;
+    const ttl = typeof ttlResult === 'number' ? ttlResult : 0;
+    const resetTimeStr = typeof resetTimeResult === 'string' ? resetTimeResult : null;
 
     const currentCount = count ? parseInt(count, 10) : 0;
-    const resetTimestamp = resetTime ? parseInt(resetTime, 10) : now + blockDuration;
+    const resetTimestamp = resetTimeStr ? parseInt(resetTimeStr, 10) : now + blockDuration;
 
     // If rate limit exceeded and still in block period
     if (currentCount >= config.limit && ttl > 0) {
@@ -102,7 +119,7 @@ async function checkRateLimitRedis(
     if (currentCount === 0) {
       // First request in this window
       incrementPipeline.set(countKey, 1, 'EX', windowSeconds);
-      incrementPipeline.set(resetKey, resetTimestamp, 'EX', windowSeconds);
+      incrementPipeline.set(resetKey, resetTimestamp.toString(), 'EX', windowSeconds);
     } else {
       // Increment existing count
       incrementPipeline.incr(countKey);
@@ -244,12 +261,21 @@ export async function getRateLimitStatus(identifier: string): Promise<RateLimitR
       pipeline.ttl(countKey);
       pipeline.get(resetKey);
 
-      const [[, count], [, ttl], [, resetTime]] = await pipeline.exec();
+      const results = await pipeline.exec();
+      if (!results || results.length < 3) return null;
+
+      const [, countResult] = results[0];
+      const [, ttlResult] = results[1];
+      const [, resetTimeResult] = results[2];
+
+      const count = typeof countResult === 'string' ? countResult : null;
+      const ttl = typeof ttlResult === 'number' ? ttlResult : 0;
+      const resetTimeStr = typeof resetTimeResult === 'string' ? resetTimeResult : null;
 
       if (!count) return null;
 
       const currentCount = parseInt(count, 10);
-      const resetTimestamp = resetTime ? parseInt(resetTime, 10) : Date.now() + ttl * 1000;
+      const resetTimestamp = resetTimeStr ? parseInt(resetTimeStr, 10) : Date.now() + ttl * 1000;
 
       return {
         success: ttl > 0,

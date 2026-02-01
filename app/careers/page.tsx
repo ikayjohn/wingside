@@ -237,22 +237,34 @@ export default function CareersPage() {
             <div className="careers-job-details">
               <p className="careers-job-label">Job Title: {selectedJobData.title}</p>
 
-              <h3 className="careers-job-heading">Overview</h3>
-              <p className="careers-job-text">{selectedJobData.overview}</p>
+              {selectedJobData.overview && (
+                <>
+                  <h3 className="careers-job-heading">Overview</h3>
+                  <p className="careers-job-text">{selectedJobData.overview}</p>
+                </>
+              )}
 
-              <h3 className="careers-job-heading">Key Responsibilities</h3>
-              <ul className="careers-job-list">
-                {selectedJobData.responsibilities.map((item, index) => (
-                  <li key={index}>{item}</li>
-                ))}
-              </ul>
+              {selectedJobData.responsibilities && selectedJobData.responsibilities.length > 0 && (
+                <>
+                  <h3 className="careers-job-heading">Key Responsibilities</h3>
+                  <ul className="careers-job-list">
+                    {selectedJobData.responsibilities.map((item, index) => (
+                      <li key={index}>{item}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
 
-              <h3 className="careers-job-heading">Qualifications</h3>
-              <ul className="careers-job-list">
-                {selectedJobData.qualifications.map((item, index) => (
-                  <li key={index}>{item}</li>
-                ))}
-              </ul>
+              {selectedJobData.qualifications && selectedJobData.qualifications.length > 0 && (
+                <>
+                  <h3 className="careers-job-heading">Qualifications</h3>
+                  <ul className="careers-job-list">
+                    {selectedJobData.qualifications.map((item, index) => (
+                      <li key={index}>{item}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </div>
 
             {/* Success Message */}

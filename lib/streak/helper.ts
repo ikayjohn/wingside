@@ -43,7 +43,7 @@ export async function updateOrderStreak(
 
   let currentStreak = profile.current_streak || 0;
   let longestStreak = profile.longest_streak || 0;
-  let streakStartDate = profile.streak_start_date ? new Date(profile.streak_start_date) : today;
+  let streakStartDate: Date | null = profile.streak_start_date ? new Date(profile.streak_start_date) : today;
   const currentTotalPoints = profile.total_points || 0;
 
   // Calculate if this is a consecutive day
@@ -140,7 +140,7 @@ export async function updateOrderStreak(
   };
 
   // Only set streak_start_date if there's an active streak
-  if (currentStreak > 0) {
+  if (currentStreak > 0 && streakStartDate) {
     updateData.streak_start_date = streakStartDate.toISOString().split('T')[0];
   } else {
     updateData.streak_start_date = null;

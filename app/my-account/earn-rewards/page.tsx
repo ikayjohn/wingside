@@ -404,9 +404,9 @@ export default function EarnRewardsPage() {
                     <button
                       onClick={() => setSocialVerifyModal({
                         open: true,
-                        platform: task.platform,
-                        platformName: task.platformName,
-                        platformUrl: task.platformUrl,
+                        platform: task.platform as 'instagram' | 'twitter' | 'tiktok' | 'facebook' | 'youtube',
+                        platformName: task.platformName ?? '',
+                        platformUrl: task.platformUrl ?? '',
                         points: task.points
                       })}
                       className="bg-[#F7C400] text-gray-900 py-2 px-4 rounded-full font-medium text-sm hover:bg-[#e5b500] transition-colors"

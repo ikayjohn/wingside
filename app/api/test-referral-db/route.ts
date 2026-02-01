@@ -7,7 +7,7 @@ export async function GET() {
 
     // Test if referral tables exist
     const tablesToCheck = ['referrals', 'referral_rewards', 'referral_settings', 'referral_shares'];
-    const tableStatus = {};
+    const tableStatus: Record<string, { exists: boolean; error: string | null; count: number }> = {};
 
     for (const tableName of tablesToCheck) {
       try {
@@ -24,7 +24,7 @@ export async function GET() {
       } catch (tableError) {
         tableStatus[tableName] = {
           exists: false,
-          error: tableError.message,
+          error: tableError instanceof Error ? tableError.message : String(tableError),
           count: 0
         };
       }

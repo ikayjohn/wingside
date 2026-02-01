@@ -63,7 +63,6 @@ export function getRedisClient(): RedisType | null {
   if (!redis) {
     redis = new Redis(REDIS_URL, {
       maxRetriesPerRequest: 3,
-      retryDelayOnFailover: 100,
       enableReadyCheck: true,
       // Fallback to in-memory caching if Redis is unavailable
       retryStrategy: (times) => {

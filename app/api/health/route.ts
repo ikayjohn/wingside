@@ -46,7 +46,7 @@ export async function GET() {
       'SUPABASE_SERVICE_ROLE_KEY'
     ];
 
-    const envStatus = {};
+    const envStatus: Record<string, string> = {};
     for (const envVar of requiredEnvVars) {
       envStatus[envVar] = process.env[envVar] ? 'set' : 'missing';
     }

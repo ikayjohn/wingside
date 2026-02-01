@@ -38,6 +38,8 @@ export async function GET() {
       .eq('user_id', user.id)
       .eq('payment_status', 'paid');
 
+    const safeOrderCount = orderCount ?? 0;
+
     // Define available rewards
     const availableRewards = [
       {
@@ -47,11 +49,11 @@ export async function GET() {
         description: 'Complete your first order to earn bonus points!',
         icon: '🎉',
         category: 'milestone',
-        canClaim: orderCount > 0 && !claimedTypes.has('first_order'),
+        canClaim: safeOrderCount > 0 && !claimedTypes.has('first_order'),
         claimed: claimedTypes.has('first_order'),
         claimedAt: claimedRewards?.find(r => r.reward_type === 'first_order')?.claimed_at,
-        progress: orderCount > 0 ? 1 : 0,
-        progressText: orderCount > 0 ? '1/1 orders completed' : '0/1 orders completed',
+        progress: safeOrderCount > 0 ? 1 : 0,
+        progressText: safeOrderCount > 0 ? '1/1 orders completed' : '0/1 orders completed',
         requirement: 'Complete your first paid order'
       },
       {

@@ -23,7 +23,7 @@ interface EmbedlyCurrency {
   name: string;
 }
 
-interface EmbedlyCustomer {
+interface EmbedlyCustomerResponse {
   id: string;
   firstName: string;
   lastName: string;
@@ -67,7 +67,7 @@ async function embedlyRequest<T = unknown>(
     throw new Error(`Embedly API request failed: ${response.status}`);
   }
 
-  return response.json();
+  return (await response.json()) as EmbedlyApiResponse<T>;
 }
 
 // Get Nigeria's country GUID
@@ -154,7 +154,7 @@ export async function createCustomer(customer: Omit<EmbedlyCustomer, 'id'>): Pro
   const countryId = await getNigeriaCountryId();
   const customerTypeId = await getIndividualCustomerTypeId();
 
-  const result = await embedlyRequest('/customers/add', 'POST', {
+  const result = await embedlyRequest<{ id?: string }>('/customers/add', 'POST', {
     organizationId: EMBEDLY_ORG_ID,
     firstName: customer.firstName,
     lastName: customer.lastName,
@@ -165,14 +165,14 @@ export async function createCustomer(customer: Omit<EmbedlyCustomer, 'id'>): Pro
     city: 'Port Harcourt', // Default city - can be overridden
     address: 'Wingside Customer', // Default address - can be overridden
   });
-  return result.data?.id || result.id;
+  return result.data?.id || (result as any).id;
 }
 
 // Get customer by ID
 export async function getCustomer(customerId: string): Promise<EmbedlyCustomer | null> {
   try {
-    const result = await embedlyRequest(`/customer/${customerId}`);
-    return result.data || result;
+    const result = await embedlyRequest<EmbedlyCustomer>(`/customer/${customerId}`);
+    return result.data || (result as any);
   } catch {
     return null;
   }
@@ -181,11 +181,11 @@ export async function getCustomer(customerId: string): Promise<EmbedlyCustomer |
 // Get customer by email (checks all customers)
 export async function getCustomerByEmail(email: string): Promise<EmbedlyCustomer | null> {
   try {
-    const result = await embedlyRequest('/customers/get/all', 'GET');
+    const result = await embedlyRequest<any>('/customers/get/all', 'GET');
     const customers = result.data || result;
 
     // Handle both array and non-array responses
-    const customerArray: Array<Partial<EmbedlyCustomer & { emailAddress?: string }>> = Array.isArray(customers) ? customers : [];
+    const customerArray: any[] = Array.isArray(customers) ? customers : [];
 
     const found = customerArray.find((c) => {
       const customerEmail = (c.emailAddress || c.email || '').toLowerCase();
@@ -214,19 +214,19 @@ export async function createWallet(customerId: string, customerName?: string, cu
   // Get NGN currency GUID
   const currencyId = await getNgnCurrencyId();
 
-  const result = await embedlyRequest('/wallets/add', 'POST', {
+  const result = await embedlyRequest<any>('/wallets/add', 'POST', {
     customerId,
     currencyId,
     name: customerName || 'Wallet', // Use customer name if provided
   });
-  return result.data?.id || result.walletId || result.id;
+  return result.data?.id || (result as any).walletId || (result as any).id;
 }
 
 // Get wallet by ID
 export async function getWallet(walletId: string): Promise<EmbedlyWallet | null> {
   try {
-    const result = await embedlyRequest(`/wallet/${walletId}`);
-    return result.data || result;
+    const result = await embedlyRequest<EmbedlyWallet>(`/wallet/${walletId}`);
+    return result.data || (result as any);
   } catch {
     return null;
   }
@@ -332,7 +332,8 @@ export async function setupCustomerWithWallet(customer: {
       console.log(`Embedly: Wallet ${walletId} ready for customer ${customerId}`);
     } catch (walletError: unknown) {
       // CRITICAL: Wallet creation failed - this prevents loyalty points from being credited
-      console.error(`❌ CRITICAL: Embedly wallet creation failed for customer ${customerId}:`, walletError.message);
+      const errorMessage = walletError instanceof Error ? walletError.message : String(walletError);
+      console.error(`❌ CRITICAL: Embedly wallet creation failed for customer ${customerId}:`, errorMessage);
 
       // Track the failure for manual recovery
       try {
@@ -342,13 +343,13 @@ export async function setupCustomerWithWallet(customer: {
         await supabase.from('failed_integrations').insert({
           integration_type: 'embedly_wallet_creation',
           user_email: customer.email,
-          error_message: walletError.message,
+          error_message: errorMessage,
           error_details: {
             customer_id: customerId,
             embedly_customer_id: customerId,
             full_name: customer.full_name,
             email: customer.email,
-            error: walletError.message
+            error: errorMessage
           },
           status: 'pending_retry',
           created_at: new Date().toISOString()
@@ -363,7 +364,7 @@ export async function setupCustomerWithWallet(customer: {
           metadata: {
             customer_email: customer.email,
             embedly_customer_id: customerId,
-            error: walletError.message,
+            error: errorMessage,
             urgency: 'high',
             action_required: 'Manually create wallet and credit pending points'
           },
@@ -374,7 +375,7 @@ export async function setupCustomerWithWallet(customer: {
       }
 
       // Don't silently continue - throw error to prevent incomplete integration
-      throw new Error(`Embedly wallet creation failed: ${walletError.message}`);
+      throw new Error(`Embedly wallet creation failed: ${errorMessage}`);
     }
 
     return { customerId, walletId, isNewCustomer };

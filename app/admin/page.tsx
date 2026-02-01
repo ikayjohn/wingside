@@ -434,7 +434,7 @@ export default function AdminDashboard() {
                       }}
                       itemStyle={{ color: '#fff', fontSize: 14, fontWeight: 'bold' }}
                       labelStyle={{ color: '#fbbf24', fontSize: 12 }}
-                      formatter={(value: number) => [`${value} orders`, 'Count']}
+                      formatter={(value: number | undefined) => [`${value ?? 0} orders`, 'Count']}
                     />
                     <Area
                       type="monotone"
@@ -713,7 +713,7 @@ export default function AdminDashboard() {
               />
               <Tooltip
                 contentStyle={{ backgroundColor: '#552627', border: 'none', borderRadius: '8px', color: '#fff' }}
-                formatter={(value: number) => value.toLocaleString()}
+                formatter={(value: number | undefined) => (value ?? 0).toLocaleString()}
               />
               <Area
                 type="monotone"

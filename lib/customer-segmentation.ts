@@ -9,9 +9,12 @@ export interface Customer {
   created_at: string;
   last_order_date?: string | null;
   avg_days_between_orders?: number;
+  last_days_between_orders?: number;
   referral_count?: number;
   social_verifications?: number;
   avg_order_value?: number;
+  last_order_value?: number;
+  weekend_order_ratio?: number;
 }
 
 export interface CustomerSegment {
@@ -89,7 +92,7 @@ export const CUSTOMER_SEGMENTS: CustomerSegment[] = [
     description: 'Prefers ordering on weekends',
     color: 'yellow',
     icon: '🎉',
-    criteria: (c) => c.weekend_order_ratio >= 0.6
+    criteria: (c) => (c.weekend_order_ratio ?? 0) >= 0.6
   },
   {
     id: 'big-spender',
@@ -177,13 +180,13 @@ export function calculateCustomerHealth(customer: Customer): number {
   }
 
   // Referral activity (up to 10 points)
-  if (customer.referral_count > 0) {
-    score += Math.min(10, customer.referral_count * 2);
+  if ((customer.referral_count ?? 0) > 0) {
+    score += Math.min(10, (customer.referral_count ?? 0) * 2);
   }
 
   // Social verifications (up to 10 points)
-  if (customer.social_verifications > 0) {
-    score += Math.min(10, customer.social_verifications * 2);
+  if ((customer.social_verifications ?? 0) > 0) {
+    score += Math.min(10, (customer.social_verifications ?? 0) * 2);
   }
 
   return Math.min(100, Math.max(0, score));

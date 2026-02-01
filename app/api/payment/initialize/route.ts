@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     // This prevents abuse while allowing legitimate retry attempts
     const clientIp = await getClientIp();
     const rateLimitKey = `${order.user_id || 'guest'}:${clientIp}`;
-    const rateLimit = checkRateLimit(rateLimitKey, {
+    const rateLimit = await checkRateLimit(rateLimitKey, {
       limit: 5,
       window: 15 * 60 * 1000, // 15 minutes
       blockDuration: 30 * 60 * 1000 // 30 minute block after exceeding limit
