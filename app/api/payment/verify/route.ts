@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Update order payment status in database
-
+    // Only update if order is still pending to prevent status corruption
     if (orderId) {
       const { error: updateError } = await supabase
         .from('orders')
@@ -90,6 +90,8 @@ export async function GET(request: NextRequest) {
           paid_at: new Date().toISOString(),
         })
         .eq('id', orderId)
+        .eq('payment_status', 'pending') // Only update pending payments
+        .in('status', ['pending', 'confirmed']) // Don't revert completed/delivered orders
 
       if (updateError) {
         console.error('Error updating order payment status:', updateError)

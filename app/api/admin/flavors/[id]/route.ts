@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { CacheInvalidation, deleteCachePattern } from '@/lib/redis';
+import { csrfProtection } from '@/lib/csrf';
 
 // PATCH /api/admin/flavors/[id] - Update flavor (admin only)
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // CSRF protection for state-changing operations
+  const csrfError = await csrfProtection(request);
+  if (csrfError) return csrfError;
+
   try {
     const { id } = await params;
     const supabase = await createClient();
@@ -99,6 +104,10 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // CSRF protection for state-changing operations
+  const csrfError = await csrfProtection(request);
+  if (csrfError) return csrfError;
+
   try {
     const { id } = await params;
     const supabase = await createClient();

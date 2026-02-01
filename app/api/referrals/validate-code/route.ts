@@ -49,11 +49,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Success - return referrer info (but don't expose sensitive data)
+    // Success - only return validation status without exposing user data
+    // SECURITY: Do not expose referrerId to prevent user enumeration attacks
+    // The backend will look up the referrerId when processing the referral
     return NextResponse.json({
       valid: true,
-      referrerId: referrerData.id,
-      message: 'Referral code validated successfully'
+      message: 'Referral code is valid'
     });
 
   } catch (error) {

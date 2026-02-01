@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { CacheInvalidation } from '@/lib/redis';
+import { csrfProtection } from '@/lib/csrf';
 
 // GET /api/admin/flavors - Fetch all flavors (admin only)
 export async function GET(request: NextRequest) {
@@ -71,6 +72,10 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/flavors - Create new flavor (admin only)
 export async function POST(request: NextRequest) {
+  // CSRF protection for state-changing operations
+  const csrfError = await csrfProtection(request);
+  if (csrfError) return csrfError;
+
   try {
     const supabase = await createClient();
 

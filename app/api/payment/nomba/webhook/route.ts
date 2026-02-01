@@ -90,16 +90,18 @@ export async function POST(request: NextRequest) {
           .digest('base64'),
       }
 
-      // Check if any signature format matches
+      // Check if any signature format matches using timing-safe comparison
       const isValidSignature = Object.values(signatures).some(sig => {
         try {
+          // Use timing-safe comparison to prevent timing attacks
           return crypto.timingSafeEqual(
             Buffer.from(signature),
             Buffer.from(sig)
           )
         } catch {
-          // If timingSafeEqual throws (different buffer lengths), try string comparison
-          return signature === sig
+          // If timingSafeEqual throws (different buffer lengths), signatures don't match
+          // Don't fall back to insecure string comparison
+          return false
         }
       })
 

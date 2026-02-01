@@ -11,28 +11,20 @@ export async function GET(request: NextRequest) {
     const orderNumber = searchParams.get('orderNumber')
     const orderId = searchParams.get('orderId')
 
-    // If orderNumber is provided, fetch that specific order (no auth required for confirmation/tracking)
+    // Order lookup requires either authentication or email verification
+    // SECURITY: Never use admin client for unauthenticated order lookups
     if (orderNumber) {
       console.log(`[Orders API] Looking up order by orderNumber: ${orderNumber}`)
 
-      let { data: orders, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          items:order_items(*)
-        `)
-        .eq('order_number', orderNumber)
+      // Get email parameter for verification (required for guest lookups)
+      const verificationEmail = searchParams.get('email')
 
-      console.log(`[Orders API] Server client result:`, {
-        found: orders?.length || 0,
-        error: error?.message
-      })
+      // Check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser()
 
-      // If server client fails (RLS) or returns empty, use admin client
-      if (error || !orders || orders.length === 0) {
-        console.log('[Orders API] Trying admin client...')
-        const admin = createAdminClient()
-        const result = await admin
+      // For authenticated users, use normal client with RLS
+      if (user) {
+        const { data: orders, error } = await supabase
           .from('orders')
           .select(`
             *,
@@ -40,14 +32,37 @@ export async function GET(request: NextRequest) {
           `)
           .eq('order_number', orderNumber)
 
-        orders = result.data
-        error = result.error
+        if (error) {
+          console.error('[Orders API] Error fetching order:', error)
+          return NextResponse.json(
+            { error: 'Failed to fetch order' },
+            { status: 500 }
+          )
+        }
 
-        console.log(`[Orders API] Admin client result:`, {
-          found: orders?.length || 0,
-          error: error?.message
-        })
+        console.log(`[Orders API] ✅ Returning ${orders?.length || 0} orders for authenticated user`)
+        return NextResponse.json({ orders })
       }
+
+      // For guest users, require email verification
+      if (!verificationEmail) {
+        return NextResponse.json(
+          { error: 'Email verification required for order lookup' },
+          { status: 401 }
+        )
+      }
+
+      // Use admin client ONLY with email verification for guest orders
+      console.log('[Orders API] Guest order lookup with email verification')
+      const admin = createAdminClient()
+      const { data: orders, error } = await admin
+        .from('orders')
+        .select(`
+          *,
+          items:order_items(*)
+        `)
+        .eq('order_number', orderNumber)
+        .eq('customer_email', verificationEmail.toLowerCase().trim())
 
       if (error) {
         console.error('[Orders API] Error fetching order:', error)
@@ -57,7 +72,14 @@ export async function GET(request: NextRequest) {
         )
       }
 
-      console.log(`[Orders API] ✅ Returning ${orders?.length || 0} orders`)
+      if (!orders || orders.length === 0) {
+        return NextResponse.json(
+          { error: 'Order not found or email does not match' },
+          { status: 404 }
+        )
+      }
+
+      console.log(`[Orders API] ✅ Returning ${orders.length} orders for verified guest`)
       return NextResponse.json({ orders })
     }
 
