@@ -14,13 +14,13 @@ async function requireAdmin() {
     return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   }
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)
     .single();
 
-  if (profile?.role !== 'admin') {
+  if (profileError || profile?.role !== 'admin') {
     return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
   }
 
@@ -60,12 +60,17 @@ export async function POST(
     }
 
     // Get default address if available
-    const { data: address } = await admin
+    const { data: address, error: addressError } = await admin
       .from('addresses')
       .select('street_address, city, state')
       .eq('user_id', id)
       .eq('is_default', true)
       .single();
+
+    // No default address is OK (PGRST116), other errors should be logged
+    if (addressError && addressError.code !== 'PGRST116') {
+      console.error('Error fetching default address:', addressError);
+    }
 
     // Sync to integrations
     const result = await syncNewCustomer({
@@ -101,11 +106,15 @@ export async function GET(
     const { id } = await params;
     const admin = createAdminClient();
 
-    const { data: profile } = await admin
+    const { data: profile, error: profileError } = await admin
       .from('profiles')
       .select('zoho_contact_id, embedly_customer_id, embedly_wallet_id, wallet_balance')
       .eq('id', id)
       .single();
+
+    if (profileError || !profile) {
+      return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
+    }
 
     const status = getIntegrationStatus();
 

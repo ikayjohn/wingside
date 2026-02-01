@@ -14,13 +14,13 @@ async function requireAdmin() {
     return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   }
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)
     .single();
 
-  if (profile?.role !== 'admin') {
+  if (profileError || profile?.role !== 'admin') {
     return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
   }
 
@@ -53,11 +53,15 @@ export async function GET(
     // Fetch referrer name if referred_by exists
     let referrerName = null;
     if (profile.referred_by) {
-      const { data: referrer } = await admin
+      const { data: referrer, error: referrerError } = await admin
         .from('profiles')
         .select('full_name, email')
         .eq('id', profile.referred_by)
         .single();
+
+      if (referrerError) {
+        console.error('Error fetching referrer:', referrerError);
+      }
 
       if (referrer) {
         referrerName = referrer.full_name || referrer.email;
@@ -114,7 +118,7 @@ export async function GET(
     const totalSpent = orderTotals?.reduce((sum, order) => sum + (order.total || 0), 0) || 0;
 
     // Get last order date (most recent non-cancelled order)
-    const { data: lastOrder } = await admin
+    const { data: lastOrder, error: lastOrderError } = await admin
       .from('orders')
       .select('created_at')
       .eq('user_id', id)
@@ -123,14 +127,24 @@ export async function GET(
       .limit(1)
       .single();
 
+    // No orders is OK (PGRST116), other errors should be logged
+    if (lastOrderError && lastOrderError.code !== 'PGRST116') {
+      console.error('Error fetching last order:', lastOrderError);
+    }
+
     // Get last visit date (most recent order of any status)
-    const { data: lastVisit } = await admin
+    const { data: lastVisit, error: lastVisitError } = await admin
       .from('orders')
       .select('created_at')
       .eq('user_id', id)
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
+
+    // No orders is OK (PGRST116), other errors should be logged
+    if (lastVisitError && lastVisitError.code !== 'PGRST116') {
+      console.error('Error fetching last visit:', lastVisitError);
+    }
 
     const customerDetails = {
       ...profile,
