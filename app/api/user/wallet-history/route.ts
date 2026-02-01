@@ -56,8 +56,17 @@ export async function GET() {
         'streak_bonus': 'Streak Bonus',
         'manual_adjustment': 'Manual Adjustment',
         'affiliate_commission': 'Affiliate Commission',
-        'cashback': 'Cashback'
+        'cashback': 'Cashback',
+        'card_payment': 'Card Payment',
+        'card_refund': 'Card Refund',
+        'card_topup': 'Card Top-Up'
       }
+
+      // Check if this is a card transaction
+      const isCardTransaction = t.metadata?.transaction_type === 'card_tap' ||
+                                t.transaction_type === 'card_payment' ||
+                                t.transaction_type === 'card_refund' ||
+                                t.transaction_type === 'card_topup';
 
       return {
         id: t.id,
@@ -65,9 +74,17 @@ export async function GET() {
         description: t.description,
         amount: t.type === 'debit' ? -Math.abs(t.amount) : Math.abs(t.amount),
         status: t.status,
-        paymentMethod: t.metadata?.payment_method || 'wallet',
+        paymentMethod: isCardTransaction ? 'wingside_card' : (t.metadata?.payment_method || 'wallet'),
         createdAt: t.created_at,
         orderNumber: t.order_id,
+        // Include card transaction details if available
+        ...(isCardTransaction && {
+          cardDetails: {
+            card_serial: t.metadata?.card_serial,
+            merchant: t.metadata?.merchant,
+            location: t.metadata?.location
+          }
+        })
       }
     }) || []
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 // GET /api/user/wallet-balance - Fetch user's current wallet balance
 export async function GET() {
@@ -36,9 +37,25 @@ export async function GET() {
 
     const balance = latestTransaction?.balance_after || 0
 
+    // Check if user has a linked Wingside Card
+    const admin = createAdminClient();
+    const { data: card } = await admin
+      .from('wingside_cards')
+      .select('card_serial, status, card_type')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
     return NextResponse.json({
       balance: Number(balance),
-      currency: 'NGN'
+      currency: 'NGN',
+      card: card ? {
+        card_serial: card.card_serial,
+        status: card.status,
+        card_type: card.card_type,
+        has_card: true
+      } : {
+        has_card: false
+      }
     })
   } catch (error) {
     console.error('Unexpected error:', error)
