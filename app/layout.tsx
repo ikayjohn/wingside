@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AdminLayout } from "./admin-layout-wrapper";
 import Script from "next/script";
-// import ServiceWorkerProvider from "@/components/ServiceWorkerProvider"; // Temporarily disabled
+import ServiceWorkerProvider from "@/components/ServiceWorkerProvider";
 
 const inter = Inter({
   weight: ['300', '400', '500', '600', '700', '800'],
@@ -93,7 +93,7 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        {/* <ServiceWorkerProvider /> */} {/* Temporarily disabled to fix image loading issues */}
+        <ServiceWorkerProvider />
         <AdminLayout>{children}</AdminLayout>
       </body>
     </html>

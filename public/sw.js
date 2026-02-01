@@ -43,22 +43,21 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (request.method !== 'GET') return;
 
+  // Skip images to prevent caching issues
+  // Images are handled by Next.js Image component and Supabase CDN
+  if (request.destination === 'image' ||
+      /\.(jpg|jpeg|png|gif|webp|svg|ico)$/i.test(url.pathname)) {
+    return; // Let browser handle images normally
+  }
+
   // Skip external resources (CDNs, Supabase, etc.)
   if (url.origin !== location.origin) {
-    // For API calls to Supabase, use Network Only
-    if (url.pathname.startsWith('/api/')) {
-      event.respondWith(
-        fetch(request).catch((error) => {
-          console.error('API fetch failed:', error);
-          return new Response(JSON.stringify({ error: 'Network error' }), {
-            status: 503,
-            headers: { 'Content-Type': 'application/json' },
-          });
-        })
-      );
-      return;
-    }
-    return;
+    return; // Let browser handle external resources normally
+  }
+
+  // Skip API routes - always fetch fresh data
+  if (url.pathname.startsWith('/api/')) {
+    return; // Let browser handle API calls normally
   }
 
   // For static assets and pages, use Network First with Cache fallback
