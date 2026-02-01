@@ -18,11 +18,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is admin
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single()
+
+    if (profileError) {
+      console.error('Error fetching profile:', profileError)
+      return NextResponse.json(
+        { error: 'Failed to fetch profile' },
+        { status: 500 }
+      )
+    }
 
     if (profile?.role !== 'admin') {
       return NextResponse.json(
@@ -80,11 +88,19 @@ export async function POST(request: NextRequest) {
     const result = data[0]
 
     // Get user info for response
-    const { data: targetUser } = await adminSupabase
+    const { data: targetUser, error: targetUserError } = await adminSupabase
       .from('profiles')
       .select('email, full_name')
       .eq('id', userId)
       .single()
+
+    if (targetUserError) {
+      console.error('Error fetching target user:', targetUserError)
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
 
     const action = pointsChange > 0 ? 'awarded' : 'deducted'
     const absPoints = Math.abs(pointsChange)

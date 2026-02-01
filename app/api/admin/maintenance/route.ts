@@ -41,13 +41,21 @@ export async function GET() {
 
     // Check if user is admin
     console.log('[Admin GET] Checking if user is admin...')
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single()
 
-    console.log('[Admin GET] Profile result:', { profile: profile?.role })
+    console.log('[Admin GET] Profile result:', { profile: profile?.role, error: profileError?.message })
+
+    if (profileError) {
+      console.error('[Admin GET] Error fetching profile:', profileError)
+      return NextResponse.json(
+        { error: 'Failed to fetch profile' },
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      )
+    }
 
     if (!profile || profile.role !== 'admin') {
       console.log('[Admin GET] Returning 403 Forbidden')
@@ -146,11 +154,19 @@ export async function POST(request: Request) {
     }
 
     // Check if user is admin
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role, email')
       .eq('id', user.id)
       .single()
+
+    if (profileError) {
+      console.error('[Admin POST] Error fetching profile:', profileError)
+      return NextResponse.json(
+        { error: 'Failed to fetch profile' },
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      )
+    }
 
     if (!profile || profile.role !== 'admin') {
       return NextResponse.json(

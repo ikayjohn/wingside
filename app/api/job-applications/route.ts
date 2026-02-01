@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
 
-    if (dbError) {
+    if (dbError || !application) {
       console.error('Database error:', dbError)
       return NextResponse.json(
         { error: 'Failed to submit application' },

@@ -143,11 +143,19 @@ export async function POST(request: NextRequest) {
       );
 
       // Get user details
-      const { data: profile } = await adminSupabase
+      const { data: profile, error: profileError } = await adminSupabase
         .from('profiles')
         .select('id, full_name, email, referral_code')
         .eq('id', userId)
         .single();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        return NextResponse.json(
+          { error: 'User not found' },
+          { status: 404 }
+        );
+      }
 
       if (!profile) {
         return NextResponse.json(

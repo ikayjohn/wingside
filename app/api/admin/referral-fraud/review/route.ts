@@ -18,11 +18,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is admin
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single()
+
+    if (profileError) {
+      console.error('Error fetching profile:', profileError)
+      return NextResponse.json(
+        { error: 'Failed to fetch profile' },
+        { status: 500 }
+      )
+    }
 
     if (profile?.role !== 'admin') {
       return NextResponse.json(
@@ -77,11 +85,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Get updated flag details
-    const { data: updatedFlag } = await adminSupabase
+    const { data: updatedFlag, error: flagError } = await adminSupabase
       .from('referral_fraud_flags')
       .select('*')
       .eq('id', flagId)
       .single()
+
+    if (flagError) {
+      console.error('Error fetching updated flag:', flagError)
+      return NextResponse.json(
+        { error: 'Failed to fetch updated flag' },
+        { status: 500 }
+      )
+    }
 
     console.log(`✅ Admin ${user.email} reviewed fraud flag ${flagId}: ${status}`)
 

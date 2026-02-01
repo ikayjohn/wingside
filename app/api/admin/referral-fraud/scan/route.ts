@@ -26,13 +26,15 @@ export async function POST(request: NextRequest) {
 
       if (!authError && user) {
         // Check if user is admin
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', user.id)
           .single()
 
-        if (profile?.role === 'admin') {
+        if (profileError) {
+          console.error('Error fetching profile:', profileError)
+        } else if (profile?.role === 'admin') {
           isAuthorized = true
         }
       }
