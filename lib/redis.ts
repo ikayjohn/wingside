@@ -1,9 +1,40 @@
 /**
  * Redis Client Configuration
- * Provides caching layer for frequently accessed data
+ * Provides caching layer for frequently accessed data with in-memory fallback
+ *
+ * @module lib/redis
  */
 
 import type { Redis as RedisType } from 'ioredis';
+
+/**
+ * Type-safe cache key factory functions
+ */
+export type CacheKeyFactory = {
+  readonly PRODUCTS: string;
+  readonly PRODUCTS_ALL: string;
+  readonly PRODUCTS_BY_CATEGORY: (categoryId: string) => string;
+  readonly FLAVORS: string;
+  readonly FLAVORS_BY_CATEGORY: (category: string) => string;
+  readonly CATEGORIES: string;
+  readonly DELIVERY_AREAS: string;
+  readonly PICKUP_LOCATIONS: string;
+  readonly STORES: string;
+  readonly SETTINGS: string;
+  readonly PROMO_CODES: string;
+  readonly USER_PROFILE: (userId: string) => string;
+  readonly USER_WALLET: (userId: string) => string;
+};
+
+/**
+ * Cache TTL configuration in seconds
+ */
+export type CacheTTL = {
+  readonly SHORT: number;
+  readonly MEDIUM: number;
+  readonly LONG: number;
+  readonly EXTENDED: number;
+};
 
 let Redis: typeof import('ioredis').default | null = null;
 try {
@@ -58,9 +89,16 @@ export function getRedisClient(): RedisType | null {
 }
 
 /**
- * Cache keys with namespacing
+ * Cache keys with namespacing for all Redis operations
+ * Use these constants to ensure consistent cache key formatting
+ *
+ * @example
+ * ```ts
+ * await setCache(CACHE_KEYS.PRODUCTS, products, CACHE_TTL.LONG);
+ * const products = await getFromCache<Product[]>(CACHE_KEYS.PRODUCTS);
+ * ```
  */
-export const CACHE_KEYS = {
+export const CACHE_KEYS: CacheKeyFactory = {
   PRODUCTS: 'wingside:products',
   PRODUCTS_ALL: 'wingside:products:all',
   PRODUCTS_BY_CATEGORY: (categoryId: string) => `wingside:products:category:${categoryId}`,
@@ -77,9 +115,19 @@ export const CACHE_KEYS = {
 } as const;
 
 /**
- * Cache TTL (Time To Live) in seconds
+ * Cache TTL (Time To Live) configurations in seconds
+ *
+ * - SHORT (5 min): User data, wallet balance - frequently changing
+ * - MEDIUM (30 min): Delivery areas, locations - moderately stable
+ * - LONG (1 hour): Products, flavors - relatively stable
+ * - EXTENDED (24 hours): Categories, settings - rarely changing
+ *
+ * @example
+ * ```ts
+ * await setCache(CACHE_KEYS.USER_WALLET(userId), wallet, CACHE_TTL.SHORT);
+ * ```
  */
-export const CACHE_TTL = {
+export const CACHE_TTL: CacheTTL = {
   SHORT: 300,        // 5 minutes - user data, wallet
   MEDIUM: 1800,      // 30 minutes - delivery areas, locations
   LONG: 3600,        // 1 hour - products, flavors
@@ -87,8 +135,24 @@ export const CACHE_TTL = {
 } as const;
 
 /**
- * Get data from Redis cache
- * Returns null if Redis is unavailable - API routes will fall back to memory cache
+ * Retrieves data from Redis cache with type safety
+ *
+ * Returns null if:
+ * - Redis is unavailable (graceful degradation to memory cache)
+ * - Key doesn't exist
+ * - Data has expired
+ *
+ * @template T - The expected type of the cached data
+ * @param key - Cache key (use CACHE_KEYS constants)
+ * @returns Cached data of type T, or null if not found
+ *
+ * @example
+ * ```ts
+ * const products = await getFromCache<Product[]>(CACHE_KEYS.PRODUCTS);
+ * if (!products) {
+ *   // Fetch from database
+ * }
+ * ```
  */
 export async function getFromCache<T>(key: string): Promise<T | null> {
   try {
@@ -107,8 +171,24 @@ export async function getFromCache<T>(key: string): Promise<T | null> {
 }
 
 /**
- * Set data in Redis cache
- * Silently fails if Redis is unavailable - memory cache is used as fallback
+ * Stores data in Redis cache with automatic serialization
+ *
+ * Features:
+ * - Automatic JSON serialization
+ * - Configurable TTL (time to live)
+ * - Graceful degradation if Redis unavailable
+ * - Type-safe value parameter
+ *
+ * @template T - The type of data to cache
+ * @param key - Cache key (use CACHE_KEYS constants)
+ * @param value - Data to cache (will be JSON serialized)
+ * @param ttl - Time to live in seconds (default: CACHE_TTL.MEDIUM)
+ *
+ * @example
+ * ```ts
+ * await setCache(CACHE_KEYS.PRODUCTS, products, CACHE_TTL.LONG);
+ * await setCache(CACHE_KEYS.USER_PROFILE(userId), profile, CACHE_TTL.SHORT);
+ * ```
  */
 export async function setCache<T>(
   key: string,
@@ -127,7 +207,14 @@ export async function setCache<T>(
 }
 
 /**
- * Delete data from Redis cache
+ * Deletes a single key from Redis cache
+ *
+ * @param key - Cache key to delete
+ *
+ * @example
+ * ```ts
+ * await deleteFromCache(CACHE_KEYS.USER_WALLET(userId));
+ * ```
  */
 export async function deleteFromCache(key: string): Promise<void> {
   try {
@@ -141,7 +228,20 @@ export async function deleteFromCache(key: string): Promise<void> {
 }
 
 /**
- * Delete multiple cache keys by pattern
+ * Deletes multiple cache keys matching a pattern
+ *
+ * @param pattern - Redis key pattern (supports * wildcard)
+ *
+ * @example
+ * ```ts
+ * // Delete all product-related caches
+ * await deleteCachePattern('wingside:products*');
+ *
+ * // Delete all user-specific caches
+ * await deleteCachePattern('wingside:user:123*');
+ * ```
+ *
+ * @see {@link https://redis.io/commands/keys/ | Redis KEYS command}
  */
 export async function deleteCachePattern(pattern: string): Promise<void> {
   try {
@@ -176,7 +276,19 @@ export async function clearAllCache(): Promise<void> {
 }
 
 /**
- * Cache invalidation helpers
+ * Cache invalidation helpers for common operations
+ *
+ * Provides high-level methods to invalidate related cache entries
+ * for both Redis and in-memory caches simultaneously.
+ *
+ * @example
+ * ```ts
+ * // After updating products in database
+ * await CacheInvalidation.products();
+ *
+ * // After user profile update
+ * await CacheInvalidation.user(userId);
+ * ```
  */
 export const CacheInvalidation = {
   // Invalidate all product-related caches
