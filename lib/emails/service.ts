@@ -50,9 +50,10 @@ export async function sendEmail({ to, subject, html, replyTo }: EmailParams) {
 
     console.log('Email sent successfully:', data);
     return { success: true, data };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error sending email:', error);
-    return { success: false, error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -130,7 +131,7 @@ export async function sendContactNotification(data: {
   phone: string;
   company?: string;
   message?: string;
-  formData?: any;
+  formData?: Record<string, unknown>;
 }) {
   const typeLabel = data.type.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
@@ -149,6 +150,14 @@ export async function sendContactNotification(data: {
   );
 }
 
+interface OrderItem {
+  product_name: string;
+  flavor?: string;
+  size?: string;
+  quantity: number;
+  total_price: number;
+}
+
 /**
  * Send order confirmation to customer
  * Uses database template: order_confirmation
@@ -157,7 +166,7 @@ export async function sendOrderConfirmation(data: {
   orderNumber: string;
   customerName: string;
   customerEmail: string;
-  items: any[];
+  items: OrderItem[];
   subtotal: number;
   deliveryFee: number;
   total: number;
@@ -224,7 +233,7 @@ export async function sendOrderNotification(data: {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
-  items: any[];
+  items: OrderItem[];
   total: number;
   deliveryAddress?: string;
   paymentMethod: string;
