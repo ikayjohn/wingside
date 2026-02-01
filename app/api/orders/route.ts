@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import crypto from 'crypto'
 import { sendOrderConfirmation, sendOrderNotification } from '@/lib/emails/service'
 import { validateOrderInput, sanitizeString, normalizeNigerianPhone } from '@/lib/validation'
+import { csrfProtection } from '@/lib/csrf'
 
 // GET /api/orders - Fetch user's orders or all orders (admin)
 export async function GET(request: NextRequest) {
@@ -174,6 +175,12 @@ export async function GET(request: NextRequest) {
 // POST /api/orders - Create new order
 export async function POST(request: NextRequest) {
   try {
+    // Check CSRF token
+    const csrfError = await csrfProtection(request)
+    if (csrfError) {
+      return csrfError
+    }
+
     const supabase = await createClient()
     let body;
     try {

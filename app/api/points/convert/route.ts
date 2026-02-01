@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { creditWallet } from '@/lib/wallet/helper';
+import { csrfProtection } from '@/lib/csrf';
 
 // POST /api/points/convert - Convert points to wallet cash
 export async function POST(request: NextRequest) {
   try {
+    // Check CSRF token
+    const csrfError = await csrfProtection(request)
+    if (csrfError) {
+      return csrfError
+    }
+
     const supabase = await createClient();
 
     // Get authenticated user

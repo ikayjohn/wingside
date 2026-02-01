@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { csrfProtection } from '@/lib/csrf'
 
 // GET /api/user/profile - Fetch authenticated user's profile data
 export async function GET() {
@@ -174,6 +175,12 @@ export async function GET() {
 // PATCH /api/user/profile - Update authenticated user's profile
 export async function PATCH(request: Request) {
   try {
+    // Check CSRF token
+    const csrfError = await csrfProtection(request)
+    if (csrfError) {
+      return csrfError
+    }
+
     const supabase = await createClient()
 
     // Get authenticated user

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { checkRateLimitByIp, rateLimitErrorResponse } from '@/lib/rate-limit';
+import { csrfProtection } from '@/lib/csrf';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -9,6 +10,12 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
+    // Check CSRF token
+    const csrfError = await csrfProtection(request)
+    if (csrfError) {
+      return csrfError
+    }
+
     // Check rate limit (2 applications per day per IP)
     const { rateLimit } = await checkRateLimitByIp({
       limit: 2,

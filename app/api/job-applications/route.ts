@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { checkRateLimitByIp, rateLimitErrorResponse } from '@/lib/rate-limit'
+import { csrfProtection } from '@/lib/csrf'
 
 // POST /api/job-applications - Submit a job application
 export async function POST(request: NextRequest) {
   try {
+    // Check CSRF token
+    const csrfError = await csrfProtection(request)
+    if (csrfError) {
+      return csrfError
+    }
+
     // Check rate limit (3 applications per day per IP)
     const { rateLimit } = await checkRateLimitByIp({
       limit: 3,

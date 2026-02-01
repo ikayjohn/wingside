@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { csrfProtection } from '@/lib/csrf';
 
 // POST /api/rewards/claim - Claim a one-time reward
 export async function POST(request: NextRequest) {
   try {
+    // Check CSRF token
+    const csrfError = await csrfProtection(request)
+    if (csrfError) {
+      return csrfError
+    }
+
     const supabase = await createClient();
     const body = await request.json();
     const { rewardType, points, description, metadata } = body;
