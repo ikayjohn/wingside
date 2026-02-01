@@ -243,11 +243,16 @@ async function handlePayoutWebhook(data: any, supabase: any) {
 
     // Find and update user wallet balance atomically
     if (status === 'Success') {
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id, embedly_wallet_id')
         .eq('bank_account', debitAccountNumber)
         .single();
+
+      if (profileError) {
+        console.error('Error finding profile for payout:', profileError);
+        return NextResponse.json({ received: true, warning: 'Profile not found' });
+      }
 
       if (profile) {
         // Use atomic debit to prevent race conditions
@@ -345,11 +350,16 @@ async function handleNipWebhook(data: any, supabase: any) {
     }
 
     // Find user by account number
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('id, embedly_wallet_id, full_name')
       .eq('bank_account', accountNumber)
       .single();
+
+    if (profileError) {
+      console.error('Error finding profile for NIP transfer:', profileError);
+      return; // Skip if profile not found
+    }
 
     if (profile) {
       // Use atomic credit function to prevent race conditions
@@ -542,17 +552,25 @@ async function handleWalletTransferWebhook(data: any, supabase: any) {
       .eq('reference', reference);
 
     // Find users involved in the transfer
-    const { data: fromProfile } = await supabase
+    const { data: fromProfile, error: fromError } = await supabase
       .from('profiles')
       .select('id, full_name')
       .eq('bank_account', fromAccount)
       .single();
 
-    const { data: toProfile } = await supabase
+    const { data: toProfile, error: toError } = await supabase
       .from('profiles')
       .select('id, full_name')
       .eq('bank_account', toAccount)
       .single();
+
+    if (fromError) {
+      console.error('Error finding sender profile:', fromError);
+    }
+
+    if (toError) {
+      console.error('Error finding recipient profile:', toError);
+    }
 
     if (fromProfile) {
       // Use atomic debit to prevent race conditions

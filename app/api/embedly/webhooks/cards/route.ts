@@ -65,24 +65,29 @@ async function handleCardUpdateInfo(data: any) {
   const supabase = await createClient()
 
   // Get customer ID by account number
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('id')
     .eq('embedly_wallet_account_number', data.debitAccountNumber)
     .single()
 
-  if (!profile) {
-    console.log('Profile not found for account:', data.debitAccountNumber);
+  if (profileError || !profile) {
+    console.log('Profile not found for account:', data.debitAccountNumber, profileError);
     return;
   }
 
   // Check if card already exists
-  const { data: existingCard } = await supabase
+  const { data: existingCard, error: cardError } = await supabase
     .from('cards')
     .select('*')
     .eq('user_id', profile.id)
     .eq('masked_pan', data.maskedCardNumber)
     .single();
+
+  // Card not found is OK (we'll create it), other errors should be logged
+  if (cardError && cardError.code !== 'PGRST116') {
+    console.error('Error checking existing card:', cardError);
+  }
 
   const cardData = {
     user_id: profile.id,
@@ -117,13 +122,14 @@ async function handleCardRelink(data: any) {
   const supabase = await createClient()
 
   // Get customer ID by account number
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('id')
     .eq('embedly_wallet_account_number', data.debitAccountNumber)
     .single();
 
-  if (!profile) {
+  if (profileError || !profile) {
+    console.error('Profile not found for card relink:', profileError);
     return;
   }
 
@@ -146,14 +152,14 @@ async function handleCardTransaction(data: any, eventType: string) {
   const supabase = await createClient()
 
   // Get card by account number
-  const { data: card } = await supabase
+  const { data: card, error: cardError } = await supabase
     .from('cards')
     .select('*')
     .eq('account_number', data.debitAccountNumber)
     .single();
 
-  if (!card) {
-    console.log('Card not found for transaction:', data.debitAccountNumber);
+  if (cardError || !card) {
+    console.log('Card not found for transaction:', data.debitAccountNumber, cardError);
     return;
   }
 
@@ -180,11 +186,16 @@ async function handleCheckoutPayment(data: any) {
   const supabase = await createClient()
 
   // Get card by account number
-  const { data: card } = await supabase
+  const { data: card, error: cardError } = await supabase
     .from('cards')
     .select('*')
     .eq('account_number', data.recipientAccountNumber)
     .single();
+
+  if (cardError) {
+    console.error('Error finding card for checkout payment:', cardError);
+    return;
+  }
 
   if (card) {
     // Update card balance
