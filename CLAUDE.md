@@ -395,7 +395,7 @@ Required variables (see `.env.example`):
 ## Code Style
 
 - **TypeScript**: Strict mode disabled (`strict: false` in tsconfig.json), interface types for complex objects
-- **JSX Transform**: Uses `"jsx": "react-jsx"` (non-standard for Next.js, consider changing to `"preserve"`)
+- **JSX Transform**: Uses `"jsx": "preserve"` (Next.js default)
 - **React**: Functional components with hooks (no class components)
 - **Imports**: Next.js `Link` and `Image` for navigation and images
 - **Naming**: PascalCase for components, camelCase for variables/functions
