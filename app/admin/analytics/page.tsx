@@ -145,7 +145,7 @@ export default function AnalyticsPage() {
       }> = [];
       orders?.forEach(order => {
         if (order.order_items) {
-          order.order_items.forEach(item => {
+          order.order_items.forEach((item: any) => {
             allOrderItems.push(item);
           });
         }
