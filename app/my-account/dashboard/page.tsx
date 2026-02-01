@@ -597,13 +597,6 @@ export default function WingclubDashboard() {
             </div>
             <span>Wingside® Card</span>
           </Link>
- 
-          <Link href="/my-account/referrals" className="dashboard-action-card">
-            <div className="dashboard-action-icon purple">
-              <Image src="/referrals.svg" alt="Referrals" width={40} height={40} />
-            </div>
-            <span>Referrals</span>
-          </Link>
         </div>
 
         {/* Stats Cards */}
