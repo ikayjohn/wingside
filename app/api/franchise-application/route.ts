@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { checkRateLimitByIp, rateLimitErrorResponse } from '@/lib/rate-limit';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -8,6 +9,15 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
+    // Check rate limit (2 applications per day per IP)
+    const { rateLimit } = await checkRateLimitByIp({
+      limit: 2,
+      window: 24 * 60 * 60 * 1000 // 24 hours
+    });
+    if (!rateLimit.success) {
+      return rateLimitErrorResponse(rateLimit);
+    }
+
     let body;
     try {
       body = await request.json();

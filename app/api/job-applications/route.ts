@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkRateLimitByIp, rateLimitErrorResponse } from '@/lib/rate-limit'
 
 // POST /api/job-applications - Submit a job application
 export async function POST(request: NextRequest) {
   try {
+    // Check rate limit (3 applications per day per IP)
+    const { rateLimit } = await checkRateLimitByIp({
+      limit: 3,
+      window: 24 * 60 * 60 * 1000 // 24 hours
+    });
+    if (!rateLimit.success) {
+      return rateLimitErrorResponse(rateLimit);
+    }
+
     const supabase = await createClient()
     const formData = await request.formData()
 
