@@ -431,7 +431,6 @@ Required variables (see `.env.example`):
 2. JSX transform set to "react-jsx" instead of "preserve" (Next.js default)
 3. Redis is optional but recommended for production performance
 4. Some API routes don't check if Redis client is null before caching
-5. Environment variable naming inconsistency: code uses `NEXT_PUBLIC_SITE_URL` but .env defines `NEXT_PUBLIC_APP_URL`
 
 ## Additional Documentation
 

@@ -45,8 +45,8 @@ NEXT_PUBLIC_VAPID_SUBJECT=mailto:admin@wingside.ng
 ### Site Configuration
 
 ```bash
-# Your site URL (used in email links and redirects)
-NEXT_PUBLIC_SITE_URL=https://wingside.ng
+# Your application URL (used in email links and redirects)
+NEXT_PUBLIC_APP_URL=https://wingside.ng
 ```
 
 ## Generating VAPID Keys

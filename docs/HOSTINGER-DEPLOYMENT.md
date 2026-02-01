@@ -143,7 +143,7 @@ If you need environment variables on Hostinger:
 ```bash
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAACMIIjQo9BnYYZJL
 TURNSTILE_SECRET_KEY=0x4AAAACMIIkZk7E4l6yE0sCjp7bFl8zA
-NEXT_PUBLIC_SITE_URL=https://your-domain.com
+NEXT_PUBLIC_APP_URL=https://your-domain.com
 ```
 
 ### .htaccess Features

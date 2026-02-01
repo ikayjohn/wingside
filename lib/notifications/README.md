@@ -261,7 +261,7 @@ Stores web push subscription data for users.
 | `VAPID_PRIVATE_KEY` | VAPID private key | Yes |
 | `NEXT_PUBLIC_VAPID_SUBJECT` | VAPID subject email | Yes |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase admin key | Yes |
-| `NEXT_PUBLIC_SITE_URL` | Site URL for links | Yes |
+| `NEXT_PUBLIC_APP_URL` | Application URL for links | Yes |
 
 ## Security Considerations
 
