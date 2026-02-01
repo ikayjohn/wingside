@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import DOMPurify from 'dompurify';
 
 interface EmailTemplate {
   id: string;
@@ -25,6 +26,14 @@ export default function EmailTemplatesManager() {
   const [editingHtml, setEditingHtml] = useState('');
   const [editingActive, setEditingActive] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
+
+  // Sanitize HTML content to prevent XSS attacks
+  const sanitizedHtml = useMemo(() => {
+    return DOMPurify.sanitize(editingHtml, {
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'a', 'img', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'div', 'span', 'table', 'tr', 'td', 'th', 'thead', 'tbody'],
+      ALLOWED_ATTR: ['href', 'src', 'alt', 'class', 'style', 'target', 'rel', 'width', 'height'],
+    });
+  }, [editingHtml]);
 
   useEffect(() => {
     loadTemplates();
@@ -226,7 +235,7 @@ export default function EmailTemplatesManager() {
                     <p className="text-sm text-gray-500 mb-2">HTML Preview:</p>
                     <div
                       className="bg-white rounded-lg p-4"
-                      dangerouslySetInnerHTML={{ __html: editingHtml }}
+                      dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
                     />
                   </div>
                 </div>

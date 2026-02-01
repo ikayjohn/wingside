@@ -14,7 +14,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "plugins": [
       {
@@ -28,18 +28,20 @@
     },
     "target": "ES2017",
     // Strict type checking options (enabled incrementally)
-    "noImplicitAny": true,                // Raise error on expressions with implied 'any' type
-    "strictNullChecks": true,             // Enable strict null checking
-    "strictFunctionTypes": true,          // Enable strict checking of function types
-    "strictBindCallApply": true,          // Enable strict 'bind', 'call', and 'apply' methods
-    "noImplicitThis": true,               // Raise error on 'this' with implied 'any' type
-    "alwaysStrict": true,                 // Parse in strict mode and emit "use strict"
+    "noImplicitAny": true, // Raise error on expressions with implied 'any' type
+    "strictNullChecks": true, // Enable strict null checking
+    "strictFunctionTypes": true, // Enable strict checking of function types
+    "strictBindCallApply": true, // Enable strict 'bind', 'call', and 'apply' methods
+    "noImplicitThis": true, // Raise error on 'this' with implied 'any' type
+    "alwaysStrict": true, // Parse in strict mode and emit "use strict"
     // Additional strict checks (to be enabled)
-    "noUnusedLocals": false,              // Report errors on unused local variables
-    "noUnusedParameters": false,          // Report errors on unused parameters
-    "noImplicitReturns": false,           // Report error when not all code paths return a value
-    "noFallthroughCasesInSwitch": false,  // Report errors for fallthrough cases in switch
+    "noUnusedLocals": false, // Report errors on unused local variables
+    "noUnusedParameters": false, // Report errors on unused parameters
+    "noImplicitReturns": false, // Report error when not all code paths return a value
+    "noFallthroughCasesInSwitch": false, // Report errors for fallthrough cases in switch
     "strictPropertyInitialization": false // Ensure class properties are initialized (requires strictNullChecks)
+    ,
+    "strict": false
   },
   "include": [
     "next-env.d.ts",

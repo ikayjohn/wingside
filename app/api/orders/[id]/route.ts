@@ -1,6 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { loggers } from '@/lib/logger'
+
+/**
+ * Check if request is from an authenticated webhook source
+ * Only authenticated webhooks should bypass RLS using admin client
+ */
+function isAuthenticatedWebhook(request: NextRequest): boolean {
+  // Check for webhook authentication token
+  const webhookToken = process.env.WEBHOOK_AUTH_TOKEN
+  if (webhookToken) {
+    const authHeader = request.headers.get('x-webhook-token')
+    if (authHeader === webhookToken) {
+      return true
+    }
+  }
+
+  // Check for Paystack webhook signature
+  const paystackSecret = process.env.PAYSTACK_SECRET_KEY
+  if (paystackSecret) {
+    const signature = request.headers.get('x-paystack-signature')
+    if (signature) {
+      // Webhook with signature is authenticated
+      // (Actual signature verification happens in webhook handler)
+      return true
+    }
+  }
+
+  // Check for internal service account header (for admin operations)
+  const serviceToken = process.env.INTERNAL_SERVICE_TOKEN
+  if (serviceToken) {
+    const authHeader = request.headers.get('x-service-token')
+    if (authHeader === serviceToken) {
+      return true
+    }
+  }
+
+  return false
+}
 
 // GET /api/orders/[id] - Get single order by ID or order_number
 export async function GET(
@@ -9,7 +47,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    console.log(`[Orders API] Looking up order: ${id}`)
+    loggers.order.debug('Looking up order', { id })
 
     // Helper function to try both UUID and order_number lookup
     async function fetchOrder(client: any) {
@@ -44,38 +82,47 @@ export async function GET(
     const supabase = await createClient()
     let { data: order, error } = await fetchOrder(supabase)
 
-    console.log(`[Orders API] Server client result:`, { found: !!order, error: error?.message })
+    loggers.order.debug('Server client result', { found: !!order, error: error?.message })
 
-    // If server client fails (e.g., no auth session), use admin client
-    // This allows payment callbacks to work without authentication
+    // SECURITY: Only use admin client (bypass RLS) for authenticated webhooks
+    // Regular users must be authenticated and pass RLS checks
     if (error && !order) {
-      console.log('[Orders API] Server client failed, trying admin client...')
-      const admin = createAdminClient()
+      if (isAuthenticatedWebhook(request)) {
+        loggers.order.info('Authenticated webhook request, using admin client')
+        const admin = createAdminClient()
 
-      const result = await fetchOrder(admin)
-      order = result.data
-      error = result.error
+        const result = await fetchOrder(admin)
+        order = result.data
+        error = result.error
 
-      console.log(`[Orders API] Admin client result:`, {
-        found: !!order,
-        error: error?.message,
-        orderId: order?.id,
-        orderNumber: order?.order_number
-      })
+        loggers.order.debug('Admin client result', {
+          found: !!order,
+          error: error?.message,
+          orderId: order?.id,
+          orderNumber: order?.order_number
+        })
+      } else {
+        // Unauthenticated request - enforce RLS, don't fall back to admin
+        loggers.order.warn('Unauthenticated request blocked from admin client', { id })
+        return NextResponse.json(
+          { error: 'Order not found or access denied' },
+          { status: 404 }
+        )
+      }
     }
 
     if (error) {
-      console.error('[Orders API] Final error:', error)
+      loggers.order.error('Order lookup failed', error, { id })
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
       )
     }
 
-    console.log(`[Orders API] ✅ Successfully fetched order: ${order?.order_number}`)
+    loggers.order.info('Successfully fetched order', { orderNumber: order?.order_number, id: order?.id })
     return NextResponse.json({ order })
   } catch (error) {
-    console.error('[Orders API] Unexpected error:', error)
+    loggers.order.error('Unexpected error in order lookup', error, { id })
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

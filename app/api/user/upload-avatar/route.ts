@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { validateImageFile, generateSafeFilename } from '@/lib/file-validation'
+import { loggers } from '@/lib/logger'
 
 // POST /api/user/upload-avatar - Upload user avatar
 export async function POST(request: NextRequest) {
@@ -13,7 +15,7 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      console.error('Auth error:', authError)
+      loggers.auth.error('Avatar upload unauthorized', authError)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -21,47 +23,57 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const file = formData.get('avatar') as File
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
-    }
+    // SECURITY: Validate file with magic number verification
+    const validation = await validateImageFile(file, {
+      maxSize: 5 * 1024 * 1024, // 5MB
+      allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+      strictMimeType: true,
+    })
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ error: 'File must be an image' }, { status: 400 })
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File size must be less than 5MB' }, { status: 400 })
+    if (!validation.valid) {
+      loggers.api.warn('Avatar upload validation failed', {
+        userId: user.id,
+        error: validation.error,
+        fileName: file?.name,
+        mimeType: file?.type,
+      })
+      return NextResponse.json({ error: validation.error }, { status: 400 })
     }
 
     // Convert file to buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Get file extension
-    const ext = file.name.split('.').pop()
-    const fileName = `${user.id}-${Date.now()}.${ext}`
+    // SECURITY: Generate safe filename using detected type, not user-provided extension
+    const fileName = generateSafeFilename(user.id, validation.detectedType!)
 
-    console.log('Uploading avatar:', { fileName, size: file.size, type: file.type })
+    loggers.api.debug('Uploading avatar', {
+      userId: user.id,
+      fileName,
+      size: file.size,
+      detectedType: validation.detectedType,
+    })
 
     // Upload to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('avatars')
       .upload(fileName, buffer, {
-        contentType: file.type,
+        contentType: validation.detectedType!, // Use validated type
         upsert: true,
       })
 
     if (uploadError) {
-      console.error('Storage upload error:', uploadError)
+      loggers.api.error('Avatar storage upload failed', uploadError, {
+        userId: user.id,
+        fileName,
+      })
       return NextResponse.json({
         error: 'Failed to upload file to storage',
         details: uploadError.message
       }, { status: 500 })
     }
 
-    console.log('Upload successful:', uploadData)
+    loggers.api.debug('Avatar upload successful', { userId: user.id, path: uploadData.path })
 
     // Get public URL
     const { data: urlData } = supabase.storage
@@ -69,7 +81,7 @@ export async function POST(request: NextRequest) {
       .getPublicUrl(fileName)
 
     const avatarUrl = urlData.publicUrl
-    console.log('Avatar URL:', avatarUrl)
+    loggers.api.debug('Avatar URL generated', { userId: user.id, avatarUrl })
 
     // Update user profile with new avatar URL
     const { data: profileData, error: updateError } = await supabase
@@ -80,12 +92,10 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (updateError) {
-      console.error('Profile update error:', updateError)
-      console.error('Update error details:', {
+      loggers.database.error('Profile avatar update failed', updateError, {
+        userId: user.id,
         code: updateError.code,
-        message: updateError.message,
-        details: updateError.details,
-        hint: updateError.hint
+        hint: updateError.hint,
       })
       return NextResponse.json({
         error: 'Failed to update profile',
@@ -93,11 +103,14 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    console.log('Profile updated successfully:', profileData)
+    loggers.api.info('Avatar uploaded successfully', {
+      userId: user.id,
+      avatarUrl,
+    })
 
     return NextResponse.json({ avatar_url: avatarUrl })
   } catch (error) {
-    console.error('Unexpected avatar upload error:', error)
+    loggers.api.error('Unexpected avatar upload error', error)
     return NextResponse.json({
       error: 'Internal server error',
       details: error instanceof Error ? error.message : 'Unknown error'

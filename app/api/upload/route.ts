@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { validateImageFile, generateSafeFilename } from '@/lib/file-validation'
+import { loggers } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
-  console.log('[Upload API] Request received')
+  loggers.admin.debug('Upload request received')
 
   try {
     // Check environment variables
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      console.error('[Upload API] Missing Supabase environment variables')
+      loggers.admin.error('Missing Supabase environment variables')
       return NextResponse.json(
         { error: 'Server configuration error: Missing Supabase credentials' },
         { status: 500 }
@@ -15,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createClient()
-    console.log('[Upload API] Supabase client created')
+    loggers.admin.debug('Supabase client created')
 
     // Check authentication
     const {
@@ -24,16 +26,16 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (authError) {
-      console.error('[Upload API] Auth error:', authError)
+      loggers.auth.error('Upload auth error', authError)
       return NextResponse.json({ error: 'Authentication error: ' + authError.message }, { status: 401 })
     }
 
     if (!user) {
-      console.log('[Upload API] No user found')
+      loggers.auth.warn('Upload attempted without user session')
       return NextResponse.json({ error: 'Unauthorized - No user session found' }, { status: 401 })
     }
 
-    console.log('[Upload API] User authenticated:', user.id)
+    loggers.admin.debug('User authenticated', { userId: user.id })
 
     // Check admin role
     const { data: profile, error: profileError } = await supabase
@@ -43,27 +45,29 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (profileError) {
-      console.error('[Upload API] Profile query error:', profileError)
+      loggers.database.error('Profile query failed in upload', profileError, { userId: user.id })
       return NextResponse.json({ error: 'Failed to verify admin role' }, { status: 500 })
     }
 
     if (profile?.role !== 'admin') {
-      console.log('[Upload API] User not admin:', profile?.role)
+      loggers.auth.warn('Non-admin upload attempt', { userId: user.id, role: profile?.role })
       return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 })
     }
 
-    console.log('[Upload API] User is admin')
+    loggers.admin.debug('Admin role verified', { userId: user.id })
 
     // Get the file from form data
     const formData = await request.formData()
     const file = formData.get('file') as File
     const folder = formData.get('folder') as string || 'product-images' // Default to product-images
 
-    console.log('[Upload API] File details:', { name: file?.name, type: file?.type, size: file?.size, folder })
-
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
-    }
+    loggers.admin.debug('File upload request', {
+      userId: user.id,
+      fileName: file?.name,
+      mimeType: file?.type,
+      size: file?.size,
+      folder,
+    })
 
     // Validate folder
     const validFolders = ['product-images', 'hero-images']
@@ -74,65 +78,62 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
-    if (!validTypes.includes(file.type)) {
-      return NextResponse.json(
-        { error: 'Invalid file type. Only JPG, PNG, WEBP, and GIF are allowed' },
-        { status: 400 }
-      )
+    // SECURITY: Validate file with magic number verification
+    const validation = await validateImageFile(file, {
+      maxSize: 5 * 1024 * 1024, // 5MB
+      allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+      strictMimeType: true,
+    })
+
+    if (!validation.valid) {
+      loggers.admin.warn('File upload validation failed', {
+        userId: user.id,
+        error: validation.error,
+        fileName: file?.name,
+        folder,
+      })
+      return NextResponse.json({ error: validation.error }, { status: 400 })
     }
 
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024 // 5MB
-    if (file.size > maxSize) {
-      return NextResponse.json(
-        { error: 'File too large. Maximum size is 5MB' },
-        { status: 400 }
-      )
-    }
-
-    // Generate unique filename
-    const timestamp = Date.now()
-    const randomString = Math.random().toString(36).substring(2, 15)
-    const fileExtension = file.name.split('.').pop()
+    // SECURITY: Generate safe filename using detected type, not user-provided extension
     const prefix = folder === 'hero-images' ? 'hero' : 'product'
-    const fileName = `${prefix}-${timestamp}-${randomString}.${fileExtension}`
+    const randomString = Math.random().toString(36).substring(2, 15)
+    const fileName = generateSafeFilename(`${prefix}-${randomString}`, validation.detectedType!)
 
-    console.log('[Upload API] Generated filename:', fileName)
+    loggers.admin.debug('Generated safe filename', { userId: user.id, fileName, detectedType: validation.detectedType })
 
     // Convert file to buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    console.log('[Upload API] Starting upload to Supabase Storage...')
+    loggers.admin.debug('Starting upload to Supabase Storage', { userId: user.id, fileName, folder })
 
     // Use service client for upload (bypasses RLS, auth check already done above)
     const serviceClient = createServiceClient()
     const { data, error } = await serviceClient.storage
       .from(folder)
       .upload(fileName, buffer, {
-        contentType: file.type,
+        contentType: validation.detectedType!, // Use validated type
         cacheControl: '3600',
         upsert: true, // Allow overwriting if file exists
       })
 
     if (error) {
-      console.error('[Upload API] Supabase upload error:', error)
+      loggers.admin.error('Supabase upload failed', error, { userId: user.id, fileName, folder })
       return NextResponse.json(
         { error: 'Failed to upload file: ' + error.message },
         { status: 500 }
       )
     }
 
-    console.log('[Upload API] Upload successful:', data)
+    loggers.admin.info('File uploaded successfully', { userId: user.id, path: data.path, folder })
 
     // Get public URL
     const {
       data: { publicUrl },
     } = supabase.storage.from(folder).getPublicUrl(fileName)
 
-    console.log('[Upload API] Public URL:', publicUrl)
+    loggers.admin.debug('Public URL generated', { userId: user.id, publicUrl })
 
     return NextResponse.json({
       success: true,
@@ -140,7 +141,7 @@ export async function POST(request: NextRequest) {
       fileName: fileName,
     })
   } catch (error: unknown) {
-    console.error('[Upload API] Unexpected error:', error)
+    loggers.admin.error('Unexpected upload error', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       { error: 'Internal server error: ' + errorMessage },

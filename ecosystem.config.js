@@ -12,11 +12,11 @@ module.exports = {
     script: 'node_modules/next/dist/bin/next',
     args: 'start',
     cwd: './',  // Current directory - adjust if deployed elsewhere
-    instances: 1,  // Single instance for VPS - increase for load balancing
-    exec_mode: 'fork',  // Use 'cluster' if instances > 1
+    instances: 2,  // Use 2 instances for better load handling on VPS
+    exec_mode: 'cluster',  // Cluster mode for load balancing
     autorestart: true,
     watch: false,  // Don't watch files in production
-    max_memory_restart: '1G',  // Restart if memory exceeds 1GB
+    max_memory_restart: '800M',  // Restart if memory exceeds 800MB (optimized for VPS)
 
     // Environment variables
     env: {

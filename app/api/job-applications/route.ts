@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { checkRateLimitByIp, rateLimitErrorResponse } from '@/lib/rate-limit'
 import { csrfProtection } from '@/lib/csrf'
+import { validateDocumentFile, generateSafeFilename } from '@/lib/file-validation'
+import { loggers } from '@/lib/logger'
 
 // POST /api/job-applications - Submit a job application
 export async function POST(request: NextRequest) {
@@ -60,28 +62,31 @@ export async function POST(request: NextRequest) {
 
     // Handle resume upload
     if (resume && resume.size > 0) {
-      // Validate file size (max 5MB)
-      if (resume.size > 5 * 1024 * 1024) {
-        return NextResponse.json(
-          { error: 'Resume file size must be less than 5MB' },
-          { status: 400 }
-        )
+      // SECURITY: Validate file with magic number verification (PDF only, Word uses basic MIME check)
+      const validation = await validateDocumentFile(resume, {
+        maxSize: 5 * 1024 * 1024, // 5MB
+        allowedTypes: [
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ],
+        strictMimeType: true,
+      })
+
+      if (!validation.valid) {
+        loggers.api.warn('Resume upload validation failed', {
+          error: validation.error,
+          fileName: resume.name,
+          mimeType: resume.type,
+          jobPositionId,
+        })
+        return NextResponse.json({ error: validation.error }, { status: 400 })
       }
 
-      // Validate file type
-      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
-      if (!allowedTypes.includes(resume.type)) {
-        return NextResponse.json(
-          { error: 'Invalid file type. Only PDF, DOC, and DOCX files are allowed' },
-          { status: 400 }
-        )
-      }
-
-      // Generate unique filename
-      const timestamp = Date.now()
-      const sanitizedFileName = resume.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-      const fileName = `${timestamp}_${sanitizedFileName}`
-      const filePath = `${jobPositionId}/${fileName}`
+      // SECURITY: Generate safe filename - prevents path traversal and uses validated extension
+      const sanitizedJobId = jobPositionId.replace(/[^a-zA-Z0-9-_]/g, '')
+      const fileName = generateSafeFilename(`resume-${sanitizedJobId}`, validation.detectedType!)
+      const filePath = `${sanitizedJobId}/${fileName}`
 
       // Upload file to storage
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -89,7 +94,10 @@ export async function POST(request: NextRequest) {
         .upload(filePath, resume)
 
       if (uploadError) {
-        console.error('File upload error:', uploadError)
+        loggers.api.error('Resume upload failed', uploadError, {
+          filePath,
+          jobPositionId,
+        })
         return NextResponse.json(
           { error: 'Failed to upload resume' },
           { status: 500 }
@@ -123,12 +131,21 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (dbError || !application) {
-      console.error('Database error:', dbError)
+      loggers.database.error('Job application insert failed', dbError, {
+        jobPositionId,
+        email,
+      })
       return NextResponse.json(
         { error: 'Failed to submit application' },
         { status: 500 }
       )
     }
+
+    loggers.api.info('Job application submitted', {
+      applicationId: application.id,
+      jobPositionId,
+      email,
+    })
 
     return NextResponse.json({
       success: true,
@@ -137,7 +154,7 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
 
   } catch (error) {
-    console.error('Error:', error)
+    loggers.api.error('Unexpected error in job application', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
