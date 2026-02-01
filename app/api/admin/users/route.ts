@@ -74,37 +74,41 @@ export async function GET() {
       );
     }
 
-    // Get order counts for each user using admin client
-    const usersWithStats = await Promise.all(
-      (users || []).map(async (userData) => {
-        try {
-          const { data: orders, error: ordersError } = await admin
-            .from('orders')
-            .select('id, total')
-            .eq('user_id', userData.id);
+    // Fetch all orders for all users in a single query to avoid N+1
+    const userIds = (users || []).map(u => u.id);
 
-          if (ordersError) {
-            console.error(`Error fetching orders for user ${userData.id}:`, ordersError);
+    const ordersByUser: Record<string, { totalOrders: number; totalSpent: number }> = {};
+
+    // Initialize stats for all users
+    userIds.forEach(id => {
+      ordersByUser[id] = { totalOrders: 0, totalSpent: 0 };
+    });
+
+    if (userIds.length > 0) {
+      const { data: allOrders, error: ordersError } = await admin
+        .from('orders')
+        .select('id, total, user_id')
+        .in('user_id', userIds);
+
+      if (ordersError) {
+        console.error('Error fetching orders:', ordersError);
+      } else {
+        // Aggregate orders by user
+        (allOrders || []).forEach(order => {
+          if (order.user_id && ordersByUser[order.user_id]) {
+            ordersByUser[order.user_id].totalOrders += 1;
+            ordersByUser[order.user_id].totalSpent += Number(order.total || 0);
           }
+        });
+      }
+    }
 
-          const totalOrders = orders?.length || 0;
-          const totalSpent = orders?.reduce((sum, order) => sum + Number(order.total || 0), 0) || 0;
-
-          return {
-            ...userData,
-            totalOrders,
-            totalSpent
-          };
-        } catch (err) {
-          console.error(`Error processing user ${userData.id}:`, err);
-          return {
-            ...userData,
-            totalOrders: 0,
-            totalSpent: 0
-          };
-        }
-      })
-    );
+    // Map users with their aggregated stats
+    const usersWithStats = (users || []).map(userData => ({
+      ...userData,
+      totalOrders: ordersByUser[userData.id]?.totalOrders || 0,
+      totalSpent: ordersByUser[userData.id]?.totalSpent || 0
+    }));
 
     return NextResponse.json({ users: usersWithStats });
   } catch (error) {

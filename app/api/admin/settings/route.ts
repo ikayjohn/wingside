@@ -141,48 +141,64 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Update each setting in site_settings table
-    const updateResults = await Promise.all(
-      Object.entries(settings).map(async ([key, value]) => {
-        const { data, error, count } = await supabase
-          .from('site_settings')
-          .update({
-            setting_value: String(value),
-            updated_at: new Date().toISOString()
-          })
-          .eq('setting_key', key)
-          .select();
+    // Fetch existing settings to validate keys exist
+    const settingKeys = Object.keys(settings);
+    const { data: existingSettings, error: fetchError } = await supabase
+      .from('site_settings')
+      .select('setting_key')
+      .in('setting_key', settingKeys);
 
-        if (error) {
-          console.error(`Error updating setting ${key}:`, error);
-          return { key, success: false, error: error.message };
-        }
-
-        if (!data || data.length === 0) {
-          console.warn(`Setting ${key} not found in database`);
-          return { key, success: false, error: 'Setting not found' };
-        }
-
-        console.log(`Updated ${key} to ${value}`);
-        return { key, success: true, newValue: value };
-      })
-    );
-
-    // Check if any updates failed
-    const failures = updateResults.filter(r => !r.success);
-    if (failures.length > 0) {
-      console.error('Some settings failed to update:', failures);
+    if (fetchError) {
+      console.error('Error fetching existing settings:', fetchError);
       return NextResponse.json({
         success: false,
-        message: 'Some settings failed to update',
-        failures
+        error: 'Failed to validate settings'
       }, { status: 500 });
     }
+
+    const existingKeys = new Set((existingSettings || []).map(s => s.setting_key));
+    const notFoundKeys = settingKeys.filter(key => !existingKeys.has(key));
+
+    if (notFoundKeys.length > 0) {
+      console.warn('Some setting keys not found:', notFoundKeys);
+      return NextResponse.json({
+        success: false,
+        error: 'Some settings not found in database',
+        notFound: notFoundKeys
+      }, { status: 400 });
+    }
+
+    // Batch update using upsert for better performance (single query)
+    const updatedAt = new Date().toISOString();
+    const settingsToUpdate = Object.entries(settings).map(([key, value]) => ({
+      setting_key: key,
+      setting_value: String(value),
+      updated_at: updatedAt
+    }));
+
+    const { data: updatedData, error: updateError } = await supabase
+      .from('site_settings')
+      .upsert(settingsToUpdate, {
+        onConflict: 'setting_key',
+        ignoreDuplicates: false
+      })
+      .select();
+
+    if (updateError) {
+      console.error('Error updating settings:', updateError);
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to update settings',
+        details: updateError.message
+      }, { status: 500 });
+    }
+
+    console.log(`Updated ${settingsToUpdate.length} settings in batch`);
 
     return NextResponse.json({
       success: true,
       message: 'Settings updated successfully',
-      updated: updateResults.length
+      updated: settingsToUpdate.length
     });
   } catch (error) {
     console.error('Unexpected error:', error);
