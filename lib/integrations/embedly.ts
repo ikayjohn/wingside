@@ -299,10 +299,50 @@ export async function setupCustomerWithWallet(customer: {
       walletId = await createWallet(customerId, customer.full_name);
       console.log(`Embedly: Wallet ${walletId} ready for customer ${customerId}`);
     } catch (walletError: any) {
-      // Wallet creation failed - customer might already have max wallets
-      console.error(`Embedly: Could not create wallet for customer ${customerId}:`, walletError.message);
-      // Return customer ID without wallet - user may need to select existing wallet
-      return { customerId, walletId: '', isNewCustomer };
+      // CRITICAL: Wallet creation failed - this prevents loyalty points from being credited
+      console.error(`❌ CRITICAL: Embedly wallet creation failed for customer ${customerId}:`, walletError.message);
+
+      // Track the failure for manual recovery
+      try {
+        const { createClient } = await import('@/lib/supabase/server');
+        const supabase = await createClient();
+
+        await supabase.from('failed_integrations').insert({
+          integration_type: 'embedly_wallet_creation',
+          user_email: customer.email,
+          error_message: walletError.message,
+          error_details: {
+            customer_id: customerId,
+            embedly_customer_id: customerId,
+            full_name: customer.full_name,
+            email: customer.email,
+            error: walletError.message
+          },
+          status: 'pending_retry',
+          created_at: new Date().toISOString()
+        });
+
+        // Create admin notification
+        await supabase.from('notifications').insert({
+          user_id: null,
+          type: 'integration_failure',
+          title: 'Embedly Wallet Creation Failed',
+          message: `Failed to create wallet for ${customer.email}. Loyalty points cannot be credited.`,
+          metadata: {
+            customer_email: customer.email,
+            embedly_customer_id: customerId,
+            error: walletError.message,
+            urgency: 'high',
+            action_required: 'Manually create wallet and credit pending points'
+          },
+          is_read: false
+        });
+      } catch (trackingError) {
+        console.error('Failed to track wallet creation error:', trackingError);
+      }
+
+      // Don't silently continue - throw error to prevent incomplete integration
+      throw new Error(`Embedly wallet creation failed: ${walletError.message}`);
     }
 
     return { customerId, walletId, isNewCustomer };

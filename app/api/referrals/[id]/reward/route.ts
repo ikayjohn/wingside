@@ -68,7 +68,7 @@ export async function POST(
         referredUserName: referral.referred_user?.full_name || 'Your friend',
         rewardAmount: referral.reward_amount || 1000,
         totalRewards,
-        referralLink: `${process.env.NEXT_PUBLIC_SITE_URL}/signup?ref=${referral.referrer.referral_code}`,
+        referralLink: `${process.env.NEXT_PUBLIC_APP_URL}/signup?ref=${referral.referrer.referral_code}`,
       }
     )
 

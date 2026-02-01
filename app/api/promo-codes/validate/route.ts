@@ -13,9 +13,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Promo code is required' }, { status: 400 })
     }
 
-    if (!orderAmount || orderAmount <= 0) {
+    // Validate order amount with proper bounds and decimal handling
+    const MAX_ORDER_AMOUNT = 10000000; // ₦10,000,000 max
+    const numericAmount = Number(orderAmount);
+
+    if (!orderAmount || isNaN(numericAmount) || numericAmount <= 0) {
       return NextResponse.json({ error: 'Invalid order amount' }, { status: 400 })
     }
+
+    if (numericAmount > MAX_ORDER_AMOUNT) {
+      return NextResponse.json(
+        { error: `Order amount exceeds maximum allowed (₦${MAX_ORDER_AMOUNT.toLocaleString()})` },
+        { status: 400 }
+      )
+    }
+
+    // Round to 2 decimal places to prevent float precision issues
+    const sanitizedAmount = Math.round(numericAmount * 100) / 100;
 
     // Fetch promo code
     const { data: promoCode, error } = await supabase
@@ -48,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check minimum order amount
-    if (orderAmount < promoCode.min_order_amount) {
+    if (sanitizedAmount < promoCode.min_order_amount) {
       return NextResponse.json(
         {
           error: `Minimum order amount is ₦${promoCode.min_order_amount.toLocaleString()}`,
@@ -57,11 +71,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Calculate discount
+    // Calculate discount with proper decimal handling
     let discountAmount = 0
 
     if (promoCode.discount_type === 'percentage') {
-      discountAmount = (orderAmount * promoCode.discount_value) / 100
+      discountAmount = Math.round((sanitizedAmount * promoCode.discount_value) / 100 * 100) / 100
 
       // Apply max discount cap if set
       if (promoCode.max_discount_amount && discountAmount > promoCode.max_discount_amount) {
@@ -73,9 +87,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Don't allow discount to exceed order amount
-    if (discountAmount > orderAmount) {
-      discountAmount = orderAmount
+    if (discountAmount > sanitizedAmount) {
+      discountAmount = sanitizedAmount
     }
+
+    // Round final discount to 2 decimal places
+    discountAmount = Math.round(discountAmount * 100) / 100
 
     return NextResponse.json({
       valid: true,

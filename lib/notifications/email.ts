@@ -175,8 +175,8 @@ export async function sendOrderStatusEmail(
     order_tracking_url: orderData.orderTrackingUrl,
     points_earned: orderData.pointsEarned,
     total_points: orderData.totalPoints,
-    review_url: `${process.env.NEXT_PUBLIC_SITE_URL}/review/${orderData.orderNumber}`,
-    reorder_url: `${process.env.NEXT_PUBLIC_SITE_URL}/order`,
+    review_url: `${process.env.NEXT_PUBLIC_APP_URL}/review/${orderData.orderNumber}`,
+    reorder_url: `${process.env.NEXT_PUBLIC_APP_URL}/order`,
   };
 
   return sendEmail({
@@ -244,7 +244,7 @@ export async function sendWelcomeEmail(
     variables: {
       customer_name: userName,
       referral_code: referralCode,
-      referral_link: referralCode ? `${process.env.NEXT_PUBLIC_SITE_URL}/signup?ref=${referralCode}` : undefined,
+      referral_link: referralCode ? `${process.env.NEXT_PUBLIC_APP_URL}/signup?ref=${referralCode}` : undefined,
     },
   });
 }

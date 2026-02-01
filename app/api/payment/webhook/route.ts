@@ -185,30 +185,28 @@ export async function POST(request: NextRequest) {
               console.log(`✅ Created Zoho deal: ${syncResult.zoho_deal_id}`)
             }
 
-            // 3. Increment promo code usage if a promo code was used
+            // 3. Increment promo code usage atomically if a promo code was used
             if (order.promo_code_id) {
               try {
-                // Get current used_count
-                const { data: promoCode } = await admin
-                  .from('promo_codes')
-                  .select('used_count')
-                  .eq('id', order.promo_code_id)
-                  .single();
+                // Use atomic RPC function to prevent race conditions
+                const { data: promoResult, error: promoError } = await admin.rpc('increment_promo_usage', {
+                  promo_id: order.promo_code_id
+                });
 
-                if (promoCode) {
-                  const { error: promoError } = await admin
-                    .from('promo_codes')
-                    .update({ used_count: (promoCode.used_count || 0) + 1 })
-                    .eq('id', order.promo_code_id);
-
-                  if (!promoError) {
+                if (!promoError && promoResult && promoResult.length > 0) {
+                  const result = promoResult[0];
+                  if (result.success) {
                     console.log(`✅ Incremented promo code usage for: ${order.promo_code_id}`)
                   } else {
-                    console.error('Error incrementing promo code usage:', promoError)
+                    console.error(`⚠️ Promo code increment failed: ${result.error_message}`)
                   }
+                } else if (!promoError) {
+                  console.log(`✅ Incremented promo code usage for: ${order.promo_code_id}`)
+                } else {
+                  console.error('⚠️ Error incrementing promo code usage:', promoError)
                 }
               } catch (promoError) {
-                console.error('Error incrementing promo code usage:', promoError)
+                console.error('⚠️ Error incrementing promo code usage:', promoError)
               }
             }
 
@@ -292,12 +290,64 @@ export async function POST(request: NextRequest) {
               });
 
               if (!emailResult.success) {
-                console.error('Failed to send payment confirmation email:', emailResult.error);
+                console.error('❌ Failed to send payment confirmation email:', emailResult.error);
+
+                // Track email failure for manual follow-up
+                await admin.from('failed_notifications').insert({
+                  notification_type: 'payment_confirmation_email',
+                  order_id: order.id,
+                  order_number: order.order_number,
+                  recipient_email: order.customer_email,
+                  recipient_phone: order.customer_phone,
+                  error_message: emailResult.error || 'Unknown email error',
+                  metadata: {
+                    customer_name: order.customer_name,
+                    order_total: order.total,
+                    payment_method: 'paystack',
+                    transaction_reference: data.reference,
+                    attempt_count: 1
+                  },
+                  status: 'pending_retry',
+                  created_at: new Date().toISOString()
+                });
+
+                // Create admin notification
+                await admin.from('notifications').insert({
+                  user_id: null,
+                  type: 'email_delivery_failed',
+                  title: 'Payment Confirmation Email Failed',
+                  message: `Failed to send payment confirmation to ${order.customer_email} for order ${order.order_number}`,
+                  metadata: {
+                    order_id: order.id,
+                    order_number: order.order_number,
+                    customer_email: order.customer_email,
+                    error: emailResult.error,
+                    action_required: 'Send manual confirmation or retry email delivery'
+                  },
+                  is_read: false
+                });
               } else {
                 console.log('✅ Payment confirmation email sent to', order.customer_email);
               }
             } catch (emailError) {
-              console.error('Error sending payment confirmation email:', emailError);
+              console.error('❌ Error sending payment confirmation email:', emailError);
+
+              // Track email system failure
+              await admin.from('failed_notifications').insert({
+                notification_type: 'payment_confirmation_email',
+                order_id: order.id,
+                order_number: order.order_number,
+                recipient_email: order.customer_email,
+                recipient_phone: order.customer_phone,
+                error_message: emailError instanceof Error ? emailError.message : 'Email system exception',
+                metadata: {
+                  customer_name: order.customer_name,
+                  order_total: order.total,
+                  error_type: 'exception',
+                  stack_trace: emailError instanceof Error ? emailError.stack : undefined
+                },
+                status: 'pending_retry'
+              });
             }
 
             // Send order notification email to admin
@@ -333,10 +383,41 @@ export async function POST(request: NextRequest) {
                 if (smsResult.success) {
                   console.log('✅ Payment confirmation SMS sent to', order.customer_phone);
                 } else {
-                  console.error('Failed to send payment confirmation SMS:', smsResult.error);
+                  console.error('❌ Failed to send payment confirmation SMS:', smsResult.error);
+
+                  // Track SMS failure
+                  await admin.from('failed_notifications').insert({
+                    notification_type: 'payment_confirmation_sms',
+                    order_id: order.id,
+                    order_number: order.order_number,
+                    recipient_email: order.customer_email,
+                    recipient_phone: order.customer_phone,
+                    error_message: smsResult.error || 'Unknown SMS error',
+                    metadata: {
+                      customer_name: order.customer_name,
+                      order_total: order.total,
+                      attempt_count: 1
+                    },
+                    status: 'pending_retry'
+                  });
                 }
               } catch (smsError) {
-                console.error('Error sending payment confirmation SMS:', smsError);
+                console.error('❌ Error sending payment confirmation SMS:', smsError);
+
+                // Track SMS system error
+                await admin.from('failed_notifications').insert({
+                  notification_type: 'payment_confirmation_sms',
+                  order_id: order.id,
+                  order_number: order.order_number,
+                  recipient_email: order.customer_email,
+                  recipient_phone: order.customer_phone,
+                  error_message: smsError instanceof Error ? smsError.message : 'SMS system exception',
+                  metadata: {
+                    customer_name: order.customer_name,
+                    error_type: 'exception'
+                  },
+                  status: 'pending_retry'
+                });
               }
             }
           }

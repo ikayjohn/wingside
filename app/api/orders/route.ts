@@ -195,6 +195,55 @@ export async function POST(request: NextRequest) {
     const referralDiscount = body.referral_discount || 0
     const total = subtotal + deliveryFee + tax - discountAmount - referralDiscount
 
+    // Validate promo code if provided
+    if (body.promo_code_id) {
+      const { data: promoCode, error: promoError } = await supabase
+        .from('promo_codes')
+        .select('*')
+        .eq('id', body.promo_code_id)
+        .eq('is_active', true)
+        .single()
+
+      if (promoError || !promoCode) {
+        return NextResponse.json(
+          { error: 'Invalid promo code' },
+          { status: 400 }
+        )
+      }
+
+      // Check expiration
+      const now = new Date()
+      if (promoCode.valid_until && new Date(promoCode.valid_until) < now) {
+        return NextResponse.json(
+          { error: 'Promo code has expired' },
+          { status: 400 }
+        )
+      }
+
+      if (promoCode.valid_from && new Date(promoCode.valid_from) > now) {
+        return NextResponse.json(
+          { error: 'Promo code not yet valid' },
+          { status: 400 }
+        )
+      }
+
+      // Check usage limit
+      if (promoCode.usage_limit && promoCode.used_count >= promoCode.usage_limit) {
+        return NextResponse.json(
+          { error: 'Promo code usage limit reached' },
+          { status: 400 }
+        )
+      }
+
+      // Check minimum order amount
+      if (subtotal < promoCode.min_order_amount) {
+        return NextResponse.json(
+          { error: `Minimum order amount for this promo code is ₦${promoCode.min_order_amount.toLocaleString()}` },
+          { status: 400 }
+        )
+      }
+    }
+
     // Create order
     const { data: order, error: orderError } = await supabase
       .from('orders')

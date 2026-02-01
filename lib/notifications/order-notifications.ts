@@ -51,7 +51,7 @@ export async function onOrderCreated(orderId: string) {
         paymentMethod: order.payment_method || 'Card',
         deliveryAddress: order.delivery_address,
         estimatedTime: 30, // You can calculate this based on items
-        orderTrackingUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/my-account/orders?order=${order.order_number}`,
+        orderTrackingUrl: `${process.env.NEXT_PUBLIC_APP_URL}/my-account/orders?order=${order.order_number}`,
       }
     );
 
@@ -95,7 +95,7 @@ export async function onOrderStatusChanged(
     // Prepare notification data
     const notificationData: any = {
       orderNumber: order.order_number,
-      orderTrackingUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/my-account/orders?order=${order.order_number}`,
+      orderTrackingUrl: `${process.env.NEXT_PUBLIC_APP_URL}/my-account/orders?order=${order.order_number}`,
     };
 
     // Add status-specific data
@@ -136,7 +136,7 @@ export async function onOrderStatusChanged(
           rewardMessage: `You earned ${notificationData.pointsEarned} points from your recent order!`,
           pointsEarned: notificationData.pointsEarned,
           totalPoints: notificationData.totalPoints,
-          rewardsUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/my-account/dashboard`,
+          rewardsUrl: `${process.env.NEXT_PUBLIC_APP_URL}/my-account/dashboard`,
         }
       );
     }
@@ -265,7 +265,7 @@ export async function checkRewardMilestones(userId: string) {
           rewardMessage: milestone.message,
           pointsEarned: 0,
           totalPoints: points,
-          rewardsUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/my-account/dashboard`,
+          rewardsUrl: `${process.env.NEXT_PUBLIC_APP_URL}/my-account/dashboard`,
         });
         break; // Only send one notification per milestone
       }
