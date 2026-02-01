@@ -102,9 +102,9 @@ export default function Header() {
             ? 'bg-white pt-2.5'
             : isHomepage
               ? isScrolled
-                ? 'bg-white sticky top-0 shadow-md -pt-[30px] -pb-2.5'
+                ? 'bg-white sticky top-0 shadow-md py-2.5'
                 : 'bg-transparent absolute top-0 left-0 right-0 pt-2.5'
-              : 'bg-white sticky top-0 shadow-md -pt-[30px] -pb-2.5'
+              : 'bg-white sticky top-0 shadow-md py-2.5'
           }`}
       >
         <div className="w-full gutter-x">

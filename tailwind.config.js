@@ -1,25 +1,10 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
-  theme: {
-    extend: {
-      colors: {
-        primary: '#F7C400',
-        'primary-light': '#FDF5E5',
-        'text-dark': '#552627',
-        'text-brown': '#78350f',
-      },
-      spacing: {
-        'gutter': '60px',
-      },
-      fontFamily: {
-        inter: ['Inter', 'sans-serif'],
-      },
-    },
-  },
-  plugins: [],
+  // Tailwind 4 uses CSS-based configuration via @theme directive
+  // See app/globals.css for theme customization
 }

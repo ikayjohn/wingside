@@ -61,9 +61,23 @@ export async function POST(request: NextRequest) {
       const orderId = data.metadata?.order_id
 
       if (orderId) {
-        const supabase = await createClient()
+        const admin = createAdminClient()
+
+        // Idempotency: Check if this payment reference has already been processed
+        const { data: existingOrder } = await admin
+          .from('orders')
+          .select('id, payment_status, payment_reference')
+          .eq('id', orderId)
+          .single()
+
+        if (existingOrder?.payment_status === 'paid' &&
+            existingOrder?.payment_reference === data.reference) {
+          console.log(`✓ Order ${orderId} already processed with reference ${data.reference}`)
+          return NextResponse.json({ success: true, message: 'Already processed' })
+        }
 
         // Update order payment status
+        const supabase = await createClient()
         const { error: updateError } = await supabase
           .from('orders')
           .update({
@@ -73,26 +87,21 @@ export async function POST(request: NextRequest) {
             status: 'confirmed', // Automatically confirm order when paid
           })
           .eq('id', orderId)
+          .eq('payment_status', 'pending') // Only update if still pending
 
         if (updateError) {
           console.error('Error updating order from webhook:', updateError)
+          // If update failed, order might already be paid
+          return NextResponse.json({ success: true, message: 'Order already updated' })
         } else {
           console.log(`Order ${orderId} payment confirmed via webhook`)
 
           // Fetch order details
-          const admin = createAdminClient()
           const { data: order } = await admin
             .from('orders')
             .select('*, order_items(*)')
             .eq('id', orderId)
             .single()
-
-          // Idempotency: Skip if already processed (check again after update)
-          if (order && order.payment_status === 'paid' && order.paid_at &&
-              new Date(order.paid_at).getTime() < Date.now() - 5000) {
-            console.log(`✓ Order ${orderId} already processed earlier`)
-            return NextResponse.json({ success: true })
-          }
 
           if (order) {
             // 1. Check if customer profile exists, create and sync if not

@@ -351,7 +351,7 @@ export default function AdminLayout({
               <div>
                 <h3 className="text-sm font-semibold text-[#552627] uppercase tracking-wider mb-3">Support</h3>
                 <div className="space-y-2 text-sm text-gray-600">
-                  <p>admin@wingside.com</p>
+                  <p>admin@wingside.ng</p>
                   <p>Wingside Cockpit</p>
                   <p className="text-xs text-gray-400">Version 1.0.0</p>
                 </div>

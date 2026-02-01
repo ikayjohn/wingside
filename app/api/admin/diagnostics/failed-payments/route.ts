@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/admin-auth'
 
 // GET /api/admin/diagnostics/failed-payments - Get recent failed payment attempts
 export async function GET(request: NextRequest) {
+  // Require admin authentication
+  const auth = await requireAdmin();
+  if (!auth.success) return auth.error;
+
   try {
-    const supabase = await createClient()
+    const supabase = auth.supabase;
 
     // Get orders with failed/pending payment status from last 24 hours
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()

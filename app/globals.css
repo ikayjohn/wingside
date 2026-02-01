@@ -2,11 +2,17 @@
 
 /* Global Variables */
 @theme {
+  /* Colors */
   --color-primary: #F7C400;
   --color-primary-light: #FDF5E5;
   --color-text-dark: #000000;
   --color-text-brown: #552627;
+
+  /* Spacing */
   --spacing-gutter: 60px;
+
+  /* Font Families */
+  --font-family-inter: Inter, sans-serif;
 }
 
 /* Spinner Animation */

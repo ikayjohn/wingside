@@ -1,17 +1,19 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import HeroSlideshow from '@/components/HeroSlideshow';
 import { fetchSettings } from '@/lib/settings';
 
-// Structured data for SEO - will be populated with real data
-let structuredData = {
+// Structured data for SEO
+// Note: NEXT_PUBLIC_* environment variables are inlined at build time by Next.js,
+// making them safe to use at module level even in client components
+const structuredData = {
   "@context": "https://schema.org",
   "@type": "Restaurant",
   "name": "Wingside",
   "description": "Experience 20 bold wing flavors across 6 categories at Wingside. Your wings, your way.",
-  "url": "https://wingside.com",
+  "url": "https://www.wingside.ng",
   "telephone": process.env.NEXT_PUBLIC_CONTACT_PHONE || "+234-809-019-1999",
   "address": {
     "@type": "PostalAddress",
@@ -34,12 +36,12 @@ let structuredData = {
     "opens": "10:00",
     "closes": "22:00"
   },
-  "menu": "https://wingside.com/order",
+  "menu": "https://www.wingside.ng/order",
   "potentialAction": {
     "@type": "OrderAction",
     "target": {
       "@type": "EntryPoint",
-      "urlTemplate": "https://wingside.com/order"
+      "urlTemplate": "https://www.wingside.ng/order"
     },
     "deliveryMethod": [
       "http://purl.org/goodrelations/v1#DeliveryModePickUp",
@@ -115,23 +117,23 @@ export default function WingsideLanding() {
   }, [setActiveDeliverySection]);
 
   // Fetch flavors from database on mount
-  const fetchFlavors = useCallback(async () => {
-    try {
-      const response = await fetch('/api/flavors');
-      const data = await response.json();
-      if (response.ok) {
-        setFlavors(data.flavors || []);
-      }
-    } catch (error) {
-      console.error('Error fetching flavors:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
+    async function fetchFlavors() {
+      try {
+        const response = await fetch('/api/flavors');
+        const data = await response.json();
+        if (response.ok) {
+          setFlavors(data.flavors || []);
+        }
+      } catch (error) {
+        console.error('Error fetching flavors:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     fetchFlavors();
-  }, [fetchFlavors]);
+  }, []);
 
   // Helper function to parse description into two parts
   const parseDescription = (description: string) => {

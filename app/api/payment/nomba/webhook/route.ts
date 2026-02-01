@@ -124,17 +124,19 @@ export async function POST(request: NextRequest) {
 
       console.log('✅ Nomba webhook signature verified successfully')
     } else {
-      console.warn('⚠️  NOMBA_WEBHOOK_SECRET not configured')
-      console.warn('⚠️  Webhooks are NOT SECURE without signature verification!')
-      console.warn('⚠️  Set NOMBA_WEBHOOK_SECRET in production immediately!')
+      console.error('❌ NOMBA_WEBHOOK_SECRET not configured')
+      console.error('❌ Webhook signature verification is REQUIRED in all environments')
+      console.error('❌ Set NOMBA_WEBHOOK_SECRET immediately to enable webhook processing')
 
-      // In production, require webhook secret
-      if (process.env.NODE_ENV === 'production') {
-        return NextResponse.json(
-          { error: 'Webhook signature verification required in production' },
-          { status: 401 }
-        )
-      }
+      // Require webhook secret in ALL environments (dev/staging/production)
+      // This prevents forged webhooks in non-production environments
+      return NextResponse.json(
+        {
+          error: 'Webhook signature verification required',
+          message: 'NOMBA_WEBHOOK_SECRET must be configured to process webhooks'
+        },
+        { status: 401 }
+      )
     }
 
     // Handle payment failure or cancellation

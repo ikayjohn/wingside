@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import { deleteFromCache, memoryCache, CACHE_KEYS } from '@/lib/redis';
+import { requireAdmin } from '@/lib/admin-auth';
 
 // GET /api/admin/clear-cache/stores - Clear stores cache
 export async function GET() {
+  // Require admin authentication
+  const auth = await requireAdmin();
+  if (!auth.success) return auth.error;
+
   try {
     console.log('🧹 Clearing stores cache...');
 

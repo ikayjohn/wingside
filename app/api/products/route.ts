@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const includeInactive = searchParams.get('includeInactive') === 'true'
     const cacheKey = category
       ? CACHE_KEYS.PRODUCTS_BY_CATEGORY(category)
-      : (includeInactive ? 'products_all' : CACHE_KEYS.PRODUCTS)
+      : (includeInactive ? CACHE_KEYS.PRODUCTS_ALL : CACHE_KEYS.PRODUCTS)
 
     // Check for cache-busting headers
     const cacheControl = request.headers.get('cache-control')

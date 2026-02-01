@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sanitizeEmail, sanitizeUrl } from '@/lib/security'
-import { checkRateLimitByIp, rateLimitErrorResponse } from '@/lib/rate-limit'
+import { checkRateLimit, getClientIp, rateLimitErrorResponse } from '@/lib/rate-limit'
 import { csrfProtection } from '@/lib/csrf'
 
 // Email validation regex
@@ -29,12 +29,6 @@ export async function POST(request: NextRequest) {
     const csrfError = await csrfProtection(request)
     if (csrfError) {
       return csrfError
-    }
-
-    // Check rate limit (10 payment initializations per 5 minutes per IP)
-    const { rateLimit } = await checkRateLimitByIp({ limit: 10, window: 5 * 60 * 1000 });
-    if (!rateLimit.success) {
-      return rateLimitErrorResponse(rateLimit);
     }
 
     const body = await request.json()
@@ -88,6 +82,20 @@ export async function POST(request: NextRequest) {
         { error: 'Order not found' },
         { status: 404 }
       )
+    }
+
+    // Strict rate limiting: 5 payment initializations per 15 minutes per user+IP combination
+    // This prevents abuse while allowing legitimate retry attempts
+    const clientIp = await getClientIp();
+    const rateLimitKey = `${order.user_id || 'guest'}:${clientIp}`;
+    const rateLimit = checkRateLimit(rateLimitKey, {
+      limit: 5,
+      window: 15 * 60 * 1000, // 15 minutes
+      blockDuration: 30 * 60 * 1000 // 30 minute block after exceeding limit
+    });
+
+    if (!rateLimit.success) {
+      return rateLimitErrorResponse(rateLimit);
     }
 
     // Check if order is already paid

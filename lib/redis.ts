@@ -20,9 +20,9 @@ let redis: any = null;
 export function getRedisClient(): any {
   if (!REDIS_URL || !Redis) {
     if (!Redis) {
-      console.warn('Redis package not available. Caching disabled.');
+      console.warn('[Redis] Package not available. Using in-memory cache fallback.');
     } else {
-      console.warn('Redis URL not configured. Caching disabled.');
+      console.warn('[Redis] URL not configured. Using in-memory cache fallback.');
     }
     return null;
   }
@@ -60,6 +60,7 @@ export function getRedisClient(): any {
  */
 export const CACHE_KEYS = {
   PRODUCTS: 'wingside:products',
+  PRODUCTS_ALL: 'wingside:products:all',
   PRODUCTS_BY_CATEGORY: (categoryId: string) => `wingside:products:category:${categoryId}`,
   FLAVORS: 'wingside:flavors',
   FLAVORS_BY_CATEGORY: (category: string) => `wingside:flavors:category:${category}`,
@@ -85,10 +86,12 @@ export const CACHE_TTL = {
 
 /**
  * Get data from Redis cache
+ * Returns null if Redis is unavailable - API routes will fall back to memory cache
  */
 export async function getFromCache<T>(key: string): Promise<T | null> {
   try {
     const client = getRedisClient();
+    // Graceful degradation: return null if Redis unavailable
     if (!client) return null;
 
     const data = await client.get(key);
@@ -96,13 +99,14 @@ export async function getFromCache<T>(key: string): Promise<T | null> {
 
     return JSON.parse(data) as T;
   } catch (error) {
-    console.error('Redis GET error:', error);
+    console.error('[Redis] GET error:', error);
     return null;
   }
 }
 
 /**
  * Set data in Redis cache
+ * Silently fails if Redis is unavailable - memory cache is used as fallback
  */
 export async function setCache<T>(
   key: string,
@@ -111,11 +115,12 @@ export async function setCache<T>(
 ): Promise<void> {
   try {
     const client = getRedisClient();
+    // Graceful degradation: return early if Redis unavailable
     if (!client) return;
 
     await client.setex(key, ttl, JSON.stringify(value));
   } catch (error) {
-    console.error('Redis SET error:', error);
+    console.error('[Redis] SET error:', error);
   }
 }
 

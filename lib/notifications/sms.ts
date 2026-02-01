@@ -360,7 +360,7 @@ export async function sendOrderConfirmationSMS(
   }
 ): Promise<SMSResult> {
   const formattedPhone = formatPhoneNumber(phoneNumber);
-  const message = `Wingside: Order #${orderData.orderNumber} confirmed! Total: ₦${orderData.totalAmount}. Ready in ~${orderData.estimatedTime} mins. Track your order at wingside.com/my-account/dashboard`;
+  const message = `Wingside: Order #${orderData.orderNumber} confirmed! Total: ₦${orderData.totalAmount}. Ready in ~${orderData.estimatedTime} mins. Track your order at wingside.ng/my-account/dashboard`;
 
   return sendSMS(formattedPhone, message);
 }
@@ -379,14 +379,14 @@ export async function sendOrderStatusSMS(
 
   const statusMessages: Record<string, string> = {
     preparing: `Wingside: Order #${orderData.orderNumber} is being prepared. We'll notify you when it's ready!`,
-    ready: `Wingside: Order #${orderData.orderNumber} is READY for pickup! Track at wingside.com/my-account/dashboard`,
+    ready: `Wingside: Order #${orderData.orderNumber} is READY for pickup! Track at wingside.ng/my-account/dashboard`,
     picked_up: `Wingside: Order #${orderData.orderNumber} has been picked up. Enjoy your wings!`,
-    out_for_delivery: `Wingside: Order #${orderData.orderNumber} is out for delivery! Track at wingside.com/my-account/dashboard`,
+    out_for_delivery: `Wingside: Order #${orderData.orderNumber} is out for delivery! Track at wingside.ng/my-account/dashboard`,
     delivered: `Wingside: Order #${orderData.orderNumber} has been delivered. Enjoy your wings!`,
   };
 
   const message = statusMessages[orderData.status] ||
-    `Wingside: Order #${orderData.orderNumber} status updated to: ${orderData.status}. Track at wingside.com/my-account/dashboard`;
+    `Wingside: Order #${orderData.orderNumber} status updated to: ${orderData.status}. Track at wingside.ng/my-account/dashboard`;
 
   return sendSMS(formattedPhone, message);
 }

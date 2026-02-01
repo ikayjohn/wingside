@@ -260,7 +260,7 @@ export async function sendNotification(options: NotificationOptions): Promise<{
           case 'reward':
             smsResult = await sendSMS(
               options.userPhone,
-              `🎉 You earned ${options.data.pointsEarned} points! Total: ${options.data.totalPoints} pts. Redeem rewards at wingside.com/my-account/dashboard`
+              `🎉 You earned ${options.data.pointsEarned} points! Total: ${options.data.totalPoints} pts. Redeem rewards at wingside.ng/my-account/dashboard`
             );
             break;
 

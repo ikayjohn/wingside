@@ -82,7 +82,8 @@
       "Bash(supabase db push:*)",
       "Bash(openssl rand:*)",
       "Bash(git log:*)",
-      "WebFetch(domain:developer.nomba.com)"
+      "WebFetch(domain:developer.nomba.com)",
+      "WebFetch(domain:www.npmjs.com)"
     ],
     "deny": [],
     "ask": []

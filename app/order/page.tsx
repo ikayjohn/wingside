@@ -98,75 +98,74 @@ export default function OrderPage() {
     }
   }, [cart]);
 
-  // Fetch products from API on mount
-  const fetchProducts = useCallback(async () => {
-    try {
-      // Add timestamp to prevent browser caching
-      const response = await fetch(`/api/products/?_t=${Date.now()}`, {
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
-        },
-        cache: 'no-store',
-      });
-      const data = await response.json();
-
-      if (data.products) {
-        // Transform API data to match expected format
-        const transformedProducts = data.products.map((p: any) => ({
-          id: p.id, // Keep as UUID string
-          name: p.name,
-          category: p.category?.name || 'Wings',
-          subcategory: p.subcategory,
-          image: p.image_url || p.image,
-          flavors: p.flavors || [],
-          sizes: (p.sizes || []).filter((size: any, index: number, self: any[]) =>
-            index === self.findIndex((s) => s.name === size.name && s.price === size.price)
-          ),
-          badge: p.badge,
-          flavorCount: p.max_flavors || 1,
-          wingCount: p.wing_count,
-          flavorLabel: p.flavorLabel, // Use camelCase from API
-          description: p.description,
-          riceOptions: p.riceOptions,
-          riceCount: p.riceCount,
-          drinkOptions: p.drinkOptions,
-          drinkCount: p.drinkCount,
-          milkshakeOptions: p.milkshakeOptions,
-          cakeOptions: p.cakeOptions,
-        }));
-        setProducts(transformedProducts);
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Fetch categories from API
-  const fetchCategories = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/categories?_t=${Date.now()}`, {
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
-        },
-        cache: 'no-store',
-      });
-      const data = await response.json();
-      if (data.categories) {
-        setApiCategories(data.categories);
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  }, []);
-
+  // Fetch products and categories from API on mount
   useEffect(() => {
+    async function fetchProducts() {
+      try {
+        // Add timestamp to prevent browser caching
+        const response = await fetch(`/api/products/?_t=${Date.now()}`, {
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+          },
+          cache: 'no-store',
+        });
+        const data = await response.json();
+
+        if (data.products) {
+          // Transform API data to match expected format
+          const transformedProducts = data.products.map((p: any) => ({
+            id: p.id, // Keep as UUID string
+            name: p.name,
+            category: p.category?.name || 'Wings',
+            subcategory: p.subcategory,
+            image: p.image_url || p.image,
+            flavors: p.flavors || [],
+            sizes: (p.sizes || []).filter((size: any, index: number, self: any[]) =>
+              index === self.findIndex((s) => s.name === size.name && s.price === size.price)
+            ),
+            badge: p.badge,
+            flavorCount: p.max_flavors || 1,
+            wingCount: p.wing_count,
+            flavorLabel: p.flavorLabel, // Use camelCase from API
+            description: p.description,
+            riceOptions: p.riceOptions,
+            riceCount: p.riceCount,
+            drinkOptions: p.drinkOptions,
+            drinkCount: p.drinkCount,
+            milkshakeOptions: p.milkshakeOptions,
+            cakeOptions: p.cakeOptions,
+          }));
+          setProducts(transformedProducts);
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function fetchCategories() {
+      try {
+        const response = await fetch(`/api/categories?_t=${Date.now()}`, {
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+          },
+          cache: 'no-store',
+        });
+        const data = await response.json();
+        if (data.categories) {
+          setApiCategories(data.categories);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    }
+
     fetchProducts();
     fetchCategories();
-  }, [fetchProducts, fetchCategories]);
+  }, []);
 
   // Auto-select first flavor category for products with many flavors
   useEffect(() => {
