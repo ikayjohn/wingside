@@ -64,11 +64,19 @@ export async function POST(request: NextRequest) {
         const admin = createAdminClient()
 
         // Idempotency: Check if this payment reference has already been processed
-        const { data: existingOrder } = await admin
+        const { data: existingOrder, error: orderCheckError } = await admin
           .from('orders')
           .select('id, payment_status, payment_reference')
           .eq('id', orderId)
           .single()
+
+        if (orderCheckError) {
+          console.error('Error checking existing order:', orderCheckError)
+          return NextResponse.json(
+            { error: 'Order not found' },
+            { status: 404 }
+          )
+        }
 
         if (existingOrder?.payment_status === 'paid' &&
             existingOrder?.payment_reference === data.reference) {
@@ -97,19 +105,32 @@ export async function POST(request: NextRequest) {
           console.log(`Order ${orderId} payment confirmed via webhook`)
 
           // Fetch order details
-          const { data: order } = await admin
+          const { data: order, error: orderFetchError } = await admin
             .from('orders')
             .select('*, order_items(*)')
             .eq('id', orderId)
             .single()
 
+          if (orderFetchError || !order) {
+            console.error('Error fetching order details:', orderFetchError)
+            return NextResponse.json(
+              { error: 'Failed to fetch order details' },
+              { status: 500 }
+            )
+          }
+
           if (order) {
             // 1. Check if customer profile exists, create and sync if not
-            const { data: existingProfile } = await admin
+            const { data: existingProfile, error: profileError } = await admin
               .from('profiles')
               .select('id, zoho_contact_id, embedly_customer_id')
               .eq('email', order.customer_email)
               .single()
+
+            // Profile not found is OK (guest checkout), other errors are not
+            if (profileError && profileError.code !== 'PGRST116') {
+              console.error('Error checking customer profile:', profileError)
+            }
 
             let profileId = existingProfile?.id
 

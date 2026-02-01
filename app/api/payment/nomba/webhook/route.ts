@@ -255,11 +255,16 @@ export async function POST(request: NextRequest) {
       // Note: admin client already created above for order update
 
       // 1. Get or create customer profile
-      const { data: existingProfile } = await admin
+      const { data: existingProfile, error: profileError } = await admin
         .from('profiles')
         .select('id, zoho_contact_id, embedly_customer_id')
         .eq('email', order.customer_email)
         .single()
+
+      // Profile not found is OK (guest checkout), other errors are not
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Error checking customer profile:', profileError)
+      }
 
       let profileId = existingProfile?.id
       let needsSync = false

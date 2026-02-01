@@ -148,11 +148,16 @@ export async function POST(request: NextRequest) {
     const referralCode = generateReferralCode(firstName, lastName);
 
     // Check if profile was auto-created by Supabase Auth
-    const { data: existingProfile } = await supabase
+    const { data: existingProfile, error: checkError } = await supabase
       .from('profiles')
       .select('id, referral_code')
       .eq('id', authData.user.id)
       .single();
+
+    // Log error but continue - profile might not exist yet
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking existing profile:', checkError);
+    }
 
     let profileData;
     let profileError;

@@ -83,7 +83,8 @@
       "Bash(openssl rand:*)",
       "Bash(git log:*)",
       "WebFetch(domain:developer.nomba.com)",
-      "WebFetch(domain:www.npmjs.com)"
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(bash:*)"
     ],
     "deny": [],
     "ask": []
