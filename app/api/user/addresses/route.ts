@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { validateAddressInput, sanitizeString } from '@/lib/validation'
 
 // GET /api/user/addresses - Fetch user's addresses
 export async function GET() {
@@ -65,14 +66,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Validate required fields
-    const { label, street_address, city, state, postal_code, is_default } = body
-    if (!label || !street_address || !city) {
+    // Validate input
+    const validation = validateAddressInput(body);
+    if (!validation.valid) {
       return NextResponse.json(
-        { error: 'Label, street address, and city are required' },
+        {
+          error: 'Validation failed',
+          details: validation.errors
+        },
         { status: 400 }
-      )
+      );
     }
+
+    // Sanitize string inputs
+    const { label, street_address, city, state, postal_code, is_default } = body;
+    const sanitizedLabel = sanitizeString(label);
+    const sanitizedStreet = sanitizeString(street_address);
+    const sanitizedCity = sanitizeString(city);
+    const sanitizedState = state ? sanitizeString(state) : null;
+    const sanitizedPostal = postal_code ? sanitizeString(postal_code) : null;
 
     // If setting as default, unset other default addresses
     if (is_default) {
@@ -87,11 +99,11 @@ export async function POST(request: NextRequest) {
       .from('addresses')
       .insert({
         user_id: user.id,
-        label: label.trim(),
-        street_address: street_address.trim(),
-        city: city.trim(),
-        state: state?.trim() || null,
-        postal_code: postal_code?.trim() || null,
+        label: sanitizedLabel,
+        street_address: sanitizedStreet,
+        city: sanitizedCity,
+        state: sanitizedState,
+        postal_code: sanitizedPostal,
         country: 'Nigeria', // Default country
         is_default: is_default || false,
       })

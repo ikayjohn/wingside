@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import crypto from 'crypto'
 import { sendOrderConfirmation, sendOrderNotification } from '@/lib/emails/service'
+import { validateOrderInput, sanitizeString, normalizeNigerianPhone } from '@/lib/validation'
 
 // GET /api/orders - Fetch user's orders or all orders (admin)
 export async function GET(request: NextRequest) {
@@ -183,6 +184,29 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid JSON in request body' },
         { status: 400 }
       );
+    }
+
+    // Validate input
+    const validation = validateOrderInput(body);
+    if (!validation.valid) {
+      return NextResponse.json(
+        {
+          error: 'Validation failed',
+          details: validation.errors
+        },
+        { status: 400 }
+      );
+    }
+
+    // Sanitize string inputs
+    body.customer_name = sanitizeString(body.customer_name);
+    body.customer_email = sanitizeString(body.customer_email).toLowerCase();
+    body.customer_phone = normalizeNigerianPhone(body.customer_phone) || body.customer_phone;
+    if (body.delivery_address_text) {
+      body.delivery_address_text = sanitizeString(body.delivery_address_text);
+    }
+    if (body.notes) {
+      body.notes = sanitizeString(body.notes);
     }
 
     // Get user (optional for guest checkout)

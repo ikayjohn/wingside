@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { validateAddressInput, sanitizeString, isValidUUID } from '@/lib/validation'
 
 // PUT /api/user/addresses/[id] - Update address
 export async function PUT(
@@ -20,6 +21,14 @@ export async function PUT(
     }
     const { id } = await params
 
+    // Validate UUID format
+    if (!isValidUUID(id)) {
+      return NextResponse.json(
+        { error: 'Invalid address ID format' },
+        { status: 400 }
+      );
+    }
+
     // Get authenticated user
     const {
       data: { user },
@@ -27,6 +36,20 @@ export async function PUT(
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Validate input (if fields are being updated)
+    if (body.label || body.street_address || body.city) {
+      const validation = validateAddressInput(body);
+      if (!validation.valid) {
+        return NextResponse.json(
+          {
+            error: 'Validation failed',
+            details: validation.errors
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // Check if address belongs to user
@@ -47,6 +70,18 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
+    // Sanitize string inputs
+    const sanitizedData: any = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (body.label) sanitizedData.label = sanitizeString(body.label);
+    if (body.street_address) sanitizedData.street_address = sanitizeString(body.street_address);
+    if (body.city) sanitizedData.city = sanitizeString(body.city);
+    if (body.state) sanitizedData.state = sanitizeString(body.state);
+    if (body.postal_code) sanitizedData.postal_code = sanitizeString(body.postal_code);
+    if (body.is_default !== undefined) sanitizedData.is_default = body.is_default;
+
     // If setting as default, unset other default addresses
     if (body.is_default) {
       await supabase
@@ -59,15 +94,7 @@ export async function PUT(
     // Update address
     const { data: address, error } = await supabase
       .from('addresses')
-      .update({
-        label: body.label?.trim(),
-        street_address: body.street_address?.trim(),
-        city: body.city?.trim(),
-        state: body.state?.trim() || null,
-        postal_code: body.postal_code?.trim() || null,
-        is_default: body.is_default,
-        updated_at: new Date().toISOString(),
-      })
+      .update(sanitizedData)
       .eq('id', id)
       .select()
       .single()
@@ -98,6 +125,14 @@ export async function DELETE(
   try {
     const supabase = await createClient()
     const { id } = await params
+
+    // Validate UUID format
+    if (!isValidUUID(id)) {
+      return NextResponse.json(
+        { error: 'Invalid address ID format' },
+        { status: 400 }
+      );
+    }
 
     // Get authenticated user
     const {
