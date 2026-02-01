@@ -512,7 +512,6 @@ export async function POST(request: NextRequest) {
               });
             }
           }
-        }
       }
     } else if (event.event === 'charge.failed') {
       console.log('Payment failed:', event.data.reference)
