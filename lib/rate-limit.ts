@@ -1,10 +1,11 @@
 /**
- * Rate limiting implementation using in-memory storage
- * For production, use Redis, Upstash, or Vercel KV for distributed rate limiting
+ * Rate limiting implementation with Redis support for distributed rate limiting
+ * Automatically falls back to in-memory storage when Redis is unavailable
  */
 
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
+import { getRedisClient } from './redis';
 
 interface RateLimitEntry {
   count: number;
@@ -12,7 +13,7 @@ interface RateLimitEntry {
   firstAttempt: number;
 }
 
-// In-memory storage (for single-instance deployments)
+// In-memory storage (fallback for single-instance deployments or when Redis unavailable)
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
 // Clean up expired entries every 5 minutes
@@ -52,13 +53,82 @@ export interface RateLimitResult {
 }
 
 /**
- * Check if a request should be rate limited
- *
- * @param identifier - Unique identifier (IP address, user ID, email, etc.)
- * @param config - Rate limit configuration
- * @returns Rate limit result
+ * Check rate limit using Redis (distributed rate limiting)
+ * Uses atomic INCR and EXPIRE commands for thread safety across multiple instances
  */
-export function checkRateLimit(
+async function checkRateLimitRedis(
+  identifier: string,
+  config: RateLimitConfig
+): Promise<RateLimitResult | null> {
+  const redis = getRedisClient();
+  if (!redis) return null;
+
+  try {
+    const now = Date.now();
+    const blockDuration = config.blockDuration || config.window;
+    const windowSeconds = Math.ceil(blockDuration / 1000);
+
+    // Redis keys
+    const countKey = `ratelimit:${identifier}:count`;
+    const resetKey = `ratelimit:${identifier}:reset`;
+
+    // Get current count and TTL atomically using pipeline
+    const pipeline = redis.pipeline();
+    pipeline.get(countKey);
+    pipeline.ttl(countKey);
+    pipeline.get(resetKey);
+
+    const [[, count], [, ttl], [, resetTime]] = await pipeline.exec();
+
+    const currentCount = count ? parseInt(count, 10) : 0;
+    const resetTimestamp = resetTime ? parseInt(resetTime, 10) : now + blockDuration;
+
+    // If rate limit exceeded and still in block period
+    if (currentCount >= config.limit && ttl > 0) {
+      const retryAfter = ttl;
+
+      return {
+        success: false,
+        limit: config.limit,
+        remaining: 0,
+        reset: resetTimestamp,
+        retryAfter,
+      };
+    }
+
+    // Increment count atomically
+    const incrementPipeline = redis.pipeline();
+
+    if (currentCount === 0) {
+      // First request in this window
+      incrementPipeline.set(countKey, 1, 'EX', windowSeconds);
+      incrementPipeline.set(resetKey, resetTimestamp, 'EX', windowSeconds);
+    } else {
+      // Increment existing count
+      incrementPipeline.incr(countKey);
+      incrementPipeline.expire(countKey, windowSeconds);
+    }
+
+    await incrementPipeline.exec();
+
+    const newCount = currentCount + 1;
+
+    return {
+      success: true,
+      limit: config.limit,
+      remaining: Math.max(0, config.limit - newCount),
+      reset: resetTimestamp,
+    };
+  } catch (error) {
+    console.error('[Rate Limit] Redis error, falling back to in-memory:', error);
+    return null; // Fall back to in-memory
+  }
+}
+
+/**
+ * Check rate limit using in-memory storage (fallback for single-instance)
+ */
+function checkRateLimitMemory(
   identifier: string,
   config: RateLimitConfig
 ): RateLimitResult {
@@ -116,16 +186,84 @@ export function checkRateLimit(
 }
 
 /**
- * Reset rate limit for an identifier
+ * Check if a request should be rate limited
+ * Automatically uses Redis when available, falls back to in-memory storage
+ *
+ * @param identifier - Unique identifier (IP address, user ID, email, etc.)
+ * @param config - Rate limit configuration
+ * @returns Rate limit result
  */
-export function resetRateLimit(identifier: string): void {
+export async function checkRateLimit(
+  identifier: string,
+  config: RateLimitConfig
+): Promise<RateLimitResult> {
+  // Try Redis first (distributed rate limiting)
+  const redisResult = await checkRateLimitRedis(identifier, config);
+
+  if (redisResult) {
+    return redisResult;
+  }
+
+  // Fall back to in-memory (single-instance only)
+  return checkRateLimitMemory(identifier, config);
+}
+
+/**
+ * Reset rate limit for an identifier (clears both Redis and in-memory)
+ */
+export async function resetRateLimit(identifier: string): Promise<void> {
+  // Clear from Redis
+  const redis = getRedisClient();
+  if (redis) {
+    try {
+      const countKey = `ratelimit:${identifier}:count`;
+      const resetKey = `ratelimit:${identifier}:reset`;
+      await redis.del(countKey, resetKey);
+    } catch (error) {
+      console.error('[Rate Limit] Error clearing Redis keys:', error);
+    }
+  }
+
+  // Clear from in-memory
   rateLimitStore.delete(identifier);
 }
 
 /**
- * Get current rate limit status without incrementing
+ * Get current rate limit status without incrementing (Redis or in-memory)
  */
-export function getRateLimitStatus(identifier: string): RateLimitResult | null {
+export async function getRateLimitStatus(identifier: string): Promise<RateLimitResult | null> {
+  // Try Redis first
+  const redis = getRedisClient();
+  if (redis) {
+    try {
+      const countKey = `ratelimit:${identifier}:count`;
+      const resetKey = `ratelimit:${identifier}:reset`;
+
+      const pipeline = redis.pipeline();
+      pipeline.get(countKey);
+      pipeline.ttl(countKey);
+      pipeline.get(resetKey);
+
+      const [[, count], [, ttl], [, resetTime]] = await pipeline.exec();
+
+      if (!count) return null;
+
+      const currentCount = parseInt(count, 10);
+      const resetTimestamp = resetTime ? parseInt(resetTime, 10) : Date.now() + ttl * 1000;
+
+      return {
+        success: ttl > 0,
+        limit: currentCount,
+        remaining: 0,
+        reset: resetTimestamp,
+      };
+    } catch (error) {
+      console.error('[Rate Limit] Error getting Redis status:', error);
+      // Fall through to in-memory
+    }
+  }
+
+  // Fall back to in-memory
   const entry = rateLimitStore.get(identifier);
   if (!entry) return null;
 
@@ -213,7 +351,7 @@ export async function checkRateLimitByIp(
   config: RateLimitConfig
 ): Promise<{ rateLimit: RateLimitResult; ip: string }> {
   const ip = await getClientIp();
-  const rateLimit = checkRateLimit(ip, config);
+  const rateLimit = await checkRateLimit(ip, config);
   return { rateLimit, ip };
 }
 
