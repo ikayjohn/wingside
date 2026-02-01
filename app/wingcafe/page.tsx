@@ -147,8 +147,8 @@ export default function WingcafePage() {
                 className="w-full h-full object-cover"
               />
               <div className="absolute top-[44px] left-6 text-left">
-                <p className="text-black font-bold text-[40px] md:text-[48px] leading-[0.85]">Brewed for</p>
-                <p className="text-black font-bold text-[40px] md:text-[48px] leading-[0.85]">the bold</p>
+                <p className="text-[#552627] font-bold text-[40px] md:text-[48px] leading-[0.85]">Brewed for</p>
+                <p className="text-[#552627] font-bold text-[40px] md:text-[48px] leading-[0.85]">the bold</p>
               </div>
             </div>
 
@@ -160,8 +160,8 @@ export default function WingcafePage() {
                 className="w-full h-full object-cover"
               />
               <div className="absolute top-[44px] left-6 text-left">
-                <p className="text-white font-bold text-[40px] md:text-[48px] leading-[0.85]">life is fresher on the</p>
-                <p className="text-white font-bold text-[40px] md:text-[48px] leading-[0.85]">wing side</p>
+                <p className="text-[#552627] font-bold text-[40px] md:text-[48px] leading-[0.85]">life is fresher on the</p>
+                <p className="text-[#552627] font-bold text-[40px] md:text-[48px] leading-[0.85]">wing side</p>
               </div>
             </div>
           </div>

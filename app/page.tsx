@@ -101,7 +101,7 @@ export default function WingsideLanding() {
 
   const currentSlide = deliverySlides[activeDeliverySection % deliverySlides.length];
 
-  // Auto-slide delivery section every 5 seconds
+  // Auto-slide delivery section every 8 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveDeliverySection(prev => {
@@ -111,7 +111,7 @@ export default function WingsideLanding() {
         }
         return prev + 1;
       });
-    }, 5000);
+    }, 8000);
 
     return () => clearInterval(interval);
   }, [setActiveDeliverySection]);
