@@ -12,40 +12,51 @@ export async function POST(request: NextRequest) {
   try {
     const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY
 
-    if (!paystackSecretKey) {
-      console.error('PAYSTACK_SECRET_KEY not configured')
-      return NextResponse.json(
-        { error: 'Payment gateway not configured' },
-        { status: 500 }
-      )
-    }
-
     // Get the signature from headers
     const signature = request.headers.get('x-paystack-signature')
-
-    if (!signature) {
-      console.error('No signature in webhook request')
-      return NextResponse.json(
-        { error: 'Invalid signature' },
-        { status: 401 }
-      )
-    }
 
     // Get raw body
     const body = await request.text()
 
-    // Validate signature
-    const hash = crypto
-      .createHmac('sha512', paystackSecretKey)
-      .update(body)
-      .digest('hex')
+    // Verify webhook signature if secret is configured
+    if (paystackSecretKey) {
+      if (!signature) {
+        console.error('No signature in webhook request')
+        return NextResponse.json(
+          { error: 'Invalid signature' },
+          { status: 401 }
+        )
+      }
 
-    if (hash !== signature) {
-      console.error('Invalid webhook signature')
-      return NextResponse.json(
-        { error: 'Invalid signature' },
-        { status: 401 }
-      )
+      // Validate signature
+      const hash = crypto
+        .createHmac('sha512', paystackSecretKey)
+        .update(body)
+        .digest('hex')
+
+      if (hash !== signature) {
+        console.error('Invalid webhook signature')
+        return NextResponse.json(
+          { error: 'Invalid signature' },
+          { status: 401 }
+        )
+      }
+
+      console.log('✅ Paystack webhook signature verified')
+    } else {
+      // In production, require secret key
+      if (process.env.NODE_ENV === 'production') {
+        console.error('❌ PAYSTACK_SECRET_KEY not configured in PRODUCTION')
+        return NextResponse.json(
+          { error: 'Payment gateway not configured' },
+          { status: 500 }
+        )
+      }
+
+      // In dev/staging, allow webhooks without secret for testing
+      console.warn('⚠️  PAYSTACK_SECRET_KEY not configured - allowing webhook for testing')
+      console.warn('⚠️  This is only allowed in development/staging environments')
+      console.warn('⚠️  Production deployments MUST have PAYSTACK_SECRET_KEY set')
     }
 
     // Parse the webhook event
