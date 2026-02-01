@@ -43,7 +43,6 @@ const nextConfig: NextConfig = {
 
   // Production optimizations for VPS
   reactStrictMode: true,
-  swcMinify: true,
 
   // Output configuration for VPS
   output: 'standalone',
