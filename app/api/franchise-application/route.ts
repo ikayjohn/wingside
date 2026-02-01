@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     if (missingFields.length > 0) {
       return NextResponse.json(
-        { message: `Missing required fields: ${missingFields.join(', ')}` },
+        { error: `Missing required fields: ${missingFields.join(', ')}` },
         { status: 400 }
       );
     }
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Supabase error:', error);
       return NextResponse.json(
-        { message: 'Failed to submit application. Please try again.' },
+        { error: 'Failed to submit application. Please try again.' },
         { status: 500 }
       );
     }
@@ -98,13 +98,13 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: 'Application submitted successfully', id: data.id },
+      { success: true, message: 'Application submitted successfully', id: data.id },
       { status: 201 }
     );
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
