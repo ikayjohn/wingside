@@ -5,6 +5,7 @@ import { syncNewCustomer, syncOrderCompletion } from '@/lib/integrations'
 import { sendPaymentConfirmation, sendOrderNotification } from '@/lib/emails/service'
 import { sendPaymentConfirmationSMS, isSMSEnabled } from '@/lib/notifications/sms'
 import { updateOrderStreak } from '@/lib/streak/helper'
+import { loggers } from '@/lib/logger'
 import crypto from 'crypto'
 
 // POST /api/payment/webhook - Handle Paystack webhook events
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
     // Verify webhook signature if secret is configured
     if (paystackSecretKey) {
       if (!signature) {
-        console.error('No signature in webhook request')
+        loggers.webhook.error('No signature in webhook request')
         return NextResponse.json(
           { error: 'Invalid signature' },
           { status: 401 }
@@ -35,18 +36,18 @@ export async function POST(request: NextRequest) {
         .digest('hex')
 
       if (hash !== signature) {
-        console.error('Invalid webhook signature')
+        loggers.webhook.error('Invalid webhook signature')
         return NextResponse.json(
           { error: 'Invalid signature' },
           { status: 401 }
         )
       }
 
-      console.log('✅ Paystack webhook signature verified')
+      loggers.webhook.info('Paystack webhook signature verified')
     } else {
       // In production, require secret key
       if (process.env.NODE_ENV === 'production') {
-        console.error('❌ PAYSTACK_SECRET_KEY not configured in PRODUCTION')
+        loggers.webhook.error('PAYSTACK_SECRET_KEY not configured in PRODUCTION')
         return NextResponse.json(
           { error: 'Payment gateway not configured' },
           { status: 500 }
@@ -54,15 +55,15 @@ export async function POST(request: NextRequest) {
       }
 
       // In dev/staging, allow webhooks without secret for testing
-      console.warn('⚠️  PAYSTACK_SECRET_KEY not configured - allowing webhook for testing')
-      console.warn('⚠️  This is only allowed in development/staging environments')
-      console.warn('⚠️  Production deployments MUST have PAYSTACK_SECRET_KEY set')
+      loggers.webhook.warn('PAYSTACK_SECRET_KEY not configured - allowing webhook for testing')
+      loggers.webhook.warn('This is only allowed in development/staging environments')
+      loggers.webhook.warn('Production deployments MUST have PAYSTACK_SECRET_KEY set')
     }
 
     // Parse the webhook event
     const event = JSON.parse(body)
 
-    console.log('Paystack webhook event:', event.event)
+    loggers.webhook.info('Paystack webhook event received', { event: event.event })
 
     // Handle different event types
     if (event.event === 'charge.success') {
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
           .single()
 
         if (orderCheckError) {
-          console.error('Error checking existing order:', orderCheckError)
+          loggers.webhook.error('Error checking existing order', orderCheckError, { orderId })
           return NextResponse.json(
             { error: 'Order not found' },
             { status: 404 }
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
 
         if (existingOrder?.payment_status === 'paid' &&
             existingOrder?.payment_reference === data.reference) {
-          console.log(`✓ Order ${orderId} already processed with reference ${data.reference}`)
+          loggers.webhook.info('Order already processed', { orderId, reference: data.reference })
           return NextResponse.json({ success: true, message: 'Already processed' })
         }
 
