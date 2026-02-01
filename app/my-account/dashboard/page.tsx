@@ -595,7 +595,7 @@ export default function WingclubDashboard() {
                 <line x1="1" y1="10" x2="23" y2="10"></line>
               </svg>
             </div>
-            <span>My Cards</span>
+            <span>Wingside® Card</span>
           </Link>
  
           <Link href="/my-account/referrals" className="dashboard-action-card">
