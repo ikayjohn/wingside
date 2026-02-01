@@ -45,11 +45,11 @@ export default function AdminDashboard() {
     totalRevenue: 0,
   });
   const [chartData, setChartData] = useState({
-    revenueChart: [],
-    statusChart: [],
-    topProducts: [],
-    dailyChart: [],
-    customerGrowth: [],
+    revenueChart: [] as any[],
+    statusChart: [] as any[],
+    topProducts: [] as any[],
+    dailyChart: [] as any[],
+    customerGrowth: [] as any[],
     heatmapData: {} as { [key: string]: { [key: string]: number } },
     websiteAnalytics: {} as any,
   });
