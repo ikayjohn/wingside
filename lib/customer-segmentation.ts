@@ -3,13 +3,24 @@
  * Automatically categorizes customers based on behavior, value, and patterns
  */
 
+export interface Customer {
+  total_spent?: number;
+  total_orders?: number;
+  created_at: string;
+  last_order_date?: string | null;
+  avg_days_between_orders?: number;
+  referral_count?: number;
+  social_verifications?: number;
+  avg_order_value?: number;
+}
+
 export interface CustomerSegment {
   id: string;
   name: string;
   description: string;
   color: string;
   icon: string;
-  criteria: (customer: any) => boolean;
+  criteria: (customer: Customer) => boolean;
 }
 
 export const CUSTOMER_SEGMENTS: CustomerSegment[] = [
@@ -101,7 +112,7 @@ export const CUSTOMER_SEGMENTS: CustomerSegment[] = [
 /**
  * Calculate customer segments based on customer data
  */
-export function calculateCustomerSegments(customer: any): string[] {
+export function calculateCustomerSegments(customer: Customer): string[] {
   const segments: string[] = [];
 
   for (const segment of CUSTOMER_SEGMENTS) {
@@ -128,7 +139,7 @@ export function getSegmentInfo(segmentId: string): CustomerSegment | undefined {
 /**
  * Get all matching segment objects
  */
-export function getCustomerSegments(customer: any): CustomerSegment[] {
+export function getCustomerSegments(customer: Customer): CustomerSegment[] {
   const segmentIds = calculateCustomerSegments(customer);
   return CUSTOMER_SEGMENTS.filter(s => segmentIds.includes(s.id));
 }
@@ -136,7 +147,7 @@ export function getCustomerSegments(customer: any): CustomerSegment[] {
 /**
  * Calculate customer health score (0-100)
  */
-export function calculateCustomerHealth(customer: any): number {
+export function calculateCustomerHealth(customer: Customer): number {
   let score = 50; // Base score
 
   // Total orders (up to 20 points)
@@ -191,7 +202,7 @@ export function getHealthInfo(score: number): { label: string; color: string } {
 /**
  * Predict next order date (simple heuristic)
  */
-export function predictNextOrder(customer: any): Date | null {
+export function predictNextOrder(customer: Customer): Date | null {
   if (!customer.last_order_date || !customer.avg_days_between_orders) return null;
 
   const lastOrder = new Date(customer.last_order_date);
@@ -206,7 +217,7 @@ export function predictNextOrder(customer: any): Date | null {
 /**
  * Calculate churn risk (0-100)
  */
-export function calculateChurnRisk(customer: any): number {
+export function calculateChurnRisk(customer: Customer): number {
   let risk = 0;
 
   if (!customer.last_order_date) return 50;

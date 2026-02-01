@@ -3,7 +3,9 @@
  * Provides caching layer for frequently accessed data
  */
 
-let Redis: any;
+import type { Redis as RedisType } from 'ioredis';
+
+let Redis: typeof import('ioredis').default | null = null;
 try {
   Redis = require('ioredis');
 } catch (e) {
@@ -15,9 +17,9 @@ try {
 const REDIS_URL = process.env.REDIS_URL || process.env.REDIS_LOCAL_URL;
 
 // Create Redis client singleton
-let redis: any = null;
+let redis: RedisType | null = null;
 
-export function getRedisClient(): any {
+export function getRedisClient(): RedisType | null {
   if (!REDIS_URL || !Redis) {
     if (!Redis) {
       console.warn('[Redis] Package not available. Using in-memory cache fallback.');
@@ -235,16 +237,16 @@ export const CacheInvalidation = {
  * Graceful degradation: Fallback to in-memory cache if Redis fails
  */
 class MemoryCache {
-  private cache = new Map<string, { value: any; expiry: number }>();
+  private cache = new Map<string, { value: unknown; expiry: number }>();
 
-  set(key: string, value: any, ttl: number): void {
+  set(key: string, value: unknown, ttl: number): void {
     this.cache.set(key, {
       value,
       expiry: Date.now() + ttl * 1000,
     });
   }
 
-  get(key: string): any {
+  get(key: string): unknown {
     const item = this.cache.get(key);
     if (!item) return null;
 

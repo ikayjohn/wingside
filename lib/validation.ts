@@ -324,9 +324,28 @@ export function collectErrors(
 }
 
 /**
+ * Order input interface
+ */
+export interface OrderInput {
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  items: Array<{
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+  }>;
+  delivery_fee?: number;
+  tax?: number;
+  discount_amount?: number;
+  delivery_address_text?: string;
+  notes?: string;
+}
+
+/**
  * Order validation schema
  */
-export function validateOrderInput(body: any): { errors: ValidationError[]; valid: boolean } {
+export function validateOrderInput(body: Partial<OrderInput>): { errors: ValidationError[]; valid: boolean } {
   const errors: ValidationError[] = [];
 
   // Validate customer information
@@ -357,7 +376,7 @@ export function validateOrderInput(body: any): { errors: ValidationError[]; vali
 
   // Validate each item
   if (Array.isArray(body.items)) {
-    body.items.forEach((item: any, index: number) => {
+    body.items.forEach((item: Partial<OrderInput['items'][number]>, index: number) => {
       const qtyError = validateNumber(item.quantity, `items[${index}].quantity`, {
         required: true,
         min: 1,
@@ -425,9 +444,20 @@ export function validateOrderInput(body: any): { errors: ValidationError[]; vali
 }
 
 /**
+ * Address input interface
+ */
+export interface AddressInput {
+  label: string;
+  street_address: string;
+  city: string;
+  state?: string;
+  postal_code?: string;
+}
+
+/**
  * Address validation schema (for user addresses API)
  */
-export function validateAddressInput(body: any): { errors: ValidationError[]; valid: boolean } {
+export function validateAddressInput(body: Partial<AddressInput>): { errors: ValidationError[]; valid: boolean } {
   const errors: ValidationError[] = [];
 
   // Validate label (address name)
