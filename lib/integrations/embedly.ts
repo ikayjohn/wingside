@@ -5,17 +5,49 @@ const EMBEDLY_API_KEY = process.env.EMBEDLY_API_KEY;
 const EMBEDLY_ORG_ID = process.env.EMBEDLY_ORG_ID;
 const EMBEDLY_BASE_URL = process.env.EMBEDLY_BASE_URL || 'https://waas-prod.embedly.ng/api/v1';
 
+// Embedly API response types
+interface EmbedlyCountry {
+  id: string;
+  countryCodeTwo: string;
+  name: string;
+}
+
+interface EmbedlyCustomerType {
+  id: string;
+  name: string;
+}
+
+interface EmbedlyCurrency {
+  id: string;
+  shortName: string;
+  name: string;
+}
+
+interface EmbedlyCustomer {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+}
+
+interface EmbedlyApiResponse<T = unknown> {
+  data?: T;
+  message?: string;
+  status?: string;
+}
+
 // Cached GUIDs
 let NIGERIA_COUNTRY_ID: string | null = null;
 let INDIVIDUAL_CUSTOMER_TYPE_ID: string | null = null;
 let NGN_CURRENCY_ID: string | null = null;
 
 // Make authenticated API request
-async function embedlyRequest(
+async function embedlyRequest<T = unknown>(
   endpoint: string,
   method: string = 'GET',
-  body?: any
-): Promise<any> {
+  body?: Record<string, unknown>
+): Promise<EmbedlyApiResponse<T>> {
   if (!EMBEDLY_API_KEY) {
     throw new Error('Embedly API key not configured');
   }
@@ -45,8 +77,8 @@ async function getNigeriaCountryId(): Promise<string> {
   }
 
   try {
-    const result = await embedlyRequest('/utilities/countries/get');
-    const nigeria = result.data?.find((c: any) => c.countryCodeTwo === 'NG');
+    const result = await embedlyRequest<EmbedlyCountry[]>('/utilities/countries/get');
+    const nigeria = result.data?.find((c) => c.countryCodeTwo === 'NG');
     if (nigeria) {
       NIGERIA_COUNTRY_ID = nigeria.id;
       return NIGERIA_COUNTRY_ID;
@@ -65,8 +97,8 @@ async function getIndividualCustomerTypeId(): Promise<string> {
   }
 
   try {
-    const result = await embedlyRequest('/customers/types/all');
-    const individual = result.data?.find((t: any) => t.name.toLowerCase() === 'individual');
+    const result = await embedlyRequest<EmbedlyCustomerType[]>('/customers/types/all');
+    const individual = result.data?.find((t) => t.name.toLowerCase() === 'individual');
     if (individual) {
       INDIVIDUAL_CUSTOMER_TYPE_ID = individual.id;
       return INDIVIDUAL_CUSTOMER_TYPE_ID;
@@ -90,8 +122,8 @@ async function getNgnCurrencyId(): Promise<string> {
   }
 
   try {
-    const result = await embedlyRequest('/utilities/currencies/get');
-    const ngn = result.data?.find((c: any) => c.shortName === 'NGN');
+    const result = await embedlyRequest<EmbedlyCurrency[]>('/utilities/currencies/get');
+    const ngn = result.data?.find((c) => c.shortName === 'NGN');
     if (ngn) {
       NGN_CURRENCY_ID = ngn.id;
       return NGN_CURRENCY_ID;
@@ -153,9 +185,9 @@ export async function getCustomerByEmail(email: string): Promise<EmbedlyCustomer
     const customers = result.data || result;
 
     // Handle both array and non-array responses
-    const customerArray = Array.isArray(customers) ? customers : [];
+    const customerArray: Array<Partial<EmbedlyCustomer & { emailAddress?: string }>> = Array.isArray(customers) ? customers : [];
 
-    const found = customerArray.find((c: any) => {
+    const found = customerArray.find((c) => {
       const customerEmail = (c.emailAddress || c.email || '').toLowerCase();
       return customerEmail === email.toLowerCase();
     });
@@ -298,7 +330,7 @@ export async function setupCustomerWithWallet(customer: {
     try {
       walletId = await createWallet(customerId, customer.full_name);
       console.log(`Embedly: Wallet ${walletId} ready for customer ${customerId}`);
-    } catch (walletError: any) {
+    } catch (walletError: unknown) {
       // CRITICAL: Wallet creation failed - this prevents loyalty points from being credited
       console.error(`❌ CRITICAL: Embedly wallet creation failed for customer ${customerId}:`, walletError.message);
 
