@@ -1,9 +1,36 @@
 /**
  * Structured logging utility for Wingside
  * Provides consistent logging across the application with support for different log levels
+ *
+ * Features:
+ * - Environment-aware: Debug logs disabled in production by default
+ * - Structured context: Attach metadata to log entries
+ * - Namespaced loggers: Pre-configured for different domains (Auth, Payment, etc.)
+ * - Configurable via LOG_LEVEL environment variable
+ *
+ * @example
+ * ```typescript
+ * import { loggers } from '@/lib/logger';
+ *
+ * // In production: This won't log anything
+ * loggers.payment.debug('Processing payment', { orderId: '123' });
+ *
+ * // In production: This will log
+ * loggers.payment.error('Payment failed', error, { orderId: '123' });
+ * ```
  */
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+/**
+ * Check if running in production environment
+ */
+export const isProduction = process.env.NODE_ENV === 'production';
+
+/**
+ * Check if running in development environment
+ */
+export const isDevelopment = process.env.NODE_ENV === 'development';
 
 export interface LogContext {
   [key: string]: unknown;
@@ -178,3 +205,59 @@ export const loggers = {
  * Backward compatibility: export as default
  */
 export default logger;
+
+/**
+ * Safe console wrapper that respects environment
+ * Use this instead of raw console.log/console.debug in production code
+ *
+ * @example
+ * ```typescript
+ * import { safeConsole } from '@/lib/logger';
+ *
+ * // Only logs in development
+ * safeConsole.debug('This is debug info');
+ *
+ * // Always logs (even in production)
+ * safeConsole.error('Critical error');
+ * ```
+ */
+export const safeConsole = {
+  /**
+   * Debug logging - suppressed in production
+   */
+  debug: (...args: unknown[]): void => {
+    if (isDevelopment) {
+      console.debug(...args);
+    }
+  },
+
+  /**
+   * Log - suppressed in production (use logger.info instead)
+   */
+  log: (...args: unknown[]): void => {
+    if (isDevelopment) {
+      console.log(...args);
+    }
+  },
+
+  /**
+   * Info - logs in all environments
+   */
+  info: (...args: unknown[]): void => {
+    console.info(...args);
+  },
+
+  /**
+   * Warning - logs in all environments
+   */
+  warn: (...args: unknown[]): void => {
+    console.warn(...args);
+  },
+
+  /**
+   * Error - logs in all environments
+   */
+  error: (...args: unknown[]): void => {
+    console.error(...args);
+  },
+};
