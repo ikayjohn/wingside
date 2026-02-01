@@ -355,7 +355,7 @@ export default function BlogPostsPage() {
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(post.id)}
+                        onClick={() => post.id && handleDelete(post.id)}
                         className="px-3 py-1 text-red-600 hover:bg-red-50 rounded text-sm font-medium"
                       >
                         Delete
