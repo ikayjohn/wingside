@@ -85,7 +85,8 @@
       "WebFetch(domain:developer.nomba.com)",
       "WebFetch(domain:www.npmjs.com)",
       "Bash(bash:*)",
-      "Bash(fi:*)"
+      "Bash(fi:*)",
+      "Bash(git diff:*)"
     ],
     "deny": [],
     "ask": []

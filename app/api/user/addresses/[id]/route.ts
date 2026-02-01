@@ -8,7 +8,16 @@ export async function PUT(
 ) {
   try {
     const supabase = await createClient()
-    const body = await request.json()
+    let body
+    try {
+      body = await request.json()
+    } catch (error) {
+      console.error('JSON parse error:', error)
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      )
+    }
     const { id } = await params
 
     // Get authenticated user

@@ -19,7 +19,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body = await request.json()
+    let body
+    try {
+      body = await request.json()
+    } catch (error) {
+      console.error('JSON parse error:', error)
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      )
+    }
     const { oldPassword, newPassword } = body
 
     // Validate required fields

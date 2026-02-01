@@ -101,7 +101,16 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (error) {
+      console.error('JSON parse error:', error);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
     const { id, subject, html_content, text_content, is_active } = body;
 
     if (!id) {

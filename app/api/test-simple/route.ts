@@ -9,15 +9,24 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
+    let body;
+    try {
+      body = await request.json();
+    } catch (error) {
+      console.error('JSON parse error:', error);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400, headers: { 'content-type': 'application/json' } }
+      );
+    }
     return NextResponse.json(
       { message: 'POST is working!', received: body },
       { headers: { 'content-type': 'application/json' } }
     )
   } catch (error) {
     return NextResponse.json(
-      { error: 'Failed to parse JSON' },
-      { status: 400, headers: { 'content-type': 'application/json' } }
+      { error: 'Internal server error' },
+      { status: 500, headers: { 'content-type': 'application/json' } }
     )
   }
 }
