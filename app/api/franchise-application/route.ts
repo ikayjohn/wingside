@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { checkRateLimitByIp, rateLimitErrorResponse } from '@/lib/rate-limit';
 import { csrfProtection } from '@/lib/csrf';
+import { Resend } from 'resend';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -141,12 +142,12 @@ ${application.message ? `Additional Message:\n${application.message}` : ''}
 Submitted at: ${new Date().toISOString()}
   `.trim();
 
-  // Use your email service (Resend, SendGrid, etc.)
-  // For now, we'll log it. In production, integrate with your email service
-  console.log('Email to be sent to franchise@wingside.ng:', emailBody);
+  // Send email notification using Resend
+  if (!process.env.RESEND_API_KEY) {
+    console.error('RESEND_API_KEY not configured, cannot send franchise application email');
+    return;
+  }
 
-  // Example with Resend (uncomment and configure):
-  /*
   const resend = new Resend(process.env.RESEND_API_KEY);
   await resend.emails.send({
     from: 'Wingside Franchise <noreply@wingside.ng>',
@@ -154,5 +155,4 @@ Submitted at: ${new Date().toISOString()}
     subject: 'New Franchise Application - Wingside',
     text: emailBody,
   });
-  */
 }
