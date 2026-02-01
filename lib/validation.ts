@@ -19,7 +19,22 @@ export class ValidationException extends Error {
 }
 
 /**
- * Email validation using RFC 5322 simplified regex
+ * Validates email address format using RFC 5322 simplified regex
+ *
+ * Checks for:
+ * - Basic format: local@domain.tld
+ * - Maximum length: 254 characters
+ * - No whitespace
+ *
+ * @param email - Email address to validate
+ * @returns True if email format is valid
+ *
+ * @example
+ * ```ts
+ * isValidEmail('user@example.com') // true
+ * isValidEmail('invalid.email') // false
+ * isValidEmail('user @example.com') // false
+ * ```
  */
 export function isValidEmail(email: string): boolean {
   if (!email || typeof email !== 'string') return false;
@@ -28,8 +43,27 @@ export function isValidEmail(email: string): boolean {
 }
 
 /**
- * Nigerian phone number validation
- * Accepts formats: +234XXXXXXXXXX, 234XXXXXXXXXX, 0XXXXXXXXXX, XXXXXXXXXXX
+ * Validates Nigerian phone number in multiple formats
+ *
+ * Accepted formats:
+ * - +234XXXXXXXXXX (E.164 international format)
+ * - 234XXXXXXXXXX (International without +)
+ * - 0XXXXXXXXXX (Local format with leading 0)
+ * - XXXXXXXXXXX (Local format without leading 0)
+ *
+ * Automatically strips spaces, hyphens, and parentheses.
+ * Only accepts numbers starting with 7, 8, or 9 (valid Nigerian mobile prefixes).
+ *
+ * @param phone - Phone number to validate
+ * @returns True if phone number matches Nigerian format
+ *
+ * @example
+ * ```ts
+ * isValidNigerianPhone('+2348012345678') // true
+ * isValidNigerianPhone('08012345678') // true
+ * isValidNigerianPhone('0801 234 5678') // true (spaces stripped)
+ * isValidNigerianPhone('06012345678') // false (6 is not valid)
+ * ```
  */
 export function isValidNigerianPhone(phone: string): boolean {
   if (!phone || typeof phone !== 'string') return false;
@@ -50,7 +84,21 @@ export function isValidNigerianPhone(phone: string): boolean {
 }
 
 /**
- * Validate and normalize Nigerian phone number to E.164 format (+234XXXXXXXXXX)
+ * Validates and normalizes Nigerian phone number to E.164 format
+ *
+ * Converts any valid Nigerian phone format to international E.164 format (+234XXXXXXXXXX).
+ * Returns null if the phone number is invalid.
+ *
+ * @param phone - Phone number in any accepted Nigerian format
+ * @returns Phone number in E.164 format (+234XXXXXXXXXX), or null if invalid
+ *
+ * @example
+ * ```ts
+ * normalizeNigerianPhone('08012345678') // '+2348012345678'
+ * normalizeNigerianPhone('234 801 234 5678') // '+2348012345678'
+ * normalizeNigerianPhone('+2348012345678') // '+2348012345678'
+ * normalizeNigerianPhone('invalid') // null
+ * ```
  */
 export function normalizeNigerianPhone(phone: string): string | null {
   if (!isValidNigerianPhone(phone)) return null;
@@ -276,7 +324,22 @@ export function validateArray(
 }
 
 /**
- * Sanitize string input (remove dangerous characters, trim whitespace)
+ * Sanitizes string input by removing dangerous characters and normalizing whitespace
+ *
+ * Performs:
+ * - Trims leading/trailing whitespace
+ * - Removes NULL bytes (\0) that can cause security issues
+ * - Normalizes multiple consecutive spaces to single space
+ *
+ * @param value - String to sanitize
+ * @returns Sanitized string, or empty string if input is not a string
+ *
+ * @example
+ * ```ts
+ * sanitizeString('  hello   world  ') // 'hello world'
+ * sanitizeString('test\0data') // 'testdata'
+ * sanitizeString(null) // ''
+ * ```
  */
 export function sanitizeString(value: string): string {
   if (typeof value !== 'string') return '';
@@ -290,7 +353,26 @@ export function sanitizeString(value: string): string {
 }
 
 /**
- * Sanitize HTML/script content (basic XSS prevention)
+ * Sanitizes HTML/script content for basic XSS prevention
+ *
+ * Removes common XSS attack vectors:
+ * - <script> tags and their contents
+ * - <iframe> tags and their contents
+ * - onclick, onerror, and other event handler attributes
+ * - javascript: protocol in URLs
+ *
+ * ⚠️ Note: This is basic sanitization. For user-generated HTML,
+ * use a dedicated library like DOMPurify.
+ *
+ * @param value - HTML string to sanitize
+ * @returns Sanitized HTML string
+ *
+ * @example
+ * ```ts
+ * sanitizeHtml('<script>alert("xss")</script>Hello') // 'Hello'
+ * sanitizeHtml('<a href="javascript:alert()">Link</a>') // '<a href="">Link</a>'
+ * sanitizeHtml('<div onclick="alert()">Click</div>') // '<div>Click</div>'
+ * ```
  */
 export function sanitizeHtml(value: string): string {
   if (typeof value !== 'string') return '';
