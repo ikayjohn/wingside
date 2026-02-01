@@ -45,7 +45,8 @@ export default function FundWalletModal({
   useEffect(() => {
     if (currentBalance !== undefined && lastBalance !== undefined && currentBalance > lastBalance) {
       setBalanceUpdated(true);
-      setTimeout(() => setBalanceUpdated(false), 3000);
+      const timer = setTimeout(() => setBalanceUpdated(false), 3000);
+      return () => clearTimeout(timer);
     }
     setLastBalance(currentBalance);
   }, [currentBalance, lastBalance]);
