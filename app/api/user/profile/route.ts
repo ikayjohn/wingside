@@ -186,7 +186,16 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
+    let body;
+    try {
+      body = await request.json();
+    } catch (error) {
+      console.error('JSON parse error:', error);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
     const { firstName, lastName, phone, birthdayDay, birthdayMonth } = body
 
     // Get current profile to check if birthday is already set

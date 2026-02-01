@@ -40,7 +40,16 @@ function generateReferralCode(firstName: string, lastName: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (error) {
+      console.error('JSON parse error:', error);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
 
     // TEMPORARILY DISABLED: Bot protection blocks legitimate signups without frontend timestamp
     // TODO: Add BotProtection component to signup form then re-enable

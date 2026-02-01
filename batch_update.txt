@@ -1,0 +1,10 @@
+app/api/admin/blog/posts/[id]/route.ts
+app/api/admin/contact-submissions/[id]/route.ts
+app/api/admin/events/route.ts
+app/api/admin/events/[id]/route.ts
+app/api/admin/flavors/route.ts
+app/api/admin/flavors/[id]/route.ts
+app/api/admin/gift-cards/route.ts
+app/api/admin/job-applications/[id]/route.ts
+app/api/admin/notifications/resend/route.ts
+app/api/admin/notifications/send/route.ts

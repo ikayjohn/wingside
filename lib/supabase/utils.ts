@@ -82,6 +82,26 @@ export function createErrorResponse(
 }
 
 /**
+ * Safe JSON parsing with proper error handling
+ * Returns parsed data or throws with user-friendly error message
+ */
+export async function safeJsonParse<T = any>(
+  request: Request
+): Promise<T> {
+  try {
+    const body = await request.json();
+    return body as T;
+  } catch (error) {
+    console.error('[JSON Parse Error]', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      contentType: request.headers.get('content-type')
+    });
+
+    throw new Error('Invalid JSON in request body. Please check your request format.');
+  }
+}
+
+/**
  * Categorized error types for better error handling
  */
 export enum ErrorType {
@@ -91,7 +111,8 @@ export enum ErrorType {
   VALIDATION_ERROR = 'VALIDATION_ERROR',
   DATABASE_ERROR = 'DATABASE_ERROR',
   EXTERNAL_API_ERROR = 'EXTERNAL_API_ERROR',
-  INTERNAL_ERROR = 'INTERNAL_ERROR'
+  INTERNAL_ERROR = 'INTERNAL_ERROR',
+  INVALID_JSON = 'INVALID_JSON'
 }
 
 /**

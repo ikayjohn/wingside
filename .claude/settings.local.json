@@ -84,7 +84,8 @@
       "Bash(git log:*)",
       "WebFetch(domain:developer.nomba.com)",
       "WebFetch(domain:www.npmjs.com)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(fi:*)"
     ],
     "deny": [],
     "ask": []
