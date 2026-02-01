@@ -427,10 +427,10 @@ Required variables (see `.env.example`):
 
 ## Known Issues & Limitations
 
-1. TypeScript strict mode is disabled - consider enabling incrementally
-2. JSX transform set to "react-jsx" instead of "preserve" (Next.js default)
-3. Redis is optional but recommended for production performance
-4. Some API routes don't check if Redis client is null before caching
+1. Redis is optional but recommended for production performance
+2. Some API routes don't check if Redis client is null before caching
+3. ~178 'any' type annotations remain in app/components (core utilities fixed)
+4. Additional strict TypeScript checks can be enabled incrementally (noUnusedLocals, noImplicitReturns, etc.)
 
 ## Additional Documentation
 
