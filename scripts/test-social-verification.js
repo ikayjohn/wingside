@@ -142,7 +142,7 @@ async function testSocialVerification() {
   // ============================================================================
 
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     log('📋 Testing API Endpoint:', colors.cyan);
     log(`   URL: ${baseUrl}/api/admin/social-verifications`, colors.gray);
     log(`   Note: This endpoint requires admin authentication`, colors.yellow);
@@ -294,7 +294,7 @@ async function testSocialVerification() {
   // ============================================================================
 
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     log('📋 Manual Test Steps Required:', colors.yellow);
     log(`   1. Navigate to: ${baseUrl}/my-account/earn-rewards`, colors.cyan);
     log('   2. Click "Verify & Claim" on any social platform', colors.cyan);

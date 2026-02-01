@@ -450,6 +450,7 @@ export async function POST(request: NextRequest) {
           amount: data.transaction.transactionAmount,
           paymentMethod: 'nomba',
           transactionReference: transactionId,
+          trackingToken: order.tracking_token,
         });
 
         if (!emailResult.success) {

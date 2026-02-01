@@ -190,8 +190,15 @@ export async function sendPaymentConfirmation(data: {
   amount: number;
   paymentMethod: string;
   transactionReference?: string;
+  trackingToken?: string;
 }) {
   const formatCurrency = (amount: number) => `₦${amount.toLocaleString()}`;
+
+  // Generate tracking URL if token provided
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.wingside.ng';
+  const trackingUrl = data.trackingToken
+    ? `${appUrl}/track/${data.trackingToken}`
+    : `${appUrl}/my-account`;
 
   return sendTemplatedEmail(
     'payment_confirmation',
@@ -202,6 +209,8 @@ export async function sendPaymentConfirmation(data: {
       amount: formatCurrency(data.amount),
       paymentMethod: data.paymentMethod.toUpperCase(),
       transactionReference: data.transactionReference || '',
+      trackingUrl: trackingUrl,
+      trackingToken: data.trackingToken || '',
     }
   );
 }

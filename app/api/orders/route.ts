@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import crypto from 'crypto'
 import { sendOrderConfirmation, sendOrderNotification } from '@/lib/emails/service'
 
 // GET /api/orders - Fetch user's orders or all orders (admin)
@@ -244,11 +245,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Generate secure tracking token for guest order tracking
+    const trackingToken = crypto.randomBytes(32).toString('hex');
+
     // Create order
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
         order_number: orderNumber,
+        tracking_token: trackingToken,
         user_id: user?.id || null,
         customer_name: body.customer_name,
         customer_email: body.customer_email,

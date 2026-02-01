@@ -287,6 +287,7 @@ export async function POST(request: NextRequest) {
                 amount: data.amount / 100, // Convert from kobo to naira
                 paymentMethod: 'paystack',
                 transactionReference: data.reference,
+                trackingToken: order.tracking_token,
               });
 
               if (!emailResult.success) {
