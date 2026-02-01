@@ -115,7 +115,16 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = await request.json()
+    let body;
+    try {
+      body = await request.json();
+    } catch (error) {
+      console.error('JSON parse error:', error);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
 
     console.log('[Products API] Updating product:', id)
     console.log('[Products API] Update data:', { ...body, image_url: body.image_url?.substring(0, 50) + '...' })

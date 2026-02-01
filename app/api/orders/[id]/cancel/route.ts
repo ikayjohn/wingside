@@ -8,7 +8,18 @@ export async function POST(
 ) {
   try {
     const { id: orderId } = await params
-    const body = await request.json()
+
+    let body;
+    try {
+      body = await request.json();
+    } catch (error) {
+      console.error('JSON parse error:', error);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
+
     const { reason, source } = body
 
     console.log(`[Order Cancel] Cancelling order ${orderId}`, { reason, source })

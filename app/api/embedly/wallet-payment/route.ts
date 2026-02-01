@@ -6,7 +6,19 @@ import embedlyClient from '@/lib/embedly/client';
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
-    const { order_id, amount, remarks } = await request.json();
+
+    let body;
+    try {
+      body = await request.json();
+    } catch (error) {
+      console.error('JSON parse error:', error);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
+
+    const { order_id, amount, remarks } = body;
 
     // Get authenticated user
     const {

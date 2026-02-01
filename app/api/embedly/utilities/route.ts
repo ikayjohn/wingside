@@ -74,7 +74,17 @@ export async function GET(request: NextRequest) {
 // POST /api/embedly/utilities/name-enquiry - Perform account name verification
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (error) {
+      console.error('JSON parse error:', error);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
+
     const { bankCode, accountNumber } = body;
 
     if (!bankCode || !accountNumber) {

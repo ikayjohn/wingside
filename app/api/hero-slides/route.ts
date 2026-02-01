@@ -111,7 +111,17 @@ export async function POST(request: NextRequest) {
 
     console.log('[Hero Slides API] POST - User is admin, proceeding...');
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (error) {
+      console.error('JSON parse error:', error);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
+
     console.log('[Hero Slides API] POST - Request body:', body);
 
     const { title, headline, description, image_url, is_active, display_order } = body;
