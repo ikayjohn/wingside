@@ -824,10 +824,10 @@ export default function WingclubDashboard() {
             )}
           </div>
 
-          {/* Recent Transactions */}
+          {/* Wallet Transactions */}
           <div className="dashboard-recent-section h-full flex flex-col">
             <div className="dashboard-recent-header">
-              <h3 className="dashboard-recent-title">Recent Transactions</h3>
+              <h3 className="dashboard-recent-title">Wallet Transactions</h3>
               <Link href="/my-account/wallet-history" className="dashboard-view-all">View All</Link>
             </div>
 
