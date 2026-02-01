@@ -131,9 +131,9 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ success: true, message: 'Already processed' })
         }
 
-        // Update order payment status
+        // Update order payment status with optimistic locking
         const supabase = await createClient()
-        const { error: updateError } = await supabase
+        const { data: updateResult, error: updateError, count } = await supabase
           .from('orders')
           .update({
             payment_status: 'paid',
@@ -142,14 +142,29 @@ export async function POST(request: NextRequest) {
             status: 'confirmed', // Automatically confirm order when paid
           })
           .eq('id', orderId)
-          .eq('payment_status', 'pending') // Only update if still pending
+          .eq('payment_status', 'pending') // Only update if still pending - prevents race conditions
+          .select()
 
         if (updateError) {
-          console.error('Error updating order from webhook:', updateError)
-          // If update failed, order might already be paid
-          return NextResponse.json({ success: true, message: 'Order already updated' })
-        } else {
-          console.log(`Order ${orderId} payment confirmed via webhook`)
+          loggers.webhook.error('Error updating order from webhook', updateError, { orderId })
+          return NextResponse.json(
+            { error: 'Failed to update order' },
+            { status: 500 }
+          )
+        }
+
+        // CRITICAL: Check if update actually modified a row
+        // If count is 0, another webhook already processed this payment
+        if (!updateResult || updateResult.length === 0) {
+          loggers.webhook.info('Order already processed by another webhook - skipping side effects', {
+            orderId,
+            reference: data.reference
+          })
+          return NextResponse.json({ success: true, message: 'Already processed' })
+        }
+
+        // If we got here, THIS webhook won the race and should process side effects
+        console.log(`Order ${orderId} payment confirmed via webhook - processing rewards`)
 
           // Fetch order details
           const { data: order, error: orderFetchError } = await admin
