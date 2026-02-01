@@ -150,7 +150,25 @@ export async function POST(request: NextRequest) {
     // Handle payment failure or cancellation
     if (event.event_type === 'payment_failed' || event.event_type === 'payment_cancelled') {
       const { data } = event
+
+      // Validate payment data exists
+      if (!data || typeof data !== 'object') {
+        console.error('Missing payment data in webhook event')
+        return NextResponse.json(
+          { error: 'Invalid payment data' },
+          { status: 400 }
+        )
+      }
+
       const orderReference = data.order?.orderReference
+
+      if (!orderReference) {
+        console.error('Missing order reference in failed payment webhook')
+        return NextResponse.json(
+          { error: 'Missing order reference' },
+          { status: 400 }
+        )
+      }
 
       console.log(`Payment ${event.event_type} for order reference: ${orderReference}`)
 
@@ -196,6 +214,15 @@ export async function POST(request: NextRequest) {
     // Handle successful payment
     if (event.event_type === 'payment_success') {
       const { data } = event
+
+      // Validate payment data exists
+      if (!data || typeof data !== 'object') {
+        console.error('Missing payment data in webhook event')
+        return NextResponse.json(
+          { error: 'Invalid payment data' },
+          { status: 400 }
+        )
+      }
 
       // Handle different payload structures
       const orderReference = data.order?.orderReference || (data as any).orderReference || null

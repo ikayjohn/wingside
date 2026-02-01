@@ -65,12 +65,47 @@ export async function POST(request: NextRequest) {
 
     loggers.webhook.info('Paystack webhook event received', { event: event.event })
 
+    // Validate event structure
+    if (!event || typeof event !== 'object') {
+      loggers.webhook.error('Invalid webhook event structure')
+      return NextResponse.json(
+        { error: 'Invalid event structure' },
+        { status: 400 }
+      )
+    }
+
     // Handle different event types
     if (event.event === 'charge.success') {
       const { data } = event
 
+      // Validate payment data exists
+      if (!data || typeof data !== 'object') {
+        loggers.webhook.error('Missing payment data in webhook event')
+        return NextResponse.json(
+          { error: 'Invalid payment data' },
+          { status: 400 }
+        )
+      }
+
+      // Validate payment reference
+      if (!data.reference) {
+        loggers.webhook.error('Missing payment reference in webhook')
+        return NextResponse.json(
+          { error: 'Missing payment reference' },
+          { status: 400 }
+        )
+      }
+
       // Extract order ID from metadata
       const orderId = data.metadata?.order_id
+
+      if (!orderId) {
+        loggers.webhook.error('Missing order_id in payment metadata', { reference: data.reference })
+        return NextResponse.json(
+          { error: 'Missing order ID in metadata' },
+          { status: 400 }
+        )
+      }
 
       if (orderId) {
         const admin = createAdminClient()
@@ -131,13 +166,21 @@ export async function POST(request: NextRequest) {
             )
           }
 
-          if (order) {
-            // 1. Check if customer profile exists, create and sync if not
-            const { data: existingProfile, error: profileError } = await admin
-              .from('profiles')
-              .select('id, zoho_contact_id, embedly_customer_id')
-              .eq('email', order.customer_email)
-              .single()
+          // Validate required order fields
+          if (!order.customer_email || !order.customer_name) {
+            loggers.webhook.error('Order missing required customer fields', { orderId })
+            return NextResponse.json(
+              { error: 'Order data incomplete' },
+              { status: 500 }
+            )
+          }
+
+          // 1. Check if customer profile exists, create and sync if not
+          const { data: existingProfile, error: profileError } = await admin
+            .from('profiles')
+            .select('id, zoho_contact_id, embedly_customer_id')
+            .eq('email', order.customer_email)
+            .single()
 
             // Profile not found is OK (guest checkout), other errors are not
             if (profileError && profileError.code !== 'PGRST116') {
