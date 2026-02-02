@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { CacheInvalidation } from '@/lib/redis';
 
 // GET /api/admin/settings - Get all settings (admin only)
 export async function GET() {
@@ -194,6 +195,14 @@ export async function PUT(request: NextRequest) {
     }
 
     console.log(`Updated ${settingsToUpdate.length} settings in batch`);
+
+    // Invalidate settings cache (both Redis and memory cache)
+    try {
+      await CacheInvalidation.settings();
+    } catch (cacheError) {
+      console.error('Error invalidating cache:', cacheError);
+      // Don't fail the request if cache invalidation fails
+    }
 
     return NextResponse.json({
       success: true,

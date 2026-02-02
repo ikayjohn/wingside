@@ -82,20 +82,20 @@ export default function WingsideLanding() {
       alt: 'Wingside Delivery'
     },
     {
-      title: 'WINGSIDE\nHOTSPOT',
-      description: 'Bring the wings to your customers. Any business with regular foot traffic can benefit from the Wingside Hotspot program.',
+      title: 'WINGSIDE\nCONNECT',
+      description: 'Connect with fellow wing lovers and share your flavor journey. Join our community for exclusive events and insider access.',
       ctaText: 'Learn More',
-      ctaLink: '/hotspots',
-      image: '/hotspots-carousel.png',
-      alt: 'Wingside Hotspot'
+      ctaLink: '/connect',
+      image: '/connect-carousel.png',
+      alt: 'Wingside Connect'
     },
     {
-      title: 'WINGSIDE\nKIDS',
-      description: 'Building early brand affinity and family loyalty through fun, food, and unforgettable experiences.',
+      title: 'WINGSIDE\nGIFTS',
+      description: 'Share the love of wings with friends and family. Perfect for any occasion, our gift cards bring flavor to every celebration.',
       ctaText: 'Learn More',
-      ctaLink: '/kids',
-      image: '/kids-hero.png',
-      alt: 'Wingside Kids'
+      ctaLink: '/gifts',
+      image: '/gifts-carousel.png',
+      alt: 'Wingside Gifts'
     }
   ];
 
@@ -489,12 +489,12 @@ export default function WingsideLanding() {
                   <button
                     onClick={() => setActiveDeliverySection(1)}
                     className={`w-3 h-3 rounded-full transition-all duration-300 ${activeDeliverySection === 1 ? 'bg-[#5D3131] w-8' : 'bg-gray-300'}`}
-                    aria-label="Go to hotspot section"
+                    aria-label="Go to connect section"
                   />
                   <button
                     onClick={() => setActiveDeliverySection(2)}
                     className={`w-3 h-3 rounded-full transition-all duration-300 ${activeDeliverySection === 2 ? 'bg-[#5D3131] w-8' : 'bg-gray-300'}`}
-                    aria-label="Go to kids section"
+                    aria-label="Go to gifts section"
                   />
                 </div>
 

@@ -85,7 +85,7 @@ export default function RootLayout({
         {/* Preload hero video for faster loading */}
         <link rel="preload" href="/hero.mp4" as="video" type="video/mp4" />
       </head>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         {/* Skip Navigation Link for Keyboard Users */}
         <a
           href="#main-content"

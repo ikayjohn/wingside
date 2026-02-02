@@ -47,6 +47,30 @@ export interface SiteSettings {
   accept_cash: string;
   accept_card: string;
   accept_wallet: string;
+
+  // Navigation Page Visibility
+  page_visible_wingclub: string;
+  page_visible_business: string;
+  page_visible_wingcafe: string;
+  page_visible_gifts: string;
+  page_visible_connect: string;
+  page_visible_kids: string;
+  page_visible_sports: string;
+  page_visible_about: string;
+  page_visible_hotspots: string;
+  page_visible_wingside_to_go: string;
+  page_visible_support: string;
+  page_visible_blog: string;
+  page_visible_flavors: string;
+  page_visible_gift_balance: string;
+  page_visible_contact: string;
+  page_visible_careers: string;
+  page_visible_franchising: string;
+  page_visible_wingside_cares: string;
+  page_visible_partnership: string;
+  page_visible_cookie_preferences: string;
+  page_visible_terms: string;
+  page_visible_privacy: string;
 }
 
 export const defaultSettings: SiteSettings = {
@@ -96,6 +120,30 @@ export const defaultSettings: SiteSettings = {
   accept_cash: 'false',
   accept_card: 'true',
   accept_wallet: 'true',
+
+  // Navigation Page Visibility (default to visible for backward compatibility)
+  page_visible_wingclub: 'true',
+  page_visible_business: 'true',
+  page_visible_wingcafe: 'true',
+  page_visible_gifts: 'true',
+  page_visible_connect: 'true',
+  page_visible_kids: 'true',
+  page_visible_sports: 'true',
+  page_visible_about: 'true',
+  page_visible_hotspots: 'true',
+  page_visible_wingside_to_go: 'true',
+  page_visible_support: 'true',
+  page_visible_blog: 'true',
+  page_visible_flavors: 'true',
+  page_visible_gift_balance: 'true',
+  page_visible_contact: 'true',
+  page_visible_careers: 'true',
+  page_visible_franchising: 'true',
+  page_visible_wingside_cares: 'true',
+  page_visible_partnership: 'true',
+  page_visible_cookie_preferences: 'true',
+  page_visible_terms: 'true',
+  page_visible_privacy: 'true',
 };
 
 // Fetch settings from API

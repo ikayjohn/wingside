@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { NAVIGATION_LINKS } from '@/lib/navigation-links';
 
 interface SettingItem {
   key: string;
@@ -348,6 +349,170 @@ export default function AdminSettingsPage() {
                   </>
                 );
               })()}
+            </div>
+          </div>
+        )}
+
+        {/* Navigation Page Visibility Section */}
+        {settingsByCategory['navigation'] && (
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 shadow-md rounded-lg p-6 border-2 border-blue-200 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                Navigation Page Visibility
+              </h2>
+              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
+                Show/Hide Pages
+              </span>
+            </div>
+
+            <div className="bg-white rounded-lg p-4 mb-6 border border-blue-200">
+              <h3 className="font-semibold text-gray-900 mb-2">How it works:</h3>
+              <p className="text-sm text-gray-600">
+                Control which pages appear in navigation menus across your site.
+                Unchecked pages will be hidden from the Header sidebar and Footer links,
+                but remain accessible via direct URL. Core pages (Terms, Privacy)
+                cannot be hidden for legal compliance.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              {/* Header Sidebar Links */}
+              <div className="bg-white rounded-lg p-4 border border-gray-200">
+                <h3 className="font-semibold text-gray-900 mb-4 text-lg">Header Sidebar Menu</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {NAVIGATION_LINKS
+                    .filter(link => link.section === 'header')
+                    .map(link => {
+                      const key = `page_visible_${link.id}`;
+                      return (
+                        <div key={key} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={settings[key] !== 'false'}
+                            onChange={(e) => handleChange(key, e.target.checked ? 'true' : 'false')}
+                            className="w-5 h-5 text-blue-600 focus:ring-blue-500 rounded cursor-pointer"
+                          />
+                          <label className="text-sm font-medium text-gray-700 cursor-pointer flex-1" onClick={(e) => {
+                            const checkbox = (e.currentTarget.previousElementSibling as HTMLInputElement);
+                            if (checkbox) {
+                              checkbox.checked = !checkbox.checked;
+                              handleChange(key, checkbox.checked ? 'true' : 'false');
+                            }
+                          }}>
+                            {link.label}
+                          </label>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* Footer Company Links */}
+              <div className="bg-white rounded-lg p-4 border border-gray-200">
+                <h3 className="font-semibold text-gray-900 mb-4 text-lg">Footer - Company Section</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {NAVIGATION_LINKS
+                    .filter(link => link.section === 'footer-company')
+                    .map(link => {
+                      const key = `page_visible_${link.id}`;
+                      return (
+                        <div key={key} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={settings[key] !== 'false'}
+                            onChange={(e) => handleChange(key, e.target.checked ? 'true' : 'false')}
+                            className="w-5 h-5 text-blue-600 focus:ring-blue-500 rounded cursor-pointer"
+                          />
+                          <label className="text-sm font-medium text-gray-700 cursor-pointer flex-1" onClick={(e) => {
+                            const checkbox = (e.currentTarget.previousElementSibling as HTMLInputElement);
+                            if (checkbox) {
+                              checkbox.checked = !checkbox.checked;
+                              handleChange(key, checkbox.checked ? 'true' : 'false');
+                            }
+                          }}>
+                            {link.label}
+                          </label>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* Footer Get Involved Links */}
+              <div className="bg-white rounded-lg p-4 border border-gray-200">
+                <h3 className="font-semibold text-gray-900 mb-4 text-lg">Footer - Get Involved Section</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {NAVIGATION_LINKS
+                    .filter(link => link.section === 'footer-involved')
+                    .map(link => {
+                      const key = `page_visible_${link.id}`;
+                      return (
+                        <div key={key} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={settings[key] !== 'false'}
+                            onChange={(e) => handleChange(key, e.target.checked ? 'true' : 'false')}
+                            className="w-5 h-5 text-blue-600 focus:ring-blue-500 rounded cursor-pointer"
+                          />
+                          <label className="text-sm font-medium text-gray-700 cursor-pointer flex-1" onClick={(e) => {
+                            const checkbox = (e.currentTarget.previousElementSibling as HTMLInputElement);
+                            if (checkbox) {
+                              checkbox.checked = !checkbox.checked;
+                              handleChange(key, checkbox.checked ? 'true' : 'false');
+                            }
+                          }}>
+                            {link.label}
+                          </label>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* Footer Legal Links */}
+              <div className="bg-white rounded-lg p-4 border border-gray-200">
+                <h3 className="font-semibold text-gray-900 mb-4 text-lg">Footer - Legal Section</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {NAVIGATION_LINKS
+                    .filter(link => link.section === 'footer-legal')
+                    .map(link => {
+                      const key = `page_visible_${link.id}`;
+                      const isLocked = link.alwaysVisible;
+                      return (
+                        <div key={key} className={`flex items-center gap-3 p-3 rounded-lg ${
+                          isLocked ? 'bg-gray-100 opacity-60' : 'bg-gray-50 hover:bg-gray-100'
+                        } transition-colors`}>
+                          <input
+                            type="checkbox"
+                            checked={isLocked ? true : settings[key] !== 'false'}
+                            disabled={isLocked}
+                            readOnly={isLocked}
+                            onChange={isLocked ? undefined : (e) => handleChange(key, e.target.checked ? 'true' : 'false')}
+                            className="w-5 h-5 text-blue-600 focus:ring-blue-500 rounded disabled:cursor-not-allowed cursor-pointer"
+                          />
+                          <label className={`text-sm font-medium text-gray-700 flex items-center gap-2 flex-1 ${
+                            isLocked ? 'cursor-not-allowed' : 'cursor-pointer'
+                          }`} onClick={(e) => {
+                            if (!isLocked) {
+                              const checkbox = (e.currentTarget.previousElementSibling as HTMLInputElement);
+                              if (checkbox) {
+                                checkbox.checked = !checkbox.checked;
+                                handleChange(key, checkbox.checked ? 'true' : 'false');
+                              }
+                            }
+                          }}>
+                            {link.label}
+                            {isLocked && (
+                              <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </label>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
             </div>
           </div>
         )}

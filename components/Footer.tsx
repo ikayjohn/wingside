@@ -3,16 +3,27 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { SiteSettings, fetchSettings } from '@/lib/settings';
+import { getVisibleLinks } from '@/lib/page-visibility';
+import type { NavigationLink } from '@/lib/navigation-links';
 
 export default function Footer() {
   const [settings, setSettings] = useState<Partial<SiteSettings>>({});
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
+  const [companyLinks, setCompanyLinks] = useState<NavigationLink[]>([]);
+  const [involvedLinks, setInvolvedLinks] = useState<NavigationLink[]>([]);
+  const [legalLinks, setLegalLinks] = useState<NavigationLink[]>([]);
 
   useEffect(() => {
     fetchSettings()
-      .then(setSettings)
+      .then((settings) => {
+        setSettings(settings);
+        // Filter visible navigation links for each section
+        setCompanyLinks(getVisibleLinks(settings, 'footer-company'));
+        setInvolvedLinks(getVisibleLinks(settings, 'footer-involved'));
+        setLegalLinks(getVisibleLinks(settings, 'footer-legal'));
+      })
       .catch((error) => {
         console.error('Failed to fetch settings in Footer:', error);
         // Keep default empty settings on error
@@ -196,28 +207,30 @@ export default function Footer() {
       <footer className="bg-white py-6 md:py-8 footer-container">
         <div className="w-full">
           {/* Footer Navigation */}
-          <div className="flex flex-wrap justify-center items-center gap-x-4 md:gap-x-8 gap-y-3 md:gap-y-4 mb-6 md:mb-8">
-            {/* Company Section */}
-            <div className="flex flex-wrap justify-center items-center gap-x-4 md:gap-x-6 gap-y-2" style={{ marginTop: '10px' }}>
-              <span className="font-bold text-xs uppercase tracking-wide text-gray-900">COMPANY</span>
-              <Link href="/about" className="footer-link">About Us</Link>
-              <Link href="/hotspots" className="footer-link">Wingside Hotspots</Link>
-              <Link href="/wingside-to-go" className="footer-link">Wingside To-Go</Link>
-              <Link href="/support" className="footer-link">Support</Link>
-              <Link href="/blog" className="footer-link">Blog</Link>
-              <Link href="/flavors" className="footer-link">Flavors</Link>
-              <Link href="/gift-balance" className="footer-link">Gift Card Balance</Link>
-            </div>
+          <div className="flex flex-col gap-y-3 md:gap-y-4 mb-6 md:mb-8">
+            {/* Company Section - Dynamic based on visibility settings */}
+            {companyLinks.length > 0 && (
+              <div className="flex flex-wrap justify-center items-center gap-x-4 md:gap-x-6 gap-y-2">
+                <span className="font-bold text-xs uppercase tracking-wide text-gray-900">COMPANY</span>
+                {companyLinks.map((link) => (
+                  <Link key={link.id} href={link.href} className="footer-link">
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            )}
 
-            {/* Get Involved Section */}
-            <div className="flex flex-wrap justify-center items-center gap-x-4 md:gap-x-8 gap-y-2" style={{ marginTop: '10px' }}>
-              <span className="font-bold text-xs uppercase tracking-wide text-gray-900">GET INVOLVED</span>
-              <Link href="/careers" className="footer-link">Careers</Link>
-              <Link href="/contact" className="footer-link">Contact Us</Link>
-              <Link href="/franchising" className="footer-link">Franchising</Link>
-              <Link href="/wingside-cares" className="footer-link">Wingside Cares</Link>
-              <Link href="/partnership" className="footer-link">Partnership</Link>
-            </div>
+            {/* Get Involved Section - Dynamic based on visibility settings */}
+            {involvedLinks.length > 0 && (
+              <div className="flex flex-wrap justify-center items-center gap-x-4 md:gap-x-8 gap-y-2">
+                <span className="font-bold text-xs uppercase tracking-wide text-gray-900">GET INVOLVED</span>
+                {involvedLinks.map((link) => (
+                  <Link key={link.id} href={link.href} className="footer-link">
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Copyright */}
@@ -225,12 +238,16 @@ export default function Footer() {
             © 2026 All rights reserved. Wingside Foods Limited.
           </div>
 
-          {/* Legal Links */}
-          <div className="flex flex-wrap justify-center gap-x-4 md:gap-x-6 gap-y-2 mt-4 text-xs">
-            <Link href="/cookie-preferences" className="text-gray-500 hover:text-gray-700 transition-colors">Cookie Preferences</Link>
-            <Link href="/terms" className="text-gray-500 hover:text-gray-700 transition-colors">Terms & Conditions</Link>
-            <Link href="/privacy" className="text-gray-500 hover:text-gray-700 transition-colors">Privacy Policy</Link>
-          </div>
+          {/* Legal Links - Dynamic based on visibility settings */}
+          {legalLinks.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-x-4 md:gap-x-6 gap-y-2 mt-4 text-xs">
+              {legalLinks.map((link) => (
+                <Link key={link.id} href={link.href} className="text-gray-500 hover:text-gray-700 transition-colors">
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </footer>
     </>

@@ -5,6 +5,9 @@ import { X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { fetchSettings } from '@/lib/settings';
+import { getVisibleLinks } from '@/lib/page-visibility';
+import type { NavigationLink } from '@/lib/navigation-links';
 
 export default function Header() {
   const pathname = usePathname();
@@ -19,6 +22,17 @@ export default function Header() {
   const supabase = createClient();
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [visibleHeaderLinks, setVisibleHeaderLinks] = useState<NavigationLink[]>([]);
+
+  // Fetch visible navigation links
+  useEffect(() => {
+    fetchSettings().then(settings => {
+      setVisibleHeaderLinks(getVisibleLinks(settings, 'header'));
+    }).catch(error => {
+      console.error('Failed to fetch navigation settings:', error);
+      // Keep empty array if fetch fails - graceful degradation
+    });
+  }, []);
 
   // Handle scroll effect for homepage
   useEffect(() => {
@@ -337,76 +351,20 @@ export default function Header() {
                     </Link>
                   </li>
                 )}
-                <li role="none">
-                  <Link
-                    href="/wingclub"
-                    className="sidebar-link"
-                    onClick={handleClose}
-                    role="menuitem"
-                  >
-                    Wingclub
-                  </Link>
-                </li>
-                <li role="none">
-                  <Link
-                    href="/business"
-                    className="sidebar-link"
-                    onClick={handleClose}
-                    role="menuitem"
-                  >
-                    Wingside Business
-                  </Link>
-                </li>
-                <li role="none">
-                  <Link
-                    href="/wingcafe"
-                    className="sidebar-link"
-                    onClick={handleClose}
-                    role="menuitem"
-                  >
-                    Wingcafé
-                  </Link>
-                </li>
-                <li role="none">
-                  <Link
-                    href="/gifts"
-                    className="sidebar-link"
-                    onClick={handleClose}
-                    role="menuitem"
-                  >
-                    Wingside Gifts
-                  </Link>
-                </li>
-                <li role="none">
-                  <Link
-                    href="/connect"
-                    className="sidebar-link"
-                    onClick={handleClose}
-                    role="menuitem"
-                  >
-                    Wingside Connect
-                  </Link>
-                </li>
-                <li role="none">
-                  <Link
-                    href="/kids"
-                    className="sidebar-link"
-                    onClick={handleClose}
-                    role="menuitem"
-                  >
-                    Wingside Kids
-                  </Link>
-                </li>
-                <li role="none">
-                  <Link
-                    href="/sports"
-                    className="sidebar-link"
-                    onClick={handleClose}
-                    role="menuitem"
-                  >
-                    Wingside Sports
-                  </Link>
-                </li>
+
+                {/* Dynamic navigation links based on visibility settings */}
+                {visibleHeaderLinks.map((link) => (
+                  <li key={link.id} role="none">
+                    <Link
+                      href={link.href}
+                      className="sidebar-link"
+                      onClick={handleClose}
+                      role="menuitem"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
               </ul>
 
               {/* Order Button */}
