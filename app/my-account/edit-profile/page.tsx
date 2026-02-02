@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { fetchWithCsrf, getCsrfToken } from '@/lib/client/csrf';
 
 export default function EditProfilePage() {
   const [formData, setFormData] = useState({
@@ -75,9 +76,8 @@ export default function EditProfilePage() {
     setSuccess('');
 
     try {
-      const response = await fetch('/api/user/profile', {
+      const response = await fetchWithCsrf('/api/user/profile', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
@@ -124,9 +124,8 @@ export default function EditProfilePage() {
     setPasswordSuccess('');
 
     try {
-      const response = await fetch('/api/user/change-password', {
+      const response = await fetchWithCsrf('/api/user/change-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           oldPassword: passwordData.oldPassword,
           newPassword: passwordData.newPassword,
@@ -211,8 +210,17 @@ export default function EditProfilePage() {
       const formData = new FormData();
       formData.append('avatar', avatarFile);
 
+      // Get CSRF token
+      const csrfToken = await getCsrfToken();
+      if (!csrfToken) {
+        throw new Error('Security token not available. Please refresh the page.');
+      }
+
       const response = await fetch('/api/user/upload-avatar', {
         method: 'POST',
+        headers: {
+          'x-csrf-token': csrfToken,
+        },
         body: formData,
       });
 

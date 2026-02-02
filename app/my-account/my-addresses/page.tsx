@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { fetchWithCsrf } from '@/lib/client/csrf';
 
 interface Address {
   id: string;
@@ -102,7 +103,7 @@ export default function MyAddressesPage() {
     }
 
     try {
-      const response = await fetch(`/api/user/addresses/${id}`, {
+      const response = await fetchWithCsrf(`/api/user/addresses/${id}`, {
         method: 'DELETE',
       });
 
@@ -121,11 +122,8 @@ export default function MyAddressesPage() {
   // Handle set as default
   const handleSetDefault = async (id: string) => {
     try {
-      const response = await fetch(`/api/user/addresses/${id}`, {
+      const response = await fetchWithCsrf(`/api/user/addresses/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ is_default: true }),
       });
 

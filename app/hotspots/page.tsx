@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { fetchWithCsrf } from '@/lib/client/csrf';
 
 export default function WingsideHotspotsPage() {
 
@@ -173,9 +174,8 @@ export default function WingsideHotspotsPage() {
     const data = Object.fromEntries(formData.entries());
 
     try {
-      const response = await fetch('/api/contact', {
+      const response = await fetchWithCsrf('/api/contact', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'hotspot',
           name: data.name,

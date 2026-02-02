@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import { HoneypotField } from '@/components/HoneypotField';
 import { Recaptcha } from '@/components/Recaptcha';
+import { fetchWithCsrf } from '@/lib/client/csrf';
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -326,9 +327,8 @@ export default function MyAccountPage() {
       console.log('🔄 Starting signup process...');
 
       // Call server-side signup API
-      const signupResponse = await fetch('/api/auth/signup', {
+      const signupResponse = await fetchWithCsrf('/api/auth/signup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: signupData.email,
           password: signupData.password,

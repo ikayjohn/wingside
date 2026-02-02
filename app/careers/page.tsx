@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getCsrfToken } from '@/lib/client/csrf';
 
 interface JobPosition {
   id: string;
@@ -93,8 +94,17 @@ export default function CareersPage() {
     }
 
     try {
+      // Get CSRF token
+      const csrfToken = await getCsrfToken();
+      if (!csrfToken) {
+        throw new Error('Security token not available. Please refresh the page.');
+      }
+
       const response = await fetch('/api/job-applications', {
         method: 'POST',
+        headers: {
+          'x-csrf-token': csrfToken,
+        },
         body: formDataToSend,
       });
 

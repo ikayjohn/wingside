@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import SocialVerifyModal from '@/components/SocialVerifyModal';
+import { fetchWithCsrf } from '@/lib/client/csrf';
 
 interface ClaimedReward {
   id: string;
@@ -77,9 +78,8 @@ export default function EarnRewardsPage() {
       setSuccessMessage('');
       setError('');
 
-      const response = await fetch('/api/rewards/claim', {
+      const response = await fetchWithCsrf('/api/rewards/claim', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           rewardType,
           points,
