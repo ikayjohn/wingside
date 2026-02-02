@@ -77,6 +77,24 @@ export async function POST(request: NextRequest) {
     try {
       const wallet = await embedlyClient.getWalletById(profile.embedly_wallet_id);
 
+      // Check if wallet is active
+      const isWalletActive =
+        wallet.isActive !== false &&
+        (!wallet.status || wallet.status.toLowerCase() === 'active');
+
+      if (!isWalletActive) {
+        console.error(`Wallet ${profile.embedly_wallet_id} is inactive. Status:`, wallet.status || wallet.isActive);
+        return NextResponse.json(
+          {
+            error: 'Wallet is currently inactive',
+            details: 'Your wallet needs to be activated before making payments. Please contact support or create a new wallet.',
+            code: 'WALLET_INACTIVE',
+            helpUrl: '/my-account/cards'
+          },
+          { status: 400 }
+        );
+      }
+
       // Check if sufficient balance
       if (wallet.availableBalance < amount) {
         return NextResponse.json(

@@ -35,6 +35,8 @@ export interface EmbedlyWallet {
   };
   isDefault: boolean;
   mobNum?: string;
+  status?: string; // Wallet status: 'active', 'inactive', etc.
+  isActive?: boolean; // Alternative active flag
 }
 
 export interface EmbedlyCard {

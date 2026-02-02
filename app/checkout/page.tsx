@@ -735,6 +735,12 @@ export default function CheckoutPage() {
 
         if (!walletPaymentResponse.ok) {
           console.error('Wallet payment failed:', walletPaymentData);
+
+          // Handle inactive wallet specifically
+          if (walletPaymentData.code === 'WALLET_INACTIVE') {
+            throw new Error(`${walletPaymentData.error}. ${walletPaymentData.details || 'Please create a new wallet or contact support.'}`);
+          }
+
           throw new Error(walletPaymentData.error || walletPaymentData.details || 'Wallet payment failed');
         }
 
