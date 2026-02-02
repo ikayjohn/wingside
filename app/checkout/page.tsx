@@ -658,10 +658,21 @@ export default function CheckoutPage() {
         items: orderItems,
       };
 
+      // Get CSRF token
+      const csrfResponse = await fetch('/api/csrf/token');
+      const csrfData = await csrfResponse.json();
+
+      if (!csrfResponse.ok) {
+        throw new Error('Failed to get security token');
+      }
+
       // Create order
       const response = await fetch('/api/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          [csrfData.headerName]: csrfData.token,
+        },
         body: JSON.stringify(orderData),
       });
 
@@ -675,7 +686,10 @@ export default function CheckoutPage() {
       if (appliedPromo?.promoCode?.id) {
         await fetch(`/api/promo-codes/${appliedPromo.promoCode.id}`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            [csrfData.headerName]: csrfData.token,
+          },
           body: JSON.stringify({ increment_usage: true }),
         });
       }
