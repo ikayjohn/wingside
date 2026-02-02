@@ -720,7 +720,10 @@ export default function CheckoutPage() {
 
         const walletPaymentResponse = await fetch('/api/embedly/wallet-payment', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            [csrfData.headerName]: csrfData.token,
+          },
           body: JSON.stringify({
             order_id: data.order.id,
             amount: total,
@@ -744,7 +747,10 @@ export default function CheckoutPage() {
         // Initialize payment with Nomba
         const paymentResponse = await fetch('/api/payment/nomba/initialize', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            [csrfData.headerName]: csrfData.token,
+          },
           body: JSON.stringify({
             order_id: data.order.id,
             amount: total,

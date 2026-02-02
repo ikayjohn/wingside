@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { csrfProtection } from '@/lib/csrf'
 
 interface NombaAuthResponse {
   code: string
@@ -67,6 +68,12 @@ export async function POST(request: NextRequest) {
   console.log(`${'='.repeat(60)}`)
 
   try {
+    // Check CSRF token
+    const csrfError = await csrfProtection(request);
+    if (csrfError) {
+      return csrfError;
+    }
+
     let body;
     try {
       body = await request.json();

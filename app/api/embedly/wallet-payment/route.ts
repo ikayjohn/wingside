@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import embedlyClient from '@/lib/embedly/client';
+import { csrfProtection } from '@/lib/csrf';
 
 // POST /api/embedly/wallet-payment - Process payment using wallet
 export async function POST(request: NextRequest) {
   try {
+    // Check CSRF token
+    const csrfError = await csrfProtection(request);
+    if (csrfError) {
+      return csrfError;
+    }
+
     const supabase = await createClient();
 
     let body;
