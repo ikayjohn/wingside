@@ -171,6 +171,12 @@ export default function CustomerDetailsPage() {
   const [processingPoints, setProcessingPoints] = useState(false);
   const [pointsMessage, setPointsMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Wallet Fix State
+  const [walletStatus, setWalletStatus] = useState<any>(null);
+  const [checkingWallet, setCheckingWallet] = useState(false);
+  const [fixingWallet, setFixingWallet] = useState(false);
+  const [walletMessage, setWalletMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   const fetchCustomerDetails = useCallback(async () => {
     try {
       setLoading(true);
@@ -407,6 +413,69 @@ export default function CustomerDetailsPage() {
     setPointsAmount('');
     setPointsReason('');
     setPointsMessage(null);
+  }
+
+  async function checkWalletStatus() {
+    try {
+      setCheckingWallet(true);
+      setWalletMessage(null);
+
+      const res = await fetch(`/api/admin/wallet-fix?userId=${customerId}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setWalletMessage({ type: 'error', text: data.error || 'Failed to check wallet status' });
+        return;
+      }
+
+      setWalletStatus(data);
+    } catch (error) {
+      console.error('Error checking wallet:', error);
+      setWalletMessage({ type: 'error', text: 'Failed to check wallet status' });
+    } finally {
+      setCheckingWallet(false);
+    }
+  }
+
+  async function fixInactiveWallet() {
+    if (!confirm('This will create a new active wallet for this customer. The old inactive wallet will be replaced. Continue?')) {
+      return;
+    }
+
+    try {
+      setFixingWallet(true);
+      setWalletMessage(null);
+
+      const res = await fetch('/api/admin/wallet-fix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: customerId }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setWalletMessage({ type: 'error', text: data.error || 'Failed to fix wallet' });
+        return;
+      }
+
+      setWalletMessage({
+        type: 'success',
+        text: `Successfully created new active wallet! Old ID: ${data.oldWallet?.id || 'none'}, New ID: ${data.newWallet.id}`
+      });
+
+      // Refresh customer details and wallet status
+      await fetchCustomerDetails();
+      await checkWalletStatus();
+
+      // Clear success message after 5 seconds
+      setTimeout(() => setWalletMessage(null), 5000);
+    } catch (error) {
+      console.error('Wallet fix error:', error);
+      setWalletMessage({ type: 'error', text: 'Failed to fix wallet' });
+    } finally {
+      setFixingWallet(false);
+    }
   }
 
   const exportOrdersToCSV = useCallback(async () => {
@@ -1058,6 +1127,136 @@ export default function CustomerDetailsPage() {
             </div>
           </div>
         </div>
+
+        {/* Wallet Management */}
+        {customer.embedly_customer_id && (
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-lg p-6 border-2 border-blue-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-[#552627] flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
+                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                  <line x1="1" y1="10" x2="23" y2="10"></line>
+                </svg>
+                Wallet Management
+              </h3>
+              <button
+                onClick={checkWalletStatus}
+                disabled={checkingWallet}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {checkingWallet ? 'Checking...' : 'Check Wallet Status'}
+              </button>
+            </div>
+
+            {walletMessage && (
+              <div className={`mb-4 px-4 py-3 rounded ${walletMessage.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                {walletMessage.text}
+              </div>
+            )}
+
+            {walletStatus && (
+              <div className="bg-white rounded-lg p-4 space-y-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-500">Has Customer ID:</span>
+                    <p className="font-medium">{walletStatus.hasCustomerId ? '✅ Yes' : '❌ No'}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Has Wallet ID:</span>
+                    <p className="font-medium">{walletStatus.hasWalletId ? '✅ Yes' : '❌ No'}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Cached Balance:</span>
+                    <p className="font-medium">{formatCurrency(walletStatus.cachedBalance || 0)}</p>
+                  </div>
+                </div>
+
+                {walletStatus.wallet && (
+                  <div className="border-t pt-3">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-2 flex-1">
+                        <div>
+                          <span className="text-sm text-gray-500">Wallet Status:</span>
+                          <span className={`ml-2 px-2 py-1 rounded text-sm font-medium ${
+                            walletStatus.wallet.status === 'active' ? 'bg-green-100 text-green-800' :
+                            walletStatus.wallet.status === 'inactive' ? 'bg-red-100 text-red-800' :
+                            walletStatus.wallet.status === 'error' ? 'bg-orange-100 text-orange-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {walletStatus.wallet.status?.toUpperCase() || 'UNKNOWN'}
+                          </span>
+                        </div>
+
+                        {walletStatus.wallet.id && (
+                          <div>
+                            <span className="text-sm text-gray-500">Wallet ID:</span>
+                            <p className="font-mono text-xs">{walletStatus.wallet.id}</p>
+                          </div>
+                        )}
+
+                        {walletStatus.wallet.accountNumber && (
+                          <div>
+                            <span className="text-sm text-gray-500">Account Number:</span>
+                            <p className="font-medium">{walletStatus.wallet.accountNumber}</p>
+                            <p className="text-xs text-gray-500">{walletStatus.wallet.bankName}</p>
+                          </div>
+                        )}
+
+                        {walletStatus.wallet.balance !== undefined && (
+                          <div>
+                            <span className="text-sm text-gray-500">Live Balance:</span>
+                            <p className="font-medium">{formatCurrency(walletStatus.wallet.balance)}</p>
+                          </div>
+                        )}
+
+                        {walletStatus.wallet.error && (
+                          <div className="bg-red-50 border border-red-200 rounded p-2 text-sm text-red-700">
+                            <span className="font-medium">Error:</span> {walletStatus.wallet.error}
+                          </div>
+                        )}
+                      </div>
+
+                      {walletStatus.wallet.needsFix && (
+                        <button
+                          onClick={fixInactiveWallet}
+                          disabled={fixingWallet}
+                          className="ml-4 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {fixingWallet ? 'Fixing...' : 'Fix Inactive Wallet'}
+                        </button>
+                      )}
+                    </div>
+
+                    {walletStatus.wallet.needsFix && (
+                      <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                        ⚠️ This wallet needs attention. Click "Fix Inactive Wallet" to create a new active wallet for this customer.
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {!walletStatus.wallet && walletStatus.hasCustomerId && (
+                  <div className="border-t pt-3">
+                    <p className="text-sm text-gray-600">No wallet found for this customer.</p>
+                    <button
+                      onClick={fixInactiveWallet}
+                      disabled={fixingWallet}
+                      className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {fixingWallet ? 'Creating...' : 'Create Wallet'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!walletStatus && !checkingWallet && (
+              <div className="bg-white rounded-lg p-4 text-center text-gray-500">
+                Click "Check Wallet Status" to view wallet details and diagnostics
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Referral Details */}
         {(customer.referral_details || customer.referral_code || customer.referred_by || customer.total_referrals) && (
