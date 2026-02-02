@@ -109,12 +109,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Get currencies to find NGN
+    const currencies = await embedlyClient.getCurrencies();
+    const ngn = currencies.find(currency => currency.shortName === 'NGN');
+
+    if (!ngn) {
+      return NextResponse.json(
+        { error: 'NGN currency not found in Embedly system' },
+        { status: 500 }
+      );
+    }
+
     // Create new wallet
     console.log(`[Admin] Creating new wallet for user ${targetProfile.email} (ID: ${userId})`);
     console.log(`[Admin] Old wallet status: ${currentWalletStatus}`);
 
     const newWallet = await embedlyClient.createWallet({
       customerId: targetProfile.embedly_customer_id,
+      currencyId: ngn.id,
       name: `${targetProfile.first_name} ${targetProfile.last_name}`,
     });
 
