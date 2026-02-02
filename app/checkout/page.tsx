@@ -734,7 +734,8 @@ export default function CheckoutPage() {
         const walletPaymentData = await walletPaymentResponse.json();
 
         if (!walletPaymentResponse.ok) {
-          throw new Error(walletPaymentData.error || 'Wallet payment failed');
+          console.error('Wallet payment failed:', walletPaymentData);
+          throw new Error(walletPaymentData.error || walletPaymentData.details || 'Wallet payment failed');
         }
 
         // Clear cart and show success
@@ -803,9 +804,10 @@ export default function CheckoutPage() {
         // Redirect to Paystack payment page
         window.location.href = paymentData.authorization_url;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting order:', error);
-      setSubmitError('Failed to submit order. Please try again.');
+      const errorMessage = error?.message || 'Failed to submit order. Please try again.';
+      setSubmitError(errorMessage);
       setSubmitting(false);
     }
   };
