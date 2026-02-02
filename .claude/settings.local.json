@@ -86,7 +86,8 @@
       "WebFetch(domain:www.npmjs.com)",
       "Bash(bash:*)",
       "Bash(fi:*)",
-      "Bash(git diff:*)"
+      "Bash(git diff:*)",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []
