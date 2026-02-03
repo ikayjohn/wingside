@@ -103,6 +103,7 @@ export default function AdminLayout({
         { href: '/admin/settings', label: 'System Settings' },
         { href: '/admin/maintenance', label: 'Maintenance Mode' },
         { href: '/admin/test-embedly-sync', label: 'Embedly Sync Test' },
+        { href: '/admin/wallet-transactions/cleanup', label: 'Wallet Cleanup' },
       ]
     },
   ];
