@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
       .select(`
         *,
         profiles:user_id (
+          full_name,
           email,
           embedly_wallet_id,
           wallet_balance
@@ -96,7 +97,8 @@ export async function GET(request: NextRequest) {
       if (!acc[uid]) {
         acc[uid] = {
           user_id: uid,
-          email: txn.profiles?.email || 'Unknown',
+          full_name: txn.profiles?.full_name || 'Unknown',
+          email: txn.profiles?.email || 'No email',
           embedly_wallet_id: txn.profiles?.embedly_wallet_id || 'N/A',
           wallet_balance: txn.profiles?.wallet_balance || 0,
           transactions: []
@@ -191,7 +193,7 @@ export async function POST(request: NextRequest) {
       // Get user's profile
       const { data: userProfile } = await admin
         .from('profiles')
-        .select('embedly_wallet_id, email')
+        .select('full_name, embedly_wallet_id, email')
         .eq('id', user_id)
         .single();
 
@@ -245,7 +247,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: `Refunded ₦${amount.toLocaleString()} to ${userProfile.email}`,
+        message: `Refunded ₦${amount.toLocaleString()} to ${userProfile.full_name || userProfile.email}`,
         transaction: creditTransaction
       });
     }

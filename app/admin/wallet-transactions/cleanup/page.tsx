@@ -24,6 +24,7 @@ interface Transaction {
 
 interface UserGroup {
   user_id: string;
+  full_name: string;
   email: string;
   embedly_wallet_id: string;
   wallet_balance: number;
@@ -178,9 +179,10 @@ export default function WalletCleanupPage() {
               <div className="p-6 border-b border-gray-200">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      {userGroup.email}
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                      {userGroup.full_name}
                     </h3>
+                    <p className="text-sm text-gray-600 mb-3">{userGroup.email}</p>
                     <div className="grid grid-cols-3 gap-4 text-sm">
                       <div>
                         <span className="text-gray-600">Wallet Balance: </span>
@@ -215,7 +217,7 @@ export default function WalletCleanupPage() {
                     <button
                       onClick={() => {
                         const amount = getTotalPendingAmount(userGroup);
-                        if (confirm(`Refund ${formatAmount(amount)} to ${userGroup.email}?`)) {
+                        if (confirm(`Refund ${formatAmount(amount)} to ${userGroup.full_name} (${userGroup.email})?`)) {
                           handleAction('refund_to_wallet', { 
                             user_id: userGroup.user_id, 
                             amount 
