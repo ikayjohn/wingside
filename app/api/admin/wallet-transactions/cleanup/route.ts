@@ -199,7 +199,7 @@ export async function GET(request: NextRequest) {
     // Detect potential duplicate transactions
     const duplicates: any[] = [];
     const transactionGroups = transactions?.reduce((acc: any, t: any) => {
-      const key = `${t.user_id}-${t.amount}`;
+      const key = `${t.user_id || 'guest'}-${t.amount}`;
       if (!acc[key]) acc[key] = [];
       acc[key].push(t);
       return acc;
@@ -212,15 +212,18 @@ export async function GET(request: NextRequest) {
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         );
         
-        // Mark pending ones as potential duplicates
+        // Mark pending ones as potential duplicates if there's at least one completed
         const pending = group.filter((t: any) => t.status === 'pending');
         if (completed.length > 0 && pending.length > 0) {
           pending.forEach((p: any) => {
-            duplicates.push({
-              ...p,
-              is_duplicate: true,
-              likely_legitimate_transaction_id: completed[0].id
-            });
+            // Avoid double-adding duplicates
+            if (!duplicates.find((d: any) => d.id === p.id)) {
+              duplicates.push({
+                ...p,
+                is_duplicate: true,
+                likely_legitimate_transaction_id: completed[0].id
+              });
+            }
           });
         }
       }

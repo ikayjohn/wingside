@@ -288,6 +288,18 @@ export default function WalletCleanupPage() {
                         {transaction.status === 'pending' && (
                           <>
                             <button
+                              onClick={() => {
+                                if (confirm(`Refund ₦${transaction.amount} and delete this pending transaction?`)) {
+                                  handleAction('refund_and_delete_pending', { transaction_id: transaction.id });
+                                }
+                              }}
+                              disabled={actionLoading}
+                              className="px-3 py-1 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
+                              title="Refund amount and delete this pending transaction"
+                            >
+                              Refund & Delete
+                            </button>
+                            <button
                               onClick={() => handleAction('mark_completed', { transaction_id: transaction.id })}
                               disabled={actionLoading}
                               className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
