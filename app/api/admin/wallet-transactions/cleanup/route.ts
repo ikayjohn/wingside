@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('user_id');
 
-    // Build query
+    // Build query - try with join first
     let query = admin
       .from('wallet_transactions')
       .select(`
@@ -49,7 +49,26 @@ export async function GET(request: NextRequest) {
       query = query.eq('user_id', userId);
     }
 
-    const { data: transactions, error } = await query;
+    let { data: transactions, error } = await query;
+
+    // If join fails, fallback to query without profiles
+    if (error) {
+      console.error('Error with profiles join, trying without:', error);
+      
+      const fallbackQuery = admin
+        .from('wallet_transactions')
+        .select('*')
+        .in('status', ['pending', 'failed'])
+        .order('created_at', { ascending: false });
+
+      if (userId) {
+        fallbackQuery.eq('user_id', userId);
+      }
+
+      const fallbackResult = await fallbackQuery;
+      transactions = fallbackResult.data;
+      error = fallbackResult.error;
+    }
 
     if (error) {
       console.error('Error fetching cleanup candidates:', error);
