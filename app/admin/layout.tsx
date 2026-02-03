@@ -104,6 +104,7 @@ export default function AdminLayout({
         { href: '/admin/maintenance', label: 'Maintenance Mode' },
         { href: '/admin/test-embedly-sync', label: 'Embedly Sync Test' },
         { href: '/admin/wallet-transactions/cleanup', label: 'Wallet Cleanup' },
+        { href: '/admin/emergency-refund', label: '⚠️ Emergency Refund' },
       ]
     },
   ];
