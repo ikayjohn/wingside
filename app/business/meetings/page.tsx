@@ -220,7 +220,7 @@ ${formData.moreDetails}
                 Level up your lunchtime — wings, wraps, and sides that refuel without slowing anyone down.
               </p>
               <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 18l6-6-6-6" stroke="#5D4037" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M15 18l-6-6 6-6" stroke="#5D4037" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
 
@@ -238,7 +238,7 @@ ${formData.moreDetails}
                 Feeding the big crowd? We've got wings, sides, and sauces ready to impress every guest in the room.
               </p>
               <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 18l6-6-6-6" stroke="#5D4037" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M15 18l-6-6 6-6" stroke="#5D4037" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
           </div>

@@ -161,6 +161,7 @@ ${formData.message}
           src="/wingpost-hero-machine.jpg"
           alt="Wingpost"
           className="w-full h-full object-cover"
+          style={{ objectPosition: 'right center' }}
         />
         <div className="absolute inset-0 bg-black/40" />
 
@@ -233,7 +234,7 @@ ${formData.message}
             {/* Image */}
             <div className="rounded-r-3xl overflow-hidden h-full">
               <img
-                src="/wingpost-machine.jpg"
+                src="/wingpost-machine.png"
                 alt="Wingpost Machine"
                 className="w-full h-full object-cover"
               />
@@ -355,24 +356,7 @@ ${formData.message}
                           )}
                         </div>
                         <p className="text-sm text-gray-600 mb-1">{location.address}</p>
-                        <p className="text-sm text-gray-600 mb-3">{location.city}</p>
-                        <div className="flex items-center gap-4 text-sm">
-                          <div className="flex items-center gap-1">
-                            <svg className="w-4 h-4 fill-[#F7C400]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                            </svg>
-                            <span className="font-semibold text-black">{location.rating}</span>
-                            <span className="text-gray-500">({location.reviews})</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-gray-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <circle cx="12" cy="12" r="10"></circle>
-                              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                              <path d="M2 12h20"></path>
-                            </svg>
-                            <span>{location.distance}</span>
-                          </div>
-                        </div>
+                        <p className="text-sm text-gray-600">{location.city}</p>
                       </div>
                       <img
                         src={location.thumbnail}
@@ -399,14 +383,7 @@ ${formData.message}
 
                 {/* Details Content */}
                 <div className="p-6">
-                  <h2 className="text-2xl font-bold text-black mb-2">{selectedLocation.name}</h2>
-                  <div className="flex items-center gap-1 mb-4">
-                    <svg className="w-5 h-5 fill-[#F7C400]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                    </svg>
-                    <span className="font-semibold text-black">{selectedLocation.rating}</span>
-                    <span className="text-gray-500">({selectedLocation.reviews} reviews)</span>
-                  </div>
+                  <h2 className="text-2xl font-bold text-black mb-4">{selectedLocation.name}</h2>
 
                   {/* Address */}
                   <div className="flex items-start gap-3 mb-3">
@@ -426,14 +403,6 @@ ${formData.message}
                       <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
                     </svg>
                     <p className="text-gray-700">{selectedLocation.phone}</p>
-                  </div>
-
-                  {/* Distance */}
-                  <div className="flex items-center gap-3 mb-6">
-                    <svg className="w-5 h-5 text-gray-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 11l19-9-9 19-2-8-8-2z"></path>
-                    </svg>
-                    <p className="text-gray-700">{selectedLocation.distance} away</p>
                   </div>
 
                   {/* Hours */}

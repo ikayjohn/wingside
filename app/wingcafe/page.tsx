@@ -18,6 +18,25 @@ interface CartItem {
 
 export default function WingcafePage() {
   const carouselRef = useRef<HTMLDivElement>(null);
+  const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
+  
+  const heroSlides = [
+    {
+      image: "/wingcafe-hero.jpg",
+      title: "Now Brewing... Bold Flavors",
+      description: "Experience the perfect blend of minimalist charm and vibrant taste"
+    },
+    {
+      image: "/wingcafe-hero2.png",
+      title: "Shell Yeah, It's Pistachio",
+      description: "The Nuttiest Latte on the Menu"
+    },
+    {
+      image: "/wingcafe-hero3.png",
+      title: "Green With Attitude",
+      description: "Crafted for those who like their calm with a little edge"
+    }
+  ];
 
   // Auto-scroll carousel
   useEffect(() => {
@@ -46,16 +65,35 @@ export default function WingcafePage() {
     requestAnimationFrame(scroll);
   }, []);
 
+  // Hero slideshow auto-rotation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentHeroSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
       <div className="relative h-[700px] md:h-[800px] lg:h-[900px]">
-        <img
-          src="/wingcafe-hero.jpg" loading="eager"
-          alt="Wingcafé"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/40" />
+        {heroSlides.map((slide, index) => (
+          <div
+            key={index}
+            className={`absolute inset-0 transition-opacity duration-1000 ${
+              index === currentHeroSlide ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            <img
+              src={slide.image}
+              alt={`Wingcafé ${index + 1}`}
+              className="w-full h-full object-cover"
+              loading={index === 0 ? "eager" : "lazy"}
+            />
+            <div className="absolute inset-0 bg-black/40" />
+          </div>
+        ))}
 
         {/* Content */}
         <div className="absolute inset-0 flex flex-col justify-between px-4 md:px-8 lg:px-16 py-10 md:py-22">
@@ -70,12 +108,12 @@ export default function WingcafePage() {
           <div className="w-full max-w-6xl">
             {/* Heading */}
             <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 leading-tight">
-              Now Brewing... Bold Flavors
+              {heroSlides[currentHeroSlide].title}
             </h1>
 
             {/* Description */}
             <p className="text-sm md:text-base lg:text-lg text-white mb-8 max-w-3xl leading-relaxed">
-              Experience the perfect blend of minimalist charm and vibrant taste
+              {heroSlides[currentHeroSlide].description}
             </p>
 
             {/* CTA Button */}
@@ -86,6 +124,20 @@ export default function WingcafePage() {
               Explore our menu
             </Link>
           </div>
+        </div>
+
+        {/* Slideshow Dots */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-3">
+          {heroSlides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentHeroSlide(index)}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                index === currentHeroSlide ? 'bg-[#F7C400] w-8' : 'bg-white/50 hover:bg-white/80'
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
         </div>
       </div>
 
@@ -99,18 +151,6 @@ export default function WingcafePage() {
 
           {/* Features Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            {/* Matcha Made in Heaven */}
-            <div className="relative rounded-3xl overflow-hidden aspect-[3/4] transition-all duration-300 hover:-translate-y-2 cursor-pointer">
-              <img
-                src="/wingcafe-match.png" loading="lazy"
-                alt="matcha made in heaven"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute top-[44px] left-6 text-left">
-                <p className="text-[#552627] font-bold text-[40px] md:text-[48px] leading-[0.85]">matcha made<br />in heaven</p>
-              </div>
-            </div>
-
             {/* Matcha Magic */}
             <div className="relative rounded-3xl overflow-hidden aspect-[3/4] transition-all duration-300 hover:-translate-y-2 cursor-pointer">
               <img
@@ -119,7 +159,19 @@ export default function WingcafePage() {
                 className="w-full h-full object-cover"
               />
               <div className="absolute bottom-[44px] right-6 text-right">
-                <p className="text-white font-bold text-[40px] md:text-[48px] leading-[0.85]">Affogato<br />believe how<br />good this is</p>
+                <p className="text-white font-bold text-[32px] md:text-[40px] leading-[0.85]">Affogato<br />believe how<br />good this is</p>
+              </div>
+            </div>
+
+            {/* Matcha Made in Heaven */}
+            <div className="relative rounded-3xl overflow-hidden aspect-[3/4] transition-all duration-300 hover:-translate-y-2 cursor-pointer">
+              <img
+                src="/wingcafe-match.png" loading="lazy"
+                alt="matcha made in heaven"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute top-[44px] left-6 text-left">
+                <p className="text-[#552627] font-bold text-[32px] md:text-[40px] leading-[0.85]">Matcha made<br />in heaven</p>
               </div>
             </div>
 
@@ -131,8 +183,8 @@ export default function WingcafePage() {
                 className="w-full h-full object-cover"
               />
               <div className="absolute top-[44px] left-6">
-                <p className="text-[#552627] font-bold text-4xl md:text-5xl leading-[0.85]">A whole latte</p>
-                <p className="text-[#552627] font-bold text-4xl md:text-5xl leading-[0.85]">goodness</p>
+                <p className="text-[#552627] font-bold text-3xl md:text-4xl leading-[0.85]">A whole latte</p>
+                <p className="text-[#552627] font-bold text-3xl md:text-4xl leading-[0.85]">goodness</p>
               </div>
             </div>
           </div>
@@ -142,13 +194,13 @@ export default function WingcafePage() {
             {/* Much Ado About Latte */}
             <div className="relative rounded-3xl overflow-hidden aspect-[4/3] transition-all duration-300 hover:-translate-y-2 cursor-pointer">
               <img
-                src="/wingcafe-hot.png" loading="lazy"
+                src="/wingcafe-milkshake.jpg" loading="lazy"
                 alt="Much Ado About Latte"
                 className="w-full h-full object-cover"
               />
               <div className="absolute top-[44px] left-6 text-left">
-                <p className="text-[#552627] font-bold text-[40px] md:text-[48px] leading-[0.85]">Brewed for</p>
-                <p className="text-[#552627] font-bold text-[40px] md:text-[48px] leading-[0.85]">the bold</p>
+                <p className="text-white font-bold text-[32px] md:text-[40px] leading-[0.85]">Save water, drink</p>
+                <p className="text-white font-bold text-[32px] md:text-[40px] leading-[0.85]">a milkshake</p>
               </div>
             </div>
 
@@ -160,8 +212,8 @@ export default function WingcafePage() {
                 className="w-full h-full object-cover"
               />
               <div className="absolute top-[44px] left-6 text-left">
-                <p className="text-[#552627] font-bold text-[40px] md:text-[48px] leading-[0.85]">life is fresher on the</p>
-                <p className="text-[#552627] font-bold text-[40px] md:text-[48px] leading-[0.85]">wing side</p>
+                <p className="text-[#552627] font-bold text-[32px] md:text-[40px] leading-[0.85]">Life is fresher on the</p>
+                <p className="text-[#552627] font-bold text-[32px] md:text-[40px] leading-[0.85]">wing side</p>
               </div>
             </div>
           </div>
