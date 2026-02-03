@@ -111,6 +111,7 @@ export async function POST(request: NextRequest) {
 
       // Create local wallet transaction record (debit) with PENDING status
       transactionReference = `ORDER-${order_id}-${Date.now()}`;
+      const initialBalance = wallet.availableBalance;
       const { data: transaction, error: transactionError } = await supabase
         .from('wallet_transactions')
         .insert({
@@ -121,6 +122,8 @@ export async function POST(request: NextRequest) {
           reference: transactionReference,
           description: remarks || `Payment for order ${order_id}`,
           status: 'pending', // Mark as pending until transfer completes
+          balance_before: initialBalance,
+          balance_after: initialBalance - amount, // Expected balance after transfer
           metadata: {
             order_id,
             wallet_id: profile.embedly_wallet_id,
@@ -159,11 +162,12 @@ export async function POST(request: NextRequest) {
 
           console.log(`✅ Successfully transferred ₦${amount} to merchant wallet (${merchantWalletId})`);
 
-          // Update transaction status to completed after successful transfer
-          const { error: transactionUpdateError } = await supabase
+          // Update transaction status to completed after successful transfer with actual balance
+          const { error: transactionUpdateError } = await admin
             .from('wallet_transactions')
             .update({
               status: 'completed',
+              balance_after: finalWalletBalance, // Actual balance from Embedly after transfer
               updated_at: new Date().toISOString()
             })
             .eq('id', walletTransaction.id);

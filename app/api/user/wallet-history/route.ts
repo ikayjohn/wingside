@@ -70,10 +70,10 @@ export async function GET() {
 
       return {
         id: t.id,
-        type: typeMap[t.transaction_type] || t.transaction_type,
-        description: t.description,
+        type: typeMap[t.transaction_type] || t.transaction_type || 'Transaction',
+        description: t.description || 'Wallet transaction',
         amount: t.type === 'debit' ? -Math.abs(t.amount) : Math.abs(t.amount),
-        status: t.status,
+        status: t.status || 'pending',
         paymentMethod: isCardTransaction ? 'wingside_card' : (t.metadata?.payment_method || 'wallet'),
         createdAt: t.created_at,
         orderNumber: t.order_id,

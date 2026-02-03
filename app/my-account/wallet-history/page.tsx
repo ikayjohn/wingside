@@ -92,7 +92,7 @@ export default function WalletHistoryPage() {
 
   const getFilteredTransactions = () => {
     if (filter === 'all') return transactions;
-    return transactions.filter(t => t.type.toLowerCase().includes(filter));
+    return transactions.filter(t => t.type?.toLowerCase()?.includes(filter));
   };
 
   const filteredTransactions = getFilteredTransactions();
@@ -113,7 +113,7 @@ export default function WalletHistoryPage() {
   };
 
   const getTransactionIcon = (type: string) => {
-    const typeLower = type.toLowerCase();
+    const typeLower = type?.toLowerCase() || '';
 
     if (typeLower.includes('payment') || typeLower.includes('order')) {
       return (
@@ -295,7 +295,7 @@ export default function WalletHistoryPage() {
                   </p>
                   {transaction.paymentMethod && (
                     <p className="text-xs text-gray-500 mt-1 capitalize">
-                      via {transaction.paymentMethod.replace('_', ' ')}
+                      via {transaction.paymentMethod?.replace('_', ' ') || transaction.paymentMethod}
                     </p>
                   )}
                 </div>
