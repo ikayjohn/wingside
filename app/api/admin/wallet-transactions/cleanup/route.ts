@@ -391,16 +391,116 @@ export async function POST(request: NextRequest) {
       // Get user's profile
       const { data: userProfile } = await admin
         .from('profiles')
-        .select('full_name, embedly_wallet_id, email')
+        .select('full_name, embedly_wallet_id, email, wallet_balance')
         .eq('id', transaction.user_id)
         .single();
 
-      if (userProfile?.embedly_wallet_id) {
-        // Get current wallet balance
-        const wallet = await embedlyClient.getWalletById(userProfile.embedly_wallet_id);
-        const currentBalance = wallet.availableBalance;
+      if (!userProfile) {
+        return NextResponse.json(
+          { error: 'User profile not found' },
+          { status: 404 }
+        );
+      }
 
-        // Create credit transaction
+      let refundedAmount = 0;
+      
+      // Try to refund via Embedly wallet if they have one
+      if (userProfile.embedly_wallet_id) {
+        try {
+          // Get current wallet balance
+          const wallet = await embedlyClient.getWalletById(userProfile.embedly_wallet_id);
+          const currentBalance = wallet.availableBalance;
+
+          // Create credit transaction
+          const { data: creditTransaction, error: creditError } = await admin
+            .from('wallet_transactions')
+            .insert({
+              user_id: transaction.user_id,
+              type: 'credit',
+              amount: transaction.amount,
+              currency: 'NGN',
+              reference: `REFUND-DUPLICATE-${Date.now()}`,
+              description: `Refund for duplicate payment - Deleted pending transaction ${transaction.reference}`,
+              status: 'completed',
+              balance_before: currentBalance,
+              balance_after: currentBalance + transaction.amount,
+              metadata: {
+                refund_type: 'duplicate_payment_correction',
+                refunded_by: user.id,
+                deleted_transaction_id: transaction_id
+              }
+            })
+            .select()
+            .single();
+
+          if (creditError) {
+            console.error('Error creating refund transaction:', creditError);
+            return NextResponse.json(
+              { error: `Failed to create refund: ${creditError.message}` },
+              { status: 500 }
+            );
+          }
+
+          // Update profile wallet balance
+          await admin
+            .from('profiles')
+            .update({
+              wallet_balance: currentBalance + transaction.amount
+            })
+            .eq('id', transaction.user_id);
+
+          refundedAmount = transaction.amount;
+        } catch (embedlyError) {
+          console.error('Embedly refund failed, trying direct profile update:', embedlyError);
+          
+          // Fallback: Just update the profile wallet_balance directly
+          const newBalance = (userProfile.wallet_balance || 0) + transaction.amount;
+          
+          // Create credit transaction record
+          const { data: creditTransaction, error: creditError } = await admin
+            .from('wallet_transactions')
+            .insert({
+              user_id: transaction.user_id,
+              type: 'credit',
+              amount: transaction.amount,
+              currency: 'NGN',
+              reference: `REFUND-DUPLICATE-${Date.now()}`,
+              description: `Refund for duplicate payment - Admin correction (fallback)`,
+              status: 'completed',
+              balance_before: userProfile.wallet_balance || 0,
+              balance_after: newBalance,
+              metadata: {
+                refund_type: 'admin_correction_fallback',
+                refunded_by: user.id,
+                deleted_transaction_id: transaction_id
+              }
+            })
+            .select()
+            .single();
+
+          if (creditError) {
+            console.error('Error creating refund transaction:', creditError);
+            return NextResponse.json(
+              { error: `Failed to create refund: ${creditError.message}` },
+              { status: 500 }
+            );
+          }
+
+          // Update profile wallet balance directly
+          await admin
+            .from('profiles')
+            .update({
+              wallet_balance: newBalance
+            })
+            .eq('id', transaction.user_id);
+
+          refundedAmount = transaction.amount;
+        }
+      } else {
+        // No Embedly wallet - just update profile balance directly
+        const newBalance = (userProfile.wallet_balance || 0) + transaction.amount;
+        
+        // Create credit transaction record
         const { data: creditTransaction, error: creditError } = await admin
           .from('wallet_transactions')
           .insert({
@@ -409,12 +509,12 @@ export async function POST(request: NextRequest) {
             amount: transaction.amount,
             currency: 'NGN',
             reference: `REFUND-DUPLICATE-${Date.now()}`,
-            description: `Refund for duplicate payment - Deleted pending transaction ${transaction.reference}`,
+            description: `Refund for duplicate payment - Admin correction`,
             status: 'completed',
-            balance_before: currentBalance,
-            balance_after: currentBalance + transaction.amount,
+            balance_before: userProfile.wallet_balance || 0,
+            balance_after: newBalance,
             metadata: {
-              refund_type: 'duplicate_payment_correction',
+              refund_type: 'admin_correction_no_wallet',
               refunded_by: user.id,
               deleted_transaction_id: transaction_id
             }
@@ -422,21 +522,23 @@ export async function POST(request: NextRequest) {
           .select()
           .single();
 
-        if (creditError || !creditTransaction) {
+        if (creditError) {
           console.error('Error creating refund transaction:', creditError);
           return NextResponse.json(
-            { error: 'Failed to create refund transaction' },
+            { error: `Failed to create refund: ${creditError.message}` },
             { status: 500 }
           );
         }
 
-        // Update profile wallet balance
+        // Update profile wallet balance directly
         await admin
           .from('profiles')
           .update({
-            wallet_balance: currentBalance + transaction.amount
+            wallet_balance: newBalance
           })
           .eq('id', transaction.user_id);
+
+        refundedAmount = transaction.amount;
       }
 
       // Delete the pending transaction
@@ -447,7 +549,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: `Refunded ₦${transaction.amount.toLocaleString()} and deleted duplicate pending transaction`
+        message: `Refunded ₦${refundedAmount.toLocaleString()} and deleted duplicate pending transaction for ${userProfile.full_name || userProfile.email}`
       });
     }
 
