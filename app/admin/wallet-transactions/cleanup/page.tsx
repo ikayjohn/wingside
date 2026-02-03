@@ -28,6 +28,7 @@ interface UserGroup {
   email: string;
   embedly_wallet_id: string;
   wallet_balance: number;
+  is_guest?: boolean;
   transactions: Transaction[];
 }
 
@@ -179,9 +180,16 @@ export default function WalletCleanupPage() {
               <div className="p-6 border-b border-gray-200">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                      {userGroup.full_name}
-                    </h3>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {userGroup.full_name}
+                      </h3>
+                      {userGroup.is_guest && (
+                        <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">
+                          Guest
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-600 mb-3">{userGroup.email}</p>
                     <div className="grid grid-cols-3 gap-4 text-sm">
                       <div>
@@ -214,21 +222,23 @@ export default function WalletCleanupPage() {
                     >
                       Delete All Pending
                     </button>
-                    <button
-                      onClick={() => {
-                        const amount = getTotalPendingAmount(userGroup);
-                        if (confirm(`Refund ${formatAmount(amount)} to ${userGroup.full_name} (${userGroup.email})?`)) {
-                          handleAction('refund_to_wallet', { 
-                            user_id: userGroup.user_id, 
-                            amount 
-                          });
-                        }
-                      }}
-                      disabled={actionLoading}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                    >
-                      Refund Pending
-                    </button>
+                    {!userGroup.is_guest && (
+                      <button
+                        onClick={() => {
+                          const amount = getTotalPendingAmount(userGroup);
+                          if (confirm(`Refund ${formatAmount(amount)} to ${userGroup.full_name} (${userGroup.email})?`)) {
+                            handleAction('refund_to_wallet', { 
+                              user_id: userGroup.user_id, 
+                              amount 
+                            });
+                          }
+                        }}
+                        disabled={actionLoading}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                      >
+                        Refund Pending
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

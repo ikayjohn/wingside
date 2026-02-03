@@ -71,6 +71,47 @@ export async function GET(request: NextRequest) {
       error = fallbackResult.error;
     }
 
+    // For guest orders (no user_id), fetch order details to get customer info
+    if (transactions && transactions.length > 0) {
+      const guestOrderIds = transactions
+        .filter((t: any) => !t.user_id || t.user_id === null)
+        .map((t: any) => t.metadata?.order_id)
+        .filter(Boolean);
+
+      if (guestOrderIds.length > 0) {
+        const { data: orders } = await admin
+          .from('orders')
+          .select('id, customer_name, customer_email')
+          .in('id', guestOrderIds);
+
+        // Create a map of order_id -> customer info
+        const orderCustomerMap = (orders || []).reduce((acc: any, order: any) => {
+          acc[order.id] = {
+            customer_name: order.customer_name,
+            customer_email: order.customer_email
+          };
+          return acc;
+        }, {});
+
+        // Enhance transactions with customer info from orders
+        transactions = transactions.map((txn: any) => {
+          if (!txn.user_id && txn.metadata?.order_id) {
+            const customerInfo = orderCustomerMap[txn.metadata.order_id];
+            if (customerInfo) {
+              return {
+                ...txn,
+                profiles: {
+                  full_name: customerInfo.customer_name,
+                  email: customerInfo.customer_email
+                }
+              };
+            }
+          }
+          return txn;
+        });
+      }
+    }
+
     if (error) {
       console.error('Error fetching cleanup candidates:', error);
       
@@ -95,12 +136,16 @@ export async function GET(request: NextRequest) {
     const userGroups = transactions?.reduce((acc: any, txn: any) => {
       const uid = txn.user_id;
       if (!acc[uid]) {
+        // If profile exists, use it; otherwise use "Unknown"
+        const hasProfile = txn.profiles && Object.keys(txn.profiles).length > 0;
+        
         acc[uid] = {
           user_id: uid,
-          full_name: txn.profiles?.full_name || 'Unknown',
-          email: txn.profiles?.email || 'No email',
+          full_name: hasProfile ? (txn.profiles.full_name || 'Unknown') : 'Guest Customer',
+          email: hasProfile ? (txn.profiles.email || 'No email') : 'Guest (no account)',
           embedly_wallet_id: txn.profiles?.embedly_wallet_id || 'N/A',
           wallet_balance: txn.profiles?.wallet_balance || 0,
+          is_guest: !hasProfile,
           transactions: []
         };
       }
