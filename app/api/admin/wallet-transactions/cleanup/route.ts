@@ -196,10 +196,41 @@ export async function GET(request: NextRequest) {
       userGroups: Object.values(userGroups)
     };
 
+    // Detect potential duplicate transactions
+    const duplicates: any[] = [];
+    const transactionGroups = transactions?.reduce((acc: any, t: any) => {
+      const key = `${t.user_id}-${t.amount}`;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(t);
+      return acc;
+    }, {});
+
+    Object.values(transactionGroups || {}).forEach((group: any) => {
+      if (Array.isArray(group) && group.length > 1) {
+        // Find the oldest completed one (likely legitimate)
+        const completed = group.filter((t: any) => t.status === 'completed').sort((a: any, b: any) => 
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+        
+        // Mark pending ones as potential duplicates
+        const pending = group.filter((t: any) => t.status === 'pending');
+        if (completed.length > 0 && pending.length > 0) {
+          pending.forEach((p: any) => {
+            duplicates.push({
+              ...p,
+              is_duplicate: true,
+              likely_legitimate_transaction_id: completed[0].id
+            });
+          });
+        }
+      }
+    });
+
     return NextResponse.json({
       success: true,
       analysis,
-      transactions: transactions || []
+      transactions: transactions || [],
+      duplicates
     });
 
   } catch (error) {
@@ -328,6 +359,92 @@ export async function POST(request: NextRequest) {
         success: true,
         message: `Refunded ₦${amount.toLocaleString()} to ${userProfile.full_name || userProfile.email}`,
         transaction: creditTransaction
+      });
+    }
+
+    if (action === 'refund_and_delete_pending') {
+      // Refund AND delete a specific pending transaction (for duplicates)
+      if (!transaction_id) {
+        return NextResponse.json(
+          { error: 'transaction_id is required' },
+          { status: 400 }
+        );
+      }
+
+      // Get the transaction details
+      const { data: transaction } = await admin
+        .from('wallet_transactions')
+        .select('*')
+        .eq('id', transaction_id)
+        .single();
+
+      if (!transaction) {
+        return NextResponse.json(
+          { error: 'Transaction not found' },
+          { status: 404 }
+        );
+      }
+
+      // Get user's profile
+      const { data: userProfile } = await admin
+        .from('profiles')
+        .select('full_name, embedly_wallet_id, email')
+        .eq('id', transaction.user_id)
+        .single();
+
+      if (userProfile?.embedly_wallet_id) {
+        // Get current wallet balance
+        const wallet = await embedlyClient.getWalletById(userProfile.embedly_wallet_id);
+        const currentBalance = wallet.availableBalance;
+
+        // Create credit transaction
+        const { data: creditTransaction, error: creditError } = await admin
+          .from('wallet_transactions')
+          .insert({
+            user_id: transaction.user_id,
+            type: 'credit',
+            amount: transaction.amount,
+            currency: 'NGN',
+            reference: `REFUND-DUPLICATE-${Date.now()}`,
+            description: `Refund for duplicate payment - Deleted pending transaction ${transaction.reference}`,
+            status: 'completed',
+            balance_before: currentBalance,
+            balance_after: currentBalance + transaction.amount,
+            metadata: {
+              refund_type: 'duplicate_payment_correction',
+              refunded_by: user.id,
+              deleted_transaction_id: transaction_id
+            }
+          })
+          .select()
+          .single();
+
+        if (creditError || !creditTransaction) {
+          console.error('Error creating refund transaction:', creditError);
+          return NextResponse.json(
+            { error: 'Failed to create refund transaction' },
+            { status: 500 }
+          );
+        }
+
+        // Update profile wallet balance
+        await admin
+          .from('profiles')
+          .update({
+            wallet_balance: currentBalance + transaction.amount
+          })
+          .eq('id', transaction.user_id);
+      }
+
+      // Delete the pending transaction
+      await admin
+        .from('wallet_transactions')
+        .delete()
+        .eq('id', transaction_id);
+
+      return NextResponse.json({
+        success: true,
+        message: `Refunded ₦${transaction.amount.toLocaleString()} and deleted duplicate pending transaction`
       });
     }
 
