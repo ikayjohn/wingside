@@ -332,8 +332,6 @@ export async function POST(request: NextRequest) {
           reference: `REFUND-${Date.now()}`,
           description: `Refund for duplicate payment - Admin correction`,
           status: 'completed',
-          balance_before: currentBalance,
-          balance_after: currentBalance + amount,
           metadata: {
             refund_type: 'admin_correction',
             refunded_by: user.id
@@ -422,8 +420,6 @@ export async function POST(request: NextRequest) {
               reference: `REFUND-DUPLICATE-${Date.now()}`,
               description: `Refund for duplicate payment - Deleted pending transaction ${transaction.reference}`,
               status: 'completed',
-              balance_before: currentBalance,
-              balance_after: currentBalance + transaction.amount,
               metadata: {
                 refund_type: 'duplicate_payment_correction',
                 refunded_by: user.id,
@@ -467,8 +463,6 @@ export async function POST(request: NextRequest) {
               reference: `REFUND-DUPLICATE-${Date.now()}`,
               description: `Refund for duplicate payment - Admin correction (fallback)`,
               status: 'completed',
-              balance_before: userProfile.wallet_balance || 0,
-              balance_after: newBalance,
               metadata: {
                 refund_type: 'admin_correction_fallback',
                 refunded_by: user.id,

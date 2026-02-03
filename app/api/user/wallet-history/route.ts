@@ -88,10 +88,10 @@ export async function GET() {
       }
     }) || []
 
-    // Get current balance from the latest transaction
-    const currentBalance = transactions && transactions.length > 0
+    // Get current balance - check if transactions have balance_after field, else use profile balance
+    const currentBalance = (transactions && transactions.length > 0 && transactions[0]?.balance_after)
       ? transactions[0].balance_after
-      : 0
+      : 0;
 
     return NextResponse.json({
       transactions: formattedTransactions,
