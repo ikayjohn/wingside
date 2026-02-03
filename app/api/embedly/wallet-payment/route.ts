@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import embedlyClient from '@/lib/embedly/client';
 import { csrfProtection } from '@/lib/csrf';
 
@@ -73,6 +74,9 @@ export async function POST(request: NextRequest) {
     let walletTransaction: any = null; // Declare outside try block for error handling access
     let transactionReference: string = '';
     let finalWalletBalance: number = 0; // Track actual balance after transfer
+
+    // Initialize admin client for critical operations
+    const admin = createAdminClient();
 
     try {
       const wallet = await embedlyClient.getWalletById(profile.embedly_wallet_id);
@@ -171,14 +175,14 @@ export async function POST(request: NextRequest) {
             console.log(`✅ Transaction ${walletTransaction.id} marked as completed`);
           }
 
-          // Fetch updated wallet balance from Embedly and update profile
+          // Fetch updated wallet balance from Embedly and update profile using admin client
           try {
             const updatedWallet = await embedlyClient.getWalletById(profile.embedly_wallet_id);
             finalWalletBalance = updatedWallet.availableBalance; // Store actual balance
             console.log(`💰 New wallet balance: ₦${finalWalletBalance}`);
 
-            // Update profile wallet_balance in Supabase
-            const { error: profileUpdateError } = await supabase
+            // Update profile wallet_balance in Supabase using admin client
+            const { error: profileUpdateError } = await admin
               .from('profiles')
               .update({
                 wallet_balance: finalWalletBalance
@@ -199,8 +203,8 @@ export async function POST(request: NextRequest) {
         } catch (transferError) {
           console.error('❌ Wallet transfer failed:', transferError);
 
-          // Mark transaction as failed
-          await supabase
+          // Mark transaction as failed using admin client
+          await admin
             .from('wallet_transactions')
             .update({
               status: 'failed',
@@ -218,8 +222,8 @@ export async function POST(request: NextRequest) {
       } else {
         console.warn('⚠️ Merchant wallet not configured. Skipping actual transfer.');
 
-        // Mark transaction as failed
-        await supabase
+        // Mark transaction as failed using admin client
+        await admin
           .from('wallet_transactions')
           .update({
             status: 'failed',
@@ -235,8 +239,8 @@ export async function POST(request: NextRequest) {
         throw new Error('Merchant wallet not configured. Please set EMBEDLY_MERCHANT_WALLET_ID in environment variables.');
       }
 
-      // Update order status to paid
-      const { data: order, error: orderUpdateError } = await supabase
+      // Update order status to paid using admin client to bypass RLS
+      const { data: order, error: orderUpdateError } = await admin
         .from('orders')
         .update({
           payment_status: 'paid',
@@ -259,11 +263,11 @@ export async function POST(request: NextRequest) {
 
       console.log(`✅ Order ${order_id} marked as paid and confirmed`);
 
-      // Award purchase points (₦100 = 1 point)
+      // Award purchase points (₦100 = 1 point) using admin client
       const purchasePoints = Math.floor(amount / 100);
 
       if (purchasePoints > 0) {
-        const { error: pointsError } = await supabase.rpc('award_points', {
+        const { error: pointsError } = await admin.rpc('award_points', {
           p_user_id: user.id,
           p_reward_type: 'purchase',
           p_points: purchasePoints,
@@ -279,8 +283,8 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Check and award first order bonus
-      const { data: existingClaim } = await supabase
+      // Check and award first order bonus using admin client
+      const { data: existingClaim } = await admin
         .from('reward_claims')
         .select('id')
         .eq('user_id', user.id)
@@ -289,7 +293,7 @@ export async function POST(request: NextRequest) {
 
       if (!existingClaim) {
         // Award first order bonus (15 points)
-        const { error: firstOrderError } = await supabase.rpc('claim_reward', {
+        const { error: firstOrderError } = await admin.rpc('claim_reward', {
           p_user_id: user.id,
           p_reward_type: 'first_order',
           p_points: 15,
@@ -316,11 +320,11 @@ export async function POST(request: NextRequest) {
     } catch (embedlyError) {
       console.error('Embedly wallet payment error:', embedlyError);
 
-      // If transaction was created but failed, mark it as failed
+      // If transaction was created but failed, mark it as failed using admin client
       // This ensures financial records accurately reflect failed payments
       if (walletTransaction) {
         try {
-          await supabase
+          await admin
             .from('wallet_transactions')
             .update({
               status: 'failed',
