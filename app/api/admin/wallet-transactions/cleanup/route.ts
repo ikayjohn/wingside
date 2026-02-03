@@ -53,8 +53,20 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching cleanup candidates:', error);
+      
+      // Check if table doesn't exist
+      if (error.code === '42P01') {
+        return NextResponse.json(
+          { 
+            error: 'Wallet transactions table not found',
+            details: 'The wallet_transactions table does not exist in the database'
+          },
+          { status: 404 }
+        );
+      }
+      
       return NextResponse.json(
-        { error: 'Failed to fetch transactions' },
+        { error: 'Failed to fetch transactions', details: error.message },
         { status: 500 }
       );
     }
@@ -65,9 +77,9 @@ export async function GET(request: NextRequest) {
       if (!acc[uid]) {
         acc[uid] = {
           user_id: uid,
-          email: txn.profiles?.email,
-          embedly_wallet_id: txn.profiles?.embedly_wallet_id,
-          wallet_balance: txn.profiles?.wallet_balance,
+          email: txn.profiles?.email || 'Unknown',
+          embedly_wallet_id: txn.profiles?.embedly_wallet_id || 'N/A',
+          wallet_balance: txn.profiles?.wallet_balance || 0,
           transactions: []
         };
       }
