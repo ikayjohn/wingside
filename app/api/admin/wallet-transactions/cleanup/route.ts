@@ -71,38 +71,72 @@ export async function GET(request: NextRequest) {
       error = fallbackResult.error;
     }
 
-    // For guest orders (no user_id), fetch order details to get customer info
+    // For transactions without proper profile join, fetch order details
     if (transactions && transactions.length > 0) {
-      const guestOrderIds = transactions
-        .filter((t: any) => !t.user_id || t.user_id === null)
+      const orderIds = transactions
+        .filter((t: any) => t.metadata?.order_id)
         .map((t: any) => t.metadata?.order_id)
         .filter(Boolean);
 
-      if (guestOrderIds.length > 0) {
+      if (orderIds.length > 0) {
+        // Fetch orders with user_id to get actual account information
         const { data: orders } = await admin
           .from('orders')
-          .select('id, customer_name, customer_email')
-          .in('id', guestOrderIds);
+          .select('id, customer_name, customer_email, user_id')
+          .in('id', orderIds);
 
-        // Create a map of order_id -> customer info
-        const orderCustomerMap = (orders || []).reduce((acc: any, order: any) => {
-          acc[order.id] = {
-            customer_name: order.customer_name,
-            customer_email: order.customer_email
-          };
+        // Create maps for quick lookup
+        const orderMap = (orders || []).reduce((acc: any, order: any) => {
+          acc[order.id] = order;
           return acc;
         }, {});
 
-        // Enhance transactions with customer info from orders
+        // Get user_ids from orders to fetch profiles
+        const userIds = orders
+          ?.map((o: any) => o.user_id)
+          .filter(Boolean);
+
+        let profileMap: any = {};
+        if (userIds && userIds.length > 0) {
+          const { data: profiles } = await admin
+            .from('profiles')
+            .select('id, full_name, email, embedly_wallet_id, wallet_balance')
+            .in('id', userIds);
+
+          profileMap = (profiles || []).reduce((acc: any, profile: any) => {
+            acc[profile.id] = profile;
+            return acc;
+          }, {});
+        }
+
+        // Enhance transactions with actual user/profile info
         transactions = transactions.map((txn: any) => {
-          if (!txn.user_id && txn.metadata?.order_id) {
-            const customerInfo = orderCustomerMap[txn.metadata.order_id];
-            if (customerInfo) {
+          // If no profile from join but has order_id, try to get user info
+          if ((!txn.profiles || Object.keys(txn.profiles).length === 0) && txn.metadata?.order_id) {
+            const order = orderMap[txn.metadata.order_id];
+            
+            if (order) {
+              // If order has user_id, get their profile
+              if (order.user_id && profileMap[order.user_id]) {
+                const profile = profileMap[order.user_id];
+                return {
+                  ...txn,
+                  user_id: order.user_id, // Update with actual user_id
+                  profiles: {
+                    full_name: profile.full_name,
+                    email: profile.email,
+                    embedly_wallet_id: profile.embedly_wallet_id,
+                    wallet_balance: profile.wallet_balance
+                  }
+                };
+              }
+              
+              // Otherwise use order customer info as guest
               return {
                 ...txn,
                 profiles: {
-                  full_name: customerInfo.customer_name,
-                  email: customerInfo.customer_email
+                  full_name: order.customer_name,
+                  email: order.customer_email
                 }
               };
             }
