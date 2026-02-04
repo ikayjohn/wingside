@@ -157,14 +157,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Summary
-    const passCount = results.tests.filter(t => t.status === 'PASS').length
-    const failCount = results.tests.filter(t => t.status === 'FAIL').length
+    const passCount = results.tests.filter((t: any) => t.status === 'PASS').length
+    const failCount = results.tests.filter((t: any) => t.status === 'FAIL').length
 
     results.summary = {
       total: results.tests.length,
       passed: passCount,
       failed: failCount,
-      warnings: results.tests.filter(t => t.status === 'WARN' || t.status === 'SKIP').length
+      warnings: results.tests.filter((t: any) => t.status === 'WARN' || t.status === 'SKIP').length
     }
 
     if (results.criticalErrors.length > 0) {
