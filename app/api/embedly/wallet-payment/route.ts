@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
       // Create local wallet transaction record (debit) with PENDING status
       transactionReference = `ORDER-${order_id}-${Date.now()}`;
       const initialBalance = wallet.availableBalance;
-      const { data: transaction, error: transactionError } = await supabase
+      const { data: transaction, error: transactionError } = await admin
         .from('wallet_transactions')
         .insert({
           user_id: user.id,
