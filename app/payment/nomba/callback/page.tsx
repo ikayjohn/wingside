@@ -28,8 +28,8 @@ function NombaPaymentCallbackContent() {
 
   const verifyPayment = async () => {
     try {
-      // Step 1: Check order status immediately
-      const orderResponse = await fetch(`/api/orders/${orderId}`);
+      // Step 1: Check order status immediately by ID
+      const orderResponse = await fetch(`/api/orders/get-by-id?orderId=${orderId}`);
       const orderData = await orderResponse.json();
 
       if (!orderData.order) {
@@ -52,9 +52,9 @@ function NombaPaymentCallbackContent() {
         return;
       }
 
-      // Step 3: Not paid yet - poll for webhook processing (30 seconds max)
+      // Step 3: Not paid yet - poll for webhook processing (2 minutes max)
       console.log('[Callback] Order not paid yet, waiting for webhook...');
-      const maxAttempts = 15; // 15 attempts × 2 seconds = 30 seconds
+      const maxAttempts = 60; // 60 attempts × 2 seconds = 2 minutes
       let attempts = 0;
 
       while (attempts < maxAttempts) {
@@ -62,7 +62,7 @@ function NombaPaymentCallbackContent() {
         await new Promise(resolve => setTimeout(resolve, 2000));
 
         // Check order status
-        const checkResponse = await fetch(`/api/orders/${orderId}`);
+        const checkResponse = await fetch(`/api/orders/get-by-id?orderId=${orderId}`);
         const checkData = await checkResponse.json();
 
         if (checkData.order?.payment_status === 'paid' || checkData.order?.status === 'confirmed') {
@@ -83,10 +83,38 @@ function NombaPaymentCallbackContent() {
         console.log(`[Callback] Attempt ${attempts}/${maxAttempts} - still waiting...`);
       }
 
-      // Step 4: After 30 seconds, show pending message (don't cancel!)
+      // Step 4: After 2 minutes, check if webhook actually was called
       console.log('[Callback] Timeout waiting for webhook');
+      
+      // Final check - maybe webhook processed right at the end
+      const finalResponse = await fetch(`/api/orders/get-by-id?orderId=${orderId}`);
+      const finalData = await finalResponse.json();
+
+      if (finalData.order?.payment_status === 'paid' || finalData.order?.status === 'confirmed') {
+        console.log('[Callback] Webhook processed at the last moment!');
+        setPaymentStatus('success');
+        setMessage('Payment successful! Your order has been confirmed.');
+        setOrderNumber(finalData.order.order_number);
+        setVerifying(false);
+
+        setTimeout(() => {
+          router.push(`/order-confirmation?orderNumber=${finalData.order.order_number}`);
+        }, 2000);
+        return;
+      }
+
+      // If still not paid, show helpful error
       setPaymentStatus('error');
-      setMessage('Payment is being processed. You will receive a confirmation email shortly. Please check your order history or contact support if you don\'t receive confirmation within 5 minutes.');
+      setOrderNumber(finalData.order?.order_number);
+      
+      // Provide more specific error message
+      if (finalData.order?.payment_reference && finalData.order?.payment_gateway === 'nomba') {
+        // Payment was initiated with Nomba but webhook hasn't processed it
+        setMessage('Payment is being processed. Your order has been received! Please check your email for confirmation or view your order history in a few minutes. Order: ' + (finalData.order.order_number || orderId));
+      } else {
+        setMessage('Unable to verify payment status immediately. Please check your email for confirmation or contact support with your order number: ' + (finalData.order?.order_number || orderId));
+      }
+      
       setVerifying(false);
 
       // DON'T cancel the order - the webhook might still process it!
