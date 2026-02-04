@@ -81,10 +81,38 @@ export async function POST(request: NextRequest) {
     try {
       const wallet = await embedlyClient.getWalletById(profile.embedly_wallet_id);
 
-      // Check if wallet is active
+      // SYNC: Always sync wallet status with our database before checking
+      // This ensures our database reflects the true state from Embedly
       const isWalletActive =
         wallet.isActive !== false &&
         (!wallet.status || wallet.status.toLowerCase() === 'active');
+
+      // Update profile with latest wallet data from Embedly
+      try {
+        const syncData: any = {
+          wallet_balance: wallet.availableBalance,
+          is_wallet_active: isWalletActive,
+          last_wallet_sync: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+
+        // Update virtual account info if available
+        if (wallet.virtualAccount?.accountNumber) {
+          syncData.bank_account = wallet.virtualAccount.accountNumber;
+          syncData.bank_code = wallet.virtualAccount.bankCode;
+          syncData.bank_name = wallet.virtualAccount.bankName;
+        }
+
+        await admin
+          .from('profiles')
+          .update(syncData)
+          .eq('id', user.id);
+
+        console.log(`✅ Synced wallet status: active=${isWalletActive}, balance=${wallet.availableBalance}`);
+      } catch (syncError) {
+        console.error('⚠️  Failed to sync wallet status:', syncError);
+        // Don't fail the payment if sync fails - we still have fresh data from Embedly
+      }
 
       if (!isWalletActive) {
         console.error(`Wallet ${profile.embedly_wallet_id} is inactive. Status:`, wallet.status || wallet.isActive);
