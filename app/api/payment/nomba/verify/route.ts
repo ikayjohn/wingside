@@ -6,12 +6,13 @@ interface NombaVerifyResponse {
   code: string
   description: string
   data?: {
-    results: Array<{
-      id: string
-      status: string
-      amount: number
-      transactionId: string
-    }>
+    id: string
+    status: string
+    amount: number
+    timeCreated: string
+    type: string
+    merchantTxRef?: string
+    gatewayMessage?: string
   }
 }
 
@@ -75,17 +76,18 @@ export async function POST(request: NextRequest) {
 
     const accessToken = authData.data.access_token
 
-    // Verify transaction
-    const verifyResponse = await fetch('https://api.nomba.com/v1/transactions/accounts', {
-      method: 'POST',
+    // Verify transaction using GET endpoint for single transaction lookup
+    // Official API: GET /v1/transactions/accounts/single?transactionRef={ref}
+    const verifyUrl = `https://api.nomba.com/v1/transactions/accounts/single?transactionRef=${encodeURIComponent(transactionRef)}`
+    console.log('[Nomba Verify] Fetching transaction from:', verifyUrl)
+
+    const verifyResponse = await fetch(verifyUrl, {
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
         'accountId': accountId,
       },
-      body: JSON.stringify({
-        transactionRef,
-      }),
     })
 
     const verifyData: NombaVerifyResponse = await verifyResponse.json()
@@ -94,7 +96,7 @@ export async function POST(request: NextRequest) {
       code: verifyData.code,
       description: verifyData.description,
       transactionRef,
-      resultsCount: verifyData.data?.results?.length || 0
+      hasData: !!verifyData.data
     })
 
     if (verifyData.code !== '00') {
@@ -109,7 +111,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const transaction = verifyData.data?.results?.[0]
+    const transaction = verifyData.data
 
     if (!transaction) {
       console.error('[Nomba Verify] ❌ Transaction not found for ref:', transactionRef)
@@ -124,34 +126,25 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[Nomba Verify] Transaction found:', {
-      id: transaction.transactionId,
+      id: transaction.id,
       status: transaction.status,
-      amount: transaction.amount
+      amount: transaction.amount,
+      type: transaction.type
     })
 
-    // Validate transaction status with clear primary/fallback logic
-    // Reference: Nomba API documentation specifies 'SUCCESSFUL' as primary success status
+    // Validate transaction status based on official Nomba API specification
+    // Official statuses: NEW, PENDING_PAYMENT, PAYMENT_SUCCESSFUL, PAYMENT_FAILED, PENDING_BILLING, SUCCESS, REFUND
     const statusUpper = transaction.status.toUpperCase()
 
-    // Primary success status (per Nomba documentation)
-    const PRIMARY_SUCCESS_STATUS = 'SUCCESSFUL'
+    // Success statuses per official API specification
+    const SUCCESS_STATUSES = ['SUCCESS', 'PAYMENT_SUCCESSFUL']
 
-    // Known fallback statuses (variants observed in different environments/API versions)
-    // These generate warnings to help identify if Nomba changes their API response
-    const FALLBACK_SUCCESS_STATUSES = ['SUCCESS', 'COMPLETED', 'APPROVED']
+    // Known failure statuses
+    const FAILURE_STATUSES = ['FAILED', 'PAYMENT_FAILED', 'DECLINED', 'REJECTED', 'CANCELLED', 'EXPIRED']
 
-    // Known failure statuses (explicit rejection)
-    const FAILURE_STATUSES = ['FAILED', 'DECLINED', 'REJECTED', 'CANCELLED', 'EXPIRED']
-
-    // Check primary success status
-    if (statusUpper === PRIMARY_SUCCESS_STATUS) {
-      console.log('[Nomba Verify] ✅ Payment successful (primary status)')
-    }
-    // Check fallback success statuses
-    else if (FALLBACK_SUCCESS_STATUSES.includes(statusUpper)) {
-      console.warn(`[Nomba Verify] ⚠️  Payment successful but using non-standard status: "${transaction.status}"`)
-      console.warn(`[Nomba Verify] Expected: "${PRIMARY_SUCCESS_STATUS}", Got: "${transaction.status}"`)
-      console.warn(`[Nomba Verify] Please verify Nomba API documentation - status format may have changed`)
+    // Check success statuses
+    if (SUCCESS_STATUSES.includes(statusUpper)) {
+      console.log('[Nomba Verify] ✅ Payment successful')
     }
     // Check known failure statuses
     else if (FAILURE_STATUSES.includes(statusUpper)) {
@@ -162,10 +155,10 @@ export async function POST(request: NextRequest) {
         message: `Payment ${transaction.status.toLowerCase()}. Please try again or contact support.`,
       })
     }
-    // Unknown status (pending, processing, or new status)
+    // Unknown or pending status
     else {
       console.error(`[Nomba Verify] ⚠️  UNKNOWN STATUS: "${transaction.status}"`)
-      console.error(`[Nomba Verify] Transaction ID: ${transaction.transactionId}`)
+      console.error(`[Nomba Verify] Transaction ID: ${transaction.id}`)
       console.error(`[Nomba Verify] Reference: ${transactionRef}`)
       console.error(`[Nomba Verify] This status is not in our known list - manual review required`)
 

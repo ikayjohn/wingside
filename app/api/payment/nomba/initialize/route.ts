@@ -190,11 +190,11 @@ export async function POST(request: NextRequest) {
     const orderReference = `WS-${order.order_number}-${Date.now()}`
     console.log(`[Nomba Initialize ${requestId}] Order reference: ${orderReference}`)
 
-    // IMPORTANT: Nomba expects amount in naira format (NOT kobo like Paystack!)
-    // Format as string with 2 decimal places (e.g., "250.00" for ₦250)
+    // IMPORTANT: Nomba expects amount as a number in naira format (NOT kobo like Paystack!)
+    // Official API requires: type: number, format: double (e.g., 2500.00 for ₦2,500)
     // Use order.total (from database) instead of amount parameter to prevent manipulation
-    const amountInNaira = Number(order.total).toFixed(2)
-    console.log(`[Nomba Initialize ${requestId}] Amount: ₦${order.total} → "${amountInNaira}" (naira format)`)
+    const amountInNaira = Number(order.total)
+    console.log(`[Nomba Initialize ${requestId}] Amount: ₦${order.total} → ${amountInNaira} (number type)`)
 
     // Create checkout order
     console.log(`[Nomba Initialize ${requestId}] Creating checkout order...`)
@@ -211,8 +211,9 @@ export async function POST(request: NextRequest) {
           customerId: order_id,
           callbackUrl,
           customerEmail: email,
-          amount: amountInNaira, // Send as string in naira format with 2 decimals
+          amount: amountInNaira, // Send as number (format: double) per Nomba API spec
           currency: 'NGN',
+          accountId: accountId, // Specify target account for funds deposit
         },
         tokenizeCard: false,
       }),

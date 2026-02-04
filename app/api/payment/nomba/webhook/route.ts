@@ -17,6 +17,9 @@ interface NombaWebhookEvent {
       transactionAmount: number
       fee: number
       time: string
+      cardIssuer?: string
+      originatingFrom?: string
+      merchantTxRef?: string
     }
     order: {
       orderReference: string
@@ -25,12 +28,31 @@ interface NombaWebhookEvent {
       currency: string
       customerId: string
       callbackUrl: string
+      orderId?: string
+      accountId?: string
+      cardType?: string
+      cardLast4Digits?: string
+      cardCurrency?: string
+      isTokenizedCardPayment?: string
+      paymentMethod?: string
     }
     merchant?: {
       userId: string
       walletId: string
       walletBalance: number
     }
+    tokenizedCardData?: {
+      tokenKey: string
+      cardType: string
+      tokenExpiryYear: string
+      tokenExpiryMonth: string
+      cardPan: string
+    }
+    customer?: {
+      billerId: string
+      productId: string
+    }
+    terminal?: Record<string, unknown>
   }
 }
 
@@ -46,11 +68,36 @@ export async function POST(request: NextRequest) {
 
     // Validate webhook signature (if configured)
     const webhookSecret = process.env.NOMBA_WEBHOOK_SECRET
+    // TEMPORARY: Disable signature verification for Nomba dashboard setup
+    const bypassVerification = process.env.NOMBA_WEBHOOK_BYPASS_VERIFICATION === 'true'
+
     // Nomba sends signature in 'nomba-signature' header (not 'x-nomba-signature')
     const signature = request.headers.get('nomba-signature') || request.headers.get('nomba-sig-value')
     const timestamp = request.headers.get('nomba-timestamp')
+    const signatureAlgorithm = request.headers.get('nomba-signature-algorithm')
+    const signatureVersion = request.headers.get('nomba-signature-version')
 
-    if (webhookSecret) {
+    // Detect Nomba's webhook validation test (missing signature but has other headers)
+    const isNombaValidationTest = !signature && (
+      request.headers.get('user-agent')?.includes('nomba') ||
+      request.headers.get('nomba-signature-algorithm') ||
+      request.headers.get('nomba-signature-version') ||
+      (rawBody && rawBody.length < 100)
+    )
+
+    if (isNombaValidationTest) {
+      console.log('🔍 Nomba webhook validation test detected - accepting request')
+      return NextResponse.json({
+        status: 'active',
+        message: 'Webhook endpoint is active and ready to receive webhooks'
+      })
+    }
+
+    if (bypassVerification) {
+      console.warn('⚠️  WEBHOOK SIGNATURE VERIFICATION BYPASSED - Set up mode only!')
+      console.warn('⚠️  Remember to remove NOMBA_WEBHOOK_BYPASS_VERIFICATION after setup!')
+      // Continue to webhook processing without verification
+    } else if (webhookSecret) {
       if (!signature) {
         console.error('Missing Nomba webhook signature')
         console.error('Headers received:', Object.fromEntries(request.headers.entries()))
@@ -59,6 +106,56 @@ export async function POST(request: NextRequest) {
           { status: 401 }
         )
       }
+
+      // Validate signature algorithm
+      if (signatureAlgorithm !== 'HmacSHA256') {
+        console.error('Unsupported signature algorithm:', signatureAlgorithm)
+        return NextResponse.json(
+          { error: 'Unsupported signature algorithm' },
+          { status: 401 }
+        )
+      }
+
+      // Validate signature version
+      if (signatureVersion !== '1.0.0') {
+        console.error('Unsupported signature version:', signatureVersion)
+        return NextResponse.json(
+          { error: 'Unsupported signature version' },
+          { status: 401 }
+        )
+      }
+
+      // Validate timestamp (required header per Nomba docs)
+      if (!timestamp) {
+        console.error('Missing nomba-timestamp header (required per Nomba webhook spec)')
+        return NextResponse.json(
+          { error: 'Missing required timestamp header' },
+          { status: 401 }
+        )
+      }
+
+      // Validate timestamp to prevent replay attacks (reject if > 5 minutes old)
+      const webhookTime = new Date(timestamp).getTime()
+      const now = Date.now()
+      const timeDiff = Math.abs(now - webhookTime)
+
+      if (isNaN(webhookTime)) {
+        console.error('Invalid timestamp format:', timestamp)
+        return NextResponse.json(
+          { error: 'Invalid timestamp format' },
+          { status: 401 }
+        )
+      }
+
+      if (timeDiff > 5 * 60 * 1000) {
+        console.error('Timestamp expired:', timestamp, 'Time diff:', timeDiff, 'ms')
+        return NextResponse.json(
+          { error: 'Timestamp expired' },
+          { status: 401 }
+        )
+      }
+
+      console.log('✅ Timestamp validated:', { timestamp, age: `${Math.round(timeDiff / 1000)}s` })
 
       // Verify HMAC signature using Nomba's format
       // Nomba signature verification: HMAC-SHA256 of the raw request body
@@ -125,7 +222,8 @@ export async function POST(request: NextRequest) {
       }
 
       console.log('✅ Nomba webhook signature verified successfully')
-    } else {
+    } else if (!bypassVerification) {
+      // No bypass and no webhook secret
       // In production, require webhook secret
       if (process.env.NODE_ENV === 'production') {
         console.error('❌ NOMBA_WEBHOOK_SECRET not configured in PRODUCTION')
@@ -224,9 +322,10 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Handle different payload structures
-      const orderReference = data.order?.orderReference || (data as any).orderReference || null
-      const transactionId = data.transaction?.transactionId || (data as any).transactionId || null
+      // For checkout payments, orderReference is in data.order.orderReference
+      // Other transaction types (transfers, POS) may use data.transaction.merchantTxRef
+      const orderReference = data.order?.orderReference
+      const transactionId = data.transaction?.transactionId
 
       console.log(`Payment successful for order reference: ${orderReference}`)
       console.log(`Transaction ID: ${transactionId}`)
