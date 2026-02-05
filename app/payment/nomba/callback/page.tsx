@@ -52,6 +52,11 @@ function NombaPaymentCallbackContent() {
         return;
       }
 
+      // Step 2.5: SKIP premature verification - let webhook process first
+      // The webhook is much faster and more reliable than calling Nomba's verify API
+      // We'll only verify with Nomba API if webhook hasn't processed after 2 minutes
+      console.log('[Callback] Skipping premature verification - waiting for webhook...');
+
       // Step 3: Not paid yet - poll for webhook processing (2 minutes max)
       console.log('[Callback] Order not paid yet, waiting for webhook...');
       const maxAttempts = 60; // 60 attempts × 2 seconds = 2 minutes
@@ -85,7 +90,7 @@ function NombaPaymentCallbackContent() {
 
       // Step 4: After 2 minutes, check if webhook actually was called
       console.log('[Callback] Timeout waiting for webhook');
-      
+
       // Final check - maybe webhook processed right at the end
       const finalResponse = await fetch(`/api/orders/get-by-id?orderId=${orderId}`);
       const finalData = await finalResponse.json();
@@ -103,18 +108,50 @@ function NombaPaymentCallbackContent() {
         return;
       }
 
-      // If still not paid, show helpful error
+      // Step 5: Check if payment was abandoned (only after webhook timeout)
+      if (finalData.order?.payment_reference && finalData.order?.payment_gateway === 'nomba') {
+        console.log('[Callback] Webhook timed out - checking if payment was abandoned...');
+        try {
+          const verifyResponse = await fetch('/api/payment/nomba/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transactionRef: finalData.order.payment_reference })
+          });
+          const verifyData = await verifyResponse.json();
+
+          // If Nomba API returns "not found", payment was never completed
+          if (verifyData.error?.includes('not found') || verifyData.code === '404') {
+            console.log('[Callback] Payment was abandoned - transaction not found in Nomba');
+
+            // Mark order as abandoned
+            await fetch(`/api/orders/${orderId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                status: 'cancelled',
+                payment_status: 'abandoned'
+              })
+            });
+
+            setPaymentStatus('failed');
+            setMessage('Payment was not completed. Your order has been cancelled. You can try again or start a new order.');
+            setOrderNumber(finalData.order.order_number);
+            setVerifying(false);
+            return;
+          }
+        } catch (verifyError) {
+          console.error('[Callback] Error checking abandoned payment:', verifyError);
+          // Continue to show processing message
+        }
+      }
+
+      // If still not paid, show helpful "processing" message
       setPaymentStatus('error');
       setOrderNumber(finalData.order?.order_number);
-      
-      // Provide more specific error message
-      if (finalData.order?.payment_reference && finalData.order?.payment_gateway === 'nomba') {
-        // Payment was initiated with Nomba but webhook hasn't processed it
-        setMessage('Payment is being processed. Your order has been received! Please check your email for confirmation or view your order history in a few minutes. Order: ' + (finalData.order.order_number || orderId));
-      } else {
-        setMessage('Unable to verify payment status immediately. Please check your email for confirmation or contact support with your order number: ' + (finalData.order?.order_number || orderId));
-      }
-      
+
+      // Payment is likely processing or webhook is delayed
+      setMessage('Payment is being processed. Your order has been received! Please check your email for confirmation or view your order history in a few minutes. Order: ' + (finalData.order?.order_number || orderId));
+
       setVerifying(false);
 
       // DON'T cancel the order - the webhook might still process it!
