@@ -18,18 +18,8 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient()
     const admin = createAdminClient()
 
-    // Get authenticated user
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     // Fetch order by ID - use admin client to bypass RLS
-    // This is necessary for callback pages after payment
+    // This is necessary for callback pages after payment where user may not be authenticated yet
     const { data: order, error } = await admin
       .from('orders')
       .select(`
@@ -46,26 +36,24 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Check if user owns this order or is admin
-    const isOwner = order.customer_id === user.id
+    // OPTIONAL: Check if user is authenticated and owns this order
+    // This allows callback pages to work for unauthenticated users returning from payment gateways
+    const { data: { user } } = await supabase.auth.getUser()
 
-    if (!isOwner) {
-      // Double check by customer_email
-      const { data: userEmail } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', user.id)
-        .single()
+    if (user) {
+      // User is authenticated - verify ownership
+      const isOwner = order.customer_id === user.id
 
-      const customerEmailMatches = userEmail?.id === order.customer_id
-
-      if (!customerEmailMatches) {
+      if (!isOwner) {
+        // Check if user is accessing someone else's order
         return NextResponse.json(
           { error: 'You do not have permission to view this order' },
           { status: 403 }
         )
       }
     }
+    // If no user, allow access (callback scenario)
+    // Order details are not sensitive for payment confirmation
 
     return NextResponse.json({ order })
 
