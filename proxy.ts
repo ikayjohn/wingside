@@ -11,6 +11,9 @@ export async function proxy(request: NextRequest) {
     '/api/auth',
     '/api/validate-access-code',  // IMPORTANT: Skip maintenance check for access code validation!
     '/api/maintenance-settings',  // Public endpoint for maintenance page settings
+    '/api/payment/nomba/webhook',  // CRITICAL: Allow Nomba webhooks during maintenance
+    '/api/payment/paystack/webhook',  // CRITICAL: Allow Paystack webhooks during maintenance
+    '/api/webhooks',  // CRITICAL: Allow all webhook endpoints during maintenance
     '/login',
     '/signup',
     '/forgot-password',
