@@ -2,6 +2,8 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   // Standard Next.js build (for Vercel, Node.js, or Hostinger VPS)
+  // IMPORTANT: trailingSlash causes webhook issues! API routes should NOT redirect.
+  // Nomba webhook URL must include trailing slash: /api/payment/nomba/webhook/
   trailingSlash: true,
 
   // Redirects for unified authentication
