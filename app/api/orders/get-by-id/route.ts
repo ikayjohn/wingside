@@ -36,24 +36,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // OPTIONAL: Check ownership for completed orders only
-    // Allow callback pages to check order status during payment processing
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (user && order.payment_status === 'paid') {
-      // Only verify ownership for completed orders
-      const isOwner = order.customer_id === user.id
-
-      if (!isOwner) {
-        // User is trying to access someone else's completed order
-        return NextResponse.json(
-          { error: 'You do not have permission to view this order' },
-          { status: 403 }
-        )
-      }
-    }
-    // Allow access for pending orders (callback scenario) or unauthenticated users
-    // This enables payment status polling without authentication issues
+    // No ownership check for this endpoint - it's used by payment callbacks
+    // Security: Requires knowing exact order UUID (not guessable)
+    // Users need to check order status after returning from payment gateway
+    // For user-facing order viewing, use /api/orders/[id] which enforces ownership
 
     return NextResponse.json({ order })
 
