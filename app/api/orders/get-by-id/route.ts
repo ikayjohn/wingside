@@ -36,24 +36,24 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // OPTIONAL: Check if user is authenticated and owns this order
-    // This allows callback pages to work for unauthenticated users returning from payment gateways
+    // OPTIONAL: Check ownership for completed orders only
+    // Allow callback pages to check order status during payment processing
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (user) {
-      // User is authenticated - verify ownership
+    if (user && order.payment_status === 'paid') {
+      // Only verify ownership for completed orders
       const isOwner = order.customer_id === user.id
 
       if (!isOwner) {
-        // Check if user is accessing someone else's order
+        // User is trying to access someone else's completed order
         return NextResponse.json(
           { error: 'You do not have permission to view this order' },
           { status: 403 }
         )
       }
     }
-    // If no user, allow access (callback scenario)
-    // Order details are not sensitive for payment confirmation
+    // Allow access for pending orders (callback scenario) or unauthenticated users
+    // This enables payment status polling without authentication issues
 
     return NextResponse.json({ order })
 
