@@ -29,8 +29,12 @@ function NombaPaymentCallbackContent() {
   const verifyPayment = async () => {
     try {
       // Step 1: Check order status immediately by ID
+      console.log('[Callback] Fetching order:', orderId);
       const orderResponse = await fetch(`/api/orders/get-by-id?orderId=${orderId}`);
+      console.log('[Callback] Response status:', orderResponse.status);
+
       const orderData = await orderResponse.json();
+      console.log('[Callback] Order data:', orderData);
 
       if (!orderData.order) {
         throw new Error('Order not found');
@@ -160,7 +164,10 @@ function NombaPaymentCallbackContent() {
       console.error('Error checking payment status:', error);
 
       setPaymentStatus('error');
-      setMessage('Unable to verify payment status. Please check your email for confirmation or contact support with your order number.');
+
+      // Show detailed error message for debugging
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setMessage(`Unable to verify payment status: ${errorMessage}. Please check your email for confirmation or contact support with your order number: ${orderId}`);
       setVerifying(false);
 
       // DON'T cancel the order on errors - could be a network issue
