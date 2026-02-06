@@ -38,10 +38,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate card serial format (WS + 6 digits)
-    if (!/^WS\d{6}$/.test(card_serial)) {
+    // Validate card serial format (8 alphanumeric characters)
+    if (!/^[0-9A-F]{8}$/i.test(card_serial)) {
       return NextResponse.json(
-        { error: 'Invalid card serial format. Expected: WS123456' },
+        { error: 'Invalid card serial format. Expected: 8 alphanumeric characters (e.g., 372FB056)' },
         { status: 400 }
       );
     }

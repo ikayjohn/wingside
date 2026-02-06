@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const { amount, source = 'external', reference } = body;
+    const { amount } = body;
 
     // Validate amount
     if (!amount || typeof amount !== 'number' || amount < 100) {
@@ -58,20 +58,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate source
-    if (!['wallet', 'external'].includes(source)) {
-      return NextResponse.json(
-        { error: 'Invalid source. Must be "wallet" or "external"' },
-        { status: 400 }
-      );
-    }
-
     const admin = createAdminClient();
 
-    // Get user's card
+    // Get user's card and profile (need mobile number for Embedly API)
     const { data: card, error: cardError } = await admin
       .from('wingside_cards')
-      .select('*')
+      .select(`
+        *,
+        profiles!inner(
+          phone_number
+        )
+      `)
       .eq('user_id', user.id)
       .eq('status', 'active')
       .maybeSingle();
@@ -91,14 +88,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get user's phone number
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('phone_number')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile?.phone_number) {
+      return NextResponse.json(
+        { error: 'Phone number required for top-up. Please update your profile.' },
+        { status: 400 }
+      );
+    }
+
     // Top up via Embedly TAP API
     console.log(`[Wingside Card] Topping up card ${card.card_serial} with ₦${amount}`);
 
     const topUpResult = await topUpCard({
-      card_serial: card.card_serial,
+      mobile_number: profile.phone_number,
       amount,
-      source,
-      reference
+      card_serial: card.card_serial
     });
 
     if (!topUpResult.success) {
@@ -109,29 +119,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Also update wallet balance (since card and wallet share balance)
-    const { error: walletError } = await admin.rpc('credit_wallet', {
-      p_user_id: user.id,
-      p_amount: amount,
-      p_transaction_type: 'card_topup',
-      p_description: `Card top-up: ₦${amount.toLocaleString()}`,
-      p_reference: reference || topUpResult.data?.transaction_id || null
-    });
-
-    if (walletError) {
-      console.error('Failed to sync wallet balance:', walletError);
-      // Don't fail the request - Embedly is source of truth
-    }
-
     console.log(`✅ Card ${card.card_serial} topped up successfully`);
+
+    // Record transaction in wallet_transactions for tracking
+    const txReference = `CARD_TOPUP_${Date.now()}`;
+    await admin
+      .from('wallet_transactions')
+      .insert({
+        user_id: user.id,
+        amount,
+        transaction_type: 'credit',
+        payment_method: 'card_topup',
+        status: 'completed',
+        description: `Card top-up: ₦${amount.toLocaleString()}`,
+        reference: txReference,
+        metadata: {
+          card_serial: card.card_serial,
+          source: 'embedly_tap'
+        }
+      });
 
     return NextResponse.json({
       success: true,
-      transaction_id: topUpResult.data?.transaction_id,
       card_serial: card.card_serial,
       amount,
-      new_balance: topUpResult.data?.new_balance || 0,
-      timestamp: topUpResult.data?.timestamp || new Date().toISOString()
+      reference: txReference,
+      message: topUpResult.message || 'Card topped up successfully',
+      timestamp: new Date().toISOString()
     });
 
   } catch (error) {

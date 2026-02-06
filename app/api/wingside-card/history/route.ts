@@ -8,8 +8,8 @@ import { getCardHistory } from '@/lib/embedly/tap-client';
  * Get Wingside Card transaction history
  *
  * Query params:
- * - page: Page number (default: 1)
- * - limit: Items per page (default: 50, max: 100)
+ * - fromDate: Start date (YYYY-MM-DD, default: 30 days ago)
+ * - toDate: End date (YYYY-MM-DD, default: today)
  *
  * Security:
  * - Requires authentication
@@ -28,10 +28,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Parse query params
+    // Parse query params for date range
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100);
+    const fromDate = searchParams.get('fromDate') ||
+      new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const toDate = searchParams.get('toDate') ||
+      new Date().toISOString().split('T')[0];
 
     const admin = createAdminClient();
 
@@ -58,43 +60,39 @@ export async function GET(request: NextRequest) {
     }
 
     // Get transaction history from Embedly TAP API
-    const historyResult = await getCardHistory(card.card_serial, page, limit);
+    const historyResult = await getCardHistory(card.card_serial, fromDate, toDate);
 
     if (!historyResult.success) {
       console.error('Failed to fetch card history:', historyResult.error);
 
-      // Fallback: Get wallet transactions
+      // Fallback: Get wallet transactions for the date range
       const { data: walletTxs } = await admin
         .from('wallet_transactions')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .range((page - 1) * limit, page * limit - 1);
-
-      const { count } = await admin
-        .from('wallet_transactions')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
+        .gte('created_at', fromDate)
+        .lte('created_at', toDate)
+        .order('created_at', { ascending: false });
 
       return NextResponse.json({
         card_serial: card.card_serial,
         transactions: walletTxs || [],
-        total_count: count || 0,
-        page,
-        limit,
+        total_count: walletTxs?.length || 0,
+        from_date: fromDate,
+        to_date: toDate,
         source: 'wallet_fallback'
       });
     }
 
-    // Merge card transactions with wallet transaction data
+    // Embedly TAP API returns: { transactions: [...], totalCount: number }
     const transactions = historyResult.data?.transactions || [];
 
     return NextResponse.json({
       card_serial: card.card_serial,
       transactions,
-      total_count: historyResult.data?.total_count || 0,
-      page: historyResult.data?.page || page,
-      limit: historyResult.data?.limit || limit,
+      total_count: historyResult.data?.totalCount || 0,
+      from_date: fromDate,
+      to_date: toDate,
       source: 'embedly',
       card_info: {
         status: card.status,

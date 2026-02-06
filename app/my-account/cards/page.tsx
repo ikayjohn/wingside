@@ -394,11 +394,12 @@ function OnboardCardModal({ onClose, onSuccess }: { onClose: () => void; onSucce
               type="text"
               value={cardSerial}
               onChange={(e) => setCardSerial(e.target.value.toUpperCase())}
-              placeholder="WS123456"
+              placeholder="372FB056"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
               required
-              pattern="WS\d{6}"
-              title="Format: WS followed by 6 digits (e.g., WS123456)"
+              pattern="[0-9A-F]{8}"
+              title="Format: 8 alphanumeric characters (e.g., 372FB056)"
+              maxLength={8}
             />
           </div>
 

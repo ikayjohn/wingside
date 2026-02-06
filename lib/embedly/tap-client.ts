@@ -1,11 +1,45 @@
 /**
- * Embedly TAP Card API Client
- * Wrapper for Embedly's physical card tap payment API
+ * Embedly TAP Card API Client (CORRECTED)
+ * Based on official Embedly TAP API documentation
+ *
+ * Base URLs:
+ * - Staging: https://waas-staging.embedly.ng/embedded/api/v1/tap/
+ * - Production: https://waas-prod.embedly.ng/embedded/api/v1/tap/
  */
 
-const EMBEDLY_TAP_BASE_URL = process.env.EMBEDLY_TAP_API_URL || 'https://api.embedly.com/tap/v1';
-const EMBEDLY_TAP_API_KEY = process.env.EMBEDLY_TAP_API_KEY;
+const EMBEDLY_TAP_BASE_URL = process.env.EMBEDLY_TAP_API_URL ||
+  (process.env.NODE_ENV === 'production'
+    ? 'https://waas-prod.embedly.ng/embedded/api/v1/tap'
+    : 'https://waas-staging.embedly.ng/embedded/api/v1/tap');
 
+const EMBEDLY_API_KEY = process.env.EMBEDLY_API_KEY; // Same key as wallet API
+
+/**
+ * Embedly TAP API Response Structure
+ */
+interface EmbedlyTapApiResponse<T = any> {
+  data: {
+    error: {
+      message: string;
+      status: number;
+      details: any;
+    };
+    success: {
+      message: string;
+      status: number; // 1 = success, 0 = failure
+      details: any;
+    };
+    content: T;
+    statusCode: number;
+    newStatusCode: number;
+  };
+  status: number;
+  message: string;
+}
+
+/**
+ * Simplified response for our application
+ */
 interface EmbedlyTapResponse<T = any> {
   success: boolean;
   data?: T;
@@ -13,62 +47,89 @@ interface EmbedlyTapResponse<T = any> {
   message?: string;
 }
 
-interface CardOnboardRequest {
-  customer_id: string;
-  wallet_id: string;
-  card_serial: string;
-  card_pin: string; // Will be hashed by Embedly
+/**
+ * Onboard Customer Request
+ */
+interface OnboardCustomerRequest {
+  customerId: string;        // Embedly customer ID
+  walletId: string;          // Embedly wallet ID
+  cardSerial: string;        // Physical card serial (e.g., WS123456)
+  transactionPin: string;    // Card PIN (will be hashed by Embedly)
+  maxDebit: number;          // Maximum single transaction amount
 }
 
-interface CardOnboardResponse {
-  card_id: string;
-  customer_id: string;
-  wallet_id: string;
-  card_serial: string;
-  status: 'active' | 'pending';
-  created_at: string;
+/**
+ * Get Balance Request
+ */
+interface GetBalanceRequest {
+  cardSerial: string;
 }
 
-interface CardBalanceResponse {
-  card_serial: string;
-  balance: number;
-  currency: string;
-  last_updated: string;
+/**
+ * Balance Response Content
+ */
+interface BalanceContent {
+  phone: string;
+  fullname: string;
+  walletBalance: number;
+  valid: number; // 1 = valid, 0 = invalid
 }
 
-interface CardTransaction {
-  transaction_id: string;
-  card_serial: string;
+/**
+ * Transaction History Request
+ */
+interface TransactionHistoryRequest {
+  cardSerial: string;
+  fromDate: string;  // ISO date string
+  toDate: string;    // ISO date string
+}
+
+/**
+ * Transaction History Content
+ */
+interface TransactionHistoryContent {
+  transactions: Array<{
+    transactionId: string;
+    cardSerial: string;
+    amount: number;
+    type: 'DEBIT' | 'CREDIT';
+    description: string;
+    merchantName?: string;
+    merchantLocation?: string;
+    timestamp: string;
+    balanceAfter: number;
+    reference: string;
+  }>;
+  totalCount: number;
+}
+
+/**
+ * Search Customer Request
+ */
+interface SearchCustomerRequest {
+  cardSerial: string;
+}
+
+/**
+ * Search Customer Content
+ */
+interface SearchCustomerContent {
+  customerId: string;
+  walletId: string;
+  fullname: string;
+  phone: string;
+  email?: string;
+  cardSerial: string;
+  status: string;
+}
+
+/**
+ * Top Up Customer Request
+ */
+interface TopUpCustomerRequest {
+  mobileNumber: string;
   amount: number;
-  type: 'debit' | 'credit';
-  description: string;
-  merchant?: string;
-  location?: string;
-  timestamp: string;
-  balance_after: number;
-}
-
-interface CardHistoryResponse {
-  card_serial: string;
-  transactions: CardTransaction[];
-  total_count: number;
-  page: number;
-  limit: number;
-}
-
-interface CardTopUpRequest {
-  card_serial: string;
-  amount: number;
-  source: 'wallet' | 'external';
-  reference?: string;
-}
-
-interface CardTopUpResponse {
-  transaction_id: string;
-  card_serial: string;
-  amount: number;
-  new_balance: number;
-  timestamp: string;
+  cardSerial: string;
 }
 
 /**
@@ -78,11 +139,11 @@ async function embedlyTapRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<EmbedlyTapResponse<T>> {
-  if (!EMBEDLY_TAP_API_KEY) {
-    console.error('EMBEDLY_TAP_API_KEY not configured');
+  if (!EMBEDLY_API_KEY) {
+    console.error('EMBEDLY_API_KEY not configured');
     return {
       success: false,
-      error: 'TAP card service not configured'
+      error: 'TAP card service not configured - missing API key'
     };
   }
 
@@ -92,32 +153,35 @@ async function embedlyTapRequest<T>(
     const response = await fetch(url, {
       ...options,
       headers: {
-        'Authorization': `Bearer ${EMBEDLY_TAP_API_KEY}`,
         'Content-Type': 'application/json',
+        'x-api-key': EMBEDLY_API_KEY, // Correct authentication header
         ...options.headers,
       },
     });
 
-    const data = await response.json();
+    const apiResponse: EmbedlyTapApiResponse<T> = await response.json();
 
-    if (!response.ok) {
+    // Check if the request was successful
+    // Embedly returns 200 even for errors, check data.success.status
+    if (apiResponse.data.success.status === 1) {
+      return {
+        success: true,
+        data: apiResponse.data.content,
+        message: apiResponse.data.success.message
+      };
+    } else {
       console.error('Embedly TAP API error:', {
-        status: response.status,
         endpoint,
-        error: data
+        error: apiResponse.data.error,
+        response: apiResponse
       });
 
       return {
         success: false,
-        error: data.message || data.error || 'TAP card API request failed',
-        data
+        error: apiResponse.data.error.message || 'TAP card API request failed',
+        message: apiResponse.data.error.message
       };
     }
-
-    return {
-      success: true,
-      data
-    };
   } catch (error) {
     console.error('Embedly TAP API request failed:', error);
     return {
@@ -128,70 +192,129 @@ async function embedlyTapRequest<T>(
 }
 
 /**
- * Onboard a physical card to customer's wallet
+ * 1. Onboard a physical card to customer's wallet
+ *
+ * POST /onboard-customer
  */
-export async function onboardCard(params: CardOnboardRequest): Promise<EmbedlyTapResponse<CardOnboardResponse>> {
-  return embedlyTapRequest<CardOnboardResponse>('/cards/onboard', {
+export async function onboardCard(params: {
+  customer_id: string;
+  wallet_id: string;
+  card_serial: string;
+  card_pin: string;
+  max_debit?: number;
+}): Promise<EmbedlyTapResponse<any>> {
+  return embedlyTapRequest('/onboard-customer', {
     method: 'POST',
-    body: JSON.stringify(params)
+    body: JSON.stringify({
+      customerId: params.customer_id,
+      walletId: params.wallet_id,
+      cardSerial: params.card_serial,
+      transactionPin: params.card_pin,
+      maxDebit: params.max_debit || 50000 // Default ₦50,000
+    })
   });
 }
 
 /**
- * Get card balance (same as wallet balance)
+ * 2. Get card balance (returns wallet balance)
+ *
+ * POST /get-balance
  */
-export async function getCardBalance(cardSerial: string): Promise<EmbedlyTapResponse<CardBalanceResponse>> {
-  return embedlyTapRequest<CardBalanceResponse>(`/cards/${cardSerial}/balance`, {
-    method: 'GET'
+export async function getCardBalance(
+  cardSerial: string
+): Promise<EmbedlyTapResponse<BalanceContent>> {
+  return embedlyTapRequest<BalanceContent>('/get-balance', {
+    method: 'POST',
+    body: JSON.stringify({
+      cardSerial
+    })
   });
 }
 
 /**
- * Get card transaction history
+ * 3. Get card transaction history
+ *
+ * GET /transaction-history with query params
  */
 export async function getCardHistory(
   cardSerial: string,
-  page: number = 1,
-  limit: number = 50
-): Promise<EmbedlyTapResponse<CardHistoryResponse>> {
-  return embedlyTapRequest<CardHistoryResponse>(
-    `/cards/${cardSerial}/transactions?page=${page}&limit=${limit}`,
+  fromDate?: string,
+  toDate?: string
+): Promise<EmbedlyTapResponse<TransactionHistoryContent>> {
+  // Default to last 30 days if not specified
+  const from = fromDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const to = toDate || new Date().toISOString().split('T')[0];
+
+  const params = new URLSearchParams({
+    cardSerial,
+    fromDate: from,
+    toDate: to
+  });
+
+  return embedlyTapRequest<TransactionHistoryContent>(
+    `/transaction-history?${params.toString()}`,
     { method: 'GET' }
   );
 }
 
 /**
- * Top up card (adds to wallet balance)
+ * 4. Search for customer by card serial
+ *
+ * POST /search-customer
  */
-export async function topUpCard(params: CardTopUpRequest): Promise<EmbedlyTapResponse<CardTopUpResponse>> {
-  return embedlyTapRequest<CardTopUpResponse>('/cards/topup', {
+export async function searchCustomer(
+  cardSerial: string
+): Promise<EmbedlyTapResponse<SearchCustomerContent>> {
+  return embedlyTapRequest<SearchCustomerContent>('/search-customer', {
     method: 'POST',
-    body: JSON.stringify(params)
+    body: JSON.stringify({
+      cardSerial
+    })
   });
 }
 
 /**
- * Suspend or unsuspend a card
+ * 5. Top up card (credit customer wallet)
+ *
+ * POST /credit-or-topup-customer
  */
-export async function updateCardStatus(
-  cardSerial: string,
-  status: 'active' | 'suspended' | 'lost' | 'stolen'
-): Promise<EmbedlyTapResponse<{ status: string }>> {
-  return embedlyTapRequest(`/cards/${cardSerial}/status`, {
-    method: 'PUT',
-    body: JSON.stringify({ status })
+export async function topUpCard(params: {
+  mobile_number: string;
+  amount: number;
+  card_serial: string;
+}): Promise<EmbedlyTapResponse<any>> {
+  return embedlyTapRequest('/credit-or-topup-customer', {
+    method: 'POST',
+    body: JSON.stringify({
+      mobileNumber: params.mobile_number,
+      amount: params.amount,
+      cardSerial: params.card_serial
+    })
   });
 }
 
 /**
- * Verify card PIN (for POS transactions)
+ * Helper: Validate card serial format
  */
-export async function verifyCardPin(
-  cardSerial: string,
-  pin: string
-): Promise<EmbedlyTapResponse<{ valid: boolean }>> {
-  return embedlyTapRequest(`/cards/${cardSerial}/verify-pin`, {
-    method: 'POST',
-    body: JSON.stringify({ pin })
-  });
+export function validateCardSerial(cardSerial: string): boolean {
+  // Format: 8 alphanumeric characters (e.g., 372FB056)
+  return /^[0-9A-F]{8}$/i.test(cardSerial);
 }
+
+/**
+ * Helper: Validate transaction PIN format
+ */
+export function validateTransactionPin(pin: string): boolean {
+  // PIN must be 4-6 digits
+  return /^\d{4,6}$/.test(pin);
+}
+
+// Export types for use in API routes
+export type {
+  EmbedlyTapResponse,
+  OnboardCustomerRequest,
+  BalanceContent,
+  TransactionHistoryContent,
+  SearchCustomerContent,
+  TopUpCustomerRequest
+};

@@ -71,12 +71,18 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Embedly TAP API returns: { phone, fullname, walletBalance, valid }
     return NextResponse.json({
       card_serial: card.card_serial,
-      balance: balanceResult.data?.balance || 0,
-      currency: balanceResult.data?.currency || 'NGN',
+      balance: balanceResult.data?.walletBalance || 0,
+      currency: 'NGN',
       source: 'embedly',
-      last_updated: balanceResult.data?.last_updated || new Date().toISOString(),
+      last_updated: new Date().toISOString(),
+      customer_info: {
+        fullname: balanceResult.data?.fullname,
+        phone: balanceResult.data?.phone,
+        valid: balanceResult.data?.valid === 1
+      },
       card_info: {
         status: card.status,
         max_debit: card.max_debit,
