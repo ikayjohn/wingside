@@ -115,6 +115,15 @@ export async function POST(request: NextRequest) {
       card_pin
     });
 
+    // Defensive null check
+    if (!embedlyResult) {
+      console.error('Embedly card onboarding returned null/undefined');
+      return NextResponse.json(
+        { error: 'Card activation service unavailable. Please try again later.' },
+        { status: 503 }
+      );
+    }
+
     if (!embedlyResult.success) {
       console.error('Embedly card onboarding failed:', embedlyResult.error);
       return NextResponse.json(

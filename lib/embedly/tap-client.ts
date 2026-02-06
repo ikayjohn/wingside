@@ -159,27 +159,51 @@ async function embedlyTapRequest<T>(
       },
     });
 
+    // Check if response is OK
+    if (!response.ok) {
+      console.error(`Embedly TAP API HTTP error: ${response.status} ${response.statusText}`);
+      return {
+        success: false,
+        error: `API request failed: ${response.status} ${response.statusText}`
+      };
+    }
+
     const apiResponse: EmbedlyTapApiResponse<T> = await response.json();
+
+    // Validate response structure
+    if (!apiResponse || !apiResponse.data) {
+      console.error('Embedly TAP API returned invalid response structure:', apiResponse);
+      return {
+        success: false,
+        error: 'Invalid API response structure'
+      };
+    }
 
     // Check if the request was successful
     // Embedly returns 200 even for errors, check data.success.status
-    if (apiResponse.data.success.status === 1) {
+    if (apiResponse.data.success?.status === 1) {
       return {
         success: true,
         data: apiResponse.data.content,
         message: apiResponse.data.success.message
       };
     } else {
+      // Extract error message safely
+      const errorMessage = apiResponse.data.error?.message
+        || apiResponse.data.success?.message
+        || 'TAP card API request failed';
+
       console.error('Embedly TAP API error:', {
         endpoint,
         error: apiResponse.data.error,
+        success: apiResponse.data.success,
         response: apiResponse
       });
 
       return {
         success: false,
-        error: apiResponse.data.error.message || 'TAP card API request failed',
-        message: apiResponse.data.error.message
+        error: errorMessage,
+        message: errorMessage
       };
     }
   } catch (error) {
