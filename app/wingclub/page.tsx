@@ -82,23 +82,18 @@ export default function WingclubPage() {
               </div>
             </div>
 
-            {/* Navigation Controls */}
-            <div className="absolute bottom-8 right-8 flex items-center gap-4 text-white">
-              <button
-                onClick={prevSlide}
-                className="hover:text-[#F7C400] transition-colors font-semibold"
-              >
-                PREV
-              </button>
-              <span className="font-semibold">
-                {currentSlide + 1}/{slides.length}
-              </span>
-              <button
-                onClick={nextSlide}
-                className="hover:text-[#F7C400] transition-colors font-semibold"
-              >
-                NEXT
-              </button>
+            {/* Navigation Controls - Dot Indicators */}
+            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-2">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`h-3 rounded-full transition-all duration-300 ${
+                    currentSlide === index ? 'bg-[#F7C400] w-8' : 'bg-white/50 w-3'
+                  }`}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
+              ))}
             </div>
           </div>
         ))}

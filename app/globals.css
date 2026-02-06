@@ -6295,3 +6295,118 @@ input[type="button"],
   display: block;
   border: none;
 }
+
+/* Print Styles for Order Pages */
+@media print {
+  /* Hide navigation, buttons, and UI elements */
+  header,
+  footer,
+  button {
+    display: none !important;
+  }
+
+  /* Reset body and html for clean printing */
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Make modal overlay static for printing */
+  .fixed.inset-0 {
+    position: static !important;
+    background: white !important;
+    padding: 0 !important;
+  }
+
+  /* Make modal content full width */
+  .fixed.inset-0 > div {
+    position: static !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+  }
+
+  /* Ensure content is visible and properly formatted */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Remove shadows and rounded corners for cleaner print */
+  .shadow-sm,
+  .shadow-md,
+  .shadow-lg {
+    box-shadow: none !important;
+  }
+
+  .rounded-lg,
+  .rounded-xl {
+    border-radius: 0 !important;
+  }
+
+  /* Ensure proper page breaks */
+  .bg-white {
+    background: white !important;
+    page-break-inside: avoid;
+  }
+
+  /* Make text black for better print visibility */
+  .text-gray-900,
+  .text-gray-800,
+  .text-gray-700,
+  .text-gray-600 {
+    color: black !important;
+  }
+
+  /* Keep borders visible */
+  .border {
+    border-color: #000 !important;
+  }
+
+  /* Maintain status badge colors for clarity */
+  .bg-yellow-100,
+  .bg-blue-100,
+  .bg-purple-100,
+  .bg-indigo-100,
+  .bg-orange-100,
+  .bg-green-100,
+  .bg-red-100 {
+    background-color: #f3f4f6 !important;
+    border: 1px solid #000 !important;
+  }
+
+  /* Keep important text colors */
+  .text-yellow-800,
+  .text-blue-800,
+  .text-purple-800,
+  .text-indigo-800,
+  .text-orange-800,
+  .text-green-800,
+  .text-red-800 {
+    color: #000 !important;
+    font-weight: 600 !important;
+  }
+
+  /* Adjust spacing for print */
+  .p-6,
+  .p-8 {
+    padding: 1rem !important;
+  }
+
+  /* Ensure tables print properly */
+  table {
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  /* Add company branding for print */
+  @page {
+    margin: 1cm;
+  }
+}

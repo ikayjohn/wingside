@@ -248,9 +248,11 @@ export default function OrdersPage() {
                     <p className="text-sm text-gray-500 mb-1">Total</p>
                     <p className="text-xl font-bold text-gray-900">{formatPrice(order.total)}</p>
                   </div>
-                  <span className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white group-hover:bg-gray-50 transition-colors">
-                    View Details
-                  </span>
+                  <div className="flex gap-2">
+                    <span className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white group-hover:bg-gray-50 transition-colors">
+                      View Details
+                    </span>
+                  </div>
                 </div>
               </div>
             </Link>

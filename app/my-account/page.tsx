@@ -44,7 +44,7 @@ export default function MyAccountPage() {
   useEffect(() => {
     checkAuthStatus();
   }, [checkAuthStatus]);
-  const [activeTab, setActiveTab] = useState<'signup' | 'login'>('signup');
+  const [activeTab, setActiveTab] = useState<'signup' | 'login'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -451,16 +451,16 @@ export default function MyAccountPage() {
           {/* Tabs */}
           <div className="wingclub-tabs">
             <button
-              className={`wingclub-tab ${activeTab === 'signup' ? 'active' : ''}`}
-              onClick={() => setActiveTab('signup')}
-            >
-              Sign Up
-            </button>
-            <button
               className={`wingclub-tab ${activeTab === 'login' ? 'active' : ''}`}
               onClick={() => setActiveTab('login')}
             >
               Login
+            </button>
+            <button
+              className={`wingclub-tab ${activeTab === 'signup' ? 'active' : ''}`}
+              onClick={() => setActiveTab('signup')}
+            >
+              Sign Up
             </button>
           </div>
 

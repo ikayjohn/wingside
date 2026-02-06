@@ -129,3 +129,53 @@ export async function GET(
     )
   }
 }
+
+// PATCH /api/orders/[id] - Update order (for abandoned payment detection)
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
+  try {
+    const body = await request.json()
+    const { status, payment_status } = body
+
+    // Only allow specific status updates (for abandoned payments)
+    if (status === 'cancelled' && payment_status === 'abandoned') {
+      const admin = createAdminClient()
+
+      const { data: order, error } = await admin
+        .from('orders')
+        .update({
+          status: 'cancelled',
+          payment_status: 'abandoned',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) {
+        loggers.order.error('Failed to update abandoned order', error, { id })
+        return NextResponse.json(
+          { error: 'Failed to update order' },
+          { status: 500 }
+        )
+      }
+
+      loggers.order.info('Order marked as abandoned', { orderNumber: order.order_number })
+      return NextResponse.json({ order })
+    }
+
+    return NextResponse.json(
+      { error: 'Invalid status update' },
+      { status: 400 }
+    )
+  } catch (error) {
+    loggers.order.error('Unexpected error in order update', error, { id })
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}

@@ -58,6 +58,12 @@ interface NombaWebhookEvent {
 
 // POST /api/payment/nomba/webhook - Handle Nomba webhook events
 export async function POST(request: NextRequest) {
+  // CRITICAL: Log IMMEDIATELY to catch ALL webhook attempts
+  console.log('🚨 WEBHOOK ENDPOINT HIT!')
+  console.log('🚨 Time:', new Date().toISOString())
+  console.log('🚨 Headers:', Object.fromEntries(request.headers.entries()))
+  console.log('🚨 URL:', request.url)
+
   try {
     // Get raw body first for signature verification
     const rawBody = await request.text()

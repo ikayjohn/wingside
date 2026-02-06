@@ -252,10 +252,16 @@ export default function OrderTrackingPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Print-only Header */}
+      <div className="hidden print:block text-center mb-8 border-b-2 border-gray-300 pb-4">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Wingside</h1>
+        <p className="text-sm text-gray-600">Order Receipt</p>
+      </div>
+
       <div className="max-w-[1200px] mx-auto px-4 py-8 md:px-6 lg:px-8">
 
         {/* Back to Dashboard */}
-        <Link href="/my-account/dashboard" className="wallet-history-back inline-flex items-center gap-2 mb-6">
+        <Link href="/my-account/dashboard" className="wallet-history-back inline-flex items-center gap-2 mb-6 print:hidden">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>
@@ -271,6 +277,18 @@ export default function OrderTrackingPage() {
               <p className="text-gray-600">Order #{order.order_number}</p>
             </div>
             <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => window.print()}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors print:hidden"
+                title="Print order"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                  <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+                Print
+              </button>
               <span className={`px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(order.status)}`}>
                 {order.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
               </span>
@@ -450,7 +468,7 @@ export default function OrderTrackingPage() {
             </div>
 
             {/* Help Section */}
-            <div className="bg-gray-50 rounded-xl p-6">
+            <div className="bg-gray-50 rounded-xl p-6 print:hidden">
               <h2 className="text-lg font-bold text-gray-900 mb-2">Need Help?</h2>
               <p className="text-gray-600 text-sm mb-4">
                 Have questions about your order? Contact our support team.

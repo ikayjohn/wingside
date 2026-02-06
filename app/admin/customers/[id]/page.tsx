@@ -329,7 +329,15 @@ export default function CustomerDetailsPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        console.error('Failed to fetch points details:', data.error);
+        console.error('Failed to fetch points details:', {
+          status: res.status,
+          statusText: res.statusText,
+          error: data.error,
+          details: data.details,
+          hint: data.hint,
+          code: data.code,
+          customerId
+        });
         return;
       }
 

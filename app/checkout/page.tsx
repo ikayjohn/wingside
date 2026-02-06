@@ -67,7 +67,7 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<string>('new');
 
   // Wallet payment states
-  const [paymentMethod, setPaymentMethod] = useState<'paystack' | 'nomba' | 'wallet'>('paystack');
+  const [paymentMethod, setPaymentMethod] = useState<'paystack' | 'nomba' | 'wallet' | 'embedly'>('paystack');
   const [walletBalance, setWalletBalance] = useState(0);
   const [wallet, setWallet] = useState<any>(null);
   const [loadingWallet, setLoadingWallet] = useState(false);
@@ -81,6 +81,7 @@ export default function CheckoutPage() {
     paystack: true,
     nomba: true,
     wallet: true,
+    embedly: true,
   });
 
   // Load settings from API
@@ -97,6 +98,7 @@ export default function CheckoutPage() {
             paystack: data.settings.payment_gateway_paystack_enabled === 'true',
             nomba: data.settings.payment_gateway_nomba_enabled === 'true',
             wallet: data.settings.payment_gateway_wallet_enabled === 'true',
+            embedly: data.settings.payment_gateway_embedly_enabled === 'true',
           };
           setEnabledGateways(gateways);
 
@@ -106,7 +108,7 @@ export default function CheckoutPage() {
             .map(([method]) => method);
 
           if (!availableMethods.includes(paymentMethod)) {
-            setPaymentMethod(availableMethods[0] as 'paystack' | 'nomba' | 'wallet');
+            setPaymentMethod(availableMethods[0] as 'paystack' | 'nomba' | 'wallet' | 'embedly');
           }
         }
       } catch (error) {
@@ -781,6 +783,40 @@ export default function CheckoutPage() {
 
         // Redirect to Nomba checkout page
         window.location.href = paymentData.checkout_url;
+      } else if (paymentMethod === 'embedly') {
+        // Initialize payment with Embedly Checkout
+        const paymentResponse = await fetch('/api/payment/embedly/initialize', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            [csrfData.headerName]: csrfData.token,
+          },
+          body: JSON.stringify({
+            order_id: data.order.id,
+            customer_email: formData.email,
+            customer_name: `${formData.firstName} ${formData.lastName}`,
+          }),
+        });
+
+        const paymentData = await paymentResponse.json();
+
+        if (!paymentResponse.ok) {
+          throw new Error(paymentData.error || 'Failed to initialize payment');
+        }
+
+        // Clear cart (will be restored if payment fails)
+        localStorage.removeItem('wingside-cart');
+        setCartItems([]);
+
+        // Redirect to Embedly checkout callback page
+        const params = new URLSearchParams({
+          order_id: data.order.id,
+          orderNumber: data.order.order_number,
+          amount: total.toString(),
+          customerEmail: formData.email,
+          customerName: `${formData.firstName} ${formData.lastName}`,
+        });
+        window.location.href = `/payment/embedly/callback?${params.toString()}`;
       } else {
         // Initialize payment with Paystack (default)
         const paymentResponse = await fetch('/api/payment/initialize', {
@@ -1361,7 +1397,7 @@ export default function CheckoutPage() {
                                 name="paymentMethod"
                                 value="paystack"
                                 checked={paymentMethod === 'paystack'}
-                                onChange={(e) => setPaymentMethod(e.target.value as 'paystack' | 'nomba')}
+                                onChange={(e) => setPaymentMethod(e.target.value as 'paystack' | 'nomba' | 'wallet' | 'embedly')}
                                 className="w-4 h-4 text-yellow-400 focus:ring-yellow-400"
                               />
                               <div>
@@ -1393,7 +1429,7 @@ export default function CheckoutPage() {
                                 name="paymentMethod"
                                 value="nomba"
                                 checked={paymentMethod === 'nomba'}
-                                onChange={(e) => setPaymentMethod(e.target.value as 'paystack' | 'nomba')}
+                                onChange={(e) => setPaymentMethod(e.target.value as 'paystack' | 'nomba' | 'wallet' | 'embedly')}
                                 className="w-4 h-4 text-yellow-400 focus:ring-yellow-400"
                               />
                               <div>
@@ -1404,6 +1440,38 @@ export default function CheckoutPage() {
                               <img src="/visa.svg" alt="Visa" className="h-6 w-auto" />
                               <img src="/mastercard.svg" alt="Mastercard" className="h-6 w-auto" />
                               <img src="/verve.svg" alt="Verve" className="h-6 w-auto" />
+                            </div>
+                          </label>
+                        )}
+
+                        {/* Bank Transfer Payment Option (Embedly Checkout) */}
+                        {enabledGateways.embedly && (
+                          <label
+                            className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                              paymentMethod === 'embedly'
+                                ? 'border-yellow-400 bg-yellow-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="radio"
+                                name="paymentMethod"
+                                value="embedly"
+                                checked={paymentMethod === 'embedly'}
+                                onChange={(e) => setPaymentMethod(e.target.value as 'paystack' | 'nomba' | 'wallet' | 'embedly')}
+                                className="w-4 h-4 text-yellow-400 focus:ring-yellow-400"
+                              />
+                              <div>
+                                <span className="font-medium text-gray-900">Pay with Bank Transfer</span>
+                                <p className="text-xs text-gray-500">Transfer directly from your bank app (₦0 fees)</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600">
+                                <path d="M17 9V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" />
+                                <path d="M21 19a2 2 0 0 1-2 2h-7a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2z" />
+                              </svg>
                             </div>
                           </label>
                         )}
@@ -1423,7 +1491,7 @@ export default function CheckoutPage() {
                                 name="paymentMethod"
                                 value="wallet"
                                 checked={paymentMethod === 'wallet'}
-                                onChange={(e) => setPaymentMethod(e.target.value as 'paystack' | 'nomba' | 'wallet')}
+                                onChange={(e) => setPaymentMethod(e.target.value as 'paystack' | 'nomba' | 'wallet' | 'embedly')}
                                 disabled={walletBalance < total}
                                 className="w-4 h-4 text-yellow-400 focus:ring-yellow-400"
                               />

@@ -277,7 +277,7 @@ export default function Header() {
                       : 'text-gray-700 hover:text-gray-900'
                     }`}
                 >
-                  Sign In or Sign Up
+                  Sign In
                 </Link>
               )}
               <Link

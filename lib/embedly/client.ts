@@ -166,6 +166,19 @@ export interface CheckoutWalletRequest {
   expectedAmount: number;
   organizationPrefixMappingId: string;
   expiryDurationMinutes?: number;
+  invoiceReference?: string;
+  description?: string;
+  currencyCode?: string;
+  customerEmail?: string;
+  customerName?: string;
+  metadata?: string;
+  splitType?: 'Fixed' | 'Percentage';
+  incomeSplitConfig?: Array<{
+    beneficiaryId: string;
+    splitValue: number;
+    feeValue?: number;
+    feeBearer?: boolean;
+  }>;
 }
 
 export interface CheckoutWalletResponse {
@@ -551,12 +564,91 @@ class EmbedlyClient {
     return response.data;
   }
 
-  async getCheckoutWallets(): Promise<CheckoutWalletResponse[]> {
+  async getCheckoutWallets(page = 1, pageSize = 10): Promise<CheckoutWalletResponse[]> {
     const response = await this.makeRequest<{
       statusCode: number;
       message: string;
       data: CheckoutWalletResponse[];
-    }>('/checkout-wallet', {}, this.checkoutUrl);
+    }>(`/checkout-wallet?page=${page}&pageSize=${pageSize}`, {}, this.checkoutUrl);
+
+    return response.data;
+  }
+
+  async getCheckoutWalletById(walletId: string): Promise<CheckoutWalletResponse> {
+    const response = await this.makeRequest<{
+      statusCode: number;
+      message: string;
+      data: CheckoutWalletResponse;
+    }>(`/checkout-wallet/${walletId}`, {}, this.checkoutUrl);
+
+    return response.data;
+  }
+
+  async getCheckoutWalletTransactions(walletId: string): Promise<{
+    id: string;
+    walletNumber: string;
+    status: string;
+    transactions: Array<{
+      id: string;
+      amount: number;
+      senderAccountNumber: string;
+      senderName: string;
+      status: string;
+      createdAt: string;
+      completedAt?: string;
+    }>;
+  }> {
+    const response = await this.makeRequest<{
+      statusCode: number;
+      message: string;
+      data: any;
+    }>(`/checkout-wallet/${walletId}/transactions`, {}, this.checkoutUrl);
+
+    return response.data;
+  }
+
+  async checkCheckoutWalletStatus(walletId: string): Promise<{
+    hasPayment: boolean;
+    status: string;
+    amount?: number;
+    transaction?: any;
+  }> {
+    try {
+      const wallet = await this.getCheckoutWalletById(walletId);
+
+      if (wallet.status === 'Used') {
+        const transactions = await this.getCheckoutWalletTransactions(walletId);
+        const transaction = transactions.transactions?.[0];
+
+        return {
+          hasPayment: true,
+          status: wallet.status,
+          amount: transaction?.amount,
+          transaction,
+        };
+      }
+
+      return {
+        hasPayment: false,
+        status: wallet.status,
+      };
+    } catch (error) {
+      console.error('[Embedly] Error checking checkout wallet status:', error);
+      return {
+        hasPayment: false,
+        status: 'Error',
+      };
+    }
+  }
+
+  async reactivateCheckoutWallet(walletId: string): Promise<CheckoutWalletResponse> {
+    const response = await this.makeRequest<{
+      statusCode: number;
+      message: string;
+      data: CheckoutWalletResponse;
+    }>(`/checkout-wallet/${walletId}/reactivate`, {
+      method: 'POST',
+    }, this.checkoutUrl);
 
     return response.data;
   }

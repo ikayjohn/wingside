@@ -52,16 +52,29 @@ export async function GET(
     })
 
     if (error) {
-      console.error('Error fetching user points details:', error)
+      console.error('Error fetching user points details:', {
+        error,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        userId
+      })
       return NextResponse.json(
-        { error: 'Failed to fetch user points details', details: error.message },
+        {
+          error: 'Failed to fetch user points details',
+          details: error.message,
+          hint: error.hint,
+          code: error.code
+        },
         { status: 500 }
       )
     }
 
     if (!data || data.length === 0) {
+      console.error('No data returned for user:', userId)
       return NextResponse.json(
-        { error: 'User not found' },
+        { error: 'User not found or no data returned', userId },
         { status: 404 }
       )
     }

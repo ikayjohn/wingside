@@ -204,12 +204,12 @@ export default function AdminOrdersPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-8 print:hidden">
         <h1 className="text-3xl font-bold text-[#552627]">Orders</h1>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 print:hidden">
         <button
           onClick={() => setFilter('all')}
           className={`px-4 py-2 rounded-lg font-semibold transition-colors ${filter === 'all'
@@ -294,7 +294,7 @@ export default function AdminOrdersPage() {
       </div>
 
       {/* Search */}
-      <div className="mb-6">
+      <div className="mb-6 print:hidden">
         <input
           type="text"
           placeholder="Search by order number, customer name, email, or phone..."
@@ -306,11 +306,11 @@ export default function AdminOrdersPage() {
 
       {/* Orders list */}
       {orders.length === 0 ? (
-        <div className="bg-white rounded-lg p-8 text-center shadow-sm border border-gray-200">
+        <div className="bg-white rounded-lg p-8 text-center shadow-sm border border-gray-200 print:hidden">
           <p className="text-gray-600">No orders found</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden print:hidden">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
@@ -412,6 +412,12 @@ export default function AdminOrdersPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
+              {/* Print-only Header */}
+              <div className="hidden print:block text-center mb-8 border-b-2 border-gray-300 pb-4">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Wingside</h1>
+                <p className="text-sm text-gray-600">Order Receipt - Admin Copy</p>
+              </div>
+
               {/* Header */}
               <div className="flex justify-between items-start mb-6">
                 <div>
@@ -422,14 +428,28 @@ export default function AdminOrdersPage() {
                     {new Date(selectedOrder.created_at).toLocaleString()}
                   </p>
                 </div>
-                <button
-                  onClick={() => setSelectedOrder(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => window.print()}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                    title="Print order"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                      <rect x="6" y="14" width="12" height="8"></rect>
+                    </svg>
+                    Print
+                  </button>
+                  <button
+                    onClick={() => setSelectedOrder(null)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               {loadingDetails ? (
