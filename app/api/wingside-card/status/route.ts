@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { updateCardStatus } from '@/lib/embedly/tap-client';
 
 /**
  * PUT /api/wingside-card/status
- * Update Wingside Card status
+ * Update Wingside Card status (local database only)
+ *
+ * Note: Card blocking at Embedly level requires contacting Embedly support.
+ * This endpoint updates local status for tracking purposes.
  *
  * Request body:
  * - status: 'active' | 'suspended' | 'lost' | 'stolen'
@@ -89,20 +91,9 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Update status via Embedly TAP API
+    // Update local database status
+    // Note: For actual card blocking at Embedly, contact Embedly support
     console.log(`[Wingside Card] Updating card ${card.card_serial} status to ${status}`);
-
-    const updateResult = await updateCardStatus(card.card_serial, status);
-
-    if (!updateResult.success) {
-      console.error('Card status update failed:', updateResult.error);
-      return NextResponse.json(
-        { error: updateResult.error || 'Failed to update card status' },
-        { status: 500 }
-      );
-    }
-
-    // Update local database
     const { error: dbError } = await admin
       .from('wingside_cards')
       .update({
@@ -125,7 +116,10 @@ export async function PUT(request: NextRequest) {
 
     if (dbError) {
       console.error('Failed to update card status in database:', dbError);
-      // Don't fail - Embedly is source of truth
+      return NextResponse.json(
+        { error: 'Failed to update card status' },
+        { status: 500 }
+      );
     }
 
     // Create notification for lost/stolen cards
