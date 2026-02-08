@@ -9,6 +9,8 @@ interface Slide {
   headline: string;
   description: string | null;
   image_url: string;
+  button_text: string | null;
+  button_link: string | null;
   is_active: boolean;
   display_order: number;
   created_at: string;
@@ -25,6 +27,8 @@ export default function HeroSlidesPage() {
     headline: '',
     description: '',
     image_url: '',
+    button_text: '',
+    button_link: '',
     is_active: true,
     display_order: 0,
   });
@@ -139,6 +143,8 @@ export default function HeroSlidesPage() {
       headline: slide.headline,
       description: slide.description || '',
       image_url: slide.image_url,
+      button_text: slide.button_text || '',
+      button_link: slide.button_link || '',
       is_active: slide.is_active,
       display_order: slide.display_order,
     });
@@ -151,6 +157,8 @@ export default function HeroSlidesPage() {
       headline: '',
       description: '',
       image_url: '',
+      button_text: '',
+      button_link: '',
       is_active: true,
       display_order: slides.length,
     });
@@ -408,6 +416,34 @@ export default function HeroSlidesPage() {
                     rows={3}
                     placeholder="e.g., Your wings, Your way. 20 bold flavors, endless cravings."
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Button Text (optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.button_text}
+                      onChange={(e) => setFormData({ ...formData, button_text: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
+                      placeholder="e.g., Order Now"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Button Link (optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.button_link}
+                      onChange={(e) => setFormData({ ...formData, button_link: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
+                      placeholder="e.g., /order or https://..."
+                    />
+                  </div>
                 </div>
 
                 <div>

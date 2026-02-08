@@ -83,26 +83,26 @@ export default function Footer() {
   return (
     <>
       {/* Newsletter Section */}
-      <section className="py-12 md:py-16 lg:py-20 bg-white border-b border-gray-200 footer-container">
-        <div className="w-full">
-          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+      <section className="py-12 md:py-16 lg:py-20 bg-white border-b border-gray-200 footer-container overflow-hidden">
+        <div className="w-full max-w-full min-w-0">
+          <div className="grid md:grid-cols-2 gap-6 md:gap-12 items-center">
             {/* Left: Logo */}
             <div className="flex justify-center md:justify-start">
               <div className="text-center md:text-left">
                 <img
                   src="/logo.png"
                   alt="Wingside Logo"
-                  className="h-40 md:h-60 w-auto mb-3 md:mb-4 mx-auto md:mx-0"
+                  className="h-32 sm:h-40 md:h-60 w-auto mb-3 md:mb-4 mx-auto md:mx-0"
                 />
               </div>
             </div>
 
             {/* Right: Subscribe Form */}
             <div>
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-0 md:mb-1 leading-none" style={{ color: '#552627' }}>
+              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-0 md:mb-1 leading-none break-words" style={{ color: '#552627' }}>
                 Subscribe for more
               </h2>
-              <p className="text-2xl md:text-3xl lg:text-4xl font-bold mb-1 md:mb-2 leading-none" style={{ color: '#F7C400' }}>
+              <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-1 md:mb-2 leading-none break-words" style={{ color: '#F7C400' }}>
                 DELICIOUSNESS
               </p>
               <p className="text-gray-500 text-xs md:text-sm mb-6 md:mb-8 leading-relaxed">
@@ -111,8 +111,8 @@ export default function Footer() {
               </p>
 
               {/* Email Input */}
-              <div className="flex flex-col mb-6 md:mb-8 w-full max-w-[670px]">
-                <form onSubmit={handleSubmit} className="relative w-full">
+              <div className="flex flex-col mb-6 md:mb-8 w-full max-w-[670px] min-w-0">
+                <form onSubmit={handleSubmit} className="relative w-full min-w-0">
                   <input
                     type="email"
                     value={email}
@@ -145,7 +145,7 @@ export default function Footer() {
               </div>
 
               {/* Social Icons */}
-              <div className="flex gap-8">
+              <div className="flex gap-3 sm:gap-4 md:gap-5 lg:gap-8 flex-wrap md:flex-nowrap">
                 {settings.social_instagram && (
                   <a href={settings.social_instagram} target="_blank" rel="noopener noreferrer" className="text-black hover:text-gray-600 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

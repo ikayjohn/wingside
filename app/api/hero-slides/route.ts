@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
 
     console.log('[Hero Slides API] POST - Request body:', body);
 
-    const { title, headline, description, image_url, is_active, display_order } = body;
+    const { title, headline, description, image_url, button_text, button_link, is_active, display_order } = body;
 
     // Validate required fields
     if (!title || !headline || !image_url) {
@@ -146,6 +146,8 @@ export async function POST(request: NextRequest) {
           headline,
           description: description || null,
           image_url,
+          button_text: button_text || null,
+          button_link: button_link || null,
           is_active: is_active !== undefined ? is_active : true,
           display_order: display_order || 0,
         },

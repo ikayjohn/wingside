@@ -14,6 +14,9 @@ const EMBEDLY_TAP_BASE_URL = process.env.EMBEDLY_TAP_API_URL ||
 
 const EMBEDLY_API_KEY = process.env.EMBEDLY_API_KEY; // Same key as wallet API
 
+// Bypass mode for UI testing without actual API calls
+const BYPASS_EMBEDLY_TAP = process.env.BYPASS_EMBEDLY_TAP === 'true';
+
 /**
  * Embedly TAP API Response Structure
  */

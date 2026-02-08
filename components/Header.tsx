@@ -150,15 +150,15 @@ export default function Header() {
                 src={isHomepage && !isScrolled ? "/logo-white.png?v=2" : "/logo.png?v=2"}
                 alt="Wingside Logo"
                 className={`w-auto transition-all duration-300 ${(isHomepage && isScrolled) || (!isHomepage && !isOrderPage)
-                    ? 'h-16'
-                    : 'h-24'
+                    ? 'h-12 sm:h-16'
+                    : 'h-16 sm:h-20 md:h-24'
                   }`}
                 loading="eager"
               />
             </Link>
 
             {/* CTA Buttons */}
-            <div className="flex gap-4 items-center">
+            <div className="flex gap-2 md:gap-3 lg:gap-4 items-center">
               {isLoggedIn ? (
                 <div className="relative hidden sm:block" ref={dropdownRef}>
                   <button
@@ -169,23 +169,23 @@ export default function Header() {
                     aria-haspopup="true"
                   >
                     <div className="header-avatar">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="md:w-4 md:h-4">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                       </svg>
                     </div>
-                    My Dashboard
+                    <span className="hidden lg:inline">My Dashboard</span>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
+                      width="14"
+                      height="14"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className={`ml-1 transition-transform ${dashboardDropdownOpen ? 'rotate-180' : ''}`}
+                      className={`ml-0 lg:ml-1 transition-transform ${dashboardDropdownOpen ? 'rotate-180' : ''}`}
                       aria-hidden="true"
                     >
                       <polyline points="6 9 12 15 18 9"></polyline>
@@ -329,16 +329,30 @@ export default function Header() {
             <nav className="px-10 py-4" aria-label="Main navigation">
               <ul className="space-y-4" role="menu">
                 {isLoggedIn ? (
-                  <li role="none">
-                    <Link
-                      href="/my-account/dashboard"
-                      className="sidebar-link"
-                      onClick={handleClose}
-                      role="menuitem"
-                    >
-                      My Account
-                    </Link>
-                  </li>
+                  <>
+                    <li role="none">
+                      <Link
+                        href="/my-account/dashboard"
+                        className="sidebar-link"
+                        onClick={handleClose}
+                        role="menuitem"
+                      >
+                        Dashboard
+                      </Link>
+                    </li>
+                    <li role="none">
+                      <button
+                        onClick={() => {
+                          handleClose();
+                          handleLogout();
+                        }}
+                        className="sidebar-link w-full text-left"
+                        role="menuitem"
+                      >
+                        Log out
+                      </button>
+                    </li>
+                  </>
                 ) : (
                   <li role="none">
                     <Link
@@ -347,10 +361,22 @@ export default function Header() {
                       onClick={handleClose}
                       role="menuitem"
                     >
-                      Login or Sign Up
+                      Sign In
                     </Link>
                   </li>
                 )}
+
+                {/* Valentine's Special Link */}
+                <li role="none">
+                  <Link
+                    href="/valentines"
+                    className="sidebar-link"
+                    onClick={handleClose}
+                    role="menuitem"
+                  >
+                    Valentine's Special
+                  </Link>
+                </li>
 
                 {/* Dynamic navigation links based on visibility settings */}
                 {visibleHeaderLinks.map((link) => (

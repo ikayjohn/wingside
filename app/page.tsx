@@ -281,27 +281,41 @@ export default function WingsideLanding() {
 
 
         {/* Flavors Section */}
-        <section className="py-8 md:py-16 gutter-x bg-white">
+        <section className="py-6 sm:py-8 md:py-16 bg-white px-4 sm:px-6 md:pl-6 md:pr-6 lg:pr-[60px]">
+          <style jsx>{`
+            @media (min-width: 768px) and (max-width: 1023px) {
+              section > div {
+                max-width: 100% !important;
+                margin: 0 !important;
+              }
+            }
+            @media (min-width: 1024px) {
+              section {
+                padding-left: 300px !important;
+              }
+            }
+          `}</style>
           <div className="max-w-7xl mx-auto">
-            <div className="mb-6 md:mb-10">
-              <div className="section-badge mb-3 md:mb-4">
+            {/* Header */}
+            <div className="mb-6 sm:mb-8 md:mb-10">
+              <div className="section-badge mb-2 sm:mb-3 md:mb-4 text-xs sm:text-sm">
                 Our Flavors
               </div>
-              <h2 className="section-title mb-3 md:mb-4">
+              <h2 className="section-title mb-2 sm:mb-3 md:mb-4 text-2xl sm:text-3xl md:text-4xl lg:text-5xl">
                 20 Amazing Flavors. Infinite Cravings.
               </h2>
-              <p className="text-gray-600 text-xs sm:text-sm md:text-base max-w-3xl leading-relaxed">
+              <p className="text-gray-600 text-sm sm:text-base md:text-lg max-w-3xl leading-relaxed">
                 Sweet, Hot or Fun, there's a flavor to match every mood.
               </p>
             </div>
 
             {/* Category Tabs */}
-            <div className="flex gap-5 mb-8 md:mb-12 overflow-x-auto pb-3 scrollbar-hide md:max-w-[80%] md:justify-between">
+            <div className="flex gap-3 sm:gap-4 md:gap-5 mb-6 sm:mb-8 md:mb-12 overflow-x-auto pb-3 scrollbar-hide md:max-w-full lg:max-w-[80%] md:justify-between -mx-4 px-4 sm:mx-0 sm:px-0">
               {categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
-                  className={`category-tab ${activeCategory === cat ? 'active' : ''}`}
+                  className={`category-tab whitespace-nowrap flex-shrink-0 ${activeCategory === cat ? 'active' : ''}`}
                 >
                   {cat}
                 </button>
@@ -310,25 +324,28 @@ export default function WingsideLanding() {
 
             {/* Flavor Cards */}
             {loading ? (
-              <div className="flex items-center justify-center py-16">
+              <div className="flex items-center justify-center py-12 sm:py-16">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#552627] mx-auto mb-4"></div>
-                  <div className="text-gray-600">Loading flavors...</div>
+                  <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-[#552627] mx-auto mb-3 sm:mb-4"></div>
+                  <div className="text-gray-600 text-sm sm:text-base">Loading flavors...</div>
                 </div>
               </div>
             ) : filteredFlavors.length > 0 ? (
               <>
-                <div className="grid grid-cols-2 md:grid-cols-1 gap-4 md:gap-10">
+                <div className="grid grid-cols-2 md:grid-cols-1 gap-4 sm:gap-6 md:gap-10">
                   {filteredFlavors.map((flavor) => {
                     const { description1, description2 } = parseDescription(flavor.description);
                     return (
-                      <div key={flavor.id} className="flavor-card flex flex-col gap-2 md:gap-4 md:grid md:grid-cols-2 md:items-center md:max-w-[80%]">
+                      <div key={flavor.id} className="flavor-card flex flex-col gap-2 sm:gap-3 md:gap-4 md:grid md:grid-cols-2 md:items-center md:max-w-[95%] lg:max-w-[80%]">
+                        {/* Text Content */}
                         <div className="order-2 md:order-1 md:ml-[30px]">
-                          <h3 className="text-lg sm:text-xl md:text-4xl lg:text-5xl font-bold mb-1 md:mb-4">{renderFlavorName(flavor.name)}</h3>
-                          <p className="text-gray-600 text-xs md:text-lg mb-1 md:mb-1 font-semibold">
+                          <h3 className="text-base sm:text-lg md:text-4xl lg:text-5xl font-bold mb-1 sm:mb-2 md:mb-4 leading-tight">
+                            {renderFlavorName(flavor.name)}
+                          </h3>
+                          <p className="text-gray-600 text-[10px] sm:text-xs md:text-lg mb-0.5 sm:mb-1 md:mb-1 font-semibold leading-tight">
                             {description1}
                           </p>
-                          <p className="text-gray-600 text-xs md:text-lg mb-2 md:mb-6">
+                          <p className="text-gray-600 text-[10px] sm:text-xs md:text-lg mb-2 sm:mb-3 md:mb-6 leading-snug">
                             {description2}
                           </p>
                           <div className="hidden md:flex gap-2">
@@ -340,11 +357,13 @@ export default function WingsideLanding() {
                             </Link>
                           </div>
                         </div>
+
+                        {/* Image */}
                         <div className="order-1 md:order-2 flex justify-center md:block md:ml-[80px]">
                           <img
                             src={flavor.image_url}
                             alt={flavor.name}
-                            className="w-auto h-[100px] sm:h-[120px] md:h-[260px] lg:h-[360px] flavor-image"
+                            className="w-auto h-[100px] sm:h-[140px] md:h-[260px] lg:h-[360px] flavor-image object-contain"
                             loading="lazy"
                           />
                         </div>
@@ -354,15 +373,15 @@ export default function WingsideLanding() {
                 </div>
 
                 {/* Mobile Order Now Button */}
-                <div className="mt-8 md:hidden">
-                  <Link href="/order" className="btn-primary w-full text-center py-4 text-lg inline-block">
+                <div className="mt-6 sm:mt-8 md:hidden">
+                  <Link href="/order" className="btn-primary w-full text-center py-3 sm:py-4 text-base sm:text-lg inline-block">
                     Order Now
                   </Link>
                 </div>
               </>
             ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500 text-base">No flavors available in this category yet.</p>
+              <div className="text-center py-8 sm:py-12">
+                <p className="text-gray-500 text-sm sm:text-base">No flavors available in this category yet.</p>
               </div>
             )}
           </div>

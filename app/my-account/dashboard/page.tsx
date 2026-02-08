@@ -473,7 +473,7 @@ export default function WingclubDashboard() {
           <div className="dashboard-wallet-top">
             <div className="dashboard-wallet-left">
               {/* Wallet and Points Row */}
-              <div className="flex items-start justify-between gap-4 mb-3">
+              <div className="flex items-start justify-between gap-2 sm:gap-3 md:gap-4 mb-2 sm:mb-3">
                 <div className="flex-1">
                   <p className="dashboard-wallet-label">Wallet Balance</p>
                   {embedlyWallet ? (
@@ -588,7 +588,7 @@ export default function WingclubDashboard() {
             <span>Wallet History</span>
           </Link>
  
-          <Link href="/my-account/cards" className="dashboard-action-card">
+          <button disabled className="dashboard-action-card opacity-50 cursor-not-allowed" onClick={(e) => e.preventDefault()}>
             <div className="dashboard-action-icon red">
               <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
@@ -596,7 +596,7 @@ export default function WingclubDashboard() {
               </svg>
             </div>
             <span>Wingside® Card</span>
-          </Link>
+          </button>
         </div>
 
         {/* Stats Cards */}

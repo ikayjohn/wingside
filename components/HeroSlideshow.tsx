@@ -9,6 +9,8 @@ interface Slide {
   headline: string;
   description: string | null;
   image_url: string;
+  button_text: string | null;
+  button_link: string | null;
   is_active: boolean;
   display_order: number;
 }
@@ -241,12 +243,21 @@ export default function HeroSlideshow() {
             {currentSlide.description}
           </p>
         )}
-        <Link
-          href="/order"
-          className="btn-primary inline-block mt-6 scale-110 hover:bg-white hover:text-gray-900 transition-all"
-        >
-          Order Now
-        </Link>
+        {(currentSlide.button_text || currentSlide.button_link) ? (
+          <Link
+            href={currentSlide.button_link || '/order'}
+            className="btn-primary inline-block mt-6 scale-110 hover:bg-white hover:text-gray-900 transition-all"
+          >
+            {currentSlide.button_text || 'Order Now'}
+          </Link>
+        ) : (
+          <Link
+            href="/order"
+            className="btn-primary inline-block mt-6 scale-110 hover:bg-white hover:text-gray-900 transition-all"
+          >
+            Order Now
+          </Link>
+        )}
       </div>
 
       {/* Slide Indicators */}

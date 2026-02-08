@@ -16,6 +16,9 @@ interface CartItem {
   drink?: string | string[];
   milkshake?: string;
   cake?: string;
+  deliveryDate?: string;
+  deliveryTime?: string;
+  notes?: string;
 }
 
 interface Product {
@@ -1167,6 +1170,21 @@ export default function OrderPage() {
                           )}
                           {item.milkshake && (
                             <div className="text-xs text-gray-500 mt-0.5">Milkshake: {item.milkshake}</div>
+                          )}
+                          {item.deliveryDate && (
+                            <div className="text-xs text-pink-600 font-semibold mt-1">
+                              📅 {new Date(item.deliveryDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                            </div>
+                          )}
+                          {item.deliveryTime && (
+                            <div className="text-xs text-pink-600 font-semibold">
+                              ⏰ {item.deliveryTime}
+                            </div>
+                          )}
+                          {item.notes && (
+                            <div className="text-xs text-gray-500 italic mt-1">
+                              Note: {item.notes}
+                            </div>
                           )}
                         </div>
                         <div className="flex items-center gap-2">

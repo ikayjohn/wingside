@@ -43,7 +43,7 @@ export async function PATCH(
       );
     }
 
-    const { title, headline, description, image_url, is_active, display_order } = body;
+    const { title, headline, description, image_url, button_text, button_link, is_active, display_order } = body;
 
     console.log('[Hero Slides API] PATCH - Update data:', body);
 
@@ -55,6 +55,8 @@ export async function PATCH(
         ...(headline !== undefined && { headline }),
         ...(description !== undefined && { description }),
         ...(image_url !== undefined && { image_url }),
+        ...(button_text !== undefined && { button_text }),
+        ...(button_link !== undefined && { button_link }),
         ...(is_active !== undefined && { is_active }),
         ...(display_order !== undefined && { display_order }),
       })
