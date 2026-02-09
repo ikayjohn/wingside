@@ -580,7 +580,7 @@ export default function ValentinesPage() {
             </div>
           ) : products.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-              {products.map((product) => {
+              {[...products].sort((a, b) => (b.sizes[0]?.price || 0) - (a.sizes[0]?.price || 0)).map((product) => {
                 const productPrice = product.sizes[0]?.price || 0;
 
                 return (
