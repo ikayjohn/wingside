@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -31,7 +31,8 @@ export async function GET(
       );
     }
 
-    const eventId = params.id;
+    const resolvedParams = await params;
+    const eventId = resolvedParams.id;
 
     // Fetch RSVPs for this event
     const { data: rsvps, error: rsvpsError } = await supabase
