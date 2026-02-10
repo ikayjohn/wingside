@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     // Check if event exists and is active
     const { data: event, error: eventError } = await supabase
       .from('events')
-      .select('id, title, is_active')
+      .select('id, title, is_active, event_date, event_time, location')
       .eq('id', event_id)
       .single();
 
@@ -75,8 +75,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Send confirmation email
-    // You can integrate with Resend here to send a confirmation email
+    // Send confirmation email
+    try {
+      const { sendEventRSVPConfirmation } = await import('@/lib/emails/event-rsvp');
+
+      // Create Google Calendar link
+      const eventDateStr = event.event_date || new Date().toISOString().split('T')[0];
+      const eventTimeStr = event.event_time || '00:00';
+      const eventDateTime = new Date(`${eventDateStr}T${eventTimeStr}`);
+      const calendarLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${eventDateTime.toISOString().replace(/[-:]/g, '').split('.')[0]}Z/${eventDateTime.toISOString().replace(/[-:]/g, '').split('.')[0]}Z&details=${encodeURIComponent('Event at Wingside')}&location=${encodeURIComponent(event.location || 'Wingside')}`;
+
+      await sendEventRSVPConfirmation({
+        recipientEmail: email,
+        recipientName: name,
+        eventTitle: event.title,
+        eventDate: event.event_date || new Date().toISOString(),
+        eventTime: event.event_time || '',
+        eventLocation: event.location || 'Wingside',
+        attending,
+        calendarLink: attending === 'yes' ? calendarLink : undefined,
+      });
+
+      console.log(`✅ RSVP confirmation email sent to ${email}`);
+    } catch (emailError) {
+      console.error('❌ Error sending RSVP confirmation email:', emailError);
+      // Don't fail the RSVP if email fails - continue with success response
+    }
 
     return NextResponse.json(
       {

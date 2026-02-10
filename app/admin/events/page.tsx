@@ -27,6 +27,11 @@ export default function EventsAdminPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [showRSVPModal, setShowRSVPModal] = useState(false);
+  const [selectedEventForRSVP, setSelectedEventForRSVP] = useState<Event | null>(null);
+  const [rsvps, setRsvps] = useState<any[]>([]);
+  const [rsvpStats, setRsvpStats] = useState({ total: 0, attending_yes: 0, attending_maybe: 0, attending_no: 0, want_updates: 0 });
+  const [loadingRSVPs, setLoadingRSVPs] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -136,6 +141,35 @@ export default function EventsAdminPage() {
     } catch (error) {
       console.error('Error deleting event:', error);
     }
+  };
+
+  const handleViewRSVPs = async (event: Event) => {
+    setSelectedEventForRSVP(event);
+    setShowRSVPModal(true);
+    setLoadingRSVPs(true);
+
+    try {
+      const response = await fetch(`/api/admin/events/${event.id}/rsvps`);
+      const data = await response.json();
+
+      if (response.ok) {
+        setRsvps(data.rsvps || []);
+        setRsvpStats(data.stats || { total: 0, attending_yes: 0, attending_maybe: 0, attending_no: 0, want_updates: 0 });
+      } else {
+        console.error('Failed to fetch RSVPs');
+      }
+    } catch (error) {
+      console.error('Error fetching RSVPs:', error);
+    } finally {
+      setLoadingRSVPs(false);
+    }
+  };
+
+  const handleCloseRSVPModal = () => {
+    setShowRSVPModal(false);
+    setSelectedEventForRSVP(null);
+    setRsvps([]);
+    setRsvpStats({ total: 0, attending_yes: 0, attending_maybe: 0, attending_no: 0, want_updates: 0 });
   };
 
   const handleCloseModal = () => {
@@ -303,6 +337,13 @@ export default function EventsAdminPage() {
                     </span>
                   </td>
                   <td className="px-3 py-4 text-right text-sm font-medium whitespace-nowrap">
+                    <button
+                      onClick={() => handleViewRSVPs(event)}
+                      className="text-green-600 hover:text-green-900 mr-4"
+                      title="View RSVPs"
+                    >
+                      RSVPs
+                    </button>
                     <button
                       onClick={() => handleEdit(event)}
                       className="text-blue-600 hover:text-blue-900 mr-4"
@@ -597,6 +638,133 @@ export default function EventsAdminPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* RSVP Modal */}
+      {showRSVPModal && selectedEventForRSVP && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Event RSVPs</h2>
+                  <p className="text-sm text-gray-600 mt-1">{selectedEventForRSVP.title}</p>
+                </div>
+                <button
+                  onClick={handleCloseRSVPModal}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {loadingRSVPs ? (
+                <div className="py-12 text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+                  <p className="text-gray-600 mt-4">Loading RSVPs...</p>
+                </div>
+              ) : (
+                <>
+                  {/* RSVP Statistics */}
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                    <div className="bg-gray-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-gray-900">{rsvpStats.total}</div>
+                      <div className="text-xs text-gray-600 mt-1">Total RSVPs</div>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-green-700">{rsvpStats.attending_yes}</div>
+                      <div className="text-xs text-gray-600 mt-1">Attending</div>
+                    </div>
+                    <div className="bg-yellow-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-yellow-700">{rsvpStats.attending_maybe}</div>
+                      <div className="text-xs text-gray-600 mt-1">Maybe</div>
+                    </div>
+                    <div className="bg-red-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-red-700">{rsvpStats.attending_no}</div>
+                      <div className="text-xs text-gray-600 mt-1">Can't Attend</div>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-blue-700">{rsvpStats.want_updates}</div>
+                      <div className="text-xs text-gray-600 mt-1">Want Updates</div>
+                    </div>
+                  </div>
+
+                  {/* RSVP List */}
+                  {rsvps.length === 0 ? (
+                    <div className="text-center py-12 bg-gray-50 rounded-lg">
+                      <p className="text-gray-600">No RSVPs yet for this event.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Name
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Email
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Phone
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Status
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Updates
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Date
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {rsvps.map((rsvp) => (
+                            <tr key={rsvp.id}>
+                              <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                                {rsvp.name}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600">
+                                {rsvp.email}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600">
+                                {rsvp.phone || '-'}
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className={`px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
+                                  rsvp.attending === 'yes'
+                                    ? 'bg-green-100 text-green-800'
+                                    : rsvp.attending === 'maybe'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {rsvp.attending === 'yes' ? 'Attending' : rsvp.attending === 'maybe' ? 'Maybe' : "Can't Attend"}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600">
+                                {rsvp.stay_updated ? '✓ Yes' : '✗ No'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600">
+                                {new Date(rsvp.created_at).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                })}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
