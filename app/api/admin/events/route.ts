@@ -96,6 +96,8 @@ export async function POST(request: NextRequest) {
         event_time: body.event_time || null,
         location: body.location,
         image_url: body.image_url || null,
+        spotify_playlist_url: body.spotify_playlist_url || null,
+        spotify_description: body.spotify_description || null,
         is_active: body.is_active !== undefined ? body.is_active : true,
         display_order: body.display_order || 0,
       })

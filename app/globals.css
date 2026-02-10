@@ -4679,7 +4679,8 @@ input[type="button"],
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 1rem;
-  aspect-ratio: 4/3;
+  aspect-ratio: 2/1;
+  height: auto;
 }
 
 .connect-event-image img {

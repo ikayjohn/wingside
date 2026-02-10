@@ -51,6 +51,8 @@ export async function PATCH(
         event_time: body.event_time,
         location: body.location,
         image_url: body.image_url,
+        spotify_playlist_url: body.spotify_playlist_url || null,
+        spotify_description: body.spotify_description || null,
         is_active: body.is_active,
         display_order: body.display_order,
         updated_at: new Date().toISOString(),

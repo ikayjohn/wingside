@@ -61,16 +61,20 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     // Apply filters
+    const now = new Date().toISOString();
     if (status === 'active') {
-      query = query.eq('is_active', true).gt('expires_at', new Date().toISOString());
+      query = query.eq('is_active', true).gt('expires_at', now).gt('current_balance', 0);
     } else if (status === 'inactive') {
       query = query.eq('is_active', false);
     } else if (status === 'expired') {
-      query = query.lt('expires_at', new Date().toISOString());
+      query = query.lte('expires_at', now);
+    } else if (status === 'fully_used') {
+      query = query.eq('current_balance', 0);
     }
 
     if (search) {
-      query = query.ilike('card_number', `%${search}%`);
+      // Search by card_number, code, or recipient_email
+      query = query.or(`card_number.ilike.%${search}%,code.ilike.%${search}%,recipient_email.ilike.%${search}%`);
     }
 
     // Pagination
@@ -85,12 +89,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch gift cards' }, { status: 500 });
     }
 
+    // Calculate summary statistics
+    const { data: summary } = await supabaseAdmin
+      .from('gift_cards')
+      .select('initial_balance, current_balance, is_active, expires_at');
+
+    const totalIssued = summary?.length || 0;
+    const totalValue = summary?.reduce((sum, gc) => sum + Number(gc.initial_balance), 0) || 0;
+    const remainingBalance = summary?.reduce((sum, gc) => sum + Number(gc.current_balance), 0) || 0;
+    const redeemedValue = totalValue - remainingBalance;
+    const redemptionRate = totalValue > 0 ? (redeemedValue / totalValue) * 100 : 0;
+
     return NextResponse.json({
       giftCards,
       total: count || 0,
       page,
       limit,
       totalPages: Math.ceil((count || 0) / limit),
+      summary: {
+        total_issued: totalIssued,
+        total_value: totalValue,
+        remaining_balance: remainingBalance,
+        redeemed_value: redeemedValue,
+        redemption_rate: Math.round(redemptionRate * 100) / 100,
+      },
     });
   } catch (error) {
     console.error('Gift cards list error:', error);

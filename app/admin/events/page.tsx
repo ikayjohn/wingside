@@ -11,6 +11,8 @@ interface Event {
   event_time: string | null;
   location: string;
   image_url: string | null;
+  spotify_playlist_url: string | null;
+  spotify_description: string | null;
   is_active: boolean;
   display_order: number;
   created_at: string;
@@ -32,6 +34,8 @@ export default function EventsAdminPage() {
     event_time: '',
     location: '',
     image_url: '',
+    spotify_playlist_url: '',
+    spotify_description: '',
     is_active: true,
     display_order: 0,
   });
@@ -110,6 +114,8 @@ export default function EventsAdminPage() {
       event_time: event.event_time || '',
       location: event.location,
       image_url: event.image_url || '',
+      spotify_playlist_url: event.spotify_playlist_url || '',
+      spotify_description: event.spotify_description || '',
       is_active: event.is_active,
       display_order: event.display_order,
     });
@@ -142,6 +148,8 @@ export default function EventsAdminPage() {
       event_time: '',
       location: '',
       image_url: '',
+      spotify_playlist_url: '',
+      spotify_description: '',
       is_active: true,
       display_order: 0,
     });
@@ -228,23 +236,23 @@ export default function EventsAdminPage() {
       </div>
 
       {/* Events List */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
+        <table className="w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/5">
                 Event
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">
                 Date
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">
                 Location
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
                 Status
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -259,34 +267,34 @@ export default function EventsAdminPage() {
             ) : (
               events.map((event) => (
                 <tr key={event.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-4">
                     <div className="flex items-center">
                       {event.image_url && (
                         <img
                           src={event.image_url}
                           alt={event.title}
-                          className="h-12 w-12 rounded-lg object-cover mr-4"
+                          className="h-10 w-10 rounded-lg object-cover mr-3 flex-shrink-0"
                         />
                       )}
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{event.title}</div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-gray-900 truncate">{event.title}</div>
                         {event.description && (
-                          <div className="text-sm text-gray-500 max-w-xs truncate">
+                          <div className="text-xs text-gray-500 truncate max-w-[250px]">
                             {event.description}
                           </div>
                         )}
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatDate(event.event_date)}
-                    {event.event_time && <span className="text-gray-500 ml-2">at {event.event_time}</span>}
+                  <td className="px-3 py-4 text-sm text-gray-900">
+                    <div className="whitespace-nowrap">{formatDate(event.event_date)}</div>
+                    {event.event_time && <div className="text-xs text-gray-500 whitespace-nowrap">{event.event_time}</div>}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {event.location}
+                  <td className="px-3 py-4 text-sm text-gray-900">
+                    <div className="truncate max-w-[150px]">{event.location}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                  <td className="px-3 py-4">
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
                       event.is_active
                         ? 'bg-green-100 text-green-800'
                         : 'bg-gray-100 text-gray-800'
@@ -294,7 +302,7 @@ export default function EventsAdminPage() {
                       {event.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-3 py-4 text-right text-sm font-medium whitespace-nowrap">
                     <button
                       onClick={() => handleEdit(event)}
                       className="text-blue-600 hover:text-blue-900 mr-4"
@@ -482,6 +490,53 @@ export default function EventsAdminPage() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                       placeholder="https://example.com/image.jpg"
                     />
+                  </div>
+                </div>
+
+                {/* Spotify Integration Section */}
+                <div className="border-t border-gray-200 pt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="text-green-600">
+                      <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                    </svg>
+                    <h3 className="text-lg font-semibold text-gray-900">Spotify Integration</h3>
+                    <span className="text-xs text-gray-500">(Optional)</span>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Spotify Playlist URL
+                      </label>
+                      <input
+                        type="url"
+                        name="spotify_playlist_url"
+                        value={formData.spotify_playlist_url}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                        placeholder="https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Enter the full Spotify playlist URL. It will be displayed as an embedded player on the event details.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Spotify Description
+                      </label>
+                      <textarea
+                        name="spotify_description"
+                        value={formData.spotify_description}
+                        onChange={handleInputChange}
+                        rows={2}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                        placeholder="e.g., Listen to our playlist curated for you this Valentine and follow us on Spotify for the best vibes."
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Custom message to display with the playlist. This appears above the embedded player.
+                      </p>
+                    </div>
                   </div>
                 </div>
 

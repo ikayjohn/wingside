@@ -482,7 +482,7 @@ export default function AdminProductsPage() {
       </div>
 
       {/* Category Filter */}
-      <div className="mb-6 flex gap-1 overflow-x-auto">
+      <div className="mb-6 flex flex-wrap gap-1">
         <button
           onClick={() => setSelectedCategory('all')}
           className="px-3 py-1.5 rounded-lg font-medium transition-colors whitespace-nowrap hover:opacity-80"

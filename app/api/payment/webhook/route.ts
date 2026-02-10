@@ -96,6 +96,122 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      // Check if this is a gift card purchase
+      const isGiftCardPurchase = data.metadata?.type === 'gift_card_purchase'
+
+      if (isGiftCardPurchase) {
+        // Handle gift card activation
+        const giftCardId = data.metadata?.gift_card_id
+        const giftCardCode = data.metadata?.gift_card_code
+        const designImage = data.metadata?.design_image
+        const denomination = data.metadata?.denomination
+        const recipientName = data.metadata?.recipient_name
+        const recipientEmail = data.metadata?.recipient_email
+
+        if (!giftCardId || !giftCardCode) {
+          loggers.webhook.error('Missing gift card data in payment metadata', { reference: data.reference })
+          return NextResponse.json(
+            { error: 'Missing gift card data in metadata' },
+            { status: 400 }
+          )
+        }
+
+        const admin = createAdminClient()
+
+        // Check if gift card is already activated (idempotency)
+        const { data: existingGiftCard, error: giftCardCheckError } = await admin
+          .from('gift_cards')
+          .select('id, is_active, payment_reference')
+          .eq('id', giftCardId)
+          .single()
+
+        if (giftCardCheckError) {
+          loggers.webhook.error('Error checking existing gift card', giftCardCheckError, { giftCardId })
+          return NextResponse.json(
+            { error: 'Gift card not found' },
+            { status: 404 }
+          )
+        }
+
+        if (existingGiftCard?.is_active && existingGiftCard?.payment_reference === data.reference) {
+          loggers.webhook.info('Gift card already activated', { giftCardId, reference: data.reference })
+          return NextResponse.json({ success: true, message: 'Already processed' })
+        }
+
+        // Activate gift card
+        const { error: activationError } = await admin
+          .from('gift_cards')
+          .update({
+            is_active: true,
+            current_balance: denomination,
+            payment_reference: data.reference,
+          })
+          .eq('id', giftCardId)
+          .eq('is_active', false) // Only activate if not already active
+
+        if (activationError) {
+          loggers.webhook.error('Error activating gift card', activationError, { giftCardId })
+          return NextResponse.json(
+            { error: 'Failed to activate gift card' },
+            { status: 500 }
+          )
+        }
+
+        // Record activation transaction
+        await admin
+          .from('gift_card_transactions')
+          .insert({
+            gift_card_id: giftCardId,
+            transaction_type: 'purchase',
+            amount: denomination,
+            description: 'Gift card activated',
+            balance_after: denomination,
+          })
+
+        // Send gift card email to recipient
+        try {
+          const { sendGiftCardEmail } = await import('@/lib/emails/gift-card')
+          await sendGiftCardEmail({
+            recipientEmail,
+            recipientName,
+            code: giftCardCode,
+            balance: denomination,
+            expiresAt: existingGiftCard.expires_at,
+            designImage,
+          })
+
+          // Update email_sent_at timestamp
+          await admin
+            .from('gift_cards')
+            .update({ email_sent_at: new Date().toISOString() })
+            .eq('id', giftCardId)
+
+          loggers.webhook.info(`✅ Gift card ${giftCardCode} activated and email sent`, { giftCardId })
+        } catch (emailError) {
+          loggers.webhook.error('Error sending gift card email', emailError, { giftCardId })
+
+          // Record failed email in failed_notifications table (if exists)
+          try {
+            await admin.from('failed_notifications').insert({
+              type: 'gift_card_email',
+              recipient: recipientEmail,
+              data: { gift_card_id: giftCardId, code: giftCardCode },
+              error_message: emailError instanceof Error ? emailError.message : 'Unknown error',
+            })
+          } catch (insertError) {
+            loggers.webhook.error('Error logging failed email notification', insertError)
+          }
+
+          // Don't fail the webhook - gift card is still activated
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: 'Gift card activated successfully',
+          gift_card_code: giftCardCode,
+        })
+      }
+
       // Extract order ID from metadata
       const orderId = data.metadata?.order_id
 
