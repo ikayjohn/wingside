@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
         // Check if gift card is already activated (idempotency)
         const { data: existingGiftCard, error: giftCardCheckError } = await admin
           .from('gift_cards')
-          .select('id, is_active, payment_reference')
+          .select('id, is_active, payment_reference, expires_at')
           .eq('id', giftCardId)
           .single()
 
