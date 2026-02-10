@@ -77,7 +77,7 @@ export const NAVIGATION_LINKS: NavigationLink[] = [
   // ============================================
   {
     id: 'about',
-    label: 'About Us',
+    label: 'About us',
     href: '/about',
     section: 'footer-company',
     description: 'Company information and story'
@@ -126,7 +126,7 @@ export const NAVIGATION_LINKS: NavigationLink[] = [
   },
   {
     id: 'contact',
-    label: 'Contact Us',
+    label: 'Contact us',
     href: '/contact',
     section: 'footer-company',
     description: 'Contact form and information'
