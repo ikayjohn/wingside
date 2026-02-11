@@ -54,12 +54,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { denomination, design_image, recipient_name, recipient_email } = body
+    const { denomination, design_image, recipient_name, recipient_email, payment_method } = body
 
     // Validate required fields
     if (!denomination || !design_image || !recipient_name || !recipient_email) {
       return NextResponse.json(
         { error: 'Missing required fields: denomination, design_image, recipient_name, recipient_email' },
+        { status: 400 }
+      )
+    }
+
+    // Validate payment method
+    const selectedPaymentMethod = payment_method || 'paystack' // Default to Paystack
+    if (selectedPaymentMethod !== 'paystack' && selectedPaymentMethod !== 'nomba') {
+      return NextResponse.json(
+        { error: 'Invalid payment method. Must be "paystack" or "nomba"' },
         { status: 400 }
       )
     }
@@ -168,20 +177,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Initialize payment with Paystack
-    const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY
-
-    if (!paystackSecretKey) {
-      console.error('PAYSTACK_SECRET_KEY not configured')
-      return NextResponse.json(
-        { error: 'Payment gateway not configured' },
-        { status: 500 }
-      )
-    }
-
-    // Convert amount to kobo (Paystack expects amounts in kobo/cents)
-    const amountInKobo = denomination * 100
-
     // Build callback URL
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.wingside.ng'
     const sanitizedAppUrl = sanitizeUrl(appUrl)
@@ -194,24 +189,143 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const callbackUrl = `${sanitizedAppUrl}/payment/callback?type=gift_card&gift_card_id=${encodeURIComponent(giftCard.id)}`
-
     // Generate unique payment reference
     const paymentReference = `GC_${giftCardCode}_${Date.now()}`
 
-    const paystackResponse = await fetch(
-      'https://api.paystack.co/transaction/initialize',
-      {
+    let authorizationUrl: string
+    let accessCode: string | undefined
+    let reference: string
+
+    if (selectedPaymentMethod === 'paystack') {
+      // Initialize payment with Paystack
+      const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY
+
+      if (!paystackSecretKey) {
+        console.error('PAYSTACK_SECRET_KEY not configured')
+        return NextResponse.json(
+          { error: 'Paystack payment gateway not configured' },
+          { status: 500 }
+        )
+      }
+
+      // Convert amount to kobo (Paystack expects amounts in kobo/cents)
+      const amountInKobo = denomination * 100
+
+      const callbackUrl = `${sanitizedAppUrl}/payment/callback?type=gift_card&gift_card_id=${encodeURIComponent(giftCard.id)}`
+
+      const paystackResponse = await fetch(
+        'https://api.paystack.co/transaction/initialize',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${paystackSecretKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: user.email,
+            amount: amountInKobo,
+            reference: paymentReference,
+            callback_url: callbackUrl,
+            metadata: {
+              type: 'gift_card_purchase',
+              gift_card_id: giftCard.id,
+              gift_card_code: giftCardCode,
+              design_image: design_image,
+              denomination: denomination,
+              recipient_name: sanitizedName,
+              recipient_email: sanitizedEmail,
+              purchased_by: user.id,
+            },
+          }),
+        }
+      )
+
+      const paystackData = await paystackResponse.json()
+
+      if (!paystackResponse.ok || !paystackData.status) {
+        console.error('Paystack initialization error:', paystackData)
+
+        // Delete the gift card since payment initialization failed
+        await supabase
+          .from('gift_cards')
+          .delete()
+          .eq('id', giftCard.id)
+
+        return NextResponse.json(
+          { error: 'Failed to initialize Paystack payment. Please try again.' },
+          { status: 500 }
+        )
+      }
+
+      authorizationUrl = paystackData.data.authorization_url
+      accessCode = paystackData.data.access_code
+      reference = paystackData.data.reference
+    } else {
+      // Initialize payment with Nomba
+      const nombaClientId = process.env.NOMBA_CLIENT_ID
+      const nombaClientSecret = process.env.NOMBA_CLIENT_SECRET
+      const nombaAccountId = process.env.NOMBA_ACCOUNT_ID
+
+      if (!nombaClientId || !nombaClientSecret || !nombaAccountId) {
+        console.error('Nomba credentials not configured')
+        return NextResponse.json(
+          { error: 'Nomba payment gateway not configured' },
+          { status: 500 }
+        )
+      }
+
+      // Get Nomba access token
+      const tokenResponse = await fetch('https://api.nomba.com/v1/auth/token/issue', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${paystackSecretKey}`,
           'Content-Type': 'application/json',
+          'accountId': nombaAccountId,
         },
         body: JSON.stringify({
-          email: user.email,
-          amount: amountInKobo,
-          reference: paymentReference,
-          callback_url: callbackUrl,
+          grant_type: 'client_credentials',
+          client_id: nombaClientId,
+          client_secret: nombaClientSecret,
+        }),
+      })
+
+      const tokenData = await tokenResponse.json()
+
+      if (tokenData.code !== '00' || !tokenData.data?.access_token) {
+        console.error('Failed to get Nomba access token:', tokenData)
+
+        // Delete the gift card since payment initialization failed
+        await supabase
+          .from('gift_cards')
+          .delete()
+          .eq('id', giftCard.id)
+
+        return NextResponse.json(
+          { error: 'Failed to initialize Nomba payment. Please try again.' },
+          { status: 500 }
+        )
+      }
+
+      const accessToken = tokenData.data.access_token
+
+      // Create Nomba checkout
+      const checkoutResponse = await fetch('https://api.nomba.com/v1/checkout/order', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'accountId': nombaAccountId,
+        },
+        body: JSON.stringify({
+          orderReference: paymentReference,
+          amount: denomination,
+          currency: 'NGN',
+          customerEmail: user.email || sanitizedEmail,
+          customization: {
+            title: 'Wingside Gift Card',
+            description: `${sanitizedName} - ${design_image}`,
+            logo: `${sanitizedAppUrl}/logo.png`,
+          },
+          callbackUrl: `${sanitizedAppUrl}/payment/nomba/callback?type=gift_card&gift_card_id=${encodeURIComponent(giftCard.id)}`,
           metadata: {
             type: 'gift_card_purchase',
             gift_card_id: giftCard.id,
@@ -223,31 +337,35 @@ export async function POST(request: NextRequest) {
             purchased_by: user.id,
           },
         }),
+      })
+
+      const checkoutData = await checkoutResponse.json()
+
+      if (checkoutData.code !== '00' || !checkoutData.data?.checkoutLink) {
+        console.error('Nomba checkout initialization error:', checkoutData)
+
+        // Delete the gift card since payment initialization failed
+        await supabase
+          .from('gift_cards')
+          .delete()
+          .eq('id', giftCard.id)
+
+        return NextResponse.json(
+          { error: 'Failed to initialize Nomba payment. Please try again.' },
+          { status: 500 }
+        )
       }
-    )
 
-    const paystackData = await paystackResponse.json()
-
-    if (!paystackResponse.ok || !paystackData.status) {
-      console.error('Paystack initialization error:', paystackData)
-
-      // Delete the gift card since payment initialization failed
-      await supabase
-        .from('gift_cards')
-        .delete()
-        .eq('id', giftCard.id)
-
-      return NextResponse.json(
-        { error: 'Failed to initialize payment. Please try again.' },
-        { status: 500 }
-      )
+      authorizationUrl = checkoutData.data.checkoutLink
+      reference = checkoutData.data.orderReference
     }
 
-    // Update gift card with payment reference
+    // Update gift card with payment reference and method
     await supabase
       .from('gift_cards')
       .update({
         payment_reference: paymentReference,
+        payment_method: selectedPaymentMethod,
       })
       .eq('id', giftCard.id)
 
@@ -255,9 +373,10 @@ export async function POST(request: NextRequest) {
       success: true,
       gift_card_id: giftCard.id,
       code: giftCardCode,
-      authorization_url: paystackData.data.authorization_url,
-      access_code: paystackData.data.access_code,
-      reference: paystackData.data.reference,
+      authorization_url: authorizationUrl,
+      access_code: accessCode,
+      reference: reference,
+      payment_method: selectedPaymentMethod,
     })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
