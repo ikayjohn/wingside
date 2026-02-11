@@ -49,6 +49,12 @@ export default function CheckoutPage() {
   const [promoError, setPromoError] = useState('');
   const [applyingPromo, setApplyingPromo] = useState(false);
 
+  // Gift card states
+  const [giftCardCode, setGiftCardCode] = useState('');
+  const [appliedGiftCard, setAppliedGiftCard] = useState<any>(null);
+  const [giftCardError, setGiftCardError] = useState('');
+  const [applyingGiftCard, setApplyingGiftCard] = useState(false);
+
   // Referral code states
   const [referralValidated, setReferralValidated] = useState(false);
   const [referralError, setReferralError] = useState('');
@@ -134,6 +140,18 @@ export default function CheckoutPage() {
         setAppliedPromo(JSON.parse(savedPromo));
       } catch (e) {
         console.error('Error loading promo code:', e);
+      }
+    }
+  }, []);
+
+  // Load gift card from localStorage on mount
+  useEffect(() => {
+    const savedGiftCard = localStorage.getItem('wingside-gift-card');
+    if (savedGiftCard) {
+      try {
+        setAppliedGiftCard(JSON.parse(savedGiftCard));
+      } catch (e) {
+        console.error('Error loading gift card:', e);
       }
     }
   }, []);
@@ -310,7 +328,8 @@ export default function CheckoutPage() {
   const deliveryFee = getDeliveryFee();
   const discount = appliedPromo ? appliedPromo.discountAmount : 0;
   const referralDiscount = referralValidated && subtotal + deliveryFee >= 1000 ? (referralInfo?.rewards?.referredReward || 500) : 0;
-  const total = subtotal + deliveryFee - discount - referralDiscount;
+  const giftCardAmount = appliedGiftCard ? Math.min(appliedGiftCard.balance, subtotal + deliveryFee - discount - referralDiscount) : 0;
+  const total = subtotal + deliveryFee - discount - referralDiscount - giftCardAmount;
 
   const formatPrice = (price: number) => {
     const symbol = settings.currency_symbol || '₦';
@@ -385,6 +404,63 @@ export default function CheckoutPage() {
       localStorage.removeItem('wingside-promo');
     }
   }, [appliedPromo]);
+
+  const applyGiftCard = async () => {
+    if (!giftCardCode.trim()) {
+      setGiftCardError('Please enter a gift card code');
+      return;
+    }
+
+    // Format code to uppercase and remove spaces
+    const formattedCode = giftCardCode.trim().toUpperCase();
+
+    setApplyingGiftCard(true);
+    setGiftCardError('');
+
+    try {
+      const response = await fetch('/api/gift-cards/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: formattedCode }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.valid) {
+        setAppliedGiftCard({
+          id: data.giftCard.id,
+          code: formattedCode,
+          balance: data.giftCard.current_balance,
+          expiresAt: data.giftCard.expires_at,
+        });
+        setGiftCardError('');
+      } else {
+        setGiftCardError(data.error || 'Invalid gift card code');
+        setAppliedGiftCard(null);
+      }
+    } catch (error) {
+      console.error('Error applying gift card:', error);
+      setGiftCardError('Error applying gift card');
+      setAppliedGiftCard(null);
+    } finally {
+      setApplyingGiftCard(false);
+    }
+  };
+
+  const removeGiftCard = () => {
+    setAppliedGiftCard(null);
+    setGiftCardCode('');
+    setGiftCardError('');
+  };
+
+  // Save gift card to localStorage whenever it changes
+  useEffect(() => {
+    if (appliedGiftCard) {
+      localStorage.setItem('wingside-gift-card', JSON.stringify(appliedGiftCard));
+    } else {
+      localStorage.removeItem('wingside-gift-card');
+    }
+  }, [appliedGiftCard]);
 
   const validateReferralCode = async () => {
     if (!formData.referralCode.trim()) {
@@ -657,6 +733,8 @@ export default function CheckoutPage() {
         discount_amount: discount,
         referral_code: referralValidated ? formData.referralCode : null,
         referral_discount: referralValidated && total >= 1000 ? (referralInfo?.rewards?.referredReward || 500) : 0,
+        gift_card_code: appliedGiftCard?.code || null,
+        gift_card_amount: giftCardAmount || 0,
         items: orderItems,
       };
 
@@ -746,9 +824,13 @@ export default function CheckoutPage() {
           throw new Error(walletPaymentData.error || walletPaymentData.details || 'Wallet payment failed');
         }
 
-        // Clear cart and show success
+        // Clear cart, promo, and gift card
         localStorage.removeItem('wingside-cart');
+        localStorage.removeItem('wingside-promo');
+        localStorage.removeItem('wingside-gift-card');
         setCartItems([]);
+        setAppliedPromo(null);
+        setAppliedGiftCard(null);
 
         // Redirect to success page
         window.location.href = `/order-success?order_id=${data.order.id}&payment_method=wallet`;
@@ -777,9 +859,13 @@ export default function CheckoutPage() {
           throw new Error(paymentData.error || 'Failed to initialize payment');
         }
 
-        // Clear cart (will be restored if payment fails)
+        // Clear cart, promo, and gift card (will be restored if payment fails)
         localStorage.removeItem('wingside-cart');
+        localStorage.removeItem('wingside-promo');
+        localStorage.removeItem('wingside-gift-card');
         setCartItems([]);
+        setAppliedPromo(null);
+        setAppliedGiftCard(null);
 
         // Redirect to Nomba checkout page
         window.location.href = paymentData.checkout_url;
@@ -804,9 +890,13 @@ export default function CheckoutPage() {
           throw new Error(paymentData.error || 'Failed to initialize payment');
         }
 
-        // Clear cart (will be restored if payment fails)
+        // Clear cart, promo, and gift card (will be restored if payment fails)
         localStorage.removeItem('wingside-cart');
+        localStorage.removeItem('wingside-promo');
+        localStorage.removeItem('wingside-gift-card');
         setCartItems([]);
+        setAppliedPromo(null);
+        setAppliedGiftCard(null);
 
         // Redirect to Embedly checkout callback page
         const params = new URLSearchParams({
@@ -839,9 +929,13 @@ export default function CheckoutPage() {
           throw new Error(paymentData.error || 'Failed to initialize payment');
         }
 
-        // Clear cart (will be restored if payment fails)
+        // Clear cart, promo, and gift card (will be restored if payment fails)
         localStorage.removeItem('wingside-cart');
+        localStorage.removeItem('wingside-promo');
+        localStorage.removeItem('wingside-gift-card');
         setCartItems([]);
+        setAppliedPromo(null);
+        setAppliedGiftCard(null);
 
         // Redirect to Paystack payment page
         window.location.href = paymentData.authorization_url;
@@ -1344,7 +1438,67 @@ export default function CheckoutPage() {
                     )}
                   </div>
 
-  
+                  {/* Gift Card */}
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                      </svg>
+                      <span className="text-sm text-gray-600">Gift Card</span>
+                    </div>
+                    {!appliedGiftCard ? (
+                      <>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={giftCardCode}
+                            onChange={(e) => {
+                              setGiftCardCode(e.target.value)
+                              setGiftCardError('')
+                            }}
+                            placeholder="Enter 12-digit gift card code"
+                            className="checkout-input flex-1"
+                            disabled={applyingGiftCard}
+                            maxLength={12}
+                          />
+                          <button
+                            type="button"
+                            onClick={applyGiftCard}
+                            disabled={applyingGiftCard}
+                            className="checkout-apply-btn"
+                          >
+                            {applyingGiftCard ? 'Checking...' : 'Apply'}
+                          </button>
+                        </div>
+                        {giftCardError && (
+                          <p className="text-xs text-red-600 mt-2">{giftCardError}</p>
+                        )}
+                      </>
+                    ) : (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-semibold text-green-800">{appliedGiftCard.code}</p>
+                            <p className="text-xs text-green-600">
+                              Balance: {formatPrice(appliedGiftCard.balance)} • Using: {formatPrice(giftCardAmount)}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={removeGiftCard}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="18" y1="6" x2="6" y2="18"></line>
+                              <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Divider */}
                   <div className="border-t border-gray-200 my-4"></div>
 
@@ -1361,6 +1515,14 @@ export default function CheckoutPage() {
                     <div className="flex justify-between mb-2">
                       <span className="text-sm text-yellow-600 font-medium">Referral Discount</span>
                       <span className="text-sm font-medium text-yellow-600">-{formatPrice(referralDiscount)}</span>
+                    </div>
+                  )}
+
+                  {/* Gift Card */}
+                  {giftCardAmount > 0 && (
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm text-purple-600 font-medium">Gift Card ({appliedGiftCard.code})</span>
+                      <span className="text-sm font-medium text-purple-600">-{formatPrice(giftCardAmount)}</span>
                     </div>
                   )}
 
