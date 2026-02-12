@@ -195,7 +195,7 @@ export default function AdminLayout({
             const hasChildren = 'children' in item;
             const isActive = !hasChildren && pathname === item.href;
             const isDropdownOpen = openDropdown === item.label;
-            const hasActiveChild = hasChildren && item.children?.some(child => pathname === child.href);
+            const hasActiveChild = hasChildren && item.children?.some((child: any) => pathname === child.href);
 
             if (hasChildren) {
               return (

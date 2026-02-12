@@ -77,23 +77,15 @@ export default function AdminOrdersPage() {
 
   async function fetchOrders() {
     try {
-      let query = supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const response = await fetch(`/api/admin/orders/list?filter=${filter}`);
 
-      if (filter !== 'all') {
-        query = query.eq('status', filter);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching orders:', error);
+      if (!response.ok) {
+        console.error('Error fetching orders:', response.status);
         return;
       }
 
-      setOrders(data || []);
+      const data = await response.json();
+      setOrders(data.orders || []);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -104,36 +96,20 @@ export default function AdminOrdersPage() {
   async function fetchOrderDetails(orderId: string) {
     setLoadingDetails(true);
     try {
-      // Fetch order details
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('id', orderId)
-        .single();
+      // Fetch order details via API
+      const response = await fetch(`/api/admin/orders/${orderId}`);
 
-      if (orderError) {
-        console.error('Error fetching order:', orderError);
+      if (!response.ok) {
+        console.error('Error fetching order:', response.status);
         alert('Failed to load order details');
         return;
       }
 
-      // Fetch order items
-      const { data: items, error: itemsError } = await supabase
-        .from('order_items')
-        .select('*')
-        .eq('order_id', orderId)
-        .order('created_at', { ascending: true });
+      const data = await response.json();
+      const order = data.order;
 
-      if (itemsError) {
-        console.error('Error fetching order items:', itemsError);
-        alert('Failed to load order items');
-        return;
-      }
-
-      setSelectedOrder({
-        ...order,
-        items: items || [],
-      });
+      // Order already includes items from API
+      setSelectedOrder(order);
     } catch (error) {
       console.error('Error:', error);
       alert('An error occurred');
@@ -144,13 +120,14 @@ export default function AdminOrdersPage() {
 
   async function updateOrderStatus(orderId: string, status: string) {
     try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ status })
-        .eq('id', orderId);
+      const response = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
 
-      if (error) {
-        console.error('Error updating order:', error);
+      if (!response.ok) {
+        console.error('Error updating order:', response.status);
         alert('Failed to update order');
         return;
       }

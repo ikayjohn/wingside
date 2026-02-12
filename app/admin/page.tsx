@@ -91,12 +91,21 @@ export default function AdminDashboard() {
         fetch('/api/admin/dashboard/charts'),
       ]);
 
+      // Check response status before parsing
+      if (!statsResponse.ok) {
+        const errorText = await statsResponse.text();
+        console.error('Stats API error:', statsResponse.status, errorText);
+        throw new Error(`Failed to fetch stats: ${statsResponse.status}`);
+      }
+
+      if (!chartsResponse.ok) {
+        const errorText = await chartsResponse.text();
+        console.error('Charts API error:', chartsResponse.status, errorText);
+        throw new Error(`Failed to fetch charts: ${chartsResponse.status}`);
+      }
+
       const statsData = await statsResponse.json();
       const chartsData = await chartsResponse.json();
-
-      if (!statsResponse.ok) {
-        throw new Error(statsData.error || 'Failed to fetch stats');
-      }
 
       setStats({
         totalOrders: statsData.totalOrders,
