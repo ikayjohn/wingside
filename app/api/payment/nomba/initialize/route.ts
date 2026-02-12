@@ -112,10 +112,11 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createClient()
+    const adminClient = createAdminClient()
 
-    // Verify order exists
+    // Verify order exists (use admin client to bypass RLS)
     console.log(`[Nomba Initialize ${requestId}] Fetching order ${order_id}...`)
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await adminClient
       .from('orders')
       .select('order_number, total, status, customer_name, customer_email')
       .eq('id', order_id)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { sanitizeEmail, sanitizeUrl } from '@/lib/security'
 import { checkRateLimit, getClientIp, rateLimitErrorResponse } from '@/lib/rate-limit'
 import { csrfProtection } from '@/lib/csrf'
@@ -78,9 +79,10 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createClient()
+    const adminClient = createAdminClient()
 
-    // Verify order exists and belongs to user
-    const { data: order, error: orderError } = await supabase
+    // Verify order exists (use admin client to bypass RLS)
+    const { data: order, error: orderError } = await adminClient
       .from('orders')
       .select('id, order_number, user_id, total, status')
       .eq('id', order_id)
@@ -187,8 +189,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Update order with payment reference
-    await supabase
+    // Update order with payment reference (use admin client to bypass RLS)
+    await adminClient
       .from('orders')
       .update({
         payment_reference: paystackData.data.reference,
