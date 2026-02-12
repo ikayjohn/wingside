@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { canAccessAdmin, UserRole } from '@/lib/permissions'
 import { createAdminClient } from '@/lib/supabase/admin'
 import crypto from 'crypto'
 import { sendOrderConfirmation, sendOrderNotification } from '@/lib/emails/service'

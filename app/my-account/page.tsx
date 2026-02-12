@@ -7,6 +7,7 @@ import { createBrowserClient } from '@supabase/ssr';
 import { HoneypotField } from '@/components/HoneypotField';
 import { Recaptcha } from '@/components/Recaptcha';
 import { fetchWithCsrf } from '@/lib/client/csrf';
+import { canAccessAdmin, UserRole } from '@/lib/permissions';
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,30 +17,50 @@ const supabase = createBrowserClient(
 export default function MyAccountPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
 
   // Check if user is already logged in
   const checkAuthStatus = useCallback(async () => {
+    if (redirecting) return; // Prevent multiple redirects
+
+
     const { data: { user } } = await supabase.auth.getUser();
 
+    console.log('My Account Page - User:', user?.email);
+
     if (user) {
-      // Check if user is admin
+      // Check user role
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
         .single();
 
-      // Redirect based on role
-      if (profile?.role === 'admin') {
-        router.push('/admin');
+      const userRole = (profile?.role || 'customer') as UserRole;
+
+      console.log('My Account Page - User role:', userRole);
+      console.log('My Account Page - Can access admin?', canAccessAdmin(userRole));
+
+      // Redirect all staff to admin, customers to dashboard
+      if (canAccessAdmin(userRole)) {
+        console.log('My Account Page - Redirecting to /admin');
+        setRedirecting(true);
+        // Use href for more reliable redirect
+        setTimeout(() => {
+          window.location.href = '/admin';
+        }, 100);
+        return;
       } else {
+        console.log('My Account Page - Redirecting to dashboard');
+        setRedirecting(true);
         router.push('/my-account/dashboard');
       }
     } else {
+      console.log('My Account Page - No user, showing login forms');
       // User is not logged in, show login/signup forms
       setLoading(false);
     }
-  }, [router]);
+  }, [router, redirecting]);
 
   useEffect(() => {
     checkAuthStatus();
@@ -410,8 +431,22 @@ export default function MyAccountPage() {
         return;
       }
 
-      if (data.session) {
-        router.push('/my-account/dashboard');
+      if (data.session && data.user) {
+        // Check user role before redirecting
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+
+        const userRole = (profile?.role || 'customer') as UserRole;
+
+        // Redirect staff to admin, customers to dashboard
+        if (canAccessAdmin(userRole)) {
+          window.location.href = '/admin';
+        } else {
+          router.push('/my-account/dashboard');
+        }
       }
     } catch (error: any) {
       console.error('Login error:', error);
@@ -426,12 +461,12 @@ export default function MyAccountPage() {
   };
 
   // Show loading while checking auth status
-  if (loading) {
+  if (loading || redirecting) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
-          <p className="mt-4 text-gray-600">Checking authentication...</p>
+          <p className="mt-4 text-gray-600">{redirecting ? 'Redirecting...' : 'Checking authentication...'}</p>
         </div>
       </div>
     );

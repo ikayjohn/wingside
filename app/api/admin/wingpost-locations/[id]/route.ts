@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server'
+import { canAccessAdmin, UserRole } from '@/lib/permissions';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 // PATCH /api/admin/wingpost-locations/[id] - Update location (admin only)

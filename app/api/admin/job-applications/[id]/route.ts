@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { canAccessAdmin, UserRole } from '@/lib/permissions'
 
 // PATCH /api/admin/job-applications/[id] - Update application (admin only)
 export async function PATCH(
@@ -25,7 +26,9 @@ export async function PATCH(
       .eq('id', user.id)
       .single()
 
-    if (profile?.role !== 'admin') {
+    const userRole = (profile?.role || 'customer') as UserRole
+
+    if (!canAccessAdmin(userRole)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -92,7 +95,9 @@ export async function DELETE(
       .eq('id', user.id)
       .single()
 
-    if (profile?.role !== 'admin') {
+    const userRole = (profile?.role || 'customer') as UserRole
+
+    if (!canAccessAdmin(userRole)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

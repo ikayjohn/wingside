@@ -159,9 +159,16 @@ export default function WingclubDashboard() {
       setUserData(profileData.profile);
       setRecentTransactions(allTransactions);
 
-      // Redirect admins to admin panel
-      if (profileData.profile?.role === 'admin') {
-        router.push('/admin');
+      // Redirect all staff to admin panel
+      const { canAccessAdmin } = await import('@/lib/permissions');
+      const userRole = profileData.profile?.role;
+
+      console.log('Dashboard - User role:', userRole);
+      console.log('Dashboard - Can access admin?', canAccessAdmin(userRole as any));
+
+      if (canAccessAdmin(userRole as any)) {
+        console.log('Dashboard - Redirecting to /admin');
+        window.location.href = '/admin';
         return;
       }
     } catch (err) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient as createServerClient } from '@/lib/supabase/server';
+import { createClient as createServerClient } from '@/lib/supabase/server'
+import { canAccessAdmin, UserRole } from '@/lib/permissions';
 
 // Enhanced referral code generator
 function generateReferralCode(firstName: string, lastName: string, existingCodes: string[] = []): string {

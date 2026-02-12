@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { canAccessAdmin, UserRole } from '@/lib/permissions'
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
@@ -162,7 +163,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Check if user is admin for admin routes
+  // Check if user can access admin for admin routes
   if (request.nextUrl.pathname.startsWith('/admin') && user) {
     const { data: profile } = await supabase
       .from('profiles')
@@ -170,8 +171,27 @@ export async function proxy(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    if (profile?.role !== 'admin') {
-      return NextResponse.redirect(new URL('/my-account', request.url))
+    const userRole = (profile?.role || 'customer') as UserRole
+
+    // Use canAccessAdmin instead of hardcoded 'admin' check
+    if (!canAccessAdmin(userRole)) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+  }
+
+  // Redirect staff from customer area to admin
+  if (request.nextUrl.pathname.startsWith('/my-account') && user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    const userRole = (profile?.role || 'customer') as UserRole
+
+    // If staff member trying to access customer area, redirect to admin
+    if (canAccessAdmin(userRole)) {
+      return NextResponse.redirect(new URL('/admin', request.url))
     }
   }
 

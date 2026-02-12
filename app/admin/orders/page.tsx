@@ -27,6 +27,7 @@ interface OrderItem {
   product_name: string;
   product_size?: string;
   flavors?: string[];
+  addons?: any;
   quantity: number;
   unit_price: number;
   total_price: number;
@@ -173,6 +174,32 @@ export default function AdminOrdersPage() {
       currency: 'NGN',
       minimumFractionDigits: 0,
     }).format(price).replace('NGN', '₦');
+  };
+
+  const formatAddons = (addons: any) => {
+    if (!addons) return null;
+
+    const items: string[] = [];
+
+    // Handle different addon formats
+    if (typeof addons === 'object') {
+      // Handle rice selection
+      if (addons.rice) {
+        items.push(`Rice: ${addons.rice}`);
+      }
+      // Handle drink selection
+      if (addons.drink) {
+        items.push(`Drink: ${addons.drink}`);
+      }
+      // Handle other selections
+      Object.keys(addons).forEach(key => {
+        if (key !== 'rice' && key !== 'drink' && addons[key]) {
+          items.push(`${key}: ${addons[key]}`);
+        }
+      });
+    }
+
+    return items.length > 0 ? items : null;
   };
 
   const getStatusColor = (status: string) => {
@@ -513,40 +540,55 @@ export default function AdminOrdersPage() {
                             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Product</th>
                             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Size</th>
                             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Flavors</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Add-ons</th>
                             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Qty</th>
                             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Price</th>
                             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Total</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                          {selectedOrder.items.map((item) => (
-                            <tr key={item.id}>
-                              <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                                {item.product_name}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-600">
-                                {item.product_size || '-'}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-600">
-                                {item.flavors && item.flavors.length > 0 ? (
-                                  <div className="text-xs">
-                                    {item.flavors.join(', ')}
-                                  </div>
-                                ) : (
-                                  '-'
-                                )}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-right text-gray-900">
-                                {item.quantity}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-right text-gray-900">
-                                {formatPrice(item.unit_price)}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900">
-                                {formatPrice(item.total_price)}
-                              </td>
-                            </tr>
-                          ))}
+                          {selectedOrder.items.map((item) => {
+                            const addonItems = formatAddons(item.addons);
+                            return (
+                              <tr key={item.id}>
+                                <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                                  {item.product_name}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-600">
+                                  {item.product_size || '-'}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-600">
+                                  {item.flavors && item.flavors.length > 0 ? (
+                                    <div className="text-xs">
+                                      {item.flavors.join(', ')}
+                                    </div>
+                                  ) : (
+                                    '-'
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-600">
+                                  {addonItems && addonItems.length > 0 ? (
+                                    <div className="text-xs space-y-1">
+                                      {addonItems.map((addon, idx) => (
+                                        <div key={idx}>{addon}</div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    '-'
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-right text-gray-900">
+                                  {item.quantity}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-right text-gray-900">
+                                  {formatPrice(item.unit_price)}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900">
+                                  {formatPrice(item.total_price)}
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>

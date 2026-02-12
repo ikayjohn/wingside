@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server'
+import { canAccessAdmin, UserRole } from '@/lib/permissions';
 
 // PATCH /api/events/[id] - Update event (admin only)
 export async function PATCH(

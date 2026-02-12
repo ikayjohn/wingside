@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server'
+import { canAccessAdmin, UserRole } from '@/lib/permissions';
 import { sendReferralInvitation } from '@/lib/emails/service';
 
 // Admin endpoint to send test emails

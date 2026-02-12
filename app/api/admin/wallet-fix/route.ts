@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server'
+import { canAccessAdmin, UserRole } from '@/lib/permissions';
 import embedlyClient from '@/lib/embedly/client';
 
 // POST /api/admin/wallet-fix - Admin endpoint to fix inactive wallet for any user

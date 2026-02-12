@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { HoneypotField } from '@/components/HoneypotField';
+import { canAccessAdmin, UserRole } from '@/lib/permissions';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -37,17 +38,30 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        // Check if user is admin
-        const { data: profile } = await supabase
+        console.log('Login - Checking user:', data.user.email);
+
+        // Check user role
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', data.user.id)
           .single();
 
-        // Redirect based on role
-        if (profile?.role === 'admin') {
-          router.push('/admin');
+        console.log('Login - Profile data:', profile);
+        console.log('Login - Profile error:', profileError);
+
+        const userRole = (profile?.role || 'customer') as UserRole;
+
+        console.log('Login - User role:', userRole);
+        console.log('Login - Can access admin?', canAccessAdmin(userRole));
+
+        // Redirect based on role - staff go to admin, customers to their account
+        if (canAccessAdmin(userRole)) {
+          console.log('Redirecting to /admin');
+          window.location.href = '/admin';
+          return;
         } else {
+          console.log('Redirecting to /my-account');
           router.push('/my-account');
         }
       }

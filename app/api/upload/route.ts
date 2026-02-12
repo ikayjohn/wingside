@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { canAccessAdmin, UserRole } from '@/lib/permissions'
 import { validateImageFile, generateSafeFilename } from '@/lib/file-validation'
 import { loggers } from '@/lib/logger'
 

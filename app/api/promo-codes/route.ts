@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { canAccessAdmin, UserRole } from '@/lib/permissions'
 
 // GET /api/promo-codes - Fetch all promo codes (admin only)
 export async function GET() {
@@ -21,7 +22,9 @@ export async function GET() {
       .eq('id', user.id)
       .single()
 
-    if (profile?.role !== 'admin') {
+    const userRole = (profile?.role || 'customer') as UserRole
+
+    if (!canAccessAdmin(userRole)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -68,7 +71,9 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    if (profile?.role !== 'admin') {
+    const userRole = (profile?.role || 'customer') as UserRole
+
+    if (!canAccessAdmin(userRole)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
