@@ -44,9 +44,9 @@ interface Flavor {
 
 export default function AdminProductsPage() {
   const router = useRouter()
-  const { hasAccess: canEdit } = useRoleAccess({
+  const { canEdit } = useRoleAccess({
     requiredPermission: 'products',
-    requiredLevel: 'edit',
+    requiredLevel: 'view',
   })
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])

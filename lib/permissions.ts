@@ -215,7 +215,7 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
     dashboard: { level: 'none', description: 'No dashboard access' },
     analytics: { level: 'none' },
     orders: { level: 'edit', description: 'View and update order status (preparing/ready)' },
-    products: { level: 'view', description: 'Optional: See menu items' },
+    products: { level: 'none' },
     categories: { level: 'none' },
     flavors: { level: 'none' },
     delivery_areas: { level: 'none' },

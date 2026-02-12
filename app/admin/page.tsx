@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useRoleAccess } from '@/lib/hooks/useRoleAccess';
 import {
   LineChart,
   Line,
@@ -26,6 +27,11 @@ import {
 } from 'recharts';
 
 export default function AdminDashboard() {
+  const { authorized, loading: permissionLoading } = useRoleAccess({
+    requiredPermission: 'dashboard',
+    requiredLevel: 'view',
+    redirectTo: '/admin/orders',
+  });
   const [stats, setStats] = useState({
     totalOrders: 0,
     pendingOrders: 0,
@@ -306,6 +312,18 @@ export default function AdminDashboard() {
   ];
 
   const COLORS = ['#F7C400', '#552627', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
+
+  // Don't render dashboard if checking permissions or unauthorized
+  if (permissionLoading || !authorized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 bg-gray-100 p-6 -mx-8 -my-8">
