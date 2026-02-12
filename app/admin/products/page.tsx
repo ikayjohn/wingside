@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useRoleAccess } from '@/lib/hooks/useRoleAccess'
 
 interface Product {
   id: string
@@ -43,6 +44,10 @@ interface Flavor {
 
 export default function AdminProductsPage() {
   const router = useRouter()
+  const { hasAccess: canEdit } = useRoleAccess({
+    requiredPermission: 'products',
+    requiredLevel: 'edit',
+  })
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [flavors, setFlavors] = useState<Flavor[]>([])
@@ -475,7 +480,8 @@ export default function AdminProductsPage() {
             setImagePreview('')
             setShowForm(true)
           }}
-          className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-6 py-3 rounded-lg transition-colors"
+          className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-6 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!canEdit}
         >
           + Add New Product
         </button>
@@ -579,18 +585,24 @@ export default function AdminProductsPage() {
                   </span>
                 </td>
                 <td className="px-2 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button
-                    onClick={() => handleEdit(product)}
-                    className="text-blue-600 hover:text-blue-900 mr-3"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(product.id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    Delete
-                  </button>
+                  {canEdit ? (
+                    <>
+                      <button
+                        onClick={() => handleEdit(product)}
+                        className="text-blue-600 hover:text-blue-900 mr-3"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(product.id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
+                    </>
+                  ) : (
+                    <span className="text-gray-400">View Only</span>
+                  )}
                 </td>
               </tr>
             ))}
