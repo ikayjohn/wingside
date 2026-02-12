@@ -132,12 +132,19 @@ export default function AdminLayout({
 
   // Filter navigation items based on user role permissions
   const filterNavItems = (items: any[]) => {
+    console.log('[Navigation Filter] User role:', userRole);
+
     return items.map(item => {
       if ('children' in item && item.children) {
         // Filter children based on permissions
         const filteredChildren = item.children.filter((child: any) => {
-          if (!child.permission) return true;
-          return hasPermission(userRole, child.permission as any, 'view');
+          if (!child.permission) {
+            console.warn('[Navigation Filter] Child without permission:', child.label);
+            return false; // Hide items without permission property
+          }
+          const hasAccess = hasPermission(userRole, child.permission as any, 'view');
+          console.log(`[Navigation Filter] ${child.label}: ${hasAccess ? 'SHOW' : 'HIDE'}`);
+          return hasAccess;
         });
 
         // Only show parent if it has visible children
@@ -146,8 +153,13 @@ export default function AdminLayout({
         return { ...item, children: filteredChildren };
       } else {
         // Check single item permission
-        if (!item.permission) return item;
-        return hasPermission(userRole, item.permission as any, 'view') ? item : null;
+        if (!item.permission) {
+          console.warn('[Navigation Filter] Single item without permission:', item.label);
+          return null; // Hide items without permission property
+        }
+        const hasAccess = hasPermission(userRole, item.permission as any, 'view');
+        console.log(`[Navigation Filter] ${item.label}: ${hasAccess ? 'SHOW' : 'HIDE'}`);
+        return hasAccess ? item : null;
       }
     }).filter(Boolean);
   };
