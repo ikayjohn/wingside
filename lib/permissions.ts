@@ -210,14 +210,14 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
     role_management: { level: 'none' },
   },
 
-  // KITCHEN STAFF - Kitchen operations only
+  // KITCHEN STAFF - Ultra-restricted: Orders only
   kitchen_staff: {
-    dashboard: { level: 'view', description: 'Orders overview' },
+    dashboard: { level: 'none', description: 'No dashboard access' },
     analytics: { level: 'none' },
-    orders: { level: 'edit', description: 'Update order status (preparing/ready)' },
-    products: { level: 'view', description: 'See menu items' },
+    orders: { level: 'edit', description: 'View and update order status (preparing/ready)' },
+    products: { level: 'view', description: 'Optional: See menu items' },
     categories: { level: 'none' },
-    flavors: { level: 'view', description: 'See available flavors' },
+    flavors: { level: 'none' },
     delivery_areas: { level: 'none' },
     promo_codes: { level: 'none' },
     customers: { level: 'none' },
