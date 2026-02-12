@@ -228,7 +228,7 @@ export default function AdminLayout({
 
                   {isDropdownOpen && (
                     <div className="ml-4 space-y-0.5">
-                      {item.children?.map((child) => {
+                      {item.children?.map((child: any) => {
                         const childIsActive = pathname === child.href;
                         return (
                           <Link
