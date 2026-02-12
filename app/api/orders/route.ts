@@ -289,8 +289,11 @@ export async function POST(request: NextRequest) {
     // Generate secure tracking token for guest order tracking
     const trackingToken = crypto.randomBytes(32).toString('hex');
 
+    // Use admin client to create order (bypasses RLS - this is intentional for server-side order creation)
+    const admin = createAdminClient();
+
     // Create order
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await admin
       .from('orders')
       .insert({
         order_number: orderNumber,
@@ -338,14 +341,14 @@ export async function POST(request: NextRequest) {
       total_price: item.total_price,
     }))
 
-    const { error: itemsError } = await supabase
+    const { error: itemsError } = await admin
       .from('order_items')
       .insert(orderItems)
 
     if (itemsError) {
       console.error('Error creating order items:', itemsError)
       // Rollback order creation
-      await supabase.from('orders').delete().eq('id', order.id)
+      await admin.from('orders').delete().eq('id', order.id)
       return NextResponse.json(
         { error: 'Failed to create order items' },
         { status: 500 }
