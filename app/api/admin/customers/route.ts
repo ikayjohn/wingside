@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { canAccessAdmin, UserRole } from '@/lib/permissions'
+import { canAccessAdmin, hasPermission, UserRole } from '@/lib/permissions'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-async function requireAdmin() {
+async function requireCustomersAccess() {
   const supabase = await createClient()
 
   const {
@@ -20,7 +20,13 @@ async function requireAdmin() {
     .eq('id', user.id)
     .single()
 
-  if (profile?.role !== 'admin') {
+  const userRole = (profile?.role || 'customer') as UserRole
+
+  if (!canAccessAdmin(userRole)) {
+    return { supabase, error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+  }
+
+  if (!hasPermission(userRole, 'customers', 'view')) {
     return { supabase, error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
   }
 
@@ -29,7 +35,7 @@ async function requireAdmin() {
 
 export async function GET(request: NextRequest) {
   try {
-    const { supabase, error } = await requireAdmin()
+    const { supabase, error } = await requireCustomersAccess()
     if (error) return error
 
     const admin = createAdminClient()
