@@ -242,9 +242,8 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Nomba Initialize ${requestId}] ✅ Checkout created successfully`)
 
-    // Update order with payment reference (use admin client to bypass RLS)
+    // Update order with payment reference (already using admin client from above)
     console.log(`[Nomba Initialize ${requestId}] Updating order with payment reference...`)
-    const adminClient = createAdminClient()
     const { error: updateError } = await adminClient
       .from('orders')
       .update({
