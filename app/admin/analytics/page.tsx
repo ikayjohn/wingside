@@ -213,7 +213,7 @@ export default function AnalyticsPage() {
 
       console.log('\n🗺️ Final Product-Category Map:');
       allOrderItems?.slice(0, 5).forEach(item => {
-        const mappedCategory = productCategoryMap.get(item.product_id) || productNameMap.get(item.product_name);
+        const mappedCategory = (item.product_id ? productCategoryMap.get(item.product_id) : null) || productNameMap.get(item.product_name);
         console.log(`   Order item "${item.product_name}" (${item.product_id}) → "${mappedCategory}"`);
       });
 
@@ -358,7 +358,7 @@ export default function AnalyticsPage() {
       let categoryName = 'Uncategorized';
 
       // Try product_id first
-      if (item.product_id) {
+      if (item.product_id && typeof item.product_id === 'string') {
         categoryName = productCategoryMap.get(item.product_id) || 'Uncategorized';
       }
       // Fallback: match by product_name if product_id is null
