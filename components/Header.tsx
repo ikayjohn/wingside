@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { fetchSettings } from '@/lib/settings';
@@ -144,16 +145,20 @@ export default function Header() {
               <span className="text-sm font-medium">Menu</span>
             </button>
 
-            {/* Logo - Centered */}
+            {/* Logo - Centered - Optimized with Next.js Image */}
             <Link href="/" className="absolute left-1/2 transform -translate-x-1/2 hover:opacity-80">
-              <img
+              <Image
                 src={isHomepage && !isScrolled ? "/logo-white.png?v=2" : "/logo.png?v=2"}
                 alt="Wingside Logo"
+                width={150}
+                height={150}
+                quality={80}
+                priority
+                sizes="(max-width: 640px) 64px, (max-width: 768px) 80px, 96px"
                 className={`w-auto transition-all duration-300 ${(isHomepage && isScrolled) || (!isHomepage && !isOrderPage)
                     ? 'h-12 sm:h-16'
                     : 'h-16 sm:h-20 md:h-24'
                   }`}
-                loading="eager"
               />
             </Link>
 

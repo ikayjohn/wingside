@@ -207,8 +207,8 @@ export default function WingsideLanding() {
               src="/yellowpattern.png"
               alt=""
               fill
-              quality={75}
-              sizes="100vw"
+              quality={65}
+              sizes="(max-width: 768px) 100vw, 850px"
               className="object-cover opacity-90"
             />
           </div>
@@ -241,7 +241,8 @@ export default function WingsideLanding() {
                   alt="Wingside Box"
                   width={660}
                   height={436}
-                  quality={75}
+                  quality={70}
+                  sizes="(max-width: 1280px) 380px, 540px"
                   className="w-full max-w-[540px] xl:max-w-[660px] h-auto float-hover"
                 />
               </div>
@@ -393,7 +394,8 @@ export default function WingsideLanding() {
                             alt={flavor.name}
                             width={400}
                             height={400}
-                            quality={75}
+                            quality={70}
+                            sizes="(max-width: 640px) 100px, (max-width: 768px) 140px, (max-width: 1024px) 260px, 360px"
                             className="w-auto h-[100px] sm:h-[140px] md:h-[260px] lg:h-[360px] flavor-image object-contain"
                           />
                         </div>
@@ -478,7 +480,8 @@ export default function WingsideLanding() {
                     alt={deliverySlides[0].alt}
                     width={800}
                     height={800}
-                    quality={75}
+                    quality={70}
+                    sizes="(max-width: 640px) 425px, (max-width: 768px) 340px, (max-width: 1024px) 450px, 580px"
                     className="max-h-[425px] sm:max-h-[340px] md:max-h-[450px] lg:max-h-[580px] w-auto object-contain mt-[85px] sm:mt-[-30px] md:mt-[-100px] lg:mt-[-195px]"
                   />
                 </div>
@@ -496,7 +499,8 @@ export default function WingsideLanding() {
                     alt={deliverySlides[1].alt}
                     width={800}
                     height={800}
-                    quality={75}
+                    quality={70}
+                    sizes="(max-width: 640px) 425px, (max-width: 768px) 340px, (max-width: 1024px) 450px, 580px"
                     className="max-h-[425px] sm:max-h-[340px] md:max-h-[450px] lg:max-h-[580px] w-auto object-contain mt-[85px] sm:mt-[-30px] md:mt-[-100px] lg:mt-[-195px]"
                   />
                 </div>
@@ -514,7 +518,8 @@ export default function WingsideLanding() {
                     alt={deliverySlides[2].alt}
                     width={800}
                     height={800}
-                    quality={75}
+                    quality={70}
+                    sizes="(max-width: 640px) 425px, (max-width: 768px) 340px, (max-width: 1024px) 450px, 580px"
                     className="max-h-[425px] sm:max-h-[340px] md:max-h-[450px] lg:max-h-[580px] w-auto object-contain mt-[85px] sm:mt-[-30px] md:mt-[-100px] lg:mt-[-195px]"
                   />
                 </div>
@@ -532,7 +537,8 @@ export default function WingsideLanding() {
                     alt={deliverySlides[0].alt}
                     width={800}
                     height={800}
-                    quality={75}
+                    quality={70}
+                    sizes="(max-width: 640px) 425px, (max-width: 768px) 340px, (max-width: 1024px) 450px, 580px"
                     className="max-h-[425px] sm:max-h-[340px] md:max-h-[450px] lg:max-h-[580px] w-auto object-contain mt-[85px] sm:mt-[-30px] md:mt-[-100px] lg:mt-[-195px]"
                   />
                 </div>
@@ -620,16 +626,16 @@ export default function WingsideLanding() {
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
               <div className="wc-card-img">
-                <Image src="/wc1.png" alt="Members Discount" width={400} height={400} quality={75} className="w-full h-full object-cover" />
+                <Image src="/wc1.png" alt="Members Discount" width={400} height={400} quality={70} sizes="(max-width: 768px) 160px, 322px" className="w-full h-full object-cover" />
               </div>
               <div className="wc-card-img">
-                <Image src="/wc2.png" alt="Points" width={400} height={400} quality={75} className="w-full h-full object-cover" />
+                <Image src="/wc2.png" alt="Points" width={400} height={400} quality={70} sizes="(max-width: 768px) 160px, 322px" className="w-full h-full object-cover" />
               </div>
               <div className="wc-card-img">
-                <Image src="/wc3.png" alt="Gift" width={400} height={400} quality={75} className="w-full h-full object-cover" />
+                <Image src="/wc3.png" alt="Gift" width={400} height={400} quality={70} sizes="(max-width: 768px) 160px, 322px" className="w-full h-full object-cover" />
               </div>
               <div className="wc-card-img">
-                <Image src="/wc4.png" alt="Birthday Wings" width={400} height={400} quality={75} className="w-full h-full object-cover" />
+                <Image src="/wc4.png" alt="Birthday Wings" width={400} height={400} quality={70} sizes="(max-width: 768px) 160px, 322px" className="w-full h-full object-cover" />
               </div>
             </div>
           </div>
