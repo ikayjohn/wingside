@@ -178,6 +178,11 @@ export default function WingsideConnectPage() {
       setSubmitMessage({ type: 'success', text: data.message || 'Welcome to Wingconnect! We\'ll be in touch soon.' });
       setFormData({ fullName: '', email: '', phone: '', interest: '' });
 
+      // Redirect to WhatsApp group after 2 seconds
+      setTimeout(() => {
+        window.open('https://chat.whatsapp.com/HCsrT9BfiaVGBRgopjSeou?mode=gi_t', '_blank');
+      }, 2000);
+
       setTimeout(() => setSubmitMessage(null), 5000);
     } catch (error: any) {
       setSubmitMessage({ type: 'error', text: error.message || 'Something went wrong. Please try again.' });
