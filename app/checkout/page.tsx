@@ -73,6 +73,8 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<string>('new');
   const [deliveryAvailable, setDeliveryAvailable] = useState(true);
   const [deliveryCutoffMessage, setDeliveryCutoffMessage] = useState('');
+  const [ordersOpen, setOrdersOpen] = useState(true);
+  const [operatingHoursMessage, setOperatingHoursMessage] = useState('');
 
   // Wallet payment states
   const [paymentMethod, setPaymentMethod] = useState<'paystack' | 'nomba' | 'wallet' | 'embedly'>('paystack');
@@ -91,6 +93,35 @@ export default function CheckoutPage() {
     wallet: true,
     embedly: true,
   });
+
+  // Check operating hours (applies to ALL orders - delivery and pickup)
+  const checkOperatingHours = async () => {
+    try {
+      const response = await fetch('/api/orders/status');
+      if (response.ok) {
+        const data = await response.json();
+        setOrdersOpen(data.acceptingOrders);
+
+        if (!data.acceptingOrders) {
+          if (data.autoCloseEnabled && data.countdown) {
+            const { hours, minutes } = data.countdown;
+            const timeText = hours > 0
+              ? `${hours} hour${hours !== 1 ? 's' : ''} and ${minutes} minute${minutes !== 1 ? 's' : ''}`
+              : `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+            setOperatingHoursMessage(`We're currently closed. We'll be back in ${timeText}.`);
+          } else {
+            setOperatingHoursMessage('Orders are currently disabled.');
+          }
+        } else {
+          setOperatingHoursMessage('');
+        }
+      }
+    } catch (error) {
+      console.error('Error checking operating hours:', error);
+      // Default to open on error
+      setOrdersOpen(true);
+    }
+  };
 
   // Check if delivery is available based on cutoff time
   const checkDeliveryAvailability = (cutoffTime: string) => {
@@ -166,6 +197,11 @@ export default function CheckoutPage() {
       }
     };
     fetchSettings();
+    checkOperatingHours();
+
+    // Check operating hours periodically (every minute)
+    const interval = setInterval(checkOperatingHours, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   // Load cart from localStorage on mount
@@ -997,7 +1033,28 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      
+
+      {/* Operating Hours Closed Banner */}
+      {!ordersOpen && operatingHoursMessage && (
+        <div style={{
+          backgroundColor: '#dc2626',
+          color: 'white',
+          padding: '16px 20px',
+          textAlign: 'center',
+          fontWeight: '600',
+          fontSize: '16px'
+        }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            {operatingHoursMessage}
+          </div>
+        </div>
+      )}
+
       {/* Hero Section */}
       <section className="relative h-[150px] md:h-[300px] overflow-hidden">
         <img
@@ -1793,10 +1850,11 @@ export default function CheckoutPage() {
                   {/* Place Order Button */}
                   <button
                     type="submit"
-                    disabled={submitting || cartItems.length === 0}
+                    disabled={submitting || cartItems.length === 0 || !ordersOpen}
                     className="checkout-submit-btn disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={!ordersOpen ? 'Orders are currently closed' : ''}
                   >
-                    {submitting ? 'Processing Order...' : 'Place Order'}
+                    {submitting ? 'Processing Order...' : !ordersOpen ? 'Orders Closed' : 'Place Order'}
                   </button>
 
                   {/* Trust Badges */}

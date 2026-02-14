@@ -217,6 +217,75 @@ export async function POST(request: NextRequest) {
       body.notes = sanitizeString(body.notes);
     }
 
+    // Check operating hours (applies to ALL orders - delivery and pickup)
+    try {
+      const { data: hoursSettings } = await supabase
+        .from('site_settings')
+        .select('setting_key, setting_value')
+        .in('setting_key', [
+          'accept_orders',
+          'auto_close_outside_hours',
+          'monday_open', 'monday_close',
+          'tuesday_open', 'tuesday_close',
+          'wednesday_open', 'wednesday_close',
+          'thursday_open', 'thursday_close',
+          'friday_open', 'friday_close',
+          'saturday_open', 'saturday_close',
+          'sunday_open', 'sunday_close'
+        ]);
+
+      const hoursObj: Record<string, string> = {};
+      hoursSettings?.forEach(s => {
+        hoursObj[s.setting_key] = s.setting_value;
+      });
+
+      // Check if orders are manually disabled
+      if (hoursObj['accept_orders'] === 'false') {
+        return NextResponse.json(
+          {
+            error: 'Orders are currently disabled.',
+            code: 'ORDERS_DISABLED'
+          },
+          { status: 400 }
+        );
+      }
+
+      // Check if auto-close is enabled
+      if (hoursObj['auto_close_outside_hours'] === 'true') {
+        const now = new Date();
+        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const currentDay = dayNames[now.getDay()];
+
+        const openTime = hoursObj[`${currentDay}_open`] || '11:00';
+        const closeTime = hoursObj[`${currentDay}_close`] || '22:00';
+
+        // Parse times
+        const [openHour, openMin] = openTime.split(':').map(Number);
+        const [closeHour, closeMin] = closeTime.split(':').map(Number);
+        const currentHour = now.getHours();
+        const currentMin = now.getMinutes();
+
+        const currentMinutes = currentHour * 60 + currentMin;
+        const openMinutes = openHour * 60 + openMin;
+        const closeMinutes = closeHour * 60 + closeMin;
+
+        const isWithinHours = currentMinutes >= openMinutes && currentMinutes < closeMinutes;
+
+        if (!isWithinHours) {
+          return NextResponse.json(
+            {
+              error: `We're currently closed. Our hours today are ${openTime} - ${closeTime}.`,
+              code: 'OUTSIDE_OPERATING_HOURS'
+            },
+            { status: 400 }
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error checking operating hours:', error);
+      // Continue processing - don't fail order if hours check fails
+    }
+
     // Check delivery cutoff time (applies to all delivery orders including scheduled ones)
     const isDeliveryOrder = body.delivery_fee && body.delivery_fee > 0;
     if (isDeliveryOrder) {
