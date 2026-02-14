@@ -91,7 +91,11 @@
       "Bash(Please create a new wallet or contact support.\"\n- User calls: POST /api/embedly/wallet-fix\n- New active wallet created and linked to profile\n- User can immediately make payments\n\nThis resolves the PNDC error from Embedly when wallets become inactive\nwithout manual intervention or support tickets.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(pm2 describe:*)",
       "Bash(git status:*)",
-      "Bash(git check-ignore:*)"
+      "Bash(git check-ignore:*)",
+      "Bash(git restore:*)",
+      "Bash(git ls-files:*)",
+      "Bash(wc:*)",
+      "WebFetch(domain:www.googleapis.com)"
     ],
     "deny": [],
     "ask": []
