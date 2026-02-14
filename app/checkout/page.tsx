@@ -77,7 +77,7 @@ export default function CheckoutPage() {
   const [operatingHoursMessage, setOperatingHoursMessage] = useState('');
 
   // Wallet payment states
-  const [paymentMethod, setPaymentMethod] = useState<'paystack' | 'nomba' | 'wallet' | 'embedly'>('paystack');
+  const [paymentMethod, setPaymentMethod] = useState<'paystack' | 'nomba' | 'wallet' | 'embedly'>('nomba');
   const [walletBalance, setWalletBalance] = useState(0);
   const [wallet, setWallet] = useState<any>(null);
   const [loadingWallet, setLoadingWallet] = useState(false);
