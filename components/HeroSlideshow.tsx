@@ -154,34 +154,51 @@ export default function HeroSlideshow() {
                     }}
                   />
 
-                  {/* Fallback image - optimized with Next.js Image */}
-                  {!videoLoaded && fallbackImageLoaded && (
+                  {/* Mobile: Show only image (no video for performance) */}
+                  {isMobile ? (
                     <Image
                       src={slide.image_url || '/hero-fallback.jpg'}
-                      alt=""
+                      alt={slide.title}
                       fill
                       priority
-                      quality={isMobile ? 65 : 75}
+                      quality={65}
                       sizes="100vw"
                       style={{
                         objectFit: 'cover',
+                        objectPosition: 'center',
                       }}
                     />
-                  )}
+                  ) : (
+                    <>
+                      {/* Desktop: Fallback image while video loads */}
+                      {!videoLoaded && fallbackImageLoaded && (
+                        <Image
+                          src={slide.image_url || '/hero-fallback.jpg'}
+                          alt=""
+                          fill
+                          priority
+                          quality={75}
+                          sizes="100vw"
+                          style={{
+                            objectFit: 'cover',
+                          }}
+                        />
+                      )}
 
-                  {/* Hidden img to preload and detect when loaded */}
-                  <Image
-                    src={slide.image_url || '/hero-fallback.jpg'}
-                    alt=""
-                    width={1920}
-                    height={1080}
-                    priority
-                    quality={isMobile ? 65 : 75}
-                    className="hidden"
-                    onLoad={() => setFallbackImageLoaded(true)}
-                  />
+                      {/* Hidden img to preload and detect when loaded */}
+                      <Image
+                        src={slide.image_url || '/hero-fallback.jpg'}
+                        alt=""
+                        width={1920}
+                        height={1080}
+                        priority
+                        quality={75}
+                        className="hidden"
+                        onLoad={() => setFallbackImageLoaded(true)}
+                      />
 
-                  <video
+                      {/* Desktop: Video */}
+                      <video
                     ref={videoRef}
                     key="hero-video"
                     autoPlay
@@ -210,6 +227,8 @@ export default function HeroSlideshow() {
                     <source src="/hero.mp4" type="video/mp4" />
                     Your browser does not support the video tag.
                   </video>
+                    </>
+                  )}
                 </>
               ) : (
                 // Other slides use images (Next.js Image for auto-optimization)
@@ -218,13 +237,12 @@ export default function HeroSlideshow() {
                   alt={slide.title}
                   fill
                   priority={index === 0}
-                  quality={75}
+                  quality={isMobile ? 65 : 75}
                   sizes="100vw"
-                  className="hero-video"
                   style={{
                     objectFit: 'cover',
                     objectPosition: 'center',
-                  } as any}
+                  }}
                 />
               )}
             </div>
