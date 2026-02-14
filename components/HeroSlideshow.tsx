@@ -161,7 +161,8 @@ export default function HeroSlideshow() {
                       alt={slide.title}
                       fill
                       priority
-                      quality={65}
+                      fetchPriority="high"
+                      quality={60}
                       sizes="100vw"
                       style={{
                         objectFit: 'cover',
@@ -237,7 +238,8 @@ export default function HeroSlideshow() {
                   alt={slide.title}
                   fill
                   priority={index === 0}
-                  quality={isMobile ? 65 : 75}
+                  fetchPriority={index === 0 ? "high" : "auto"}
+                  quality={isMobile ? 60 : 75}
                   sizes="100vw"
                   style={{
                     objectFit: 'cover',
