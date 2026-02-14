@@ -6536,3 +6536,256 @@ input[type="button"],
     margin: 1cm;
   }
 }
+
+/* ============================================
+   Kitchen Display System Styles
+   ============================================ */
+
+.kitchen-display-container {
+  min-height: 100vh;
+  background: #1a1a1a;
+  color: white;
+  padding: 2rem;
+}
+
+.kitchen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #333;
+}
+
+.kitchen-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #F7C400;
+}
+
+.status-indicators {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  font-size: 1.2rem;
+}
+
+.live-badge {
+  background: #ef4444;
+  color: white;
+  padding: 0.5rem 1.5rem;
+  border-radius: 999px;
+  font-weight: bold;
+  animation: pulse 2s infinite;
+}
+
+.audio-toggle {
+  background: #333;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.audio-toggle:hover {
+  background: #444;
+}
+
+.kitchen-kanban {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  min-height: 80vh;
+}
+
+.order-column {
+  background: #2a2a2a;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  overflow-y: auto;
+  max-height: 85vh;
+}
+
+.column-header {
+  font-size: 1.8rem;
+  font-weight: bold;
+  text-align: center;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.column-header.blue {
+  background: #3b82f6;
+  color: white;
+}
+
+.column-header.purple {
+  background: #a855f7;
+  color: white;
+}
+
+.column-header.green {
+  background: #22c55e;
+  color: white;
+}
+
+.order-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.order-card {
+  background: white;
+  color: black;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-size: 1.1rem;
+  line-height: 1.6;
+  animation: slideIn 0.3s ease-out;
+}
+
+.order-card.new-order {
+  animation: highlight-flash 2s ease-in-out;
+  border: 3px solid #fbbf24;
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.order-number {
+  font-weight: bold;
+  font-size: 1.3rem;
+  color: #552627;
+}
+
+.order-time {
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.customer-name {
+  font-weight: 600;
+  font-size: 1.2rem;
+  margin-bottom: 0.25rem;
+}
+
+.customer-phone {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+.order-items {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+}
+
+.order-item {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.order-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.item-name {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.item-flavors {
+  color: #F7C400;
+  font-size: 0.95rem;
+  margin-top: 0.25rem;
+}
+
+.item-notes {
+  color: #ef4444;
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+.order-total {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #552627;
+  text-align: right;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 2px solid #e5e7eb;
+}
+
+.flash-overlay {
+  position: fixed;
+  inset: 0;
+  border: 8px solid #ef4444;
+  pointer-events: none;
+  animation: border-flash 1s ease-in-out 3;
+  z-index: 9999;
+}
+
+.permission-warning {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fbbf24;
+  color: black;
+  padding: 1rem 2rem;
+  border-radius: 0.75rem;
+  font-weight: bold;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-size: 2rem;
+  color: #F7C400;
+}
+
+/* Kitchen Display System Animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes highlight-flash {
+  0% { background: #fef3c7; }
+  100% { background: white; }
+}
+
+@keyframes border-flash {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

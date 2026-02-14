@@ -316,7 +316,7 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
   sales_marketing: {
     dashboard: { level: 'none' },
     analytics: { level: 'full', description: 'Full analytics and reports' },
-    orders: { level: 'none' },
+    orders: { level: 'view', description: 'View orders and Kitchen Display' },
     products: { level: 'none' },
     categories: { level: 'none' },
     flavors: { level: 'none' },
