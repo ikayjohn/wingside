@@ -71,6 +71,8 @@ export default function CheckoutPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>('new');
+  const [deliveryAvailable, setDeliveryAvailable] = useState(true);
+  const [deliveryCutoffMessage, setDeliveryCutoffMessage] = useState('');
 
   // Wallet payment states
   const [paymentMethod, setPaymentMethod] = useState<'paystack' | 'nomba' | 'wallet' | 'embedly'>('paystack');
@@ -89,6 +91,43 @@ export default function CheckoutPage() {
     wallet: true,
     embedly: true,
   });
+
+  // Check if delivery is available based on cutoff time
+  const checkDeliveryAvailability = (cutoffTime: string) => {
+    if (!cutoffTime) {
+      setDeliveryAvailable(true);
+      return;
+    }
+
+    try {
+      // Get current time in Nigeria (WAT/UTC+1)
+      const now = new Date();
+      const nigeriaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Lagos' }));
+
+      // Parse cutoff time (format: "HH:MM")
+      const [cutoffHour, cutoffMinute] = cutoffTime.split(':').map(Number);
+      const cutoffDate = new Date(nigeriaTime);
+      cutoffDate.setHours(cutoffHour, cutoffMinute, 0, 0);
+
+      // Check if current time is past cutoff
+      if (nigeriaTime >= cutoffDate) {
+        setDeliveryAvailable(false);
+        setDeliveryCutoffMessage(`Delivery closed for today (closes at ${cutoffTime}). Pickup is still available!`);
+
+        // Auto-switch to pickup if delivery was selected
+        if (orderType === 'delivery') {
+          setOrderType('pickup');
+        }
+      } else {
+        setDeliveryAvailable(true);
+        setDeliveryCutoffMessage('');
+      }
+    } catch (error) {
+      console.error('Error checking delivery availability:', error);
+      // Default to available on error
+      setDeliveryAvailable(true);
+    }
+  };
 
   // Load settings from API
   useEffect(() => {
@@ -115,6 +154,11 @@ export default function CheckoutPage() {
 
           if (!availableMethods.includes(paymentMethod)) {
             setPaymentMethod(availableMethods[0] as 'paystack' | 'nomba' | 'wallet' | 'embedly');
+          }
+
+          // Check delivery availability based on cutoff time
+          if (data.settings.delivery_cutoff_time) {
+            checkDeliveryAvailability(data.settings.delivery_cutoff_time);
           }
         }
       } catch (error) {
@@ -982,9 +1026,29 @@ export default function CheckoutPage() {
                 <div className="delivery-pickup-selector">
                   {/* Delivery Option */}
                   <div
-                    className={`delivery-pickup-card ${orderType === 'delivery' ? 'active' : ''}`}
-                    onClick={() => setOrderType('delivery')}
+                    className={`delivery-pickup-card ${orderType === 'delivery' ? 'active' : ''} ${!deliveryAvailable ? 'disabled' : ''}`}
+                    onClick={() => deliveryAvailable && setOrderType('delivery')}
+                    style={{
+                      opacity: !deliveryAvailable ? 0.5 : 1,
+                      cursor: !deliveryAvailable ? 'not-allowed' : 'pointer',
+                      position: 'relative'
+                    }}
                   >
+                    {!deliveryAvailable && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '8px',
+                        right: '8px',
+                        backgroundColor: '#ef4444',
+                        color: 'white',
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        fontSize: '10px',
+                        fontWeight: 'bold'
+                      }}>
+                        CLOSED
+                      </div>
+                    )}
                     <div className="delivery-pickup-radio">
                       <div className={`radio-dot ${orderType === 'delivery' ? 'active' : ''}`}></div>
                     </div>
@@ -992,7 +1056,9 @@ export default function CheckoutPage() {
                       <img src="/delivery.svg" alt="Delivery" width="28" height="28" />
                     </div>
                     <h3 className="delivery-pickup-title">Delivery</h3>
-                    <p className="delivery-pickup-desc">We'll bring it to your door</p>
+                    <p className="delivery-pickup-desc">
+                      {!deliveryAvailable ? 'Closed for today' : 'We'll bring it to your door'}
+                    </p>
                     <div className="delivery-pickup-time">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
@@ -1024,6 +1090,29 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Delivery Cutoff Message */}
+                {!deliveryAvailable && deliveryCutoffMessage && (
+                  <div style={{
+                    backgroundColor: '#fef3c7',
+                    border: '1px solid #f59e0b',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                    marginBottom: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="12"></line>
+                      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <p style={{ margin: 0, color: '#92400e', fontSize: '14px', fontWeight: '500' }}>
+                      {deliveryCutoffMessage}
+                    </p>
+                  </div>
+                )}
 
                 {/* Delivery Area / Pickup Store */}
                 <div className="mb-8">

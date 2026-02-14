@@ -217,6 +217,46 @@ export async function POST(request: NextRequest) {
       body.notes = sanitizeString(body.notes);
     }
 
+    // Check delivery cutoff time (applies to all delivery orders including scheduled ones)
+    const isDeliveryOrder = body.delivery_fee && body.delivery_fee > 0;
+    if (isDeliveryOrder) {
+      try {
+        // Fetch delivery cutoff time setting
+        const { data: settingData } = await supabase
+          .from('site_settings')
+          .select('setting_value')
+          .eq('setting_key', 'delivery_cutoff_time')
+          .single();
+
+        if (settingData?.setting_value) {
+          const cutoffTime = settingData.setting_value;
+
+          // Get current time in Nigeria (WAT/UTC+1)
+          const now = new Date();
+          const nigeriaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Lagos' }));
+
+          // Parse cutoff time (format: "HH:MM")
+          const [cutoffHour, cutoffMinute] = cutoffTime.split(':').map(Number);
+          const cutoffDate = new Date(nigeriaTime);
+          cutoffDate.setHours(cutoffHour, cutoffMinute, 0, 0);
+
+          // Check if current time is past cutoff
+          if (nigeriaTime >= cutoffDate) {
+            return NextResponse.json(
+              {
+                error: `Delivery orders are closed for today (cutoff: ${cutoffTime}). Please select pickup instead.`,
+                code: 'DELIVERY_CLOSED'
+              },
+              { status: 400 }
+            );
+          }
+        }
+      } catch (error) {
+        console.error('Error checking delivery cutoff:', error);
+        // Continue processing - don't fail order if setting check fails
+      }
+    }
+
     // Get user (optional for guest checkout)
     const {
       data: { user },
