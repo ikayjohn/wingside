@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server'
-import { canAccessAdmin, UserRole } from '@/lib/permissions';
+import { hasPermission, UserRole } from '@/lib/permissions';
 
-// PATCH /api/admin/events/[id] - Update event (admin only)
+// PATCH /api/admin/events/[id] - Update event
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -11,7 +11,7 @@ export async function PATCH(
     const supabase = await createClient();
     const { id } = await params;
 
-    // Check if user is authenticated and is admin
+    // Check if user is authenticated and has permission
     const {
       data: { user },
       error: authError,
@@ -27,7 +27,9 @@ export async function PATCH(
       .eq('id', user.id)
       .single();
 
-    if (profile?.role !== 'admin') {
+    const userRole = (profile?.role || 'customer') as UserRole;
+
+    if (!hasPermission(userRole, 'events', 'edit')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -80,7 +82,7 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/admin/events/[id] - Delete event (admin only)
+// DELETE /api/admin/events/[id] - Delete event
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -89,7 +91,7 @@ export async function DELETE(
     const supabase = await createClient();
     const { id } = await params;
 
-    // Check if user is authenticated and is admin
+    // Check if user is authenticated and has permission
     const {
       data: { user },
       error: authError,
@@ -105,7 +107,9 @@ export async function DELETE(
       .eq('id', user.id)
       .single();
 
-    if (profile?.role !== 'admin') {
+    const userRole = (profile?.role || 'customer') as UserRole;
+
+    if (!hasPermission(userRole, 'events', 'full')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

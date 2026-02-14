@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { hasPermission, UserRole } from '@/lib/permissions';
 
 export async function GET(
   request: NextRequest,
@@ -8,7 +9,7 @@ export async function GET(
   try {
     const supabase = await createClient();
 
-    // Check if user is admin
+    // Check if user has permission to view events
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -24,9 +25,11 @@ export async function GET(
       .eq('id', user.id)
       .single();
 
-    if (!profile || profile.role !== 'admin') {
+    const userRole = (profile?.role || 'customer') as UserRole;
+
+    if (!hasPermission(userRole, 'events', 'view')) {
       return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
+        { error: 'Forbidden' },
         { status: 403 }
       );
     }
