@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { canAccessAdmin, UserRole } from '@/lib/permissions'
+import { hasPermission, UserRole } from '@/lib/permissions'
 
-// PATCH /api/admin/contact-submissions/[id] - Update submission (admin only)
+// PATCH /api/admin/contact-submissions/[id] - Update submission
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -11,7 +11,7 @@ export async function PATCH(
     const { id } = await params
     const supabase = await createClient()
 
-    // Check authentication and admin role
+    // Check authentication and permissions
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -28,7 +28,7 @@ export async function PATCH(
 
     const userRole = (profile?.role || 'customer') as UserRole
 
-    if (!canAccessAdmin(userRole)) {
+    if (!hasPermission(userRole, 'contact_submissions', 'edit')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -71,7 +71,7 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/admin/contact-submissions/[id] - Delete submission (admin only)
+// DELETE /api/admin/contact-submissions/[id] - Delete submission
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -80,7 +80,7 @@ export async function DELETE(
     const { id } = await params
     const supabase = await createClient()
 
-    // Check authentication and admin role
+    // Check authentication and permissions
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -97,7 +97,7 @@ export async function DELETE(
 
     const userRole = (profile?.role || 'customer') as UserRole
 
-    if (!canAccessAdmin(userRole)) {
+    if (!hasPermission(userRole, 'contact_submissions', 'full')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

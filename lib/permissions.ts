@@ -337,7 +337,7 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
     job_applications: { level: 'none' },
     stores: { level: 'none' },
     wingpost_locations: { level: 'none' },
-    contact_submissions: { level: 'none' },
+    contact_submissions: { level: 'full', description: 'View and respond to contact inquiries' },
     social_verifications: { level: 'none' },
     hero_slides: { level: 'edit', description: 'Manage homepage content' },
     users: { level: 'none' },

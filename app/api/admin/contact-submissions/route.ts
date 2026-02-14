@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { canAccessAdmin, UserRole } from '@/lib/permissions'
+import { hasPermission, UserRole } from '@/lib/permissions'
 
-// GET /api/admin/contact-submissions - Fetch all submissions (admin only)
+// GET /api/admin/contact-submissions - Fetch all submissions
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type')
     const status = searchParams.get('status')
 
-    // Check authentication and admin role
+    // Check authentication and permissions
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     const userRole = (profile?.role || 'customer') as UserRole
 
-    if (!canAccessAdmin(userRole)) {
+    if (!hasPermission(userRole, 'contact_submissions', 'view')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
