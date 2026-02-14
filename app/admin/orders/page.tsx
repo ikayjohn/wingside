@@ -526,44 +526,83 @@ export default function AdminOrdersPage() {
                         <tbody className="divide-y divide-gray-200">
                           {selectedOrder.items.map((item) => {
                             const addonItems = formatAddons(item.addons);
+                            const hasItemDetails = item.notes || item.delivery_date || item.delivery_time;
+
                             return (
-                              <tr key={item.id}>
-                                <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                                  {item.product_name}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600">
-                                  {item.product_size || '-'}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600">
-                                  {item.flavors && item.flavors.length > 0 ? (
-                                    <div className="text-xs">
-                                      {item.flavors.join(', ')}
-                                    </div>
-                                  ) : (
-                                    '-'
-                                  )}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600">
-                                  {addonItems && addonItems.length > 0 ? (
-                                    <div className="text-xs space-y-1">
-                                      {addonItems.map((addon, idx) => (
-                                        <div key={idx}>{addon}</div>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    '-'
-                                  )}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-right text-gray-900">
-                                  {item.quantity}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-right text-gray-900">
-                                  {formatPrice(item.unit_price)}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900">
-                                  {formatPrice(item.total_price)}
-                                </td>
-                              </tr>
+                              <>
+                                <tr key={item.id}>
+                                  <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                                    {item.product_name}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-600">
+                                    {item.product_size || '-'}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-600">
+                                    {item.flavors && item.flavors.length > 0 ? (
+                                      <div className="text-xs">
+                                        {item.flavors.join(', ')}
+                                      </div>
+                                    ) : (
+                                      '-'
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-600">
+                                    {addonItems && addonItems.length > 0 ? (
+                                      <div className="text-xs space-y-1">
+                                        {addonItems.map((addon, idx) => (
+                                          <div key={idx}>{addon}</div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      '-'
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-right text-gray-900">
+                                    {item.quantity}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-right text-gray-900">
+                                    {formatPrice(item.unit_price)}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900">
+                                    {formatPrice(item.total_price)}
+                                  </td>
+                                </tr>
+                                {hasItemDetails && (
+                                  <tr key={`${item.id}-details`} className="bg-yellow-50">
+                                    <td colSpan={7} className="px-4 py-3">
+                                      <div className="space-y-1.5">
+                                        {item.delivery_date && (
+                                          <div className="flex items-center gap-2 text-sm">
+                                            <span className="font-semibold text-pink-700">📅 Delivery Date:</span>
+                                            <span className="text-gray-900">
+                                              {new Date(item.delivery_date).toLocaleDateString('en-US', {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric'
+                                              })}
+                                            </span>
+                                          </div>
+                                        )}
+                                        {item.delivery_time && (
+                                          <div className="flex items-center gap-2 text-sm">
+                                            <span className="font-semibold text-pink-700">🕒 Delivery Time:</span>
+                                            <span className="text-gray-900">{item.delivery_time}</span>
+                                          </div>
+                                        )}
+                                        {item.notes && (
+                                          <div className="text-sm">
+                                            <span className="font-semibold text-pink-700">💌 Special Note:</span>
+                                            <div className="mt-1 p-3 bg-white border border-pink-200 rounded-lg text-gray-900 italic">
+                                              "{item.notes}"
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                )}
+                              </>
                             );
                           })}
                         </tbody>

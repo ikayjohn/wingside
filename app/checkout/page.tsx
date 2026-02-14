@@ -709,6 +709,9 @@ export default function CheckoutPage() {
           quantity: item.quantity,
           unit_price: item.price,
           total_price: item.price * item.quantity,
+          notes: item.notes || null,
+          delivery_date: item.deliveryDate || null,
+          delivery_time: item.deliveryTime || null,
         };
       });
 

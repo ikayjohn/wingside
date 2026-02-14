@@ -157,6 +157,9 @@ CREATE TABLE order_items (
   quantity INTEGER NOT NULL DEFAULT 1,
   unit_price DECIMAL(10, 2) NOT NULL,
   total_price DECIMAL(10, 2) NOT NULL,
+  notes TEXT, -- Item-specific notes (e.g., handwritten card message)
+  delivery_date DATE, -- Item-specific delivery date (e.g., Valentine's Day)
+  delivery_time VARCHAR(50), -- Item-specific delivery time slot (e.g., "2PM - 4PM")
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

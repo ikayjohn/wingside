@@ -339,6 +339,9 @@ export async function POST(request: NextRequest) {
       quantity: item.quantity,
       unit_price: item.unit_price,
       total_price: item.total_price,
+      notes: item.notes || null,
+      delivery_date: item.delivery_date || null,
+      delivery_time: item.delivery_time || null,
     }))
 
     const { error: itemsError } = await admin
