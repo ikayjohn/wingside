@@ -23,7 +23,18 @@ export default function HeroSlideshow() {
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [fallbackImageLoaded, setFallbackImageLoaded] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Detect mobile device for performance optimization
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const fetchSlides = useCallback(async () => {
     try {
@@ -127,9 +138,9 @@ export default function HeroSlideshow() {
               }}
             >
               {isFirstSlide ? (
-                // First slide uses hero.mp4 video
+                // First slide: Video on desktop, optimized image on mobile
                 <>
-                  {/* Solid background while fallback image loads */}
+                  {/* Solid background while image loads */}
                   <div
                     className="absolute inset-0 w-full h-full"
                     style={{
@@ -150,7 +161,7 @@ export default function HeroSlideshow() {
                       alt=""
                       fill
                       priority
-                      quality={75}
+                      quality={isMobile ? 65 : 75}
                       sizes="100vw"
                       style={{
                         objectFit: 'cover',
@@ -165,7 +176,7 @@ export default function HeroSlideshow() {
                     width={1920}
                     height={1080}
                     priority
-                    quality={75}
+                    quality={isMobile ? 65 : 75}
                     className="hidden"
                     onLoad={() => setFallbackImageLoaded(true)}
                   />
