@@ -108,9 +108,9 @@ export async function POST(request: NextRequest) {
     // Sanitize inputs
     const sanitizedName = sanitizeTextInput(name);
     const sanitizedEmail = sanitizeEmail(email);
-    const sanitizedPhone = phone ? sanitizePhone(phone) : null;
-    const sanitizedCompany = company ? sanitizeTextInput(company) : null;
-    const sanitizedMessage = message ? sanitizeTextInput(message) : null;
+    const sanitizedPhone = phone ? sanitizePhone(phone) : '';
+    const sanitizedCompany = company ? sanitizeTextInput(company) : '';
+    const sanitizedMessage = message ? sanitizeTextInput(message) : '';
 
     const supabase = await createClient();
 
@@ -121,9 +121,9 @@ export async function POST(request: NextRequest) {
         submission_type: type || 'general',
         name: sanitizedName,
         email: sanitizedEmail,
-        phone: sanitizedPhone || '',
-        company: sanitizedCompany || '',
-        message: sanitizedMessage || '',
+        phone: sanitizedPhone,
+        company: sanitizedCompany,
+        message: sanitizedMessage,
         form_data: formData || {},
         status: 'new',
         created_at: new Date().toISOString(),
