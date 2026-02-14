@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wingside - Cart Data Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #F7C400;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .status {
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffeaa7;
+        }
+
+        .item-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #F7C400;
+        }
+
+        .item-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .note-box {
+            background: #fff0f5;
+            border: 2px solid #ff1493;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .note-box .label {
+            color: #ff1493;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .note-box .content {
+            color: #333;
+            font-size: 16px;
+            font-style: italic;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .btn {
+            background: #F7C400;
+            color: #333;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(247, 196, 0, 0.4);
+        }
+
+        .btn.secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .actions {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .emoji {
+            font-size: 24px;
+            margin-right: 8px;
+        }
+
+        pre {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Wingside Cart Data Checker</h1>
+            <p>Checking browser localStorage for Valentine's order data...</p>
+        </div>
+
+        <div id="results"></div>
+
+        <div class="actions">
+            <button class="btn" onclick="location.reload()">🔄 Refresh Check</button>
+            <button class="btn secondary" onclick="exportData()">📤 Export Data</button>
+            <button class="btn secondary" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+        </div>
+    </div>
+
+    <script>
+        let allData = null;
+
+        function checkLocalStorage() {
+            const resultsDiv = document.getElementById('results');
+
+            // Check for cart data
+            const cartData = localStorage.getItem('wingside-cart');
+
+            if (!cartData) {
+                resultsDiv.innerHTML = `
+                    <div class="status error">
+                        <span class="emoji">❌</span>
+                        No cart data found in this browser's localStorage.
+                        <br><br>
+                        This could mean:
+                        <ul style="margin-top: 10px; margin-left: 30px;">
+                            <li>This is not the browser used to place the order</li>
+                            <li>The browser cache/localStorage was cleared</li>
+                            <li>The order was placed on a different device</li>
+                        </ul>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const cart = JSON.parse(cartData);
+
+                if (!Array.isArray(cart) || cart.length === 0) {
+                    resultsDiv.innerHTML = `
+                        <div class="status warning">
+                            <span class="emoji">⚠️</span>
+                            Cart data exists but is empty.
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Check for Valentine's items
+                const valentineItems = cart.filter(item =>
+                    item.name?.toLowerCase().includes('valentine') ||
+                    item.name?.toLowerCase().includes('handwritten') ||
+                    item.deliveryDate === '2026-02-14' ||
+                    item.notes
+                );
+
+                allData = valentineItems.length > 0 ? valentineItems : cart;
+
+                let html = `
+                    <div class="status success">
+                        <span class="emoji">✅</span>
+                        Found ${cart.length} items in cart!
+                        ${valentineItems.length > 0 ? `<br><span class="emoji">🌹</span>${valentineItems.length} Valentine's items with special data!` : ''}
+                    </div>
+                `;
+
+                // Display Valentine's items with notes
+                const itemsToShow = valentineItems.length > 0 ? valentineItems : cart;
+
+                itemsToShow.forEach((item, index) => {
+                    html += `
+                        <div class="item-card">
+                            <h3><span class="emoji">📦</span>Item ${index + 1}: ${item.name}</h3>
+
+                            ${item.notes ? `
+                                <div class="note-box">
+                                    <div class="label"><span class="emoji">💌</span>SPECIAL NOTE:</div>
+                                    <div class="content">"${item.notes}"</div>
+                                </div>
+                            ` : ''}
+
+                            ${item.deliveryDate ? `<div class="detail-row">
+                                <span class="detail-label">📅 Delivery Date:</span>
+                                <span class="detail-value">${new Date(item.deliveryDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                            </div>` : ''}
+
+                            ${item.deliveryTime ? `<div class="detail-row">
+                                <span class="detail-label">🕒 Delivery Time:</span>
+                                <span class="detail-value">${item.deliveryTime}</span>
+                            </div>` : ''}
+
+                            ${item.flavor ? `<div class="detail-row">
+                                <span class="detail-label">🍗 Flavors:</span>
+                                <span class="detail-value">${Array.isArray(item.flavor) ? item.flavor.join(', ') : item.flavor}</span>
+                            </div>` : ''}
+
+                            <div class="detail-row">
+                                <span class="detail-label">💰 Price:</span>
+                                <span class="detail-value">₦${item.price?.toLocaleString()}</span>
+                            </div>
+
+                            <div class="detail-row">
+                                <span class="detail-label">🔢 Quantity:</span>
+                                <span class="detail-value">${item.quantity}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                resultsDiv.innerHTML = html;
+
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="status error">
+                        <span class="emoji">❌</span>
+                        Error parsing cart data: ${error.message}
+                        <br><br>
+                        <strong>Raw data:</strong>
+                        <pre>${cartData}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        function exportData() {
+            if (!allData) {
+                alert('No data to export');
+                return;
+            }
+
+            const dataStr = JSON.stringify(allData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `wingside-valentine-orders-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function copyToClipboard() {
+            if (!allData) {
+                alert('No data to copy');
+                return;
+            }
+
+            const dataStr = JSON.stringify(allData, null, 2);
+            navigator.clipboard.writeText(dataStr).then(() => {
+                alert('✅ Data copied to clipboard!\n\nYou can now paste it into an email or document.');
+            }).catch(err => {
+                alert('Failed to copy: ' + err);
+            });
+        }
+
+        // Run check on page load
+        checkLocalStorage();
+    </script>
+</body>
+</html>
