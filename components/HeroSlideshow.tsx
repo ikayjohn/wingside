@@ -179,7 +179,7 @@ export default function HeroSlideshow() {
                     muted
                     loop
                     playsInline
-                    preload="auto"
+                    preload="metadata"
                     poster={slide.image_url}
                     onLoadedData={() => setVideoLoaded(true)}
                     onCanPlayThrough={() => setVideoLoaded(true)}

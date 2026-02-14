@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import HeroSlideshow from '@/components/HeroSlideshow';
 import { fetchSettings } from '@/lib/settings';
 
@@ -196,10 +197,13 @@ export default function WingsideLanding() {
         <section className="relative z-40 py-0 -mt-[50px] sm:-mt-[60px] md:-mt-[80px]">
           {/* Yellow Background */}
           <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 bg-gradient-to-br from-yellow-100 to-yellow-100 h-[160px] sm:h-[200px] md:h-[250px] lg:h-[400px] overflow-hidden">
-            <img
+            <Image
               src="/yellowpattern.png"
               alt=""
-              className="absolute inset-0 w-full h-full object-cover opacity-90"
+              fill
+              quality={75}
+              sizes="100vw"
+              className="object-cover opacity-90"
             />
           </div>
 
@@ -215,17 +219,23 @@ export default function WingsideLanding() {
               </div>
 
               <div className="pr-4 xl:pr-8">
-                <img
+                <Image
                   src="/thinkarrow.png"
                   alt="Arrow"
+                  width={128}
+                  height={55}
+                  quality={75}
                   className="w-24 xl:w-32 h-auto"
                 />
               </div>
 
               <div className="flex-1 flex justify-end">
-                <img
+                <Image
                   src="/thinkbox.png"
                   alt="Wingside Box"
+                  width={660}
+                  height={436}
+                  quality={75}
                   className="w-full max-w-[540px] xl:max-w-[660px] h-auto float-hover"
                 />
               </div>
@@ -238,17 +248,23 @@ export default function WingsideLanding() {
                   Think Inside<br />
                   <span>THE BOX</span>
                 </h2>
-                <img
+                <Image
                   src="/thinkarrow.png"
                   alt="Arrow"
+                  width={128}
+                  height={55}
+                  quality={75}
                   className="w-32 h-auto"
                 />
               </div>
 
               <div className="flex-1 flex justify-end">
-                <img
+                <Image
                   src="/thinkbox.png"
                   alt="Wingside Box"
+                  width={660}
+                  height={436}
+                  quality={75}
                   className="w-full max-w-[336px] h-auto float-hover"
                 />
               </div>
@@ -261,17 +277,23 @@ export default function WingsideLanding() {
                   Think Inside<br />
                   <span>THE BOX</span>
                 </h2>
-                <img
+                <Image
                   src="/thinkarrow.png"
                   alt="Arrow"
+                  width={128}
+                  height={55}
+                  quality={75}
                   className="w-20 h-auto"
                 />
               </div>
 
               <div className="flex-1 flex justify-end">
-                <img
+                <Image
                   src="/thinkbox.png"
                   alt="Wingside Box"
+                  width={660}
+                  height={436}
+                  quality={75}
                   className="w-full max-w-[317px] h-auto float-hover"
                 />
               </div>
@@ -443,9 +465,12 @@ export default function WingsideLanding() {
                     zIndex: activeDeliverySection === 0 || activeDeliverySection === 3 ? 10 : 0
                   }}
                 >
-                  <img
+                  <Image
                     src={deliverySlides[0].image}
                     alt={deliverySlides[0].alt}
+                    width={800}
+                    height={800}
+                    quality={75}
                     className="max-h-[425px] sm:max-h-[340px] md:max-h-[450px] lg:max-h-[580px] w-auto object-contain mt-[85px] sm:mt-[-30px] md:mt-[-100px] lg:mt-[-195px]"
                   />
                 </div>
@@ -458,9 +483,12 @@ export default function WingsideLanding() {
                     zIndex: activeDeliverySection === 1 ? 10 : 0
                   }}
                 >
-                  <img
+                  <Image
                     src={deliverySlides[1].image}
                     alt={deliverySlides[1].alt}
+                    width={800}
+                    height={800}
+                    quality={75}
                     className="max-h-[425px] sm:max-h-[340px] md:max-h-[450px] lg:max-h-[580px] w-auto object-contain mt-[85px] sm:mt-[-30px] md:mt-[-100px] lg:mt-[-195px]"
                   />
                 </div>
@@ -473,9 +501,12 @@ export default function WingsideLanding() {
                     zIndex: activeDeliverySection === 2 ? 10 : 0
                   }}
                 >
-                  <img
+                  <Image
                     src={deliverySlides[2].image}
                     alt={deliverySlides[2].alt}
+                    width={800}
+                    height={800}
+                    quality={75}
                     className="max-h-[425px] sm:max-h-[340px] md:max-h-[450px] lg:max-h-[580px] w-auto object-contain mt-[85px] sm:mt-[-30px] md:mt-[-100px] lg:mt-[-195px]"
                   />
                 </div>
@@ -488,9 +519,12 @@ export default function WingsideLanding() {
                     zIndex: activeDeliverySection === 3 ? 10 : 0
                   }}
                 >
-                  <img
+                  <Image
                     src={deliverySlides[0].image}
                     alt={deliverySlides[0].alt}
+                    width={800}
+                    height={800}
+                    quality={75}
                     className="max-h-[425px] sm:max-h-[340px] md:max-h-[450px] lg:max-h-[580px] w-auto object-contain mt-[85px] sm:mt-[-30px] md:mt-[-100px] lg:mt-[-195px]"
                   />
                 </div>
@@ -578,16 +612,16 @@ export default function WingsideLanding() {
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
               <div className="wc-card-img">
-                <img src="/wc1.png" alt="Members Discount" className="w-full h-full object-cover" />
+                <Image src="/wc1.png" alt="Members Discount" width={400} height={400} quality={75} className="w-full h-full object-cover" />
               </div>
               <div className="wc-card-img">
-                <img src="/wc2.png" alt="Points" className="w-full h-full object-cover" />
+                <Image src="/wc2.png" alt="Points" width={400} height={400} quality={75} className="w-full h-full object-cover" />
               </div>
               <div className="wc-card-img">
-                <img src="/wc3.png" alt="Gift" className="w-full h-full object-cover" />
+                <Image src="/wc3.png" alt="Gift" width={400} height={400} quality={75} className="w-full h-full object-cover" />
               </div>
               <div className="wc-card-img">
-                <img src="/wc4.png" alt="Birthday Wings" className="w-full h-full object-cover" />
+                <Image src="/wc4.png" alt="Birthday Wings" width={400} height={400} quality={75} className="w-full h-full object-cover" />
               </div>
             </div>
           </div>

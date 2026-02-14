@@ -6,9 +6,11 @@ import Script from "next/script";
 import ServiceWorkerProvider from "@/components/ServiceWorkerProvider";
 
 const inter = Inter({
-  weight: ['300', '400', '500', '600', '700', '800'],
+  weight: ['400', '600', '700'], // Reduced from 6 to 3 weights
   subsets: ['latin'],
   display: 'swap',
+  preload: true,
+  fallback: ['system-ui', 'arial'],
 });
 
 export const metadata: Metadata = {
@@ -84,8 +86,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Preload hero video for faster loading */}
-        <link rel="preload" href="/hero.mp4" as="video" type="video/mp4" />
+        {/* DNS prefetch for external resources */}
+        <link rel="dns-prefetch" href="https://cxbqochxrhokdscgijxe.supabase.co" />
+
+        {/* Preconnect to critical origins */}
+        <link rel="preconnect" href="https://cxbqochxrhokdscgijxe.supabase.co" crossOrigin="anonymous" />
       </head>
       <body className={inter.className} suppressHydrationWarning>
         {/* Skip Navigation Link for Keyboard Users */}
