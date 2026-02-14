@@ -386,13 +386,15 @@ export default function WingsideLanding() {
                           </div>
                         </div>
 
-                        {/* Image */}
+                        {/* Image - optimized with Next.js Image */}
                         <div className="order-1 md:order-2 flex justify-center md:block md:ml-[80px]">
-                          <img
+                          <Image
                             src={flavor.image_url}
                             alt={flavor.name}
+                            width={400}
+                            height={400}
+                            quality={75}
                             className="w-auto h-[100px] sm:h-[140px] md:h-[260px] lg:h-[360px] flavor-image object-contain"
-                            loading="lazy"
                           />
                         </div>
                       </div>

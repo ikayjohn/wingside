@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Slide {
   id: string;
@@ -142,34 +143,31 @@ export default function HeroSlideshow() {
                     }}
                   />
 
-                  {/* Fallback image - only show when fully loaded */}
+                  {/* Fallback image - optimized with Next.js Image */}
                   {!videoLoaded && fallbackImageLoaded && (
-                    <img
+                    <Image
                       src={slide.image_url || '/hero-fallback.jpg'}
                       alt=""
-                      className="absolute inset-0 w-full h-full object-cover"
+                      fill
+                      priority
+                      quality={75}
+                      sizes="100vw"
                       style={{
-                        position: 'absolute' as const,
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        minWidth: '100%',
-                        minHeight: '100%',
-                        width: 'auto',
-                        height: 'auto',
-                        objectFit: 'cover' as const,
+                        objectFit: 'cover',
                       }}
                     />
                   )}
 
                   {/* Hidden img to preload and detect when loaded */}
-                  <img
+                  <Image
                     src={slide.image_url || '/hero-fallback.jpg'}
                     alt=""
+                    width={1920}
+                    height={1080}
+                    priority
+                    quality={75}
                     className="hidden"
                     onLoad={() => setFallbackImageLoaded(true)}
-                    loading="eager"
-                    fetchPriority="high"
                   />
 
                   <video
@@ -203,13 +201,16 @@ export default function HeroSlideshow() {
                   </video>
                 </>
               ) : (
-                // Other slides use images
-                <img
+                // Other slides use images (Next.js Image for auto-optimization)
+                <Image
                   src={slide.image_url}
                   alt={slide.title}
+                  fill
+                  priority={index === 0}
+                  quality={75}
+                  sizes="100vw"
                   className="hero-video"
                   style={{
-                    ...getKenBurnsStyle(showAnimation),
                     objectFit: 'cover',
                     objectPosition: 'center',
                   } as any}
