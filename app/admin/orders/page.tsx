@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
@@ -31,6 +31,9 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
   total_price: number;
+  notes?: string;
+  delivery_date?: string;
+  delivery_time?: string;
 }
 
 interface OrderDetails extends Order {
@@ -529,8 +532,8 @@ export default function AdminOrdersPage() {
                             const hasItemDetails = item.notes || item.delivery_date || item.delivery_time;
 
                             return (
-                              <>
-                                <tr key={item.id}>
+                              <React.Fragment key={item.id}>
+                                <tr>
                                   <td className="px-4 py-3 text-sm font-medium text-gray-900">
                                     {item.product_name}
                                   </td>
@@ -602,7 +605,7 @@ export default function AdminOrdersPage() {
                                     </td>
                                   </tr>
                                 )}
-                              </>
+                              </React.Fragment>
                             );
                           })}
                         </tbody>
