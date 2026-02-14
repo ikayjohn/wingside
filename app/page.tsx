@@ -3,8 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import HeroSlideshow from '@/components/HeroSlideshow';
+import dynamic from 'next/dynamic';
 import { fetchSettings } from '@/lib/settings';
+
+// Lazy load HeroSlideshow (above fold but heavy component)
+const HeroSlideshow = dynamic(() => import('@/components/HeroSlideshow'), {
+  loading: () => <div className="hero-video-section" style={{ background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #552627 100%)', minHeight: '600px' }} />,
+  ssr: true, // Still render on server for SEO
+});
 
 // Structured data for SEO
 // Note: NEXT_PUBLIC_* environment variables are inlined at build time by Next.js,
