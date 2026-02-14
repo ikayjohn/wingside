@@ -108,9 +108,9 @@ export async function POST(request: NextRequest) {
     // Sanitize inputs
     const sanitizedName = sanitizeTextInput(name);
     const sanitizedEmail = sanitizeEmail(email);
-    const sanitizedPhone = phone ? sanitizePhone(phone) : undefined;
-    const sanitizedCompany = company ? sanitizeTextInput(company) : undefined;
-    const sanitizedMessage = message ? sanitizeTextInput(message) : undefined;
+    const sanitizedPhone = phone ? sanitizePhone(phone) : null;
+    const sanitizedCompany = company ? sanitizeTextInput(company) : null;
+    const sanitizedMessage = message ? sanitizeTextInput(message) : null;
 
     const supabase = await createClient();
 
