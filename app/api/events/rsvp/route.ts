@@ -75,6 +75,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Also add to contact_submissions for unified admin view
+    try {
+      await supabase
+        .from('contact_submissions')
+        .insert({
+          submission_type: 'event-rsvp',
+          name,
+          email: email.toLowerCase(),
+          phone: phone || null,
+          company: null,
+          message: `RSVP for: ${event.title}`,
+          form_data: {
+            event_id,
+            event_title: event.title,
+            event_date: event.event_date,
+            event_time: event.event_time,
+            event_location: event.location,
+            attending,
+            stay_updated,
+            rsvp_id: rsvp.id,
+          },
+          status: 'new',
+        });
+    } catch (contactError) {
+      // Don't fail the RSVP if contact_submissions insert fails
+      console.error('Error adding RSVP to contact_submissions:', contactError);
+    }
+
     // Send confirmation email
     try {
       const { sendEventRSVPConfirmation } = await import('@/lib/emails/event-rsvp');

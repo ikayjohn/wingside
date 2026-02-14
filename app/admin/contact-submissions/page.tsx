@@ -131,6 +131,7 @@ export default function ContactSubmissionsPage() {
       case 'meetings': return 'bg-purple-100 text-purple-800';
       case 'wingpost': return 'bg-green-100 text-green-800';
       case 'sports-community': return 'bg-[#F7C400] text-[#552627]';
+      case 'event-rsvp': return 'bg-teal-100 text-teal-800';
       case 'newsletter': return 'bg-pink-100 text-pink-800';
       case 'connect': return 'bg-indigo-100 text-indigo-800';
       case 'hotspot': return 'bg-amber-100 text-amber-800';
@@ -157,6 +158,7 @@ export default function ContactSubmissionsPage() {
       case 'meetings': return 'Meetings';
       case 'wingpost': return 'Wingpost';
       case 'sports-community': return 'Sports Community';
+      case 'event-rsvp': return 'Event RSVP';
       case 'newsletter': return 'Newsletter';
       case 'connect': return 'Wingside Connect';
       case 'hotspot': return 'Hotspot Partner';
@@ -181,6 +183,7 @@ export default function ContactSubmissionsPage() {
             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
           >
             <option value="all">All Types</option>
+            <option value="event-rsvp">Event RSVP</option>
             <option value="catering">Catering</option>
             <option value="office-lunch">Office Lunch</option>
             <option value="meetings">Meetings</option>
