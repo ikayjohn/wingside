@@ -91,6 +91,9 @@ export default function RootLayout({
 
         {/* Preconnect to critical origins */}
         <link rel="preconnect" href="https://cxbqochxrhokdscgijxe.supabase.co" crossOrigin="anonymous" />
+
+        {/* Prefetch hero images for faster LCP */}
+        <link rel="prefetch" as="image" href="/_next/image?url=%2Flogo-white.png&w=96&q=80" />
       </head>
       <body className={inter.className} suppressHydrationWarning>
         {/* Skip Navigation Link for Keyboard Users */}
