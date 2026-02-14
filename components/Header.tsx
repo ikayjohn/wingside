@@ -148,7 +148,7 @@ export default function Header() {
             {/* Logo - Centered - Optimized with Next.js Image */}
             <Link href="/" className="absolute left-1/2 transform -translate-x-1/2 hover:opacity-80">
               <Image
-                src={isHomepage && !isScrolled ? "/logo-white.png?v=2" : "/logo.png?v=2"}
+                src={isHomepage && !isScrolled ? "/logo-white.png" : "/logo.png"}
                 alt="Wingside Logo"
                 width={150}
                 height={150}
