@@ -89,6 +89,8 @@ export default function AnalyticsPage() {
       daysAgo.setDate(daysAgo.getDate() - days);
       const dateFilter = daysAgo.toISOString();
 
+      console.log(`📅 Fetching analytics for last ${days} days (from ${daysAgo.toLocaleDateString()})`);
+
       // Previous period for comparison
       const previousDaysAgo = new Date();
       previousDaysAgo.setDate(previousDaysAgo.getDate() - (days * 2));
@@ -102,7 +104,7 @@ export default function AnalyticsPage() {
 
       const validFlavorNames = new Set(actualFlavors?.map(f => f.name) || []);
 
-      // Fetch current period orders with order_items
+      // Fetch current period orders with order_items (paid orders only)
       const { data: orders, error: ordersError } = await supabase
         .from('orders')
         .select(`
@@ -115,6 +117,7 @@ export default function AnalyticsPage() {
             total_price
           )
         `)
+        .eq('payment_status', 'paid')
         .gte('created_at', dateFilter)
         .order('created_at', { ascending: false });
 
@@ -123,10 +126,11 @@ export default function AnalyticsPage() {
         throw ordersError;
       }
 
-      // Fetch previous period orders for comparison
+      // Fetch previous period orders for comparison (paid orders only)
       const { data: previousOrders, error: previousError } = await supabase
         .from('orders')
         .select('total, created_at')
+        .eq('payment_status', 'paid')
         .gte('created_at', previousDateFilter)
         .lt('created_at', dateFilter);
 
@@ -156,6 +160,13 @@ export default function AnalyticsPage() {
       const totalRevenue = orders?.reduce((sum, order) => sum + Number(order.total), 0) || 0;
       const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
+      console.log('📊 Analytics Data:', {
+        totalOrders,
+        totalRevenue,
+        dateRange: `${dateFilter} to now`,
+        sampleOrder: orders?.[0]
+      });
+
       // Calculate previous period metrics
       const previousTotalOrders = previousOrders?.length || 0;
       const previousRevenue = previousOrders?.reduce((sum, order) => sum + Number(order.total), 0) || 0;
@@ -163,6 +174,7 @@ export default function AnalyticsPage() {
 
       // Revenue by day
       const revenueByDay = aggregateRevenueByDay(orders || []);
+      console.log('📈 Revenue by Day:', revenueByDay.slice(-7));
 
       // Orders by status
       const ordersByStatus = aggregateOrdersByStatus(orders || []);
@@ -173,26 +185,55 @@ export default function AnalyticsPage() {
       // Top flavors with percentages - filtered to only actual wing flavors
       const topFlavors = aggregateTopFlavors(allOrderItems || [], validFlavorNames);
 
-      // Revenue by category - fetch all products to get their categories
-      const { data: allProducts } = await supabase
+      // Revenue by category - fetch products with category join (correct syntax!)
+      const { data: allProducts, error: productsError } = await supabase
         .from('products')
-        .select('id, category_id, categories(id, name)');
+        .select('id, name, category_id, category:categories(id, name)');
 
-      // Create a map of product IDs to category names
+      console.log('🔍 Raw products data:', JSON.stringify(allProducts?.slice(0, 3), null, 2));
+      console.log('❌ Products error:', productsError);
+      console.log('🛒 Sample order item product_ids:', allOrderItems?.slice(0, 5).map(i => i.product_id));
+
+      // Create maps: product ID → category AND product name → category (fallback)
       const productCategoryMap = new Map<string, string>();
+      const productNameMap = new Map<string, string>();
+
       allProducts?.forEach(product => {
-        const category = product.categories as any;
-        productCategoryMap.set(product.id, category?.name || 'Uncategorized');
+        const category = product.category as any;
+        const categoryName = category?.name || 'Uncategorized';
+
+        // Map by product ID (preferred)
+        productCategoryMap.set(product.id, categoryName);
+
+        // Map by product name (fallback for orders missing product_id)
+        productNameMap.set(product.name, categoryName);
+
+        console.log(`📦 Product mapping: "${product.name}" (${product.id}) → Category: "${categoryName}" (category_id: ${product.category_id})`);
       });
 
-      // Aggregate revenue by category
-      const revenueByCategory = aggregateRevenueByCategory(allOrderItems || [], productCategoryMap);
+      console.log('\n🗺️ Final Product-Category Map:');
+      allOrderItems?.slice(0, 5).forEach(item => {
+        const mappedCategory = productCategoryMap.get(item.product_id) || productNameMap.get(item.product_name);
+        console.log(`   Order item "${item.product_name}" (${item.product_id}) → "${mappedCategory}"`);
+      });
+
+      // Aggregate revenue by category (with fallback to product name matching)
+      const revenueByCategory = aggregateRevenueByCategory(allOrderItems || [], productCategoryMap, productNameMap);
 
       // Peak hours analysis
       const peakHours = aggregatePeakHours(orders || []);
 
-      // Customer insights
-      const customerInsights = aggregateCustomerInsights(orders || []);
+      // Customer insights - get unique customer emails from current period
+      const customerEmails = Array.from(new Set(orders?.map(o => o.customer_email).filter(Boolean)));
+
+      // Fetch ALL orders for these customers to get accurate first order dates
+      const { data: allCustomerOrders } = await supabase
+        .from('orders')
+        .select('customer_email, created_at')
+        .eq('payment_status', 'paid')
+        .in('customer_email', customerEmails.length > 0 ? customerEmails : ['none']);
+
+      const customerInsights = aggregateCustomerInsights(orders || [], allCustomerOrders || []);
 
       // Period comparison
       const periodComparison = {
@@ -239,7 +280,9 @@ export default function AnalyticsPage() {
     const dailyData: { [key: string]: { revenue: number; orders: number } } = {};
 
     orders.forEach(order => {
-      const date = new Date(order.created_at).toLocaleDateString();
+      // Use YYYY-MM-DD format for consistent sorting
+      const dateObj = new Date(order.created_at);
+      const date = dateObj.toISOString().split('T')[0]; // YYYY-MM-DD
       if (!dailyData[date]) {
         dailyData[date] = { revenue: 0, orders: 0 };
       }
@@ -249,7 +292,7 @@ export default function AnalyticsPage() {
 
     return Object.entries(dailyData)
       .map(([date, data]) => ({ date, ...data }))
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .sort((a, b) => a.date.localeCompare(b.date))
       .slice(-30); // Last 30 days
   }
 
@@ -308,13 +351,20 @@ export default function AnalyticsPage() {
       .slice(0, 10);
   }
 
-  function aggregateRevenueByCategory(orderItems: Array<any>, productCategoryMap: Map<string, string>) {
+  function aggregateRevenueByCategory(orderItems: Array<any>, productCategoryMap: Map<string, string>, productNameMap: Map<string, string>) {
     const categoryRevenue: { [key: string]: number } = {};
 
     orderItems.forEach(item => {
-      // Use product_id to get category name
-      const productId = item.product_id;
-      const categoryName = productId ? productCategoryMap.get(productId) || 'Uncategorized' : 'Uncategorized';
+      let categoryName = 'Uncategorized';
+
+      // Try product_id first
+      if (item.product_id) {
+        categoryName = productCategoryMap.get(item.product_id) || 'Uncategorized';
+      }
+      // Fallback: match by product_name if product_id is null
+      else if (item.product_name) {
+        categoryName = productNameMap.get(item.product_name) || 'Uncategorized';
+      }
 
       if (!categoryRevenue[categoryName]) {
         categoryRevenue[categoryName] = 0;
@@ -356,13 +406,24 @@ export default function AnalyticsPage() {
     return `${hour - 12} PM`;
   }
 
-  function aggregateCustomerInsights(orders: Array<any>) {
+  function aggregateCustomerInsights(orders: Array<any>, allCustomerOrders: Array<any>) {
     // Get unique customers
-    const customerMap = new Map<string, { name: string; email: string; orders: number; totalSpent: number; firstOrder: string; lastOrder: string }>();
+    const customerMap = new Map<string, { name: string; email: string; orders: number; totalSpent: number; firstOrder: string; lastOrder: string; actualFirstOrder: string }>();
+
+    // Build map of customer emails to their actual first order date (from all time)
+    const customerFirstOrderMap = new Map<string, string>();
+    allCustomerOrders.forEach(order => {
+      const email = order.customer_email;
+      const existing = customerFirstOrderMap.get(email);
+      if (!existing || order.created_at < existing) {
+        customerFirstOrderMap.set(email, order.created_at);
+      }
+    });
 
     orders.forEach(order => {
       const email = order.customer_email || 'unknown';
       const existing = customerMap.get(email);
+      const actualFirstOrder = customerFirstOrderMap.get(email) || order.created_at;
 
       if (existing) {
         existing.orders += 1;
@@ -377,7 +438,8 @@ export default function AnalyticsPage() {
           orders: 1,
           totalSpent: Number(order.total),
           firstOrder: order.created_at,
-          lastOrder: order.created_at
+          lastOrder: order.created_at,
+          actualFirstOrder: actualFirstOrder
         });
       }
     });
@@ -388,11 +450,11 @@ export default function AnalyticsPage() {
     const averageOrdersPerCustomer = totalCustomers > 0 ? orders.length / totalCustomers : 0;
     const customerLTV = totalCustomers > 0 ? customers.reduce((sum, c) => sum + c.totalSpent, 0) / totalCustomers : 0;
 
-    // Get new vs returning customers based on first order date
+    // Get new vs returning customers based on ACTUAL first order date (all time)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const newCustomers = customers.filter(c => new Date(c.firstOrder) >= thirtyDaysAgo).length;
-    const returningCustomers = customers.filter(c => new Date(c.firstOrder) < thirtyDaysAgo).length;
+    const newCustomers = customers.filter(c => new Date(c.actualFirstOrder) >= thirtyDaysAgo).length;
+    const returningCustomers = customers.filter(c => new Date(c.actualFirstOrder) < thirtyDaysAgo).length;
 
     // Top customers by total spent
     const topCustomers = customers
@@ -506,7 +568,7 @@ export default function AnalyticsPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-sm text-gray-600 mb-1">Total Orders</p>
+                <p className="text-sm text-gray-600 mb-1">Completed Orders</p>
                 <p className="text-2xl font-bold text-[#552627]">{salesData.totalOrders}</p>
                 <p className="text-xs text-gray-500 mt-1">In selected period</p>
               </div>
@@ -535,15 +597,38 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Revenue Chart */}
         <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-          <h2 className="text-xl font-bold text-[#552627] mb-4">Revenue Trend</h2>
-          <BarChart
-            data={salesData.revenueByDay.slice(-14).map((day) => ({
-              label: new Date(day.date).toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' }),
-              value: day.revenue,
-              color: "#F7C400"
-            }))}
-            height={256}
-          />
+          <h2 className="text-xl font-bold text-[#552627] mb-4">Revenue Trend (Last 14 Days)</h2>
+          {salesData.revenueByDay.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p className="text-sm">No revenue data available for the selected period</p>
+              <p className="text-xs mt-2">Only paid orders are included in analytics</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {salesData.revenueByDay.slice(-14).map((day, index) => {
+                const maxRevenue = Math.max(...salesData.revenueByDay.map(d => d.revenue));
+                const percentage = maxRevenue > 0 ? (day.revenue / maxRevenue) * 100 : 0;
+                return (
+                  <div key={index} className="flex items-center gap-3">
+                    <span className="text-xs font-medium text-gray-600 w-24">
+                      {new Date(day.date).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+                    </span>
+                    <div className="flex-1 bg-gray-100 rounded-full h-8 overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full flex items-center justify-end pr-3"
+                        style={{ width: `${percentage}%`, minWidth: percentage > 0 ? '60px' : '0' }}
+                      >
+                        <span className="text-xs font-semibold text-white">{day.orders}</span>
+                      </div>
+                    </div>
+                    <span className="text-sm font-semibold text-[#552627] w-24 text-right">
+                      {formatPrice(day.revenue)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Peak Hours */}
@@ -652,7 +737,7 @@ export default function AnalyticsPage() {
               </div>
             </div>
             <p className="text-3xl font-bold text-[#F7C400]">{formatPrice(salesData.customerInsights.customerLTV)}</p>
-            <p className="text-sm text-gray-600">Avg Customer LTV</p>
+            <p className="text-sm text-gray-600">Avg Spend/Customer</p>
           </div>
           <div className="text-center">
             <div className="flex justify-center mb-2">

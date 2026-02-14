@@ -20,6 +20,18 @@ export default function AdminLayout({
   const pathname = usePathname();
   const supabase = createClient();
 
+  // Auto-expand dropdown if current page is a child
+  useEffect(() => {
+    navItems.forEach(item => {
+      if ('children' in item && item.children) {
+        const hasActiveChild = item.children.some((child: any) => pathname === child.href);
+        if (hasActiveChild && openDropdown !== item.label) {
+          setOpenDropdown(item.label);
+        }
+      }
+    });
+  }, [pathname]);
+
   const checkUser = useCallback(async () => {
     const {
       data: { user },
@@ -39,8 +51,10 @@ export default function AdminLayout({
 
     const role = (profile?.role || 'customer') as UserRole;
 
-    console.log('Admin Layout - User role:', role);
-    console.log('Admin Layout - Can access admin?', canAccessAdmin(role));
+    console.log('🔐 Admin Layout - User:', user?.email);
+    console.log('🔐 Admin Layout - Profile data:', profile);
+    console.log('🔐 Admin Layout - Detected role:', role);
+    console.log('🔐 Admin Layout - Can access admin?', canAccessAdmin(role));
 
     // Check if user can access admin panel
     if (!canAccessAdmin(role)) {
@@ -209,6 +223,13 @@ export default function AdminLayout({
             const isDropdownOpen = openDropdown === item.label;
             const hasActiveChild = hasChildren && item.children?.some((child: any) => pathname === child.href);
 
+            // Debug logging
+            if (!hasChildren) {
+              console.log(`[Menu] ${item.label}: pathname="${pathname}", href="${item.href}", isActive=${isActive}`);
+            } else {
+              console.log(`[Menu] ${item.label}: hasActiveChild=${hasActiveChild}`);
+            }
+
             if (hasChildren) {
               return (
                 <div key={index} className="space-y-0.5">
@@ -219,7 +240,7 @@ export default function AdminLayout({
                       ${item.label === 'WingCommerce'
                         ? 'bg-[#FFFDE7] text-gray-900 hover:bg-[#FFF9C4] font-extrabold'
                         : hasActiveChild
-                          ? 'bg-[#552627] text-white font-semibold shadow-md'
+                          ? 'bg-[#F7C400] text-[#552627] font-semibold shadow-md'
                           : 'text-gray-700 hover:bg-gray-100 hover:text-[#552627]'
                       }
                     `}
@@ -242,6 +263,7 @@ export default function AdminLayout({
                     <div className="ml-4 space-y-0.5">
                       {item.children?.map((child: any) => {
                         const childIsActive = pathname === child.href;
+                        console.log(`[Menu Child] ${child.label}: pathname="${pathname}", href="${child.href}", isActive=${childIsActive}`);
                         return (
                           <Link
                             key={child.href}
@@ -249,7 +271,7 @@ export default function AdminLayout({
                             className={`
                               block px-4 py-2.5 rounded-lg text-xs transition-all duration-200
                               ${childIsActive
-                                ? 'bg-[#552627] text-white font-semibold shadow-md'
+                                ? 'bg-[#F7C400] text-[#552627] font-semibold shadow-md'
                                 : 'text-gray-700 hover:bg-gray-100 hover:text-[#552627]'
                               }
                             `}
@@ -271,7 +293,7 @@ export default function AdminLayout({
                 className={`
                   flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
                   ${isActive
-                    ? 'bg-[#552627] text-white font-semibold shadow-md'
+                    ? 'bg-[#F7C400] text-[#552627] font-semibold shadow-md'
                     : 'text-gray-700 hover:bg-gray-100 hover:text-[#552627]'
                   }
                 `}
@@ -298,7 +320,7 @@ export default function AdminLayout({
               className={`
                 flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
                 ${pathname === '/admin/maintenance'
-                  ? 'bg-[#552627] text-white font-semibold shadow-md'
+                  ? 'bg-[#F7C400] text-[#552627] font-semibold shadow-md'
                   : 'text-gray-700 hover:bg-gray-100 hover:text-[#552627]'
                 }
               `}

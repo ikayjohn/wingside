@@ -63,6 +63,27 @@ export default function WingsideConnectPage() {
     setTimeout(() => setSelectedEvent(null), 300);
   };
 
+  // Focus trap for modal
+  useEffect(() => {
+    if (showEventModal) {
+      // Focus first input when modal opens
+      setTimeout(() => {
+        const firstInput = document.querySelector<HTMLInputElement>('input[name="name"]');
+        firstInput?.focus();
+      }, 100);
+
+      // Handle Escape key
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          closeEventModal();
+        }
+      };
+
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [showEventModal]);
+
   const handleRsvpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEvent) return;
@@ -71,9 +92,20 @@ export default function WingsideConnectPage() {
     setRsvpMessage(null);
 
     try {
+      // Get CSRF token
+      const csrfResponse = await fetch('/api/csrf/token');
+      const csrfData = await csrfResponse.json();
+
+      if (!csrfResponse.ok) {
+        throw new Error('Failed to get security token');
+      }
+
       const response = await fetch('/api/events/rsvp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          [csrfData.headerName]: csrfData.token,
+        },
         body: JSON.stringify({
           event_id: selectedEvent.id,
           event_title: selectedEvent.title,
@@ -110,9 +142,20 @@ export default function WingsideConnectPage() {
     setSubmitMessage(null);
 
     try {
+      // Get CSRF token
+      const csrfResponse = await fetch('/api/csrf/token');
+      const csrfData = await csrfResponse.json();
+
+      if (!csrfResponse.ok) {
+        throw new Error('Failed to get security token');
+      }
+
       const response = await fetch('/api/contact', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          [csrfData.headerName]: csrfData.token,
+        },
         body: JSON.stringify({
           type: 'connect',
           name: formData.fullName,
@@ -210,23 +253,23 @@ export default function WingsideConnectPage() {
           {/* Tags */}
           <div className="connect-hero-tags">
             <span className="connect-tag">
-              <img src="/running.svg" alt="" width="18" height="18" style={{filter: 'brightness(0) invert(1)'}} />
+              <img src="/running.svg" alt="Running icon" width="18" height="18" style={{filter: 'brightness(0) invert(1)'}} />
               Run Clubs
             </span>
             <span className="connect-tag">
-              <img src="/game.svg" alt="" width="18" height="18" style={{filter: 'brightness(0) invert(1)'}} />
+              <img src="/game.svg" alt="Gaming icon" width="18" height="18" style={{filter: 'brightness(0) invert(1)'}} />
               Game Nights
             </span>
             <span className="connect-tag">
-              <img src="/jam.svg" alt="" width="18" height="18" style={{filter: 'brightness(0) invert(1)'}} />
+              <img src="/jam.svg" alt="Music icon" width="18" height="18" style={{filter: 'brightness(0) invert(1)'}} />
               Jam Sessions
             </span>
             <span className="connect-tag">
-              <img src="/talks.svg" alt="" width="18" height="18" style={{filter: 'brightness(0) invert(1)'}} />
+              <img src="/talks.svg" alt="Events icon" width="18" height="18" style={{filter: 'brightness(0) invert(1)'}} />
               Talks & Events
             </span>
             <span className="connect-tag">
-              <img src="/gifts.svg" alt="" width="18" height="18" style={{filter: 'brightness(0) invert(1)'}} />
+              <img src="/gifts.svg" alt="Gifts icon" width="18" height="18" style={{filter: 'brightness(0) invert(1)'}} />
               Freebies & First Dips Access
             </span>
           </div>
@@ -323,7 +366,7 @@ export default function WingsideConnectPage() {
                     </div>
                     <div className="connect-event-info">
                       <div className="connect-event-date">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Calendar icon">
                           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                           <line x1="16" y1="2" x2="16" y2="6"></line>
                           <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -334,7 +377,7 @@ export default function WingsideConnectPage() {
                       </div>
                       <h3 className="connect-event-title">{event.title}</h3>
                       <div className="connect-event-location">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Location icon">
                           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                           <circle cx="12" cy="10" r="3"></circle>
                         </svg>
@@ -395,7 +438,7 @@ export default function WingsideConnectPage() {
               {/* Event Details */}
               <div className="space-y-3 mb-6">
                 <div className="flex items-center gap-3 text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-500" aria-label="Event date">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                     <line x1="16" y1="2" x2="16" y2="6"></line>
                     <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -408,7 +451,7 @@ export default function WingsideConnectPage() {
                 </div>
 
                 <div className="flex items-center gap-3 text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-500" aria-label="Event location">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                     <circle cx="12" cy="10" r="3"></circle>
                   </svg>
@@ -428,7 +471,7 @@ export default function WingsideConnectPage() {
                   {selectedEvent.spotify_description && (
                     <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 mb-4">
                       <div className="flex items-start gap-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" className="text-green-600 flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" className="text-green-600 flex-shrink-0" aria-label="Spotify logo">
                           <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
                         </svg>
                         <div className="flex-1">
@@ -660,7 +703,7 @@ export default function WingsideConnectPage() {
 
           <form onSubmit={handleSubmit} className="connect-join-form">
             <div className="connect-form-field">
-              <label className="connect-form-label">Full Name</label>
+              <label className="connect-form-label">Full Name *</label>
               <input
                 type="text"
                 name="fullName"
@@ -668,11 +711,13 @@ export default function WingsideConnectPage() {
                 onChange={handleInputChange}
                 placeholder="Enter your full name"
                 className="connect-form-input"
+                required
+                minLength={2}
               />
             </div>
 
             <div className="connect-form-field">
-              <label className="connect-form-label">Email Address</label>
+              <label className="connect-form-label">Email Address *</label>
               <input
                 type="email"
                 name="email"
@@ -680,6 +725,7 @@ export default function WingsideConnectPage() {
                 onChange={handleInputChange}
                 placeholder="Enter your email"
                 className="connect-form-input"
+                required
               />
             </div>
 
@@ -692,17 +738,20 @@ export default function WingsideConnectPage() {
                 onChange={handleInputChange}
                 placeholder="+234 XXX XXX XXXX"
                 className="connect-form-input"
+                pattern="^\+?234[0-9]{10}$|^0[0-9]{10}$"
+                title="Enter a valid Nigerian phone number (e.g., +2348012345678 or 08012345678)"
               />
             </div>
 
             <div className="connect-form-field">
-              <label className="connect-form-label">What excites you most?</label>
+              <label className="connect-form-label">What excites you most? *</label>
               <div className="connect-select-wrapper">
                 <select
                   name="interest"
                   value={formData.interest}
                   onChange={handleInputChange}
                   className="connect-form-select"
+                  required
                 >
                   <option value="">Select the one that applies</option>
                   <option value="events">Events & Meetups</option>

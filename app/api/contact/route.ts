@@ -18,7 +18,7 @@ const contactSchema = z.object({
   type: z.string().optional(),
   name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must be less than 100 characters'),
   email: z.string().email('Invalid email format'),
-  phone: z.string().min(10, 'Phone number must be at least 10 digits'),
+  phone: z.string().min(10, 'Phone number must be at least 10 digits').optional().or(z.literal('')),
   company: z.string().max(200, 'Company name must be less than 200 characters').optional(),
   message: z.string().max(2000, 'Message must be less than 2000 characters').optional(),
   formData: z.record(z.any(), z.any()).optional(),
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     // Sanitize inputs
     const sanitizedName = sanitizeTextInput(name);
     const sanitizedEmail = sanitizeEmail(email);
-    const sanitizedPhone = sanitizePhone(phone);
+    const sanitizedPhone = phone ? sanitizePhone(phone) : undefined;
     const sanitizedCompany = company ? sanitizeTextInput(company) : undefined;
     const sanitizedMessage = message ? sanitizeTextInput(message) : undefined;
 

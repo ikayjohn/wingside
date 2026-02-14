@@ -781,7 +781,7 @@ export default function CheckoutPage() {
         }
 
         return {
-          product_id: item.productId || null,
+          product_id: item.id || null,
           product_name: item.name,
           size: item.size,
           flavors: flavors.length > 0 ? flavors : null,

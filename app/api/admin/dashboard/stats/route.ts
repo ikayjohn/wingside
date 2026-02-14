@@ -31,15 +31,17 @@ export async function GET(request: NextRequest) {
     // Use admin client to bypass RLS
     const admin = createAdminClient()
 
-    // Fetch orders count
+    // Fetch completed orders count (paid orders only)
     const { count: ordersCount } = await admin
       .from('orders')
       .select('*', { count: 'exact', head: true })
+      .eq('payment_status', 'paid')
 
-    // Fetch pending orders count
+    // Fetch pending orders count (paid orders awaiting fulfillment)
     const { count: pendingCount } = await admin
       .from('orders')
       .select('*', { count: 'exact', head: true })
+      .eq('payment_status', 'paid')
       .eq('status', 'pending')
 
     // Fetch products count
@@ -53,12 +55,13 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact', head: true })
       .neq('role', 'admin')
 
-    // Fetch recent orders (last 7 days)
+    // Fetch recent orders (last 7 days, paid orders only)
     const sevenDaysAgo = new Date()
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
     const { count: recentCount } = await admin
       .from('orders')
       .select('*', { count: 'exact', head: true })
+      .eq('payment_status', 'paid')
       .gte('created_at', sevenDaysAgo.toISOString())
 
     // Fetch total revenue (successfully paid orders)
