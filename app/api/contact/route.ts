@@ -177,14 +177,14 @@ export async function POST(request: NextRequest) {
 
     // Custom success messages based on form type
     const successMessages: Record<string, string> = {
-      connect: 'Welcome to the fam! Check your inbox soon – we'll take it from here.',
-      hotspot: 'Got your application! We'll review and reach out within 24-48 hours to discuss the partnership.',
-      sports: 'You're on the team! We'll send you event updates and details soon. Let's get it!',
-      catering: 'Thanks for your interest in Wingside Catering! Our team will contact you within 24 hours with options and pricing.',
-      meetings: 'Meeting request received! We'll reach out shortly to confirm availability and details.',
-      officelunch: 'Thanks for choosing Wingside for your team! We'll be in touch within 24 hours to set everything up.',
-      wingpost: 'Wingpost application received! Our partnerships team will review and contact you within 2 business days.',
-      general: 'Thanks for reaching out! We'll get back to you within 24 hours.',
+      connect: "Welcome to the fam! Check your inbox soon - we'll take it from here.",
+      hotspot: "Got your application! We'll review and reach out within 24-48 hours to discuss the partnership.",
+      sports: "You're on the team! We'll send you event updates and details soon. Let's get it!",
+      catering: "Thanks for your interest in Wingside Catering! Our team will contact you within 24 hours with options and pricing.",
+      meetings: "Meeting request received! We'll reach out shortly to confirm availability and details.",
+      officelunch: "Thanks for choosing Wingside for your team! We'll be in touch within 24 hours to set everything up.",
+      wingpost: "Wingpost application received! Our partnerships team will review and contact you within 2 business days.",
+      general: "Thanks for reaching out! We'll get back to you within 24 hours.",
     };
 
     const message = successMessages[type || 'general'] || successMessages.general;
