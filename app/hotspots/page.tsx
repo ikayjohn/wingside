@@ -186,7 +186,7 @@ export default function WingsideHotspotsPage() {
           company: data.businessName,
           message: data.message || undefined,
           website: website,
-          _formStartTime: formStartTime,
+          _timestamp: formStartTime,
           formData: {
             businessType: data.businessType,
             source: 'hotspots_page'

@@ -36,7 +36,7 @@ export default function MeetingsPage() {
           email: formData.email,
           phone: formData.phone,
           website: formData.website,
-          _formStartTime: formStartTime,
+          _timestamp: formStartTime,
           message: `
 Event Type: ${formData.eventType}
 Number of People: ${formData.numberOfPeople}

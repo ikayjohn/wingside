@@ -165,7 +165,7 @@ export default function WingsideConnectPage() {
           phone: formData.phone || '',
           message: `Interest: ${formData.interest}`,
           website: formData.website, // Honeypot field (should be empty)
-          _formStartTime: formStartTime, // Bot protection timing
+          _timestamp: formStartTime, // Bot protection timing (expects _timestamp field)
           formData: {
             interest: formData.interest,
             source: 'connect_page'

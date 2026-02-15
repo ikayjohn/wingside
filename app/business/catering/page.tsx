@@ -34,7 +34,7 @@ export default function CateringPage() {
           email: formData.email,
           phone: formData.phone,
           website: formData.website,
-          _formStartTime: formStartTime,
+          _timestamp: formStartTime,
           message: `
 Event Type: ${formData.eventType}
 Number of People: ${formData.numberOfPeople}

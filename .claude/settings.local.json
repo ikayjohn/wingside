@@ -95,7 +95,16 @@
       "Bash(git restore:*)",
       "Bash(git ls-files:*)",
       "Bash(wc:*)",
-      "WebFetch(domain:www.googleapis.com)"
+      "WebFetch(domain:www.googleapis.com)",
+      "Bash(pkill:*)",
+      "Bash(claude --version:*)",
+      "Bash(gh:*)",
+      "Bash(cmd.exe /c start https://github.com/anthropics/claude-code/issues/new)",
+      "Bash(powershell.exe -Command \"Start-Process ''https://github.com/anthropics/claude-code/issues/new''\")",
+      "Bash(powershell.exe -Command \"Start-Process ''http://localhost:3000/preview-notification.html''\")",
+      "Bash(powershell.exe -Command \"\nStart-Process ''http://localhost:3000/connect''\nStart-Sleep -Milliseconds 500\nStart-Process ''http://localhost:3000/hotspots''\nStart-Sleep -Milliseconds 500\nStart-Process ''http://localhost:3000/sports''\nStart-Sleep -Milliseconds 500\nStart-Process ''http://localhost:3000/business/catering''\n\")",
+      "Bash(powershell.exe -Command \"\nStart-Process ''http://localhost:3000/business/meetings''\nStart-Sleep -Milliseconds 500\nStart-Process ''http://localhost:3000/business/officelunch''\nStart-Sleep -Milliseconds 500\nStart-Process ''http://localhost:3000/business/wingpost''\n\")",
+      "Bash(do sed -i 's/_formStartTime/_timestamp/g' \"$file\")"
     ],
     "deny": [],
     "ask": []

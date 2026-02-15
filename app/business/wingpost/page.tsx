@@ -77,7 +77,7 @@ export default function WingpostPage() {
           phone: formData.phone,
           company: formData.companyName,
           website: formData.website,
-          _formStartTime: formStartTime,
+          _timestamp: formStartTime,
           message: `
 Address: ${formData.address}
 Space Type: ${formData.spaceType}
