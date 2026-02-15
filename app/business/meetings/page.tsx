@@ -7,6 +7,7 @@ export default function MeetingsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [formStartTime] = useState(Date.now());
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -16,7 +17,8 @@ export default function MeetingsPage() {
     eventDate: '',
     serviceType: '',
     mealPreference: '',
-    moreDetails: ''
+    moreDetails: '',
+    website: ''
   });
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -33,6 +35,8 @@ export default function MeetingsPage() {
           name: formData.fullName,
           email: formData.email,
           phone: formData.phone,
+          website: formData.website,
+          _formStartTime: formStartTime,
           message: `
 Event Type: ${formData.eventType}
 Number of People: ${formData.numberOfPeople}
@@ -74,7 +78,8 @@ ${formData.moreDetails}
           eventDate: '',
           serviceType: '',
           mealPreference: '',
-          moreDetails: ''
+          moreDetails: '',
+          website: ''
         });
         setSubmitMessage(null);
       }, 2000);
@@ -298,6 +303,18 @@ ${formData.moreDetails}
 
               {/* Form */}
               <form onSubmit={handleFormSubmit}>
+                {/* Honeypot field */}
+                <input
+                  type="text"
+                  name="website"
+                  value={formData.website}
+                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px' }}
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                />
+
                 {/* Row 1: Full Name | Email */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>

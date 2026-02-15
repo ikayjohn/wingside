@@ -16,6 +16,8 @@ export default function AdminLayout({
   const [userRole, setUserRole] = useState<UserRole>('customer');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [newOrderAlert, setNewOrderAlert] = useState(false);
+  const [newPaidOrder, setNewPaidOrder] = useState<any>(null);
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
@@ -72,6 +74,77 @@ export default function AdminLayout({
   useEffect(() => {
     checkUser();
   }, [checkUser]);
+
+  // Play notification sound for new orders
+  const playNotificationSound = useCallback(() => {
+    const audioContext = new AudioContext();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    // Two-tone notification (ding-dong)
+    oscillator.frequency.value = 800;
+    oscillator.type = 'sine';
+    gainNode.gain.value = 0.3;
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.15);
+
+    // Second tone
+    setTimeout(() => {
+      const oscillator2 = audioContext.createOscillator();
+      const gainNode2 = audioContext.createGain();
+      oscillator2.connect(gainNode2);
+      gainNode2.connect(audioContext.destination);
+      oscillator2.frequency.value = 600;
+      oscillator2.type = 'sine';
+      gainNode2.gain.value = 0.3;
+      oscillator2.start(audioContext.currentTime);
+      oscillator2.stop(audioContext.currentTime + 0.15);
+    }, 150);
+  }, []);
+
+  // Real-time listener for new orders
+  useEffect(() => {
+    if (!user || userRole === 'customer') return;
+
+    const channel = supabase
+      .channel('admin-new-orders')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders',
+        },
+        (payload) => {
+          console.log('🔔 New order detected:', payload.new);
+
+          const order = payload.new;
+
+          // Play notification sound
+          playNotificationSound();
+
+          // Show visual alert
+          setNewOrderAlert(true);
+          setTimeout(() => setNewOrderAlert(false), 3000);
+
+          // Show popup banner for PAID orders only
+          if (order.payment_status === 'paid') {
+            setNewPaidOrder(order);
+            // Auto-dismiss after 10 seconds
+            setTimeout(() => setNewPaidOrder(null), 10000);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, userRole, supabase, playNotificationSound]);
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -373,6 +446,58 @@ export default function AdminLayout({
             </div>
           </div>
         </header>
+
+        {/* New Order Alert Banner */}
+        {newOrderAlert && (
+          <div className="bg-green-500 text-white px-6 py-3 flex items-center gap-3 animate-pulse">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            <span className="font-semibold text-lg">🔔 New Order Received!</span>
+          </div>
+        )}
+
+        {/* Paid Order Popup Banner */}
+        {newPaidOrder && (
+          <div className="fixed bottom-6 right-6 z-50 bg-white border-2 border-green-500 rounded-lg shadow-2xl p-4 max-w-sm animate-slide-in-right">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="bg-green-500 rounded-full p-2">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 text-lg">New Paid Order!</h3>
+                  <p className="text-sm text-gray-500">Just received</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setNewPaidOrder(null)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="mb-4 bg-gray-50 p-3 rounded">
+              <p className="text-sm text-gray-600">Order Number</p>
+              <p className="font-bold text-gray-900 text-lg">{newPaidOrder.order_number}</p>
+              <p className="text-sm text-gray-600 mt-2">Customer</p>
+              <p className="font-semibold text-gray-900">{newPaidOrder.customer_name}</p>
+              <p className="text-sm text-gray-600 mt-2">Amount</p>
+              <p className="font-bold text-green-600 text-xl">₦{newPaidOrder.total?.toLocaleString()}</p>
+            </div>
+            <Link
+              href="/admin/orders"
+              onClick={() => setNewPaidOrder(null)}
+              className="block w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg text-center transition-colors"
+            >
+              View Order Details →
+            </Link>
+          </div>
+        )}
 
         {/* Page Content */}
         <main className="flex-1 p-8">

@@ -44,11 +44,13 @@ export default function SportsPage() {
     fullName: '',
     email: '',
     phone: '',
-    interest: ''
+    interest: '',
+    website: ''
   });
 
   const [submitting, setSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [formStartTime] = useState(Date.now());
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +66,8 @@ export default function SportsPage() {
           name: formData.fullName,
           email: formData.email,
           phone: formData.phone,
+          website: formData.website,
+          _formStartTime: formStartTime,
           message: `Interest: ${formData.interest}`,
           formData: {
             interest: formData.interest,
@@ -76,7 +80,7 @@ export default function SportsPage() {
 
       if (response.ok) {
         setSubmitMessage({ type: 'success', text: data.message || 'Thanks for joining the Wingside Sports Community!' });
-        setFormData({ fullName: '', email: '', phone: '', interest: '' });
+        setFormData({ fullName: '', email: '', phone: '', interest: '', website: '' });
       } else {
         throw new Error(data.error || 'Failed to submit form');
       }
@@ -314,6 +318,18 @@ export default function SportsPage() {
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Honeypot field */}
+            <input
+              type="text"
+              name="website"
+              value={formData.website}
+              onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+              style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px' }}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+            />
+
             <input
               type="text"
               placeholder="Full Name"

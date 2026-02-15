@@ -27,6 +27,7 @@ export default function WingpostPage() {
   const [isPartnerFormOpen, setIsPartnerFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [formStartTime] = useState(Date.now());
   const [formData, setFormData] = useState({
     companyName: '',
     contactName: '',
@@ -35,6 +36,7 @@ export default function WingpostPage() {
     address: '',
     spaceType: '',
     message: '',
+    website: '',
   });
 
   // Fetch locations from API
@@ -74,6 +76,8 @@ export default function WingpostPage() {
           email: formData.email,
           phone: formData.phone,
           company: formData.companyName,
+          website: formData.website,
+          _formStartTime: formStartTime,
           message: `
 Address: ${formData.address}
 Space Type: ${formData.spaceType}
@@ -108,6 +112,7 @@ ${formData.message}
           address: '',
           spaceType: '',
           message: '',
+          website: '',
         });
         setSubmitMessage(null);
       }, 2000);
@@ -481,6 +486,18 @@ ${formData.message}
 
               {/* Form */}
               <form onSubmit={handleFormSubmit} className="space-y-4">
+                {/* Honeypot field */}
+                <input
+                  type="text"
+                  name="website"
+                  value={formData.website}
+                  onChange={handleInputChange}
+                  style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px' }}
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                />
+
                 {/* Company Name */}
                 <div>
                   <label htmlFor="companyName" className="block text-sm font-semibold text-gray-700 mb-2">

@@ -11,11 +11,13 @@ export default function CateringPage() {
     eventType: '',
     numberOfPeople: '',
     eventDate: '',
-    moreDetails: ''
+    moreDetails: '',
+    website: ''
   });
 
   const [submitting, setSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [formStartTime] = useState(Date.now());
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +33,8 @@ export default function CateringPage() {
           name: formData.fullName,
           email: formData.email,
           phone: formData.phone,
+          website: formData.website,
+          _formStartTime: formStartTime,
           message: `
 Event Type: ${formData.eventType}
 Number of People: ${formData.numberOfPeople}
@@ -64,7 +68,8 @@ ${formData.moreDetails}
         eventType: '',
         numberOfPeople: '',
         eventDate: '',
-        moreDetails: ''
+        moreDetails: '',
+        website: ''
       });
     } catch (error: any) {
       setSubmitMessage({ type: 'error', text: error.message || 'Failed to submit. Please try again.' });
@@ -231,6 +236,18 @@ ${formData.moreDetails}
           </div>
 
           <form onSubmit={handleFormSubmit} className="space-y-6">
+            {/* Honeypot field */}
+            <input
+              type="text"
+              name="website"
+              value={formData.website}
+              onChange={(e) => setFormData({...formData, website: e.target.value})}
+              style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px' }}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+            />
+
             {/* Contact Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>

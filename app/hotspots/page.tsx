@@ -164,6 +164,8 @@ export default function WingsideHotspotsPage() {
   const [showForm, setShowForm] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [submitMessage, setSubmitMessage] = React.useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [formStartTime] = React.useState(Date.now());
+  const [website, setWebsite] = React.useState('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -183,6 +185,8 @@ export default function WingsideHotspotsPage() {
           phone: data.phone,
           company: data.businessName,
           message: data.message || undefined,
+          website: website,
+          _formStartTime: formStartTime,
           formData: {
             businessType: data.businessType,
             source: 'hotspots_page'
@@ -202,6 +206,7 @@ export default function WingsideHotspotsPage() {
       setTimeout(() => {
         setShowForm(false);
         setSubmitMessage(null);
+        setWebsite('');
         (e.target as HTMLFormElement).reset();
       }, 2000);
 
@@ -389,6 +394,18 @@ export default function WingsideHotspotsPage() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Honeypot field */}
+                <input
+                  type="text"
+                  name="website"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px' }}
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                />
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Business Name *

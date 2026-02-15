@@ -36,7 +36,9 @@ export default function WingsideConnectPage() {
     email: '',
     phone: '',
     interest: '',
+    website: '', // Honeypot field
   });
+  const [formStartTime] = useState(Date.now());
   const [loading, setLoading] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -160,8 +162,10 @@ export default function WingsideConnectPage() {
           type: 'connect',
           name: formData.fullName,
           email: formData.email,
-          phone: formData.phone,
+          phone: formData.phone || '',
           message: `Interest: ${formData.interest}`,
+          website: formData.website, // Honeypot field (should be empty)
+          _formStartTime: formStartTime, // Bot protection timing
           formData: {
             interest: formData.interest,
             source: 'connect_page'
@@ -176,7 +180,7 @@ export default function WingsideConnectPage() {
       }
 
       setSubmitMessage({ type: 'success', text: data.message || 'Welcome to Wingconnect! We\'ll be in touch soon.' });
-      setFormData({ fullName: '', email: '', phone: '', interest: '' });
+      setFormData({ fullName: '', email: '', phone: '', interest: '', website: '' });
 
       // Redirect to WhatsApp group after 2 seconds
       setTimeout(() => {
@@ -707,6 +711,18 @@ export default function WingsideConnectPage() {
           </p>
 
           <form onSubmit={handleSubmit} className="connect-join-form">
+            {/* Honeypot field - hidden from users, bots will fill it */}
+            <input
+              type="text"
+              name="website"
+              value={formData.website}
+              onChange={handleInputChange}
+              style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px' }}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+            />
+
             <div className="connect-form-field">
               <label className="connect-form-label">Full Name *</label>
               <input
@@ -743,8 +759,8 @@ export default function WingsideConnectPage() {
                 onChange={handleInputChange}
                 placeholder="+234 XXX XXX XXXX"
                 className="connect-form-input"
-                pattern="^\+?234[0-9]{10}$|^0[0-9]{10}$"
-                title="Enter a valid Nigerian phone number (e.g., +2348012345678 or 08012345678)"
+                minLength={10}
+                title="Enter a valid phone number (at least 10 digits)"
               />
             </div>
 

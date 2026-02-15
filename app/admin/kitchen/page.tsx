@@ -269,14 +269,19 @@ export default function KitchenDisplayPage() {
                               <span className="leading-tight">{item.flavors.join(', ')}</span>
                             </div>
                           )}
-                          {item.notes && (
-                            <div className="text-red-600 text-xs mt-1 italic flex items-start gap-1 bg-red-50 p-1.5 rounded">
-                              <svg className="w-3 h-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                              <span className="leading-tight">{item.notes}</span>
-                            </div>
-                          )}
+                          {/* Notes - Always show */}
+                          <div className={`text-xs mt-1.5 flex items-start gap-1 p-1.5 rounded border ${
+                            item.notes
+                              ? 'text-red-700 bg-red-50 border-red-200 font-medium'
+                              : 'text-gray-400 bg-gray-50 border-gray-200 italic'
+                          }`}>
+                            <svg className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            <span className="leading-tight">
+                              {item.notes || 'No special instructions'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>

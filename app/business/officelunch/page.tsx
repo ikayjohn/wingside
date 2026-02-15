@@ -11,11 +11,13 @@ export default function OfficeLunchPage() {
     companyName: '',
     teamSize: '',
     startDate: '',
-    needs: ''
+    needs: '',
+    website: ''
   });
 
   const [submitting, setSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [formStartTime] = useState(Date.now());
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +34,8 @@ export default function OfficeLunchPage() {
           email: formData.email,
           phone: formData.phone,
           company: formData.companyName,
+          website: formData.website,
+          _formStartTime: formStartTime,
           message: `
 Team Size: ${formData.teamSize}
 Preferred Start Date: ${formData.startDate}
@@ -63,7 +67,8 @@ ${formData.needs}
         companyName: '',
         teamSize: '',
         startDate: '',
-        needs: ''
+        needs: '',
+        website: ''
       });
     } catch (error: any) {
       setSubmitMessage({ type: 'error', text: error.message || 'Failed to submit. Please try again.' });
@@ -243,6 +248,18 @@ ${formData.needs}
 
           {/* Form */}
           <form onSubmit={handleFormSubmit}>
+            {/* Honeypot field */}
+            <input
+              type="text"
+              name="website"
+              value={formData.website}
+              onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+              style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px' }}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+            />
+
             {/* Row 1: Name | Email */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Notification Preview - Wingside</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes slide-in-right {
+      0% {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      100% {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .animate-slide-in-right {
+      animation: slide-in-right 0.4s ease-out;
+    }
+
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-8">
+
+  <div class="text-center mb-8">
+    <h1 class="text-white text-4xl font-bold mb-4">📱 Wingside Order Notification Preview</h1>
+    <p class="text-white text-lg mb-8">This is how the popup looks when a new paid order arrives</p>
+
+    <button
+      onclick="showNotification()"
+      class="bg-white text-purple-600 font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-gray-100 transition-all transform hover:scale-105 mb-4"
+    >
+      🔔 Show Notification
+    </button>
+
+    <button
+      onclick="playSound()"
+      class="bg-green-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-green-600 transition-all transform hover:scale-105 ml-4"
+    >
+      🔊 Play Sound
+    </button>
+  </div>
+
+  <!-- Top Banner Alert (All Orders) -->
+  <div id="topBanner" class="hidden fixed top-0 left-0 right-0 bg-green-500 text-white px-6 py-3 z-50" style="animation: pulse 1s infinite;">
+    <div class="flex items-center gap-3 justify-center">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+      </svg>
+      <span class="font-semibold text-lg">🔔 New Order Received!</span>
+    </div>
+  </div>
+
+  <!-- Paid Order Popup Banner (Bottom Right) -->
+  <div id="notification" class="hidden fixed bottom-6 right-6 z-50 bg-white border-2 border-green-500 rounded-lg shadow-2xl p-4 max-w-sm animate-slide-in-right">
+    <div class="flex items-start justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <div class="bg-green-500 rounded-full p-2">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <h3 class="font-bold text-gray-900 text-lg">New Paid Order!</h3>
+          <p class="text-sm text-gray-500">Just received</p>
+        </div>
+      </div>
+      <button
+        onclick="hideNotification()"
+        class="text-gray-400 hover:text-gray-600 transition-colors"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="mb-4 bg-gray-50 p-3 rounded">
+      <p class="text-sm text-gray-600">Order Number</p>
+      <p class="font-bold text-gray-900 text-lg">WS001234</p>
+
+      <p class="text-sm text-gray-600 mt-2">Customer</p>
+      <p class="font-semibold text-gray-900">John Doe</p>
+
+      <p class="text-sm text-gray-600 mt-2">Amount</p>
+      <p class="font-bold text-green-600 text-xl">₦15,750</p>
+    </div>
+
+    <button
+      onclick="window.location.href='/admin/orders'"
+      class="block w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg text-center transition-colors"
+    >
+      View Order Details →
+    </button>
+  </div>
+
+  <script>
+    function showNotification() {
+      // Show top banner
+      const topBanner = document.getElementById('topBanner');
+      topBanner.classList.remove('hidden');
+
+      // Play sound
+      playSound();
+
+      // Show popup after slight delay
+      setTimeout(() => {
+        const notification = document.getElementById('notification');
+        notification.classList.remove('hidden');
+      }, 100);
+
+      // Hide top banner after 3 seconds
+      setTimeout(() => {
+        topBanner.classList.add('hidden');
+      }, 3000);
+
+      // Auto-hide popup after 10 seconds
+      setTimeout(() => {
+        hideNotification();
+      }, 10000);
+    }
+
+    function hideNotification() {
+      const notification = document.getElementById('notification');
+      notification.classList.add('hidden');
+    }
+
+    function playSound() {
+      const audioContext = new AudioContext();
+
+      // First tone
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      oscillator.frequency.value = 800;
+      oscillator.type = 'sine';
+      gainNode.gain.value = 0.3;
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.15);
+
+      // Second tone (lower)
+      setTimeout(() => {
+        const oscillator2 = audioContext.createOscillator();
+        const gainNode2 = audioContext.createGain();
+        oscillator2.connect(gainNode2);
+        gainNode2.connect(audioContext.destination);
+        oscillator2.frequency.value = 600;
+        oscillator2.type = 'sine';
+        gainNode2.gain.value = 0.3;
+        oscillator2.start(audioContext.currentTime);
+        oscillator2.stop(audioContext.currentTime + 0.15);
+      }, 150);
+    }
+
+    // Auto-show on page load for demo
+    setTimeout(() => {
+      showNotification();
+    }, 1000);
+  </script>
+
+</body>
+</html>
