@@ -43,27 +43,14 @@ interface SalesData {
 }
 
 export default function AnalyticsPage() {
-  const [salesData, setSalesData] = useState<SalesData>({
+  // Core metrics (main duration filter)
+  const [coreMetrics, setCoreMetrics] = useState({
     totalRevenue: 0,
     totalOrders: 0,
     averageOrderValue: 0,
-    popularProducts: [],
-    revenueByDay: [],
-    ordersByStatus: [],
-    topFlavors: [],
-    revenueByCategory: [],
-    recentOrders: [],
-    peakHours: [],
-    customerInsights: {
-      totalCustomers: 0,
-      repeatCustomers: 0,
-      averageOrdersPerCustomer: 0,
-      customerLTV: 0,
-      topCustomers: [],
-      newCustomers: 0,
-      returningCustomers: 0,
-      repeatCustomerRate: 0,
-    },
+    revenueByCategory: [] as Array<{ category: string; revenue: number }>,
+    ordersByStatus: [] as Array<{ status: string; count: number }>,
+    recentOrders: [] as Array<any>,
     periodComparison: {
       revenue: 0,
       orders: 0,
@@ -73,50 +60,98 @@ export default function AnalyticsPage() {
       aovChange: 0,
     },
   });
+
+  // Revenue trend (separate duration)
+  const [revenueTrend, setRevenueTrend] = useState<Array<{ date: string; revenue: number; orders: number }>>([]);
+
+  // Popular products & flavors (separate duration)
+  const [popularData, setPopularData] = useState({
+    products: [] as Array<{ name: string; quantity: number; revenue: number }>,
+    flavors: [] as Array<{ name: string; count: number; percentage: number }>,
+  });
+
+  // Customer insights (always all-time)
+  const [customerInsights, setCustomerInsights] = useState({
+    totalCustomers: 0,
+    repeatCustomers: 0,
+    averageOrdersPerCustomer: 0,
+    customerLTV: 0,
+    topCustomers: [] as Array<{ name: string; email: string; orders: number; totalSpent: number }>,
+    newCustomers: 0,
+    returningCustomers: 0,
+    repeatCustomerRate: 0,
+  });
+
+  // Peak hours (fixed to last 30 days)
+  const [peakHours, setPeakHours] = useState<Array<{ hour: number; count: number; revenue: number; label: string }>>([]);
+
+  // Keep old salesData for backward compatibility during refactor
+  const salesData = {
+    ...coreMetrics,
+    revenueByDay: revenueTrend,
+    popularProducts: popularData.products,
+    topFlavors: popularData.flavors,
+    customerInsights,
+    peakHours,
+  };
   const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState('30'); // days
+  const [coreMetricsRange, setcoreMetricsRange] = useState('30'); // for revenue/orders top cards
+  const [revenueTrendRange, setRevenueTrendRange] = useState('14'); // revenue chart
+  const [popularProductsRange, setPopularProductsRange] = useState('30'); // products/flavors
+  const [peakHoursRange, setPeakHoursRange] = useState('30'); // peak hours
+  const [categoryRevenueRange, setCategoryRevenueRange] = useState('30'); // revenue by category
+  const [orderStatusRange, setOrderStatusRange] = useState('30'); // orders by status
   const supabase = createClient();
 
   useEffect(() => {
-    fetchAnalyticsData();
-  }, [dateRange]);
+    fetchCoreMetrics();
+  }, [coreMetricsRange]);
 
-  async function fetchAnalyticsData() {
+  useEffect(() => {
+    fetchRevenueTrend();
+  }, [revenueTrendRange]);
+
+  useEffect(() => {
+    fetchPopularProductsAndFlavors();
+  }, [popularProductsRange]);
+
+  useEffect(() => {
+    fetchPeakHours();
+  }, [peakHoursRange]);
+
+  useEffect(() => {
+    fetchCategoryRevenue();
+  }, [categoryRevenueRange]);
+
+  useEffect(() => {
+    fetchOrderStatus();
+  }, [orderStatusRange]);
+
+  async function fetchCoreMetrics() {
     setLoading(true);
     try {
-      const days = parseInt(dateRange);
+      const isAllTime = coreMetricsRange === 'all';
+      const days = isAllTime ? 0 : parseInt(coreMetricsRange);
       const daysAgo = new Date();
-      daysAgo.setDate(daysAgo.getDate() - days);
-      const dateFilter = daysAgo.toISOString();
+      if (!isAllTime) {
+        daysAgo.setDate(daysAgo.getDate() - days);
+      }
+      const dateFilter = isAllTime ? '1970-01-01T00:00:00.000Z' : daysAgo.toISOString();
 
-      console.log(`📅 Fetching analytics for last ${days} days (from ${daysAgo.toLocaleDateString()})`);
+      console.log(`📅 Fetching analytics for ${isAllTime ? 'all time' : `last ${days} days (from ${daysAgo.toLocaleDateString()})`}`);
 
       // Previous period for comparison
       const previousDaysAgo = new Date();
-      previousDaysAgo.setDate(previousDaysAgo.getDate() - (days * 2));
-      const previousDateFilter = previousDaysAgo.toISOString();
+      if (!isAllTime) {
+        previousDaysAgo.setDate(previousDaysAgo.getDate() - (days * 2));
+      }
+      const previousDateFilter = isAllTime ? '1970-01-01T00:00:00.000Z' : previousDaysAgo.toISOString();
 
-      // Fetch actual flavors from database to filter against
-      const { data: actualFlavors } = await supabase
-        .from('flavors')
-        .select('name')
-        .eq('is_active', true);
 
-      const validFlavorNames = new Set(actualFlavors?.map(f => f.name) || []);
-
-      // Fetch current period orders with order_items (paid orders only)
+      // Fetch current period orders (paid orders only)
       const { data: orders, error: ordersError } = await supabase
         .from('orders')
-        .select(`
-          *,
-          order_items (
-            product_id,
-            product_name,
-            flavors,
-            quantity,
-            total_price
-          )
-        `)
+        .select('*')
         .eq('payment_status', 'paid')
         .gte('created_at', dateFilter)
         .order('created_at', { ascending: false });
@@ -127,33 +162,24 @@ export default function AnalyticsPage() {
       }
 
       // Fetch previous period orders for comparison (paid orders only)
-      const { data: previousOrders, error: previousError } = await supabase
-        .from('orders')
-        .select('total, created_at')
-        .eq('payment_status', 'paid')
-        .gte('created_at', previousDateFilter)
-        .lt('created_at', dateFilter);
+      // For "All Time", skip previous period comparison
+      let previousOrders: any[] = [];
+      if (!isAllTime) {
+        const { data, error: previousError } = await supabase
+          .from('orders')
+          .select('total, created_at')
+          .eq('payment_status', 'paid')
+          .gte('created_at', previousDateFilter)
+          .lt('created_at', dateFilter);
 
-      if (previousError) {
-        console.error('Previous orders error:', previousError);
-        throw previousError;
+        if (previousError) {
+          console.error('Previous orders error:', previousError);
+        } else {
+          previousOrders = data || [];
+        }
       }
 
-      // Flatten order items for analysis
-      const allOrderItems: Array<{
-        product_id?: string;
-        product_name?: string;
-        flavors?: string[];
-        quantity: number;
-        total_price: number;
-      }> = [];
-      orders?.forEach(order => {
-        if (order.order_items) {
-          order.order_items.forEach((item: any) => {
-            allOrderItems.push(item);
-          });
-        }
-      });
+
 
       // Calculate basic metrics
       const totalOrders = orders?.length || 0;
@@ -172,77 +198,16 @@ export default function AnalyticsPage() {
       const previousRevenue = previousOrders?.reduce((sum, order) => sum + Number(order.total), 0) || 0;
       const previousAOV = previousTotalOrders > 0 ? previousRevenue / previousTotalOrders : 0;
 
-      // Revenue by day
-      const revenueByDay = aggregateRevenueByDay(orders || []);
-      console.log('📈 Revenue by Day:', revenueByDay.slice(-7));
 
-      // Orders by status
-      const ordersByStatus = aggregateOrdersByStatus(orders || []);
-
-      // Popular products
-      const popularProducts = aggregatePopularProducts(allOrderItems || []);
-
-      // Top flavors with percentages - filtered to only actual wing flavors
-      const topFlavors = aggregateTopFlavors(allOrderItems || [], validFlavorNames);
-
-      // Revenue by category - fetch products with category join (correct syntax!)
-      const { data: allProducts, error: productsError } = await supabase
-        .from('products')
-        .select('id, name, category_id, category:categories(id, name)');
-
-      console.log('🔍 Raw products data:', JSON.stringify(allProducts?.slice(0, 3), null, 2));
-      console.log('❌ Products error:', productsError);
-      console.log('🛒 Sample order item product_ids:', allOrderItems?.slice(0, 5).map(i => i.product_id));
-
-      // Create maps: product ID → category AND product name → category (fallback)
-      const productCategoryMap = new Map<string, string>();
-      const productNameMap = new Map<string, string>();
-
-      allProducts?.forEach(product => {
-        const category = product.category as any;
-        const categoryName = category?.name || 'Uncategorized';
-
-        // Map by product ID (preferred)
-        productCategoryMap.set(product.id, categoryName);
-
-        // Map by product name (fallback for orders missing product_id)
-        productNameMap.set(product.name, categoryName);
-
-        console.log(`📦 Product mapping: "${product.name}" (${product.id}) → Category: "${categoryName}" (category_id: ${product.category_id})`);
-      });
-
-      console.log('\n🗺️ Final Product-Category Map:');
-      allOrderItems?.slice(0, 5).forEach(item => {
-        const mappedCategory = (item.product_id ? productCategoryMap.get(item.product_id) : null) || (item.product_name ? productNameMap.get(item.product_name) : null);
-        console.log(`   Order item "${item.product_name}" (${item.product_id}) → "${mappedCategory}"`);
-      });
-
-      // Aggregate revenue by category (with fallback to product name matching)
-      const revenueByCategory = aggregateRevenueByCategory(allOrderItems || [], productCategoryMap, productNameMap);
-
-      // Peak hours analysis
-      const peakHours = aggregatePeakHours(orders || []);
-
-      // Customer insights - get unique customer emails from current period
-      const customerEmails = Array.from(new Set(orders?.map(o => o.customer_email).filter(Boolean)));
-
-      // Fetch ALL orders for these customers to get accurate first order dates
-      const { data: allCustomerOrders } = await supabase
-        .from('orders')
-        .select('customer_email, created_at')
-        .eq('payment_status', 'paid')
-        .in('customer_email', customerEmails.length > 0 ? customerEmails : ['none']);
-
-      const customerInsights = aggregateCustomerInsights(orders || [], allCustomerOrders || []);
-
-      // Period comparison
+      // Period comparison (calculate change vs previous period of equal length)
+      // For "All Time", no comparison available
       const periodComparison = {
         revenue: totalRevenue,
         orders: totalOrders,
         avgOrderValue: averageOrderValue,
-        revenueChange: previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0,
-        ordersChange: previousTotalOrders > 0 ? ((totalOrders - previousTotalOrders) / previousTotalOrders) * 100 : 0,
-        aovChange: previousAOV > 0 ? ((averageOrderValue - previousAOV) / previousAOV) * 100 : 0,
+        revenueChange: isAllTime ? 0 : (previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : (totalRevenue > 0 ? 100 : 0)),
+        ordersChange: isAllTime ? 0 : (previousTotalOrders > 0 ? ((totalOrders - previousTotalOrders) / previousTotalOrders) * 100 : (totalOrders > 0 ? 100 : 0)),
+        aovChange: isAllTime ? 0 : (previousAOV > 0 ? ((averageOrderValue - previousAOV) / previousAOV) * 100 : (averageOrderValue > 0 ? 100 : 0)),
       };
 
       // Recent orders
@@ -255,24 +220,212 @@ export default function AnalyticsPage() {
         created_at: order.created_at
       })) || [];
 
-      setSalesData({
+      // Update core metrics only
+      setCoreMetrics({
         totalRevenue,
         totalOrders,
         averageOrderValue,
-        popularProducts,
-        revenueByDay,
-        ordersByStatus,
-        topFlavors,
-        revenueByCategory,
+        revenueByCategory: [],
+        ordersByStatus: [],
         recentOrders,
-        peakHours,
-        customerInsights,
         periodComparison,
       });
+
+      // Fetch separate sections on initial load
+      if (loading) {
+        await Promise.all([
+          fetchCustomerInsights(),
+        ]);
+      }
     } catch (error) {
       console.error('Error fetching analytics data:', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  // Fetch revenue trend with its own duration
+  async function fetchRevenueTrend() {
+    try {
+      const days = revenueTrendRange === 'all' ? 0 : parseInt(revenueTrendRange);
+      const daysAgo = new Date();
+      if (days > 0) daysAgo.setDate(daysAgo.getDate() - days);
+      const dateFilter = days === 0 ? '1970-01-01T00:00:00.000Z' : daysAgo.toISOString();
+
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('total, created_at')
+        .eq('payment_status', 'paid')
+        .gte('created_at', dateFilter)
+        .order('created_at', { ascending: false });
+
+      const revenueByDay = aggregateRevenueByDay(orders || []);
+      setRevenueTrend(revenueByDay);
+    } catch (error) {
+      console.error('Error fetching revenue trend:', error);
+    }
+  }
+
+  // Fetch popular products & flavors with their own duration
+  async function fetchPopularProductsAndFlavors() {
+    try {
+      const days = popularProductsRange === 'all' ? 0 : parseInt(popularProductsRange);
+      const daysAgo = new Date();
+      if (days > 0) daysAgo.setDate(daysAgo.getDate() - days);
+      const dateFilter = days === 0 ? '1970-01-01T00:00:00.000Z' : daysAgo.toISOString();
+
+      // Fetch actual flavors
+      const { data: actualFlavors } = await supabase
+        .from('flavors')
+        .select('name')
+        .eq('is_active', true);
+      const validFlavorNames = new Set(actualFlavors?.map(f => f.name) || []);
+
+      const { data: orders } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (
+            product_name,
+            flavors,
+            quantity,
+            total_price
+          )
+        `)
+        .eq('payment_status', 'paid')
+        .gte('created_at', dateFilter);
+
+      const allOrderItems: Array<any> = [];
+      orders?.forEach(order => {
+        if (order.order_items) {
+          order.order_items.forEach((item: any) => allOrderItems.push(item));
+        }
+      });
+
+      const popularProducts = aggregatePopularProducts(allOrderItems);
+      const topFlavors = aggregateTopFlavors(allOrderItems, validFlavorNames);
+
+      setPopularData({ products: popularProducts, flavors: topFlavors });
+    } catch (error) {
+      console.error('Error fetching popular products:', error);
+    }
+  }
+
+  // Fetch customer insights (always all-time)
+  async function fetchCustomerInsights() {
+    try {
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('payment_status', 'paid')
+        .order('created_at', { ascending: false });
+
+      const customerEmails = Array.from(new Set(orders?.map(o => o.customer_email).filter(Boolean)));
+
+      const { data: allCustomerOrders } = await supabase
+        .from('orders')
+        .select('customer_email, customer_phone, customer_name, created_at')
+        .eq('payment_status', 'paid')
+        .in('customer_email', customerEmails.length > 0 ? customerEmails : ['none']);
+
+      const insights = aggregateCustomerInsights(orders || [], allCustomerOrders || [], '1970-01-01', 0, true);
+      setCustomerInsights(insights);
+    } catch (error) {
+      console.error('Error fetching customer insights:', error);
+    }
+  }
+
+  // Fetch peak hours with its own duration
+  async function fetchPeakHours() {
+    try {
+      const days = peakHoursRange === 'all' ? 0 : parseInt(peakHoursRange);
+      const daysAgo = new Date();
+      if (days > 0) daysAgo.setDate(daysAgo.getDate() - days);
+      const dateFilter = days === 0 ? '1970-01-01T00:00:00.000Z' : daysAgo.toISOString();
+
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('created_at, total')
+        .eq('payment_status', 'paid')
+        .gte('created_at', dateFilter);
+
+      const hours = aggregatePeakHours(orders || []);
+      setPeakHours(hours);
+    } catch (error) {
+      console.error('Error fetching peak hours:', error);
+    }
+  }
+
+  // Fetch revenue by category with its own duration
+  async function fetchCategoryRevenue() {
+    try {
+      const days = categoryRevenueRange === 'all' ? 0 : parseInt(categoryRevenueRange);
+      const daysAgo = new Date();
+      if (days > 0) daysAgo.setDate(daysAgo.getDate() - days);
+      const dateFilter = days === 0 ? '1970-01-01T00:00:00.000Z' : daysAgo.toISOString();
+
+      const { data: orders } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (
+            product_id,
+            product_name,
+            total_price
+          )
+        `)
+        .eq('payment_status', 'paid')
+        .gte('created_at', dateFilter);
+
+      const allOrderItems: Array<any> = [];
+      orders?.forEach(order => {
+        if (order.order_items) {
+          order.order_items.forEach((item: any) => allOrderItems.push(item));
+        }
+      });
+
+      // Fetch products with categories
+      const { data: allProducts } = await supabase
+        .from('products')
+        .select('id, name, category_id, category:categories(id, name)');
+
+      const productCategoryMap = new Map<string, string>();
+      const productNameMap = new Map<string, string>();
+
+      allProducts?.forEach(product => {
+        const category = product.category as any;
+        const categoryName = category?.name || 'Uncategorized';
+        productCategoryMap.set(product.id, categoryName);
+        productNameMap.set(product.name, categoryName);
+      });
+
+      const revenueByCategory = aggregateRevenueByCategory(allOrderItems, productCategoryMap, productNameMap);
+
+      setCoreMetrics(prev => ({ ...prev, revenueByCategory }));
+    } catch (error) {
+      console.error('Error fetching category revenue:', error);
+    }
+  }
+
+  // Fetch orders by status with its own duration
+  async function fetchOrderStatus() {
+    try {
+      const days = orderStatusRange === 'all' ? 0 : parseInt(orderStatusRange);
+      const daysAgo = new Date();
+      if (days > 0) daysAgo.setDate(daysAgo.getDate() - days);
+      const dateFilter = days === 0 ? '1970-01-01T00:00:00.000Z' : daysAgo.toISOString();
+
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('status')
+        .eq('payment_status', 'paid')
+        .gte('created_at', dateFilter);
+
+      const ordersByStatus = aggregateOrdersByStatus(orders || []);
+
+      setCoreMetrics(prev => ({ ...prev, ordersByStatus }));
+    } catch (error) {
+      console.error('Error fetching order status:', error);
     }
   }
 
@@ -406,24 +559,25 @@ export default function AnalyticsPage() {
     return `${hour - 12} PM`;
   }
 
-  function aggregateCustomerInsights(orders: Array<any>, allCustomerOrders: Array<any>) {
-    // Get unique customers
+  function aggregateCustomerInsights(orders: Array<any>, allCustomerOrders: Array<any>, dateFilter: string, days: number, isAllTime: boolean = false) {
+    // Get unique customers - use email as primary key, fallback to phone+name for guests
     const customerMap = new Map<string, { name: string; email: string; orders: number; totalSpent: number; firstOrder: string; lastOrder: string; actualFirstOrder: string }>();
 
-    // Build map of customer emails to their actual first order date (from all time)
+    // Build map of customer identifiers to their actual first order date (from all time)
     const customerFirstOrderMap = new Map<string, string>();
     allCustomerOrders.forEach(order => {
-      const email = order.customer_email;
-      const existing = customerFirstOrderMap.get(email);
+      const customerId = order.customer_email || `guest-${order.customer_phone || 'anonymous'}-${order.customer_name || 'guest'}`;
+      const existing = customerFirstOrderMap.get(customerId);
       if (!existing || order.created_at < existing) {
-        customerFirstOrderMap.set(email, order.created_at);
+        customerFirstOrderMap.set(customerId, order.created_at);
       }
     });
 
     orders.forEach(order => {
-      const email = order.customer_email || 'unknown';
-      const existing = customerMap.get(email);
-      const actualFirstOrder = customerFirstOrderMap.get(email) || order.created_at;
+      // Use email as primary identifier, fallback to phone+name for guest orders
+      const customerId = order.customer_email || `guest-${order.customer_phone || 'anonymous'}-${order.customer_name || 'guest'}`;
+      const existing = customerMap.get(customerId);
+      const actualFirstOrder = customerFirstOrderMap.get(customerId) || order.created_at;
 
       if (existing) {
         existing.orders += 1;
@@ -432,9 +586,9 @@ export default function AnalyticsPage() {
           existing.lastOrder = order.created_at;
         }
       } else {
-        customerMap.set(email, {
-          name: order.customer_name || 'Unknown',
-          email,
+        customerMap.set(customerId, {
+          name: order.customer_name || 'Guest',
+          email: order.customer_email || 'No email',
           orders: 1,
           totalSpent: Number(order.total),
           firstOrder: order.created_at,
@@ -446,15 +600,24 @@ export default function AnalyticsPage() {
 
     const customers = Array.from(customerMap.values());
     const totalCustomers = customers.length;
-    const repeatCustomers = customers.filter(c => c.orders > 1).length;
     const averageOrdersPerCustomer = totalCustomers > 0 ? orders.length / totalCustomers : 0;
     const customerLTV = totalCustomers > 0 ? customers.reduce((sum, c) => sum + c.totalSpent, 0) / totalCustomers : 0;
 
-    // Get new vs returning customers based on ACTUAL first order date (all time)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const newCustomers = customers.filter(c => new Date(c.actualFirstOrder) >= thirtyDaysAgo).length;
-    const returningCustomers = customers.filter(c => new Date(c.actualFirstOrder) < thirtyDaysAgo).length;
+    // Calculate repeat customers: customers whose first order was BEFORE the selected period
+    // For "All Time" mode, use last 30 days as cutoff
+    let periodStartDate: Date;
+    if (isAllTime) {
+      periodStartDate = new Date();
+      periodStartDate.setDate(periodStartDate.getDate() - 30);
+    } else {
+      periodStartDate = new Date(dateFilter);
+    }
+
+    const repeatCustomers = customers.filter(c => new Date(c.actualFirstOrder) < periodStartDate).length;
+
+    // Get new vs returning customers based on ACTUAL first order date
+    const newCustomers = customers.filter(c => new Date(c.actualFirstOrder) >= periodStartDate).length;
+    const returningCustomers = customers.filter(c => new Date(c.actualFirstOrder) < periodStartDate).length;
 
     // Top customers by total spent
     const topCustomers = customers
@@ -505,21 +668,26 @@ export default function AnalyticsPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
+      <div className="mb-8">
         <h1 className="text-3xl font-bold text-[#552627]">Analytics Dashboard</h1>
-        <select
-          value={dateRange}
-          onChange={(e) => setDateRange(e.target.value)}
-          className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
-        >
-          <option value="7">Last 7 days</option>
-          <option value="30">Last 30 days</option>
-          <option value="90">Last 90 days</option>
-          <option value="365">Last year</option>
-        </select>
+        <p className="text-sm text-gray-500 mt-1">Each section has independent duration controls</p>
       </div>
 
       {/* Key Metrics with Period Comparison */}
+      <div className="mb-6 flex justify-between items-center">
+        <h2 className="text-lg font-semibold text-gray-700">Core Metrics</h2>
+        <select
+          value={coreMetricsRange}
+          onChange={(e) => setcoreMetricsRange(e.target.value)}
+          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+        >
+          <option value="7">Last 7 days</option>
+          <option value="14">Last 14 days</option>
+          <option value="30">Last 30 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="all">All Time</option>
+        </select>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
           <div className="flex justify-between items-start">
@@ -588,7 +756,7 @@ export default function AnalyticsPage() {
             <div>
               <p className="text-sm text-gray-600 mb-1">Total Customers</p>
               <p className="text-2xl font-bold text-[#552627]">{salesData.customerInsights.totalCustomers}</p>
-              <p className="text-xs text-gray-500 mt-1">{salesData.customerInsights.repeatCustomers} repeat customers</p>
+              <p className="text-xs text-gray-500 mt-1">{salesData.customerInsights.repeatCustomers} returning ({salesData.customerInsights.newCustomers} new)</p>
             </div>
           </div>
         </div>
@@ -597,7 +765,19 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Revenue Chart */}
         <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-          <h2 className="text-xl font-bold text-[#552627] mb-4">Revenue Trend (Last 14 Days)</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-[#552627]">Revenue Trend</h2>
+            <select
+              value={revenueTrendRange}
+              onChange={(e) => setRevenueTrendRange(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+            >
+              <option value="7">Last 7 days</option>
+              <option value="14">Last 14 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+            </select>
+          </div>
           {salesData.revenueByDay.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p className="text-sm">No revenue data available for the selected period</p>
@@ -605,7 +785,7 @@ export default function AnalyticsPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {salesData.revenueByDay.slice(-14).map((day, index) => {
+              {salesData.revenueByDay.map((day, index) => {
                 const maxRevenue = Math.max(...salesData.revenueByDay.map(d => d.revenue));
                 const percentage = maxRevenue > 0 ? (day.revenue / maxRevenue) * 100 : 0;
                 return (
@@ -633,7 +813,20 @@ export default function AnalyticsPage() {
 
         {/* Peak Hours */}
         <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-          <h2 className="text-xl font-bold text-[#552627] mb-4">Peak Ordering Hours</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-[#552627]">Peak Ordering Hours</h2>
+            <select
+              value={peakHoursRange}
+              onChange={(e) => setPeakHoursRange(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+            >
+              <option value="7">Last 7 days</option>
+              <option value="14">Last 14 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="all">All Time</option>
+            </select>
+          </div>
           {salesData.peakHours.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p className="text-sm">No order data available for the selected period</p>
@@ -662,7 +855,19 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Popular Products */}
         <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-          <h2 className="text-xl font-bold text-[#552627] mb-4">Popular Products</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-[#552627]">Popular Products & Flavors</h2>
+            <select
+              value={popularProductsRange}
+              onChange={(e) => setPopularProductsRange(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+            >
+              <option value="7">Last 7 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="all">All Time</option>
+            </select>
+          </div>
           {salesData.popularProducts.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p className="text-sm">No product data available for the selected period</p>
@@ -689,7 +894,7 @@ export default function AnalyticsPage() {
 
         {/* Top Flavors */}
         <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-          <h2 className="text-xl font-bold text-[#552627] mb-4">Most Ordered Flavors</h2>
+          <h3 className="text-lg font-semibold text-[#552627] mb-4">Most Ordered Flavors</h3>
           {salesData.topFlavors.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p className="text-sm">No flavor data available for the selected period</p>
@@ -715,7 +920,10 @@ export default function AnalyticsPage() {
 
       {/* Customer Insights */}
       <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 mb-8">
-        <h2 className="text-xl font-bold text-[#552627] mb-6">Customer Insights</h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-[#552627]">Customer Insights</h2>
+          <span className="text-sm text-gray-500 bg-blue-100 px-3 py-1 rounded-full font-medium">All Time</span>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <div className="text-center">
             <div className="flex justify-center mb-2">
@@ -737,7 +945,8 @@ export default function AnalyticsPage() {
               </div>
             </div>
             <p className="text-3xl font-bold text-[#F7C400]">{formatPrice(salesData.customerInsights.customerLTV)}</p>
-            <p className="text-sm text-gray-600">Avg Spend/Customer</p>
+            <p className="text-sm text-gray-600">Avg Revenue/Customer</p>
+            <p className="text-xs text-gray-400 mt-1">In selected period</p>
           </div>
           <div className="text-center">
             <div className="flex justify-center mb-2">
@@ -759,7 +968,8 @@ export default function AnalyticsPage() {
               </div>
             </div>
             <p className="text-3xl font-bold text-green-600">{salesData.customerInsights.repeatCustomerRate?.toFixed(0) || '0'}%</p>
-            <p className="text-sm text-gray-600">Repeat Customer Rate</p>
+            <p className="text-sm text-gray-600">Returning Customers</p>
+            <p className="text-xs text-gray-400 mt-1">First order before period</p>
           </div>
         </div>
 
@@ -801,7 +1011,20 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Order Status Distribution */}
         <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-          <h2 className="text-xl font-bold text-[#552627] mb-4">Orders by Status</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-[#552627]">Orders by Status</h2>
+            <select
+              value={orderStatusRange}
+              onChange={(e) => setOrderStatusRange(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+            >
+              <option value="7">Last 7 days</option>
+              <option value="14">Last 14 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="all">All Time</option>
+            </select>
+          </div>
           {salesData.ordersByStatus.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p className="text-sm">No order status data available for the selected period</p>
@@ -823,7 +1046,20 @@ export default function AnalyticsPage() {
 
         {/* Revenue by Category */}
         <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-          <h2 className="text-xl font-bold text-[#552627] mb-4">Revenue by Category</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-[#552627]">Revenue by Category</h2>
+            <select
+              value={categoryRevenueRange}
+              onChange={(e) => setCategoryRevenueRange(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+            >
+              <option value="7">Last 7 days</option>
+              <option value="14">Last 14 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="all">All Time</option>
+            </select>
+          </div>
           {salesData.revenueByCategory.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p className="text-sm">No category data available for the selected period</p>
@@ -856,7 +1092,10 @@ export default function AnalyticsPage() {
 
       {/* Recent Orders */}
       <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-        <h2 className="text-xl font-bold text-[#552627] mb-4">Recent Orders</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-[#552627]">Recent Orders</h2>
+          <span className="text-xs text-gray-500">Uses Core Metrics period</span>
+        </div>
         {salesData.recentOrders.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <p className="text-sm">No orders available for the selected period</p>

@@ -49,11 +49,19 @@ export async function GET(request: NextRequest) {
       .from('products')
       .select('*', { count: 'exact', head: true })
 
-    // Fetch customers count (all non-admin profiles)
-    const { count: customersCount } = await admin
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .neq('role', 'admin')
+    // Fetch unique customers count (from paid orders only, all-time)
+    const { data: allOrders } = await admin
+      .from('orders')
+      .select('customer_email, customer_phone, customer_name')
+      .eq('payment_status', 'paid')
+
+    // Count unique customers using same logic as analytics
+    const customerSet = new Set<string>()
+    allOrders?.forEach(order => {
+      const customerId = order.customer_email || `guest-${order.customer_phone || 'anonymous'}-${order.customer_name || 'guest'}`
+      customerSet.add(customerId)
+    })
+    const customersCount = customerSet.size
 
     // Fetch recent orders (last 7 days, paid orders only)
     const sevenDaysAgo = new Date()

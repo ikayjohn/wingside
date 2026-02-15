@@ -48,6 +48,9 @@ export default function CRManalyticsPage() {
   const [timeline, setTimeline] = useState<any[]>([]);
   const [customerStats, setCustomerStats] = useState<any>(null);
   const [averageHealthScore, setAverageHealthScore] = useState(0);
+  const [customersWithoutOrders, setCustomersWithoutOrders] = useState(0);
+  const [customersWithOrders, setCustomersWithOrders] = useState(0);
+  const [totalProfiles, setTotalProfiles] = useState(0);
 
   useEffect(() => {
     fetchCustomerData();
@@ -67,6 +70,17 @@ export default function CRManalyticsPage() {
         setCustomers(data.customers || []);
         setSegmentStats(data.segment_stats || {});
         setAverageHealthScore(data.average_health_score || 0);
+        setCustomersWithoutOrders(data.customers_without_orders || 0);
+        setCustomersWithOrders(data.customers_with_orders || 0);
+        setTotalProfiles(data.total_profiles || 0);
+
+        // Debug logging
+        console.log('📊 CRM Analytics Data:', {
+          customersWithOrders: data.customers_with_orders,
+          customersWithoutOrders: data.customers_without_orders,
+          totalProfiles: data.total_profiles,
+          debug: data._debug
+        });
       }
     } catch (error) {
       console.error('Error fetching customer data:', error);
@@ -150,15 +164,29 @@ export default function CRManalyticsPage() {
       </div>
 
       {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Customers</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{customers.length}</p>
+              <p className="text-sm text-gray-600">Active Customers</p>
+              <p className="text-xs text-gray-400 mt-0.5">With orders</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{customersWithOrders}</p>
             </div>
-            <svg className="w-8 h-8 text-gray-900" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 20 20">
               <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+            </svg>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Never Ordered</p>
+              <p className="text-xs text-gray-400 mt-0.5">Signed up only</p>
+              <p className="text-3xl font-bold text-gray-600 mt-1">{customersWithoutOrders}</p>
+            </div>
+            <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
             </svg>
           </div>
         </div>
