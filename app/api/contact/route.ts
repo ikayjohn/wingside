@@ -187,11 +187,11 @@ export async function POST(request: NextRequest) {
       general: "Thanks for reaching out! We'll get back to you within 24 hours.",
     };
 
-    const message = successMessages[type || 'general'] || successMessages.general;
+    const successMessage = successMessages[type || 'general'] || successMessages.general;
 
     return NextResponse.json({
       success: true,
-      message,
+      message: successMessage,
       submission,
     });
   } catch (error) {
