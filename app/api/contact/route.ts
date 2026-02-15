@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Thank you for your inquiry! We will get back to you within 24 hours.',
+      message: 'Welcome to the fam! Check your inbox soon – we'll take it from here.',
       submission,
     });
   } catch (error) {
