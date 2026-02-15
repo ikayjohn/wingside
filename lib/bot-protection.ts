@@ -235,13 +235,13 @@ export function detectBotFromHeaders(request: NextRequest): {
     }
   }
 
-  // Check for missing or suspicious headers
+  // Check for missing Accept header (but allow */* for API clients)
   const acceptHeader = request.headers.get('accept');
-  if (!acceptHeader || acceptHeader === '*/*') {
-    // Legitimate browsers send specific Accept headers
+  if (!acceptHeader) {
+    // Only reject if Accept header is completely missing
     return {
       isBot: true,
-      reason: 'Missing or suspicious Accept header',
+      reason: 'Missing Accept header',
     };
   }
 
