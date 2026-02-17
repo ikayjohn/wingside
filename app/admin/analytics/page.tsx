@@ -101,60 +101,128 @@ export default function AnalyticsPage() {
   const [peakHoursRange, setPeakHoursRange] = useState('30'); // peak hours
   const [categoryRevenueRange, setCategoryRevenueRange] = useState('30'); // revenue by category
   const [orderStatusRange, setOrderStatusRange] = useState('30'); // orders by status
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
+    start: '',
+    end: ''
+  });
   const supabase = createClient();
 
+  const applyDateRangeToAll = async (range: { start: string; end: string }) => {
+    // Trigger all fetch functions with custom date range
+    await Promise.all([
+      fetchCoreMetrics(range),
+      fetchRevenueTrend(range),
+      fetchPopularProductsAndFlavors(range),
+      fetchPeakHours(range),
+      fetchCategoryRevenue(range),
+      fetchOrderStatus(range),
+    ]);
+  };
+
   useEffect(() => {
-    fetchCoreMetrics();
+    if (!dateRange.start && !dateRange.end) {
+      fetchCoreMetrics();
+    }
   }, [coreMetricsRange]);
 
   useEffect(() => {
-    fetchRevenueTrend();
+    if (!dateRange.start && !dateRange.end) {
+      fetchRevenueTrend();
+    }
   }, [revenueTrendRange]);
 
   useEffect(() => {
-    fetchPopularProductsAndFlavors();
+    if (!dateRange.start && !dateRange.end) {
+      fetchPopularProductsAndFlavors();
+    }
   }, [popularProductsRange]);
 
   useEffect(() => {
-    fetchPeakHours();
+    if (!dateRange.start && !dateRange.end) {
+      fetchPeakHours();
+    }
   }, [peakHoursRange]);
 
   useEffect(() => {
-    fetchCategoryRevenue();
+    if (!dateRange.start && !dateRange.end) {
+      fetchCategoryRevenue();
+    }
   }, [categoryRevenueRange]);
 
   useEffect(() => {
-    fetchOrderStatus();
+    if (!dateRange.start && !dateRange.end) {
+      fetchOrderStatus();
+    }
   }, [orderStatusRange]);
 
-  async function fetchCoreMetrics() {
+  async function fetchCoreMetrics(customRange?: { start: string; end: string }) {
     setLoading(true);
     try {
-      const isAllTime = coreMetricsRange === 'all';
-      const days = isAllTime ? 0 : parseInt(coreMetricsRange);
-      const daysAgo = new Date();
-      if (!isAllTime) {
-        daysAgo.setDate(daysAgo.getDate() - days);
-      }
-      const dateFilter = isAllTime ? '1970-01-01T00:00:00.000Z' : daysAgo.toISOString();
+      let dateFilter: string;
+      let endDateFilter: string | undefined;
 
-      console.log(`📅 Fetching analytics for ${isAllTime ? 'all time' : `last ${days} days (from ${daysAgo.toLocaleDateString()})`}`);
+      if (customRange?.start || customRange?.end) {
+        // Use custom date range
+        dateFilter = customRange.start ? new Date(customRange.start).toISOString() : '1970-01-01T00:00:00.000Z';
+        if (customRange.end) {
+          const endDate = new Date(customRange.end);
+          endDate.setDate(endDate.getDate() + 1); // Include full end day
+          endDateFilter = endDate.toISOString();
+        }
+      } else {
+        // Use dropdown selection
+        const isAllTime = coreMetricsRange === 'all';
+        const days = isAllTime ? 0 : parseInt(coreMetricsRange);
+        const daysAgo = new Date();
+        if (!isAllTime) {
+          daysAgo.setDate(daysAgo.getDate() - days);
+        }
+        dateFilter = isAllTime ? '1970-01-01T00:00:00.000Z' : daysAgo.toISOString();
+      }
+
+      const isCustomRange = !!(customRange?.start || customRange?.end);
+      const isAllTime = !isCustomRange && coreMetricsRange === 'all';
+
+      console.log(`📅 Fetching analytics for ${isCustomRange ? 'custom date range' : isAllTime ? 'all time' : `dropdown selection`}`);
 
       // Previous period for comparison
-      const previousDaysAgo = new Date();
-      if (!isAllTime) {
-        previousDaysAgo.setDate(previousDaysAgo.getDate() - (days * 2));
-      }
-      const previousDateFilter = isAllTime ? '1970-01-01T00:00:00.000Z' : previousDaysAgo.toISOString();
+      let previousDateFilter: string;
+      let previousEndFilter: string | undefined;
 
+      if (isCustomRange && customRange?.start) {
+        // For custom range, calculate equal-length previous period
+        const start = new Date(customRange.start);
+        const end = customRange.end ? new Date(customRange.end) : new Date();
+        const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+
+        const prevEnd = new Date(start);
+        prevEnd.setDate(prevEnd.getDate() - 1);
+        const prevStart = new Date(prevEnd);
+        prevStart.setDate(prevStart.getDate() - diffDays);
+
+        previousDateFilter = prevStart.toISOString();
+        previousEndFilter = prevEnd.toISOString();
+      } else if (!isAllTime) {
+        const days = parseInt(coreMetricsRange);
+        const previousDaysAgo = new Date();
+        previousDaysAgo.setDate(previousDaysAgo.getDate() - (days * 2));
+        previousDateFilter = previousDaysAgo.toISOString();
+      } else {
+        previousDateFilter = '1970-01-01T00:00:00.000Z';
+      }
 
       // Fetch current period orders (paid orders only)
-      const { data: orders, error: ordersError } = await supabase
+      let ordersQuery = supabase
         .from('orders')
         .select('*')
         .eq('payment_status', 'paid')
-        .gte('created_at', dateFilter)
-        .order('created_at', { ascending: false });
+        .gte('created_at', dateFilter);
+
+      if (endDateFilter) {
+        ordersQuery = ordersQuery.lt('created_at', endDateFilter);
+      }
+
+      const { data: orders, error: ordersError } = await ordersQuery.order('created_at', { ascending: false });
 
       if (ordersError) {
         console.error('Orders error:', ordersError);
@@ -165,12 +233,19 @@ export default function AnalyticsPage() {
       // For "All Time", skip previous period comparison
       let previousOrders: any[] = [];
       if (!isAllTime) {
-        const { data, error: previousError } = await supabase
+        let prevQuery = supabase
           .from('orders')
           .select('total, created_at')
           .eq('payment_status', 'paid')
-          .gte('created_at', previousDateFilter)
-          .lt('created_at', dateFilter);
+          .gte('created_at', previousDateFilter);
+
+        if (previousEndFilter) {
+          prevQuery = prevQuery.lt('created_at', previousEndFilter);
+        } else {
+          prevQuery = prevQuery.lt('created_at', dateFilter);
+        }
+
+        const { data, error: previousError } = await prevQuery;
 
         if (previousError) {
           console.error('Previous orders error:', previousError);
@@ -245,19 +320,36 @@ export default function AnalyticsPage() {
   }
 
   // Fetch revenue trend with its own duration
-  async function fetchRevenueTrend() {
+  async function fetchRevenueTrend(customRange?: { start: string; end: string }) {
     try {
-      const days = revenueTrendRange === 'all' ? 0 : parseInt(revenueTrendRange);
-      const daysAgo = new Date();
-      if (days > 0) daysAgo.setDate(daysAgo.getDate() - days);
-      const dateFilter = days === 0 ? '1970-01-01T00:00:00.000Z' : daysAgo.toISOString();
+      let dateFilter: string;
+      let endDateFilter: string | undefined;
 
-      const { data: orders } = await supabase
+      if (customRange?.start || customRange?.end) {
+        dateFilter = customRange.start ? new Date(customRange.start).toISOString() : '1970-01-01T00:00:00.000Z';
+        if (customRange.end) {
+          const endDate = new Date(customRange.end);
+          endDate.setDate(endDate.getDate() + 1);
+          endDateFilter = endDate.toISOString();
+        }
+      } else {
+        const days = revenueTrendRange === 'all' ? 0 : parseInt(revenueTrendRange);
+        const daysAgo = new Date();
+        if (days > 0) daysAgo.setDate(daysAgo.getDate() - days);
+        dateFilter = days === 0 ? '1970-01-01T00:00:00.000Z' : daysAgo.toISOString();
+      }
+
+      let ordersQuery = supabase
         .from('orders')
         .select('total, created_at')
         .eq('payment_status', 'paid')
-        .gte('created_at', dateFilter)
-        .order('created_at', { ascending: false });
+        .gte('created_at', dateFilter);
+
+      if (endDateFilter) {
+        ordersQuery = ordersQuery.lt('created_at', endDateFilter);
+      }
+
+      const { data: orders } = await ordersQuery.order('created_at', { ascending: false });
 
       const revenueByDay = aggregateRevenueByDay(orders || []);
       setRevenueTrend(revenueByDay);
@@ -267,12 +359,24 @@ export default function AnalyticsPage() {
   }
 
   // Fetch popular products & flavors with their own duration
-  async function fetchPopularProductsAndFlavors() {
+  async function fetchPopularProductsAndFlavors(customRange?: { start: string; end: string }) {
     try {
-      const days = popularProductsRange === 'all' ? 0 : parseInt(popularProductsRange);
-      const daysAgo = new Date();
-      if (days > 0) daysAgo.setDate(daysAgo.getDate() - days);
-      const dateFilter = days === 0 ? '1970-01-01T00:00:00.000Z' : daysAgo.toISOString();
+      let dateFilter: string;
+      let endDateFilter: string | undefined;
+
+      if (customRange?.start || customRange?.end) {
+        dateFilter = customRange.start ? new Date(customRange.start).toISOString() : '1970-01-01T00:00:00.000Z';
+        if (customRange.end) {
+          const endDate = new Date(customRange.end);
+          endDate.setDate(endDate.getDate() + 1);
+          endDateFilter = endDate.toISOString();
+        }
+      } else {
+        const days = popularProductsRange === 'all' ? 0 : parseInt(popularProductsRange);
+        const daysAgo = new Date();
+        if (days > 0) daysAgo.setDate(daysAgo.getDate() - days);
+        dateFilter = days === 0 ? '1970-01-01T00:00:00.000Z' : daysAgo.toISOString();
+      }
 
       // Fetch actual flavors
       const { data: actualFlavors } = await supabase
@@ -281,7 +385,7 @@ export default function AnalyticsPage() {
         .eq('is_active', true);
       const validFlavorNames = new Set(actualFlavors?.map(f => f.name) || []);
 
-      const { data: orders } = await supabase
+      let ordersQuery = supabase
         .from('orders')
         .select(`
           *,
@@ -294,6 +398,12 @@ export default function AnalyticsPage() {
         `)
         .eq('payment_status', 'paid')
         .gte('created_at', dateFilter);
+
+      if (endDateFilter) {
+        ordersQuery = ordersQuery.lt('created_at', endDateFilter);
+      }
+
+      const { data: orders } = await ordersQuery;
 
       const allOrderItems: Array<any> = [];
       orders?.forEach(order => {
@@ -336,18 +446,36 @@ export default function AnalyticsPage() {
   }
 
   // Fetch peak hours with its own duration
-  async function fetchPeakHours() {
+  async function fetchPeakHours(customRange?: { start: string; end: string }) {
     try {
-      const days = peakHoursRange === 'all' ? 0 : parseInt(peakHoursRange);
-      const daysAgo = new Date();
-      if (days > 0) daysAgo.setDate(daysAgo.getDate() - days);
-      const dateFilter = days === 0 ? '1970-01-01T00:00:00.000Z' : daysAgo.toISOString();
+      let dateFilter: string;
+      let endDateFilter: string | undefined;
 
-      const { data: orders } = await supabase
+      if (customRange?.start || customRange?.end) {
+        dateFilter = customRange.start ? new Date(customRange.start).toISOString() : '1970-01-01T00:00:00.000Z';
+        if (customRange.end) {
+          const endDate = new Date(customRange.end);
+          endDate.setDate(endDate.getDate() + 1);
+          endDateFilter = endDate.toISOString();
+        }
+      } else {
+        const days = peakHoursRange === 'all' ? 0 : parseInt(peakHoursRange);
+        const daysAgo = new Date();
+        if (days > 0) daysAgo.setDate(daysAgo.getDate() - days);
+        dateFilter = days === 0 ? '1970-01-01T00:00:00.000Z' : daysAgo.toISOString();
+      }
+
+      let ordersQuery = supabase
         .from('orders')
         .select('created_at, total')
         .eq('payment_status', 'paid')
         .gte('created_at', dateFilter);
+
+      if (endDateFilter) {
+        ordersQuery = ordersQuery.lt('created_at', endDateFilter);
+      }
+
+      const { data: orders } = await ordersQuery;
 
       const hours = aggregatePeakHours(orders || []);
       setPeakHours(hours);
@@ -357,14 +485,26 @@ export default function AnalyticsPage() {
   }
 
   // Fetch revenue by category with its own duration
-  async function fetchCategoryRevenue() {
+  async function fetchCategoryRevenue(customRange?: { start: string; end: string }) {
     try {
-      const days = categoryRevenueRange === 'all' ? 0 : parseInt(categoryRevenueRange);
-      const daysAgo = new Date();
-      if (days > 0) daysAgo.setDate(daysAgo.getDate() - days);
-      const dateFilter = days === 0 ? '1970-01-01T00:00:00.000Z' : daysAgo.toISOString();
+      let dateFilter: string;
+      let endDateFilter: string | undefined;
 
-      const { data: orders } = await supabase
+      if (customRange?.start || customRange?.end) {
+        dateFilter = customRange.start ? new Date(customRange.start).toISOString() : '1970-01-01T00:00:00.000Z';
+        if (customRange.end) {
+          const endDate = new Date(customRange.end);
+          endDate.setDate(endDate.getDate() + 1);
+          endDateFilter = endDate.toISOString();
+        }
+      } else {
+        const days = categoryRevenueRange === 'all' ? 0 : parseInt(categoryRevenueRange);
+        const daysAgo = new Date();
+        if (days > 0) daysAgo.setDate(daysAgo.getDate() - days);
+        dateFilter = days === 0 ? '1970-01-01T00:00:00.000Z' : daysAgo.toISOString();
+      }
+
+      let ordersQuery = supabase
         .from('orders')
         .select(`
           *,
@@ -376,6 +516,12 @@ export default function AnalyticsPage() {
         `)
         .eq('payment_status', 'paid')
         .gte('created_at', dateFilter);
+
+      if (endDateFilter) {
+        ordersQuery = ordersQuery.lt('created_at', endDateFilter);
+      }
+
+      const { data: orders } = await ordersQuery;
 
       const allOrderItems: Array<any> = [];
       orders?.forEach(order => {
@@ -408,18 +554,36 @@ export default function AnalyticsPage() {
   }
 
   // Fetch orders by status with its own duration
-  async function fetchOrderStatus() {
+  async function fetchOrderStatus(customRange?: { start: string; end: string }) {
     try {
-      const days = orderStatusRange === 'all' ? 0 : parseInt(orderStatusRange);
-      const daysAgo = new Date();
-      if (days > 0) daysAgo.setDate(daysAgo.getDate() - days);
-      const dateFilter = days === 0 ? '1970-01-01T00:00:00.000Z' : daysAgo.toISOString();
+      let dateFilter: string;
+      let endDateFilter: string | undefined;
 
-      const { data: orders } = await supabase
+      if (customRange?.start || customRange?.end) {
+        dateFilter = customRange.start ? new Date(customRange.start).toISOString() : '1970-01-01T00:00:00.000Z';
+        if (customRange.end) {
+          const endDate = new Date(customRange.end);
+          endDate.setDate(endDate.getDate() + 1);
+          endDateFilter = endDate.toISOString();
+        }
+      } else {
+        const days = orderStatusRange === 'all' ? 0 : parseInt(orderStatusRange);
+        const daysAgo = new Date();
+        if (days > 0) daysAgo.setDate(daysAgo.getDate() - days);
+        dateFilter = days === 0 ? '1970-01-01T00:00:00.000Z' : daysAgo.toISOString();
+      }
+
+      let ordersQuery = supabase
         .from('orders')
         .select('status')
         .eq('payment_status', 'paid')
         .gte('created_at', dateFilter);
+
+      if (endDateFilter) {
+        ordersQuery = ordersQuery.lt('created_at', endDateFilter);
+      }
+
+      const { data: orders } = await ordersQuery;
 
       const ordersByStatus = aggregateOrdersByStatus(orders || []);
 
@@ -668,9 +832,135 @@ export default function AnalyticsPage() {
 
   return (
     <div>
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold text-[#552627]">Analytics Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-1">Each section has independent duration controls</p>
+        <p className="text-sm text-gray-500 mt-1">Use custom date range or individual section controls</p>
+      </div>
+
+      {/* Date Range Selector */}
+      <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700">Custom Date Range:</label>
+            <input
+              type="date"
+              value={dateRange.start}
+              onChange={(e) => {
+                const newRange = { ...dateRange, start: e.target.value };
+                setDateRange(newRange);
+                if (e.target.value && dateRange.end) {
+                  applyDateRangeToAll(newRange);
+                }
+              }}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+            />
+            <span className="text-gray-500">to</span>
+            <input
+              type="date"
+              value={dateRange.end}
+              onChange={(e) => {
+                const newRange = { ...dateRange, end: e.target.value };
+                setDateRange(newRange);
+                if (dateRange.start && e.target.value) {
+                  applyDateRangeToAll(newRange);
+                }
+              }}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                const end = new Date();
+                const start = new Date();
+                start.setDate(start.getDate() - 7);
+                const newRange = {
+                  start: start.toISOString().split('T')[0],
+                  end: end.toISOString().split('T')[0]
+                };
+                setDateRange(newRange);
+                applyDateRangeToAll(newRange);
+              }}
+              className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md"
+            >
+              Last 7 Days
+            </button>
+            <button
+              onClick={() => {
+                const end = new Date();
+                const start = new Date();
+                start.setDate(start.getDate() - 30);
+                const newRange = {
+                  start: start.toISOString().split('T')[0],
+                  end: end.toISOString().split('T')[0]
+                };
+                setDateRange(newRange);
+                applyDateRangeToAll(newRange);
+              }}
+              className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md"
+            >
+              Last 30 Days
+            </button>
+            <button
+              onClick={() => {
+                const end = new Date();
+                const start = new Date();
+                start.setDate(start.getDate() - 90);
+                const newRange = {
+                  start: start.toISOString().split('T')[0],
+                  end: end.toISOString().split('T')[0]
+                };
+                setDateRange(newRange);
+                applyDateRangeToAll(newRange);
+              }}
+              className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md"
+            >
+              Last 90 Days
+            </button>
+            <button
+              onClick={() => {
+                const now = new Date();
+                const start = new Date(now.getFullYear(), now.getMonth(), 1);
+                const newRange = {
+                  start: start.toISOString().split('T')[0],
+                  end: now.toISOString().split('T')[0]
+                };
+                setDateRange(newRange);
+                applyDateRangeToAll(newRange);
+              }}
+              className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md"
+            >
+              This Month
+            </button>
+            <button
+              onClick={() => {
+                setDateRange({ start: '', end: '' });
+                setcoreMetricsRange('30');
+                setRevenueTrendRange('14');
+                setPopularProductsRange('30');
+                setPeakHoursRange('30');
+                setCategoryRevenueRange('30');
+                setOrderStatusRange('30');
+              }}
+              className="px-3 py-1.5 text-sm bg-red-50 hover:bg-red-100 text-red-700 rounded-md"
+            >
+              Clear
+            </button>
+          </div>
+
+          {(dateRange.start || dateRange.end) && (
+            <div className="text-sm text-gray-600">
+              {dateRange.start && dateRange.end ? (
+                <>Showing data from {new Date(dateRange.start).toLocaleDateString()} to {new Date(dateRange.end).toLocaleDateString()}</>
+              ) : dateRange.start ? (
+                <>Showing data from {new Date(dateRange.start).toLocaleDateString()} onwards</>
+              ) : (
+                <>Showing data until {new Date(dateRange.end).toLocaleDateString()}</>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Key Metrics with Period Comparison */}
@@ -680,6 +970,7 @@ export default function AnalyticsPage() {
           value={coreMetricsRange}
           onChange={(e) => setcoreMetricsRange(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+          disabled={!!(dateRange.start || dateRange.end)}
         >
           <option value="7">Last 7 days</option>
           <option value="14">Last 14 days</option>
@@ -771,6 +1062,7 @@ export default function AnalyticsPage() {
               value={revenueTrendRange}
               onChange={(e) => setRevenueTrendRange(e.target.value)}
               className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+              disabled={!!(dateRange.start || dateRange.end)}
             >
               <option value="7">Last 7 days</option>
               <option value="14">Last 14 days</option>
@@ -819,6 +1111,7 @@ export default function AnalyticsPage() {
               value={peakHoursRange}
               onChange={(e) => setPeakHoursRange(e.target.value)}
               className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+              disabled={!!(dateRange.start || dateRange.end)}
             >
               <option value="7">Last 7 days</option>
               <option value="14">Last 14 days</option>
@@ -861,6 +1154,7 @@ export default function AnalyticsPage() {
               value={popularProductsRange}
               onChange={(e) => setPopularProductsRange(e.target.value)}
               className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+              disabled={!!(dateRange.start || dateRange.end)}
             >
               <option value="7">Last 7 days</option>
               <option value="30">Last 30 days</option>
@@ -1017,6 +1311,7 @@ export default function AnalyticsPage() {
               value={orderStatusRange}
               onChange={(e) => setOrderStatusRange(e.target.value)}
               className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+              disabled={!!(dateRange.start || dateRange.end)}
             >
               <option value="7">Last 7 days</option>
               <option value="14">Last 14 days</option>
@@ -1052,6 +1347,7 @@ export default function AnalyticsPage() {
               value={categoryRevenueRange}
               onChange={(e) => setCategoryRevenueRange(e.target.value)}
               className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+              disabled={!!(dateRange.start || dateRange.end)}
             >
               <option value="7">Last 7 days</option>
               <option value="14">Last 14 days</option>

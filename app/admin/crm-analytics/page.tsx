@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import CustomerSearchFilters, { FilterState } from '@/components/admin/CustomerSearchFilters';
 
 interface CustomerSegment {
   id: string;
@@ -51,18 +52,66 @@ export default function CRManalyticsPage() {
   const [customersWithoutOrders, setCustomersWithoutOrders] = useState(0);
   const [customersWithOrders, setCustomersWithOrders] = useState(0);
   const [totalProfiles, setTotalProfiles] = useState(0);
+  const [filters, setFilters] = useState<FilterState | null>(null);
+  const [availableTags, setAvailableTags] = useState<any[]>([]);
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
+    start: '',
+    end: ''
+  });
+
+  useEffect(() => {
+    fetchAvailableTags();
+  }, []);
 
   useEffect(() => {
     fetchCustomerData();
-  }, [selectedSegment]);
+  }, [selectedSegment, filters, dateRange]);
+
+  const fetchAvailableTags = async () => {
+    try {
+      const response = await fetch('/api/customer-tags');
+      const data = await response.json();
+      if (response.ok) {
+        setAvailableTags(data.tags || []);
+      }
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+    }
+  };
 
   const fetchCustomerData = async () => {
     try {
       setLoading(true);
-      const url = selectedSegment
-        ? `/api/customers/segments?segment=${selectedSegment}`
-        : '/api/customers/segments';
 
+      const params = new URLSearchParams();
+
+      if (selectedSegment) {
+        params.set('segment', selectedSegment);
+      }
+
+      if (filters) {
+        if (filters.search) params.set('search', filters.search);
+        if (filters.segments.length > 0) params.set('segments', filters.segments.join(','));
+        params.set('healthScoreMin', filters.healthScore[0].toString());
+        params.set('healthScoreMax', filters.healthScore[1].toString());
+        params.set('churnRiskMin', filters.churnRisk[0].toString());
+        params.set('churnRiskMax', filters.churnRisk[1].toString());
+        params.set('orderCountMin', filters.orderCount[0].toString());
+        params.set('orderCountMax', filters.orderCount[1].toString());
+        params.set('totalSpentMin', filters.totalSpent[0].toString());
+        params.set('totalSpentMax', filters.totalSpent[1].toString());
+        if (filters.lastOrderDate.start) params.set('lastOrderStart', filters.lastOrderDate.start);
+        if (filters.lastOrderDate.end) params.set('lastOrderEnd', filters.lastOrderDate.end);
+        if (filters.tags.length > 0) params.set('tags', filters.tags.join(','));
+        params.set('sortBy', filters.sortBy);
+        params.set('sortOrder', filters.sortOrder);
+      }
+
+      // Add date range for overall analytics filtering
+      if (dateRange.start) params.set('dateRangeStart', dateRange.start);
+      if (dateRange.end) params.set('dateRangeEnd', dateRange.end);
+
+      const url = `/api/customers/segments?${params.toString()}`;
       const response = await fetch(url);
       const data = await response.json();
 
@@ -150,7 +199,7 @@ export default function CRManalyticsPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">CRM Analytics</h1>
           <p className="text-gray-600 mt-1">Customer segmentation and lifetime value insights</p>
@@ -162,6 +211,117 @@ export default function CRManalyticsPage() {
           Refresh Data
         </button>
       </div>
+
+      {/* Date Range Selector */}
+      <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700">Date Range:</label>
+            <input
+              type="date"
+              value={dateRange.start}
+              onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <span className="text-gray-500">to</span>
+            <input
+              type="date"
+              value={dateRange.end}
+              onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                const end = new Date();
+                const start = new Date();
+                start.setDate(start.getDate() - 7);
+                setDateRange({
+                  start: start.toISOString().split('T')[0],
+                  end: end.toISOString().split('T')[0]
+                });
+              }}
+              className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md"
+            >
+              Last 7 Days
+            </button>
+            <button
+              onClick={() => {
+                const end = new Date();
+                const start = new Date();
+                start.setDate(start.getDate() - 30);
+                setDateRange({
+                  start: start.toISOString().split('T')[0],
+                  end: end.toISOString().split('T')[0]
+                });
+              }}
+              className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md"
+            >
+              Last 30 Days
+            </button>
+            <button
+              onClick={() => {
+                const end = new Date();
+                const start = new Date();
+                start.setDate(start.getDate() - 90);
+                setDateRange({
+                  start: start.toISOString().split('T')[0],
+                  end: end.toISOString().split('T')[0]
+                });
+              }}
+              className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md"
+            >
+              Last 90 Days
+            </button>
+            <button
+              onClick={() => {
+                const now = new Date();
+                const start = new Date(now.getFullYear(), now.getMonth(), 1);
+                setDateRange({
+                  start: start.toISOString().split('T')[0],
+                  end: now.toISOString().split('T')[0]
+                });
+              }}
+              className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md"
+            >
+              This Month
+            </button>
+            <button
+              onClick={() => setDateRange({ start: '', end: '' })}
+              className="px-3 py-1.5 text-sm bg-red-50 hover:bg-red-100 text-red-700 rounded-md"
+            >
+              Clear
+            </button>
+          </div>
+
+          {(dateRange.start || dateRange.end) && (
+            <div className="text-sm text-gray-600">
+              {dateRange.start && dateRange.end ? (
+                <>Showing data from {new Date(dateRange.start).toLocaleDateString()} to {new Date(dateRange.end).toLocaleDateString()}</>
+              ) : dateRange.start ? (
+                <>Showing data from {new Date(dateRange.start).toLocaleDateString()} onwards</>
+              ) : (
+                <>Showing data until {new Date(dateRange.end).toLocaleDateString()}</>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Main Content Grid - Sidebar + Content */}
+      <div className="grid grid-cols-4 gap-6">
+        {/* Filters Sidebar */}
+        <div className="col-span-1">
+          <CustomerSearchFilters
+            onFilterChange={setFilters}
+            availableTags={availableTags}
+          />
+        </div>
+
+        {/* Main Content */}
+        <div className="col-span-3 space-y-6">
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -438,6 +598,8 @@ export default function CRManalyticsPage() {
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }

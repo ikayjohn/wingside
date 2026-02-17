@@ -14,12 +14,45 @@ export async function GET(request: NextRequest) {
     const segmentFilter = searchParams.get('segment')
     const limit = parseInt(searchParams.get('limit') || '50')
 
+    // Advanced filter parameters
+    const search = searchParams.get('search') || ''
+    const segments = searchParams.get('segments')?.split(',').filter(Boolean) || []
+    const healthScoreMin = parseInt(searchParams.get('healthScoreMin') || '0')
+    const healthScoreMax = parseInt(searchParams.get('healthScoreMax') || '100')
+    const churnRiskMin = parseInt(searchParams.get('churnRiskMin') || '0')
+    const churnRiskMax = parseInt(searchParams.get('churnRiskMax') || '100')
+    const orderCountMin = parseInt(searchParams.get('orderCountMin') || '0')
+    const orderCountMax = parseInt(searchParams.get('orderCountMax') || '1000')
+    const totalSpentMin = parseInt(searchParams.get('totalSpentMin') || '0')
+    const totalSpentMax = parseInt(searchParams.get('totalSpentMax') || '1000000')
+    const lastOrderStart = searchParams.get('lastOrderStart')
+    const lastOrderEnd = searchParams.get('lastOrderEnd')
+    const dateRangeStart = searchParams.get('dateRangeStart')
+    const dateRangeEnd = searchParams.get('dateRangeEnd')
+    const tags = searchParams.get('tags')?.split(',').filter(Boolean) || []
+    const sortBy = searchParams.get('sortBy') || 'last_order_date'
+    const sortOrder = searchParams.get('sortOrder') || 'desc'
+
     // First, get all paid orders to identify actual customers
-    const { data: allOrders, error: ordersError } = await supabase
+    let ordersQuery = supabase
       .from('orders')
       .select('customer_email, customer_phone, customer_name, user_id, created_at, total')
       .eq('payment_status', 'paid')
-      .order('created_at', { ascending: false })
+
+    // Apply date range filter if provided
+    if (dateRangeStart) {
+      ordersQuery = ordersQuery.gte('created_at', dateRangeStart)
+    }
+    if (dateRangeEnd) {
+      // Add one day to include the end date fully
+      const endDate = new Date(dateRangeEnd)
+      endDate.setDate(endDate.getDate() + 1)
+      ordersQuery = ordersQuery.lt('created_at', endDate.toISOString().split('T')[0])
+    }
+
+    ordersQuery = ordersQuery.order('created_at', { ascending: false })
+
+    const { data: allOrders, error: ordersError } = await ordersQuery
 
     if (ordersError) throw ordersError
 
@@ -178,13 +211,111 @@ export async function GET(request: NextRequest) {
 
     console.log(`📊 Stats: ${customersWithOrders} with orders, ${customersWithoutOrders} never ordered, ${totalProfilesCount} total profiles`)
 
-    // Filter by segment if specified
+    // Apply advanced filters
     let filteredCustomers = enrichedCustomers
-    if (segmentFilter) {
-      filteredCustomers = enrichedCustomers.filter((c: any) =>
-        c.segments.includes(segmentFilter)
+
+    // Text search filter
+    if (search) {
+      const searchLower = search.toLowerCase()
+      filteredCustomers = filteredCustomers.filter((c: any) =>
+        c.full_name?.toLowerCase().includes(searchLower) ||
+        c.email?.toLowerCase().includes(searchLower) ||
+        c.phone?.includes(search)
       )
     }
+
+    // Segment filter (legacy single segment OR new multi-segment)
+    if (segmentFilter) {
+      filteredCustomers = filteredCustomers.filter((c: any) =>
+        c.segments.includes(segmentFilter)
+      )
+    } else if (segments.length > 0) {
+      filteredCustomers = filteredCustomers.filter((c: any) =>
+        segments.some(seg => c.segments.includes(seg))
+      )
+    }
+
+    // Health score filter
+    filteredCustomers = filteredCustomers.filter((c: any) =>
+      c.health_score >= healthScoreMin && c.health_score <= healthScoreMax
+    )
+
+    // Churn risk filter
+    filteredCustomers = filteredCustomers.filter((c: any) =>
+      c.churn_risk >= churnRiskMin && c.churn_risk <= churnRiskMax
+    )
+
+    // Order count filter
+    filteredCustomers = filteredCustomers.filter((c: any) =>
+      c.total_orders >= orderCountMin && c.total_orders <= orderCountMax
+    )
+
+    // Total spent filter
+    filteredCustomers = filteredCustomers.filter((c: any) =>
+      c.total_spent >= totalSpentMin && c.total_spent <= totalSpentMax
+    )
+
+    // Last order date filter
+    if (lastOrderStart && lastOrderEnd) {
+      const startDate = new Date(lastOrderStart)
+      const endDate = new Date(lastOrderEnd)
+      filteredCustomers = filteredCustomers.filter((c: any) => {
+        if (!c.last_order_date) return false
+        const orderDate = new Date(c.last_order_date)
+        return orderDate >= startDate && orderDate <= endDate
+      })
+    }
+
+    // Tags filter
+    if (tags.length > 0) {
+      const { data: tagAssignments } = await supabase
+        .from('customer_tag_assignments')
+        .select('customer_email, tag_id')
+        .in('tag_id', tags)
+
+      const emailsWithTags = new Set(tagAssignments?.map(t => t.customer_email) || [])
+      filteredCustomers = filteredCustomers.filter((c: any) => emailsWithTags.has(c.email))
+    }
+
+    // Sort customers
+    filteredCustomers.sort((a: any, b: any) => {
+      let aVal: any, bVal: any
+
+      switch (sortBy) {
+        case 'last_order_date':
+          aVal = a.last_order_date ? new Date(a.last_order_date).getTime() : 0
+          bVal = b.last_order_date ? new Date(b.last_order_date).getTime() : 0
+          break
+        case 'total_spent':
+          aVal = a.total_spent
+          bVal = b.total_spent
+          break
+        case 'total_orders':
+          aVal = a.total_orders
+          bVal = b.total_orders
+          break
+        case 'health_score':
+          aVal = a.health_score
+          bVal = b.health_score
+          break
+        case 'churn_risk':
+          aVal = a.churn_risk
+          bVal = b.churn_risk
+          break
+        case 'full_name':
+          aVal = a.full_name?.toLowerCase() || ''
+          bVal = b.full_name?.toLowerCase() || ''
+          break
+        default:
+          return 0
+      }
+
+      if (sortOrder === 'asc') {
+        return aVal > bVal ? 1 : -1
+      } else {
+        return aVal < bVal ? 1 : -1
+      }
+    })
 
     // Get segment statistics
     const segmentStats = CUSTOMER_SEGMENTS.reduce((acc, segment) => {
