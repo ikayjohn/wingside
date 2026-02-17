@@ -4,6 +4,7 @@ import "./globals.css";
 import { AdminLayout } from "./admin-layout-wrapper";
 import Script from "next/script";
 import ServiceWorkerProvider from "@/components/ServiceWorkerProvider";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 
 const inter = Inter({
   weight: ['400', '600', '700'], // Reduced from 6 to 3 weights
@@ -96,6 +97,9 @@ export default function RootLayout({
         <link rel="prefetch" as="image" href="/_next/image?url=%2Flogo-white.png&w=96&q=80" />
       </head>
       <body className={inter.className} suppressHydrationWarning>
+        {/* Google Analytics */}
+        <GoogleAnalytics />
+
         {/* Skip Navigation Link for Keyboard Users */}
         <a
           href="#main-content"
