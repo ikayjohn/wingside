@@ -48,7 +48,7 @@ export function downloadJSON(sections: ExportSection[], filename: string): void 
 }
 
 export async function downloadXLSX(sections: ExportSection[], filename: string): Promise<void> {
-  const XLSX = await import('xlsx');
+  const XLSX = await import('@e965/xlsx');
   const wb = XLSX.utils.book_new();
 
   for (const section of sections) {

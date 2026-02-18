@@ -10,6 +10,7 @@
     "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
+    "@e965/xlsx": "^0.20.3",
     "@googlemaps/js-api-loader": "^2.0.2",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.8.0",
@@ -32,7 +33,6 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "web-push": "^3.6.7",
-    "xlsx": "^0.18.5",
     "zod": "^3.24.1"
   },
   "devDependencies": {
