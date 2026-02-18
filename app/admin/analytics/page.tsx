@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { StatCard, BarChart, ProgressBar } from '@/components/admin/Charts';
+import ExportButton from '@/components/admin/ExportButton';
+import type { ExportSection } from '@/lib/export-utils';
 
 interface SalesData {
   totalRevenue: number;
@@ -814,6 +816,118 @@ export default function AnalyticsPage() {
     }).format(price).replace('NGN', '₦');
   };
 
+  const getAnalyticsExportData = (): ExportSection[] => {
+    const sections: ExportSection[] = [];
+
+    // Core metrics summary
+    sections.push({
+      title: 'Core Metrics',
+      headers: ['Metric', 'Value'],
+      rows: [
+        ['Total Revenue (₦)', coreMetrics.totalRevenue],
+        ['Total Orders', coreMetrics.totalOrders],
+        ['Average Order Value (₦)', coreMetrics.averageOrderValue],
+        ['Revenue Change vs Prior Period (%)', coreMetrics.periodComparison.revenueChange.toFixed(2)],
+        ['Orders Change vs Prior Period (%)', coreMetrics.periodComparison.ordersChange.toFixed(2)],
+        ['AOV Change vs Prior Period (%)', coreMetrics.periodComparison.aovChange.toFixed(2)],
+      ],
+    });
+
+    // Revenue trend
+    if (revenueTrend.length > 0) {
+      sections.push({
+        title: 'Revenue Trend',
+        headers: ['Date', 'Revenue (₦)', 'Orders'],
+        rows: revenueTrend.map(d => [d.date, d.revenue, d.orders]),
+      });
+    }
+
+    // Popular products
+    if (popularData.products.length > 0) {
+      sections.push({
+        title: 'Popular Products',
+        headers: ['Product', 'Quantity Sold', 'Revenue (₦)'],
+        rows: popularData.products.map(p => [p.name, p.quantity, p.revenue]),
+      });
+    }
+
+    // Top flavors
+    if (popularData.flavors.length > 0) {
+      sections.push({
+        title: 'Top Flavors',
+        headers: ['Flavor', 'Order Count', '% of Orders'],
+        rows: popularData.flavors.map(f => [f.name, f.count, f.percentage.toFixed(1)]),
+      });
+    }
+
+    // Revenue by category
+    if (coreMetrics.revenueByCategory.length > 0) {
+      sections.push({
+        title: 'Revenue by Category',
+        headers: ['Category', 'Revenue (₦)'],
+        rows: coreMetrics.revenueByCategory.map(c => [c.category, c.revenue]),
+      });
+    }
+
+    // Orders by status
+    if (coreMetrics.ordersByStatus.length > 0) {
+      sections.push({
+        title: 'Orders by Status',
+        headers: ['Status', 'Count'],
+        rows: coreMetrics.ordersByStatus.map(s => [s.status, s.count]),
+      });
+    }
+
+    // Peak hours
+    if (peakHours.length > 0) {
+      sections.push({
+        title: 'Peak Ordering Hours',
+        headers: ['Hour', 'Time Label', 'Order Count', 'Revenue (₦)'],
+        rows: peakHours.map(h => [h.hour, h.label, h.count, h.revenue]),
+      });
+    }
+
+    // Customer insights
+    sections.push({
+      title: 'Customer Insights',
+      headers: ['Metric', 'Value'],
+      rows: [
+        ['Total Customers', customerInsights.totalCustomers],
+        ['New Customers', customerInsights.newCustomers],
+        ['Returning Customers', customerInsights.returningCustomers],
+        ['Repeat Customer Rate (%)', customerInsights.repeatCustomerRate.toFixed(1)],
+        ['Avg Orders per Customer', customerInsights.averageOrdersPerCustomer.toFixed(2)],
+        ['Customer LTV (₦)', customerInsights.customerLTV.toFixed(2)],
+      ],
+    });
+
+    // Top customers
+    if (customerInsights.topCustomers.length > 0) {
+      sections.push({
+        title: 'Top Customers',
+        headers: ['Name', 'Email', 'Orders', 'Total Spent (₦)'],
+        rows: customerInsights.topCustomers.map(c => [c.name, c.email, c.orders, c.totalSpent]),
+      });
+    }
+
+    // Recent orders
+    if (coreMetrics.recentOrders.length > 0) {
+      sections.push({
+        title: 'Recent Orders',
+        headers: ['Order #', 'Customer', 'Total (₦)', 'Status', 'Date'],
+        rows: coreMetrics.recentOrders.map(o => [
+          o.order_number,
+          o.customer_name,
+          o.total,
+          o.status,
+          new Date(o.created_at).toLocaleString('en-NG', { timeZone: 'Africa/Lagos' }),
+        ]),
+      });
+    }
+
+    return sections;
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
@@ -832,9 +946,15 @@ export default function AnalyticsPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-[#552627]">Analytics Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-1">Use custom date range or individual section controls</p>
+      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold text-[#552627]">Analytics Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-1">Use custom date range or individual section controls</p>
+        </div>
+        <ExportButton
+          filename="wingside-analytics"
+          getExportData={getAnalyticsExportData}
+        />
       </div>
 
       {/* Date Range Selector */}

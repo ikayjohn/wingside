@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import CustomerSearchFilters, { FilterState } from '@/components/admin/CustomerSearchFilters';
+import ExportButton from '@/components/admin/ExportButton';
+import type { ExportSection } from '@/lib/export-utils';
 
 interface CustomerSegment {
   id: string;
@@ -196,6 +198,72 @@ export default function CRManalyticsPage() {
     return icons[id] || <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>;
   }
 
+  const getCRMExportData = (): ExportSection[] => {
+    const sections: ExportSection[] = [];
+
+    // Overview stats
+    sections.push({
+      title: 'Overview',
+      headers: ['Metric', 'Value'],
+      rows: [
+        ['Active Customers (with orders)', customersWithOrders],
+        ['Never Ordered (signed up only)', customersWithoutOrders],
+        ['Total Profiles', totalProfiles],
+        ['Average Health Score', averageHealthScore.toFixed(1)],
+        ['At-Risk Customers', segmentStats['at-risk'] ?? 0],
+        ['Churned Customers', segmentStats['churned'] ?? 0],
+      ],
+    });
+
+    // Segment breakdown
+    if (Object.keys(segmentStats).length > 0) {
+      sections.push({
+        title: 'Segment Breakdown',
+        headers: ['Segment', 'Customer Count', '% of Total'],
+        rows: Object.entries(segmentStats).map(([seg, count]) => [
+          seg.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+          count as number,
+          customers.length > 0 ? (((count as number) / customers.length) * 100).toFixed(1) : '0',
+        ]),
+      });
+    }
+
+    // Customer list
+    if (customers.length > 0) {
+      sections.push({
+        title: 'Customer List',
+        headers: [
+          'Name',
+          'Email',
+          'Segments',
+          'Total Orders',
+          'Total Spent (₦)',
+          'Health Score',
+          'Churn Risk (%)',
+          'Last Order Date',
+          'Predicted Next Order',
+        ],
+        rows: customers.map(c => [
+          c.full_name || 'No Name',
+          c.email,
+          c.segments.join(', '),
+          c.total_orders,
+          c.total_spent,
+          c.health_score,
+          Math.round(c.churn_risk),
+          c.last_order_date
+            ? new Date(c.last_order_date).toLocaleDateString('en-NG')
+            : 'Never',
+          c.predicted_next_order
+            ? new Date(c.predicted_next_order).toLocaleDateString('en-NG')
+            : '',
+        ]),
+      });
+    }
+
+    return sections;
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -204,12 +272,18 @@ export default function CRManalyticsPage() {
           <h1 className="text-3xl font-bold text-gray-900">CRM Analytics</h1>
           <p className="text-gray-600 mt-1">Customer segmentation and lifetime value insights</p>
         </div>
-        <button
-          onClick={fetchCustomerData}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Refresh Data
-        </button>
+        <div className="flex items-center gap-3">
+          <ExportButton
+            filename="wingside-crm"
+            getExportData={getCRMExportData}
+          />
+          <button
+            onClick={fetchCustomerData}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Refresh Data
+          </button>
+        </div>
       </div>
 
       {/* Date Range Selector */}
