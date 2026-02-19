@@ -227,6 +227,7 @@ export async function POST(request: NextRequest) {
       email: authData.user.email!,
       full_name: `${firstName.trim()} ${lastName.trim()}`,
       phone: `+234${phone}`,
+      dateOfBirth: formattedDOB || undefined, // Pass actual DOB in DD-MM-YYYY format
     });
 
     if (syncResult.zoho) {

@@ -17,6 +17,7 @@ export async function syncNewCustomer(customer: {
   email: string;
   full_name: string;
   phone?: string;
+  dateOfBirth?: string; // DD-MM-YYYY from profiles.date_of_birth
   address?: string;
   city?: string;
   state?: string;
@@ -48,6 +49,7 @@ export async function syncNewCustomer(customer: {
       email: customer.email,
       full_name: customer.full_name,
       phone: customer.phone,
+      dateOfBirth: customer.dateOfBirth,
     });
 
     if (embedlyResult) {

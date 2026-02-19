@@ -148,6 +148,7 @@ export interface EmbedlyCustomer {
   firstName: string;
   lastName: string;
   phone?: string;
+  dateOfBirth?: string; // DD-MM-YYYY format (e.g. '14-12-2003')
   organisationId?: string;
   emailAddress?: string; // Alternative field name from API
   walletId?: string; // If customer has a default wallet
@@ -167,7 +168,7 @@ export async function createCustomer(customer: Omit<EmbedlyCustomer, 'id'>): Pro
     mobileNumber: customer.phone || '',
     countryId,
     customerTypeId,
-    dateOfBirth: '1990-01-01', // Required by Embedly; not collected at signup — placeholder used
+    dateOfBirth: customer.dateOfBirth || '01-01-1990', // Embedly requires DD-MM-YYYY format
     city: 'Port Harcourt', // Default city - can be overridden
     address: 'Wingside Customer', // Default address - can be overridden
   });
@@ -364,8 +365,9 @@ function sanitiseNameForEmbedly(raw: string): string {
 function parseNameForEmbedly(fullName: string): { firstName: string; lastName: string } {
   const parts = fullName.trim().split(/\s+/);
   const firstName = sanitiseNameForEmbedly(parts[0] || '') || 'Customer';
-  const rawLast   = parts.slice(1).join(' ');
-  const lastName  = sanitiseNameForEmbedly(rawLast) || firstName; // fallback to firstName
+  // Use only the LAST word as lastName — Embedly rejects multi-word lastNames like "Thomas Amadi"
+  const lastWordRaw = parts.length > 1 ? parts[parts.length - 1] : '';
+  const lastName    = sanitiseNameForEmbedly(lastWordRaw) || firstName; // fallback to firstName
   return { firstName, lastName };
 }
 
@@ -375,6 +377,7 @@ export async function setupCustomerWithWallet(customer: {
   email: string;
   full_name: string;
   phone?: string;
+  dateOfBirth?: string; // DD-MM-YYYY or DD-MM from profiles.date_of_birth
 }): Promise<{ customerId: string; walletId: string; isNewCustomer: boolean; bankAccount?: string; bankName?: string; bankCode?: string } | null> {
   if (!isEmbedlyConfigured()) {
     console.warn('Embedly not configured, skipping setup');
@@ -401,6 +404,7 @@ export async function setupCustomerWithWallet(customer: {
         firstName,
         lastName,
         phone: localPhone,
+        dateOfBirth: customer.dateOfBirth, // Pass actual DOB from profile (DD-MM-YYYY)
       });
       isNewCustomer = true;
       console.log(`Embedly: Created new customer ${customerId} for ${customer.email}`);

@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     // Get recent customer signups (last 50)
     const { data: recentCustomers, error: customersError } = await admin
       .from('profiles')
-      .select('id, email, full_name, created_at, embedly_customer_id, embedly_wallet_id')
+      .select('id, email, full_name, phone, date_of_birth, created_at, embedly_customer_id, embedly_wallet_id')
       .eq('role', 'customer')
       .order('created_at', { ascending: false })
       .limit(50)
@@ -54,7 +54,8 @@ export async function GET(request: NextRequest) {
           id: unsyncedCustomer.id,
           email: unsyncedCustomer.email,
           full_name: unsyncedCustomer.full_name || '',
-          phone: undefined
+          phone: unsyncedCustomer.phone || undefined,
+          dateOfBirth: unsyncedCustomer.date_of_birth || undefined,
         })
 
         results.test_sync = {
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
       // Fetch all customers needing attention (last 50)
       const { data: customers } = await admin
         .from('profiles')
-        .select('id, email, full_name, phone, embedly_customer_id, embedly_wallet_id')
+        .select('id, email, full_name, phone, date_of_birth, embedly_customer_id, embedly_wallet_id')
         .eq('role', 'customer')
         .order('created_at', { ascending: false })
         .limit(50)
@@ -144,6 +145,7 @@ export async function POST(request: NextRequest) {
             email: c.email,
             full_name: c.full_name || '',
             phone: c.phone || undefined,
+            dateOfBirth: c.date_of_birth || undefined,
           })
 
           if (syncResult.embedly) {
@@ -265,6 +267,7 @@ export async function POST(request: NextRequest) {
       email: customer.email,
       full_name: customer.full_name || '',
       phone: customer.phone,
+      dateOfBirth: customer.date_of_birth || undefined,
     })
 
     if (syncResult.embedly) {
