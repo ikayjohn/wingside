@@ -63,7 +63,7 @@ async function embedlyRequest<T = unknown>(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`Embedly API error (${endpoint}):`, errorText);
+    console.error(`Embedly API error (${endpoint}): [HTTP ${response.status}]`, errorText || '(empty body)');
     let parsedMessage = '';
     try {
       const parsed = JSON.parse(errorText);
@@ -175,18 +175,25 @@ export async function createCustomer(customer: Omit<EmbedlyCustomer, 'id'>): Pro
   return result.data?.id || (result as any).id;
 }
 
-// Get customer by ID
+// Get customer by ID — try multiple endpoint patterns since Embedly docs are unclear
 export async function getCustomer(customerId: string): Promise<EmbedlyCustomer | null> {
-  // Try the documented REST path first, then fallback to the collection-style path
-  for (const endpoint of [`/customers/get/${customerId}`, `/customer/${customerId}`]) {
+  const endpoints = [
+    `/customers/get/${customerId}`,
+    `/customers/${customerId}`,
+    `/customer/${customerId}`,
+  ];
+
+  for (const endpoint of endpoints) {
     try {
       const result = await embedlyRequest<EmbedlyCustomer>(endpoint);
       const customer = result.data || (result as any);
       // Validate we got a real customer object (not an empty body parsed as {})
       if (customer && (customer.id || customer.emailAddress || customer.email)) {
+        console.log(`Embedly getCustomer: found via ${endpoint}`);
         return customer;
       }
-    } catch {
+    } catch (error) {
+      console.error(`Embedly getCustomer [${endpoint}]:`, error instanceof Error ? error.message : error);
       // try next endpoint
     }
   }
@@ -195,34 +202,51 @@ export async function getCustomer(customerId: string): Promise<EmbedlyCustomer |
 
 // Get customer by email (checks all customers)
 // Embedly /customers/get/all returns paginated responses in multiple shapes:
-//   { data: [ ... ] }                  — plain array inside data
+//   { data: [ ... ] }                    — plain array inside data
 //   { data: { items: [...], total: N } }  — paginated with items key
-//   { data: { content: [...] } }        — paginated with content key
+//   { data: { content: [...] } }          — paginated with content key
+function extractCustomerArray(result: any): any[] {
+  const raw = result.data ?? result;
+  return (
+    Array.isArray(raw)          ? raw :
+    Array.isArray(raw?.items)   ? raw.items :
+    Array.isArray(raw?.content) ? raw.content :
+    Array.isArray(raw?.data)    ? raw.data :
+    []
+  );
+}
+
 export async function getCustomerByEmail(email: string): Promise<EmbedlyCustomer | null> {
-  try {
-    const result = await embedlyRequest<any>('/customers/get/all', 'GET');
-    const raw = result.data ?? result;
+  // Try endpoints in order — some may need organizationId query param
+  const endpoints = [
+    `/customers/get/all?organizationId=${EMBEDLY_ORG_ID}`,
+    `/customers/get/all`,
+  ];
 
-    // Normalise all known paginated shapes into a flat array
-    const customerArray: any[] =
-      Array.isArray(raw)          ? raw :
-      Array.isArray(raw?.items)   ? raw.items :
-      Array.isArray(raw?.content) ? raw.content :
-      Array.isArray(raw?.data)    ? raw.data :
-      [];
+  for (const endpoint of endpoints) {
+    try {
+      const result = await embedlyRequest<any>(endpoint, 'GET');
+      const customerArray = extractCustomerArray(result);
+      console.log(`Embedly getCustomerByEmail [${endpoint}]: searching ${customerArray.length} customers for ${email}`);
 
-    console.log(`Embedly getCustomerByEmail: searching ${customerArray.length} customers for ${email}`);
-
-    const found = customerArray.find((c) => {
-      const customerEmail = (c.emailAddress || c.email || '').toLowerCase();
-      return customerEmail === email.toLowerCase();
-    });
-
-    return found || null;
-  } catch (error) {
-    console.error('Error finding customer by email:', error);
-    return null;
+      if (customerArray.length > 0) {
+        const found = customerArray.find((c: any) => {
+          const customerEmail = (c.emailAddress || c.email || '').toLowerCase();
+          return customerEmail === email.toLowerCase();
+        });
+        if (found) return found;
+        // Found customers but email not in list — stop trying (list is valid but customer not there)
+        return null;
+      }
+      // Got 0 customers — try next endpoint variant
+    } catch (error) {
+      console.error(`Embedly getCustomerByEmail [${endpoint}] error:`, error instanceof Error ? error.message : error);
+      // Try next endpoint
+    }
   }
+
+  console.warn(`Embedly getCustomerByEmail: all endpoints failed or returned 0 customers for ${email}`);
+  return null;
 }
 
 // ============ Wallet Operations ============
@@ -243,30 +267,54 @@ interface WalletCreateResult {
 }
 
 // Get existing wallet for a customer (fallback when wallet limit is reached)
-// Embedly has no list-wallets-by-customer endpoint; the customer record contains walletId.
 async function getCustomerWallets(customerId: string): Promise<any[]> {
+  // Strategy 1: try dedicated wallet-by-customer endpoints
+  const walletEndpoints = [
+    `/wallet/customer/${customerId}`,
+    `/wallets/customer/${customerId}`,
+    `/wallets/get/all?customerId=${customerId}`,
+    `/wallets/get/all?customerId=${customerId}&organizationId=${EMBEDLY_ORG_ID}`,
+  ];
+
+  for (const endpoint of walletEndpoints) {
+    try {
+      const result = await embedlyRequest<any>(endpoint);
+      const raw = result.data ?? result;
+      const arr = Array.isArray(raw) ? raw : Array.isArray(raw?.items) ? raw.items : null;
+      if (arr && arr.length > 0) {
+        console.log(`Embedly: Found ${arr.length} wallet(s) via ${endpoint}`);
+        return arr;
+      }
+      // Single wallet object (not array)?
+      if (raw?.id || raw?.walletId) {
+        console.log(`Embedly: Found wallet object via ${endpoint}`);
+        return [raw];
+      }
+    } catch (err) {
+      console.error(`Embedly getCustomerWallets [${endpoint}]:`, err instanceof Error ? err.message : err);
+    }
+  }
+
+  // Strategy 2: get customer record — it may embed a walletId field
   try {
     const customer = await getCustomer(customerId) as any;
-    if (!customer) return [];
+    if (customer) {
+      const walletId =
+        customer.walletId   ||
+        customer.wallet_id  ||
+        customer.defaultWalletId ||
+        customer.wallets?.[0]?.id ||
+        customer.wallet?.id;
 
-    // Embedly may return the wallet ID under various field names
-    const walletId =
-      customer.walletId ||
-      customer.wallet_id ||
-      customer.defaultWalletId ||
-      customer.wallets?.[0]?.id ||
-      customer.wallet?.id;
-
-    if (walletId) {
-      console.log(`Embedly: Found wallet ${walletId} on customer record for ${customerId}`);
-      return [{ id: walletId, walletId }];
+      if (walletId) {
+        console.log(`Embedly: Found wallet ${walletId} on customer record for ${customerId}`);
+        return [{ id: walletId, walletId }];
+      }
+      console.warn(`Embedly: Customer ${customerId} has no walletId. Keys present: ${Object.keys(customer).join(', ')}`);
     }
+  } catch { /* ignore */ }
 
-    console.warn(`Embedly: Customer ${customerId} record has no walletId field. Keys: ${Object.keys(customer).join(', ')}`);
-    return [];
-  } catch {
-    return [];
-  }
+  return [];
 }
 
 // Create wallet for customer — returns wallet ID and virtual account details

@@ -63,7 +63,6 @@ export default function TestEmbedlySyncPage() {
   // Full sync for unsynced customers
   const syncCustomer = async (customerId: string) => {
     setActionLoading(customerId);
-    setActionMessage('');
     try {
       const response = await fetch('/api/admin/test-embedly-sync', {
         method: 'POST',
@@ -72,10 +71,9 @@ export default function TestEmbedlySyncPage() {
       });
       const data = await response.json();
       if (response.ok) {
-        setActionMessage(`✅ Synced successfully`);
-        setTimeout(runTest, 1500);
+        setActionMessage(`✅ Synced successfully — refresh the list to see updated status`);
       } else {
-        setActionMessage(`❌ Failed: ${data.error}`);
+        setActionMessage(`❌ Failed: ${data.error || JSON.stringify(data)}`);
       }
     } catch (error: any) {
       setActionMessage(`❌ Error: ${error.message}`);
@@ -87,7 +85,6 @@ export default function TestEmbedlySyncPage() {
   // Wallet-only for "Customer only" customers
   const addWallet = async (customerId: string) => {
     setActionLoading(customerId + '_wallet');
-    setActionMessage('');
     try {
       const response = await fetch('/api/admin/test-embedly-sync', {
         method: 'POST',
@@ -96,10 +93,9 @@ export default function TestEmbedlySyncPage() {
       });
       const data = await response.json();
       if (response.ok) {
-        setActionMessage(`✅ Wallet created${data.bank_account ? ` — Account: ${data.bank_account}` : ''}`);
-        setTimeout(runTest, 1500);
+        setActionMessage(`✅ Wallet created${data.bank_account ? ` — Account: ${data.bank_account}` : ''} — refresh the list to see updated status`);
       } else {
-        setActionMessage(`❌ Failed: ${data.error}`);
+        setActionMessage(`❌ Failed: ${data.error || JSON.stringify(data)}`);
       }
     } catch (error: any) {
       setActionMessage(`❌ Error: ${error.message}`);
@@ -122,9 +118,9 @@ export default function TestEmbedlySyncPage() {
       const data = await response.json();
       if (response.ok) {
         setBulkResult(data);
-        setTimeout(runTest, 2000);
+        // Don't auto-refresh — let admin read the result, then click "Run Diagnostic"
       } else {
-        setActionMessage(`❌ Bulk fix failed: ${data.error}`);
+        setActionMessage(`❌ Bulk fix failed: ${data.error || JSON.stringify(data)}`);
       }
     } catch (error: any) {
       setActionMessage(`❌ Error: ${error.message}`);
@@ -165,10 +161,11 @@ export default function TestEmbedlySyncPage() {
         </div>
       </div>
 
-      {/* Action feedback */}
+      {/* Action feedback — stays until dismissed or new action starts */}
       {actionMessage && (
-        <div className={`px-4 py-3 rounded-lg text-sm font-medium ${actionMessage.startsWith('✅') ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
-          {actionMessage}
+        <div className={`px-4 py-3 rounded-lg text-sm font-medium flex items-start justify-between gap-3 ${actionMessage.startsWith('✅') ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+          <span className="break-all">{actionMessage}</span>
+          <button onClick={() => setActionMessage('')} className="text-lg leading-none opacity-60 hover:opacity-100 shrink-0" title="Dismiss">×</button>
         </div>
       )}
 
