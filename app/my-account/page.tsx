@@ -164,13 +164,14 @@ export default function MyAccountPage() {
     return { valid: true };
   };
 
-  const validateDOB = (day: string, month: string): { valid: boolean; error?: string } => {
-    if (!day || !month) {
-      return { valid: false, error: 'Day and month are required' };
+  const validateDOB = (day: string, month: string, year: string): { valid: boolean; error?: string } => {
+    if (!day || !month || !year) {
+      return { valid: false, error: 'Day, month, and year are required' };
     }
 
     const dayNum = parseInt(day);
     const monthNum = parseInt(month);
+    const yearNum = parseInt(year);
 
     if (isNaN(dayNum) || dayNum < 1 || dayNum > 31) {
       return { valid: false, error: 'Please enter a valid day (1-31)' };
@@ -178,6 +179,11 @@ export default function MyAccountPage() {
 
     if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
       return { valid: false, error: 'Please enter a valid month (1-12)' };
+    }
+
+    const currentYear = new Date().getFullYear();
+    if (isNaN(yearNum) || yearNum < 1900 || yearNum > currentYear) {
+      return { valid: false, error: `Please enter a valid year (1900–${currentYear})` };
     }
 
     return { valid: true };
@@ -317,8 +323,8 @@ export default function MyAccountPage() {
       return;
     }
 
-    // Validate date of birth (day and month required)
-    const dobValidation = validateDOB(signupData.dobDay, signupData.dobMonth);
+    // Validate date of birth (day, month, and year all required)
+    const dobValidation = validateDOB(signupData.dobDay, signupData.dobMonth, signupData.dobYear);
     if (!dobValidation.valid) {
       setFieldErrors({
         dobDay: dobValidation.error!,
@@ -337,10 +343,8 @@ export default function MyAccountPage() {
     // Format phone number
     const formattedPhone = formatPhoneNumber(signupData.phone);
 
-    // Format date of birth for API (DD-MM format, year optional)
-    const dobFormatted = signupData.dobYear
-      ? `${signupData.dobDay.padStart(2, '0')}-${signupData.dobMonth.padStart(2, '0')}-${signupData.dobYear}`
-      : `${signupData.dobDay.padStart(2, '0')}-${signupData.dobMonth.padStart(2, '0')}`;
+    // Format date of birth for API (DD-MM-YYYY — year is now required)
+    const dobFormatted = `${signupData.dobDay.padStart(2, '0')}-${signupData.dobMonth.padStart(2, '0')}-${signupData.dobYear}`;
 
     setIsSubmitting(true);
 
@@ -643,9 +647,9 @@ export default function MyAccountPage() {
                       </select>
                     </div>
 
-                    {/* Year (Optional) */}
+                    {/* Year (Required) */}
                     <div>
-                      <label className="text-xs text-gray-600 mb-1 block">Year</label>
+                      <label className="text-xs text-gray-600 mb-1 block">Year *</label>
                       <input
                         type="number"
                         name="dobYear"
@@ -655,6 +659,7 @@ export default function MyAccountPage() {
                         min="1900"
                         max={new Date().getFullYear()}
                         className="wingclub-input"
+                        required
                       />
                     </div>
 
@@ -697,7 +702,7 @@ export default function MyAccountPage() {
                       </div>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">Day, month, and gender are required</p>
+                  <p className="text-xs text-gray-400 mt-1">Day, month, year, and gender are required</p>
                   {(fieldErrors.dobDay || fieldErrors.dobMonth || fieldErrors.gender) && (
                     <span className="wingclub-error">
                       {fieldErrors.dobDay || fieldErrors.dobMonth || fieldErrors.gender}
