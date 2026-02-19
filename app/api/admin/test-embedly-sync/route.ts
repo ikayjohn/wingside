@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { syncNewCustomer } from '@/lib/integrations'
+import { createWallet, isEmbedlyConfigured } from '@/lib/integrations/embedly'
 import { requireAdmin } from '@/lib/admin-auth'
 
 // GET /api/admin/test-embedly-sync - Test Embedly configuration and last syncs
@@ -93,7 +94,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/admin/test-embedly-sync - Manually trigger sync for a customer
+// POST /api/admin/test-embedly-sync
+// body: { customer_id }              → full sync (create customer + wallet)
+// body: { customer_id, action: 'add_wallet' } → wallet only (customer already exists)
+// body: { action: 'bulk_fix' }       → fix all unsynced + customer-only in last 50
 export async function POST(request: NextRequest) {
   // Verify admin authentication
   const auth = await requireAdmin()
@@ -106,19 +110,107 @@ export async function POST(request: NextRequest) {
     try {
       body = await request.json();
     } catch (error) {
-      console.error('JSON parse error:', error);
-      return NextResponse.json(
-        { error: 'Invalid JSON in request body' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
     }
-    const { customer_id } = body
 
+    const { customer_id, action } = body
+
+    // ── BULK FIX ────────────────────────────────────────────────────────────────
+    if (action === 'bulk_fix') {
+      if (!isEmbedlyConfigured()) {
+        return NextResponse.json({ error: 'Embedly is not configured' }, { status: 500 })
+      }
+
+      // Fetch all customers needing attention (last 50)
+      const { data: customers } = await admin
+        .from('profiles')
+        .select('id, email, full_name, phone, embedly_customer_id, embedly_wallet_id')
+        .eq('role', 'customer')
+        .order('created_at', { ascending: false })
+        .limit(50)
+
+      const needsCustomer = (customers || []).filter(c => !c.embedly_customer_id)
+      const needsWallet   = (customers || []).filter(c => c.embedly_customer_id && !c.embedly_wallet_id)
+
+      const fixedCustomer: string[] = []
+      const fixedWallet:   string[] = []
+      const failed:        Array<{ email: string; error: string }> = []
+
+      // Fix fully unsynced — sequential to avoid rate limiting
+      for (const c of needsCustomer) {
+        try {
+          const syncResult = await syncNewCustomer({
+            id: c.id,
+            email: c.email,
+            full_name: c.full_name || '',
+            phone: c.phone || undefined,
+          })
+
+          if (syncResult.embedly) {
+            const payload: any = {
+              embedly_customer_id: syncResult.embedly.customer_id,
+              updated_at: new Date().toISOString(),
+            }
+            if (syncResult.embedly.wallet_id) {
+              payload.embedly_wallet_id = syncResult.embedly.wallet_id
+              if (syncResult.embedly.bank_account) payload.bank_account = syncResult.embedly.bank_account
+              if (syncResult.embedly.bank_name)    payload.bank_name    = syncResult.embedly.bank_name
+              if (syncResult.embedly.bank_code)    payload.bank_code    = syncResult.embedly.bank_code
+              payload.is_wallet_active  = true
+              payload.last_wallet_sync  = new Date().toISOString()
+            }
+            await admin.from('profiles').update(payload).eq('id', c.id)
+            fixedCustomer.push(c.email)
+          } else {
+            failed.push({ email: c.email, error: 'Sync returned no Embedly data' })
+          }
+        } catch (err: any) {
+          failed.push({ email: c.email, error: err?.message || String(err) })
+        }
+      }
+
+      // Fix wallet-only — customer already exists in Embedly, just create wallet
+      for (const c of needsWallet) {
+        try {
+          const walletResult = await createWallet(c.embedly_customer_id, c.full_name || 'Wallet')
+
+          if (!walletResult.walletId) throw new Error('No wallet ID returned')
+
+          const payload: any = {
+            embedly_wallet_id: walletResult.walletId,
+            is_wallet_active:  true,
+            last_wallet_sync:  new Date().toISOString(),
+            updated_at:        new Date().toISOString(),
+          }
+          if (walletResult.bankAccount) payload.bank_account = walletResult.bankAccount
+          if (walletResult.bankName)    payload.bank_name    = walletResult.bankName
+          if (walletResult.bankCode)    payload.bank_code    = walletResult.bankCode
+
+          await admin.from('profiles').update(payload).eq('id', c.id)
+          fixedWallet.push(c.email)
+        } catch (err: any) {
+          failed.push({ email: c.email, error: err?.message || String(err) })
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        summary: {
+          fully_synced:  fixedCustomer.length,
+          wallet_added:  fixedWallet.length,
+          failed:        failed.length,
+        },
+        fixed_customer: fixedCustomer,
+        fixed_wallet:   fixedWallet,
+        failed,
+      })
+    }
+
+    // ── SINGLE CUSTOMER ACTIONS ─────────────────────────────────────────────────
     if (!customer_id) {
       return NextResponse.json({ error: 'customer_id is required' }, { status: 400 })
     }
 
-    // Get customer details
     const { data: customer } = await admin
       .from('profiles')
       .select('*')
@@ -129,41 +221,72 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
     }
 
-    // Trigger sync
+    // ── ADD WALLET ONLY (customer already in Embedly, just missing wallet) ──────
+    if (action === 'add_wallet') {
+      if (!customer.embedly_customer_id) {
+        return NextResponse.json(
+          { error: 'Customer has no Embedly customer ID — use full sync instead' },
+          { status: 400 }
+        )
+      }
+
+      const walletResult = await createWallet(
+        customer.embedly_customer_id,
+        customer.full_name || 'Wallet'
+      )
+
+      if (!walletResult.walletId) {
+        return NextResponse.json({ error: 'Wallet creation returned no ID' }, { status: 500 })
+      }
+
+      const payload: any = {
+        embedly_wallet_id: walletResult.walletId,
+        is_wallet_active:  true,
+        last_wallet_sync:  new Date().toISOString(),
+        updated_at:        new Date().toISOString(),
+      }
+      if (walletResult.bankAccount) payload.bank_account = walletResult.bankAccount
+      if (walletResult.bankName)    payload.bank_name    = walletResult.bankName
+      if (walletResult.bankCode)    payload.bank_code    = walletResult.bankCode
+
+      await admin.from('profiles').update(payload).eq('id', customer.id)
+
+      return NextResponse.json({
+        success: true,
+        wallet_id: walletResult.walletId,
+        bank_account: walletResult.bankAccount,
+        bank_name: walletResult.bankName,
+      })
+    }
+
+    // ── FULL SYNC (default) ─────────────────────────────────────────────────────
     const syncResult = await syncNewCustomer({
       id: customer.id,
       email: customer.email,
       full_name: customer.full_name || '',
-      phone: customer.phone
+      phone: customer.phone,
     })
 
-    // Update profile if sync succeeded
     if (syncResult.embedly) {
-      const updatePayload: any = {
+      const payload: any = {
         embedly_customer_id: syncResult.embedly.customer_id,
-        updated_at: new Date().toISOString()
-      };
-      if (syncResult.embedly.wallet_id) {
-        updatePayload.embedly_wallet_id = syncResult.embedly.wallet_id;
-        if (syncResult.embedly.bank_account) updatePayload.bank_account = syncResult.embedly.bank_account;
-        if (syncResult.embedly.bank_name) updatePayload.bank_name = syncResult.embedly.bank_name;
-        if (syncResult.embedly.bank_code) updatePayload.bank_code = syncResult.embedly.bank_code;
-        updatePayload.is_wallet_active = true;
-        updatePayload.last_wallet_sync = new Date().toISOString();
+        updated_at: new Date().toISOString(),
       }
-      await admin
-        .from('profiles')
-        .update(updatePayload)
-        .eq('id', customer.id)
+      if (syncResult.embedly.wallet_id) {
+        payload.embedly_wallet_id = syncResult.embedly.wallet_id
+        if (syncResult.embedly.bank_account) payload.bank_account = syncResult.embedly.bank_account
+        if (syncResult.embedly.bank_name)    payload.bank_name    = syncResult.embedly.bank_name
+        if (syncResult.embedly.bank_code)    payload.bank_code    = syncResult.embedly.bank_code
+        payload.is_wallet_active = true
+        payload.last_wallet_sync = new Date().toISOString()
+      }
+      await admin.from('profiles').update(payload).eq('id', customer.id)
     }
 
-    return NextResponse.json({
-      success: true,
-      customer,
-      sync_result: syncResult
-    })
+    return NextResponse.json({ success: true, customer, sync_result: syncResult })
+
   } catch (error) {
-    console.error('Manual sync error:', error)
+    console.error('Embedly sync error:', error)
     return NextResponse.json(
       { error: 'Failed to sync customer' },
       { status: 500 }
