@@ -337,6 +337,13 @@ export async function POST(request: NextRequest) {
       console.log(`Transaction ID: ${transactionId}`)
 
       if (!orderReference) {
+        // POS terminal pay_by_transfer events don't have an order reference —
+        // these are physical terminal transactions, not online orders. Acknowledge silently.
+        if (data.transaction?.originatingFrom === 'pos' || data.terminal || !data.order) {
+          console.log(`ℹ️ Nomba POS terminal transaction received (${data.transaction?.type}) — no online order, acknowledging`)
+          return NextResponse.json({ received: true })
+        }
+
         console.error('Order reference not found in webhook payload!')
         console.error('Data structure:', JSON.stringify(data, null, 2))
         return NextResponse.json(

@@ -223,13 +223,14 @@ interface WalletCreateResult {
   bankCode?: string;
 }
 
-// Get existing wallets for a customer (fallback when wallet limit is reached)
+// Get existing wallet for a customer (fallback when wallet limit is reached)
+// Embedly has no list-wallets-by-customer endpoint; GET /customer/{id} returns walletId.
 async function getCustomerWallets(customerId: string): Promise<any[]> {
   try {
-    const result = await embedlyRequest<any>(`/wallets/customer/${customerId}`);
-    const wallets = result.data;
-    if (Array.isArray(wallets)) return wallets;
-    if (wallets && (wallets.id || wallets.walletId)) return [wallets];
+    const customer = await getCustomer(customerId);
+    if (customer?.walletId) {
+      return [{ id: customer.walletId, walletId: customer.walletId }];
+    }
     return [];
   } catch {
     return [];
@@ -434,8 +435,22 @@ export async function setupCustomerWithWallet(customer: {
     }
   } catch (customerError: unknown) {
     const msg = customerError instanceof Error ? customerError.message : String(customerError);
-    console.error(`❌ Embedly customer creation failed for ${customer.email}:`, msg);
-    return null;
+
+    // Customer was created via another path (e.g. previous failed bulk sync) — look them up
+    if (msg.includes('already exist')) {
+      console.log(`Embedly: Customer already exists for ${customer.email} — looking up by email`);
+      const existing = await getCustomerByEmail(customer.email);
+      if (existing?.id) {
+        customerId = existing.id;
+        console.log(`Embedly: Found existing customer ${customerId} for ${customer.email}`);
+      } else {
+        console.error(`❌ Embedly customer already exists but lookup failed for ${customer.email}`);
+        return null;
+      }
+    } else {
+      console.error(`❌ Embedly customer creation failed for ${customer.email}:`, msg);
+      return null;
+    }
   }
 
   // Create wallet (separate try so we keep the customerId for error tracking)
