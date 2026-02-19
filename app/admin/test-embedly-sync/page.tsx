@@ -343,7 +343,7 @@ export default function TestEmbedlySyncPage() {
                               >
                                 Set Wallet ID ✏️
                               </button>
-                              <span className="text-xs text-gray-400 font-mono truncate max-w-[120px]" title={customer.embedly_customer_id}>
+                              <span className="text-xs text-gray-400 font-mono truncate max-w-[120px]" title={customer.embedly_customer_id ?? undefined}>
                                 {customer.embedly_customer_id?.slice(0, 8)}…
                               </span>
                             </>
