@@ -62,9 +62,14 @@ async function embedlyRequest<T = unknown>(
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    console.error(`Embedly API error (${endpoint}):`, error);
-    throw new Error(`Embedly API request failed: ${response.status}`);
+    const errorText = await response.text();
+    console.error(`Embedly API error (${endpoint}):`, errorText);
+    let parsedMessage = '';
+    try {
+      const parsed = JSON.parse(errorText);
+      parsedMessage = parsed.message || '';
+    } catch { /* not JSON */ }
+    throw new Error(`Embedly API request failed: ${response.status}${parsedMessage ? ` - ${parsedMessage}` : ''}`);
   }
 
   return (await response.json()) as EmbedlyApiResponse<T>;
@@ -162,6 +167,7 @@ export async function createCustomer(customer: Omit<EmbedlyCustomer, 'id'>): Pro
     mobileNumber: customer.phone || '',
     countryId,
     customerTypeId,
+    dateOfBirth: '1990-01-01', // Required by Embedly; not collected at signup — placeholder used
     city: 'Port Harcourt', // Default city - can be overridden
     address: 'Wingside Customer', // Default address - can be overridden
   });
@@ -216,26 +222,63 @@ interface WalletCreateResult {
   bankCode?: string;
 }
 
+// Get existing wallets for a customer (fallback when wallet limit is reached)
+async function getCustomerWallets(customerId: string): Promise<any[]> {
+  try {
+    const result = await embedlyRequest<any>(`/wallets/customer/${customerId}`);
+    const wallets = result.data;
+    if (Array.isArray(wallets)) return wallets;
+    if (wallets && (wallets.id || wallets.walletId)) return [wallets];
+    return [];
+  } catch {
+    return [];
+  }
+}
+
 // Create wallet for customer — returns wallet ID and virtual account details
 export async function createWallet(customerId: string, customerName?: string): Promise<WalletCreateResult> {
   const currencyId = await getNgnCurrencyId();
 
-  const result = await embedlyRequest<any>('/wallets/add', 'POST', {
-    customerId,
-    currencyId,
-    name: customerName || 'Wallet',
-  });
+  try {
+    const result = await embedlyRequest<any>('/wallets/add', 'POST', {
+      customerId,
+      currencyId,
+      name: customerName || 'Wallet',
+    });
 
-  // Embedly returns { walletId, virtualAccount: { accountNumber, bankName, bankCode } }
-  const walletId: string = result.data?.id || (result as any).walletId || (result as any).id;
-  const va = (result as any).virtualAccount;
+    // Embedly returns { walletId, virtualAccount: { accountNumber, bankName, bankCode } }
+    const walletId: string = result.data?.id || (result as any).walletId || (result as any).id;
+    const va = (result as any).virtualAccount;
 
-  return {
-    walletId,
-    bankAccount: va?.accountNumber,
-    bankName: va?.bankName,
-    bankCode: va?.bankCode,
-  };
+    return {
+      walletId,
+      bankAccount: va?.accountNumber,
+      bankName: va?.bankName,
+      bankCode: va?.bankCode,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+
+    // Customer already has maximum wallets — retrieve the existing one
+    if (message.includes('Allowed number of wallets reached')) {
+      console.log(`Embedly: Wallet limit reached for customer ${customerId} — fetching existing wallet`);
+      const existing = await getCustomerWallets(customerId);
+      if (existing.length > 0) {
+        const w = existing[0];
+        const walletId = w.id || w.walletId;
+        console.log(`Embedly: Using existing wallet ${walletId} for customer ${customerId}`);
+        return {
+          walletId,
+          bankAccount: w.virtualAccount?.accountNumber || w.bankAccount,
+          bankName: w.virtualAccount?.bankName || w.bankName,
+          bankCode: w.virtualAccount?.bankCode || w.bankCode,
+        };
+      }
+      console.warn(`Embedly: Could not retrieve existing wallets for customer ${customerId}`);
+    }
+
+    throw error;
+  }
 }
 
 // Get wallet by ID
@@ -303,11 +346,27 @@ export function isEmbedlyConfigured(): boolean {
 // Strip +234 country code prefix so Embedly gets local format (e.g. "08012345678")
 function normalisePhoneForEmbedly(phone?: string): string {
   if (!phone) return '';
-  // Remove +234 prefix, replace with leading 0
   if (phone.startsWith('+234')) return '0' + phone.slice(4);
-  // Remove 234 prefix without +
   if (phone.startsWith('234') && phone.length > 10) return '0' + phone.slice(3);
   return phone;
+}
+
+// Embedly rejects names containing numbers or most special characters.
+// Keep only letters, spaces, hyphens, apostrophes; trim and cap at 50 chars.
+function sanitiseNameForEmbedly(raw: string): string {
+  return raw
+    .replace(/[^a-zA-Z\s\-']/g, '') // strip digits and symbols
+    .replace(/\s+/g, ' ')            // collapse multiple spaces
+    .trim()
+    .slice(0, 50);
+}
+
+function parseNameForEmbedly(fullName: string): { firstName: string; lastName: string } {
+  const parts = fullName.trim().split(/\s+/);
+  const firstName = sanitiseNameForEmbedly(parts[0] || '') || 'Customer';
+  const rawLast   = parts.slice(1).join(' ');
+  const lastName  = sanitiseNameForEmbedly(rawLast) || firstName; // fallback to firstName
+  return { firstName, lastName };
 }
 
 // Create customer and wallet in one call
@@ -322,9 +381,7 @@ export async function setupCustomerWithWallet(customer: {
     return null;
   }
 
-  const nameParts = customer.full_name.split(' ');
-  const firstName = nameParts[0] || '';
-  const lastName = nameParts.slice(1).join(' ') || firstName;
+  const { firstName, lastName } = parseNameForEmbedly(customer.full_name);
   // Embedly expects local phone format e.g. "08012345678", not "+2348012345678"
   const localPhone = normalisePhoneForEmbedly(customer.phone);
 
