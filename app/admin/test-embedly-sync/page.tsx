@@ -136,7 +136,7 @@ export default function TestEmbedlySyncPage() {
 
           {/* Recent Signups */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Customer Signups (Last 30)</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Customer Signups (Last 50)</h2>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">

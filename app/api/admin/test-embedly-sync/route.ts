@@ -29,13 +29,13 @@ export async function GET(request: NextRequest) {
 
     results.env_configured = !!(process.env.EMBEDLY_API_KEY && process.env.EMBEDLY_ORG_ID)
 
-    // Get recent customer signups (last 30)
+    // Get recent customer signups (last 50)
     const { data: recentCustomers, error: customersError } = await admin
       .from('profiles')
       .select('id, email, full_name, created_at, embedly_customer_id, embedly_wallet_id')
       .eq('role', 'customer')
       .order('created_at', { ascending: false })
-      .limit(30)
+      .limit(50)
 
     if (!customersError && recentCustomers) {
       results.recent_signups = recentCustomers.map(c => ({
