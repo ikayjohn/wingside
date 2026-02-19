@@ -296,3 +296,67 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+// ── PATCH /api/admin/test-embedly-sync ──────────────────────────────────────
+// Manually link Embedly IDs when the API GET endpoints are unavailable.
+// body: { customer_id, embedly_customer_id? }  → save customer ID, then try wallet creation
+// body: { customer_id, embedly_wallet_id? }    → save wallet ID directly
+export async function PATCH(request: NextRequest) {
+  const auth = await requireAdmin()
+  if (auth.success !== true) return auth.error
+  const { admin } = auth
+
+  try {
+    let body: any;
+    try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
+
+    const { customer_id, embedly_customer_id, embedly_wallet_id } = body
+    if (!customer_id) return NextResponse.json({ error: 'customer_id is required' }, { status: 400 })
+
+    const { data: customer } = await admin.from('profiles').select('*').eq('id', customer_id).single()
+    if (!customer) return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
+
+    const update: any = { updated_at: new Date().toISOString() }
+    const responseExtra: any = {}
+
+    // ── Save customer ID, then try to auto-create wallet ──────────────────
+    if (embedly_customer_id) {
+      update.embedly_customer_id = embedly_customer_id
+
+      // Attempt wallet creation now that we have the customer ID
+      try {
+        const walletResult = await createWallet(embedly_customer_id, customer.full_name || 'Wallet')
+        if (walletResult.walletId) {
+          update.embedly_wallet_id    = walletResult.walletId
+          update.is_wallet_active     = true
+          update.last_wallet_sync     = new Date().toISOString()
+          if (walletResult.bankAccount) update.bank_account = walletResult.bankAccount
+          if (walletResult.bankName)    update.bank_name    = walletResult.bankName
+          if (walletResult.bankCode)    update.bank_code    = walletResult.bankCode
+          responseExtra.wallet_created = true
+          responseExtra.wallet_id      = walletResult.walletId
+          responseExtra.bank_account   = walletResult.bankAccount
+        }
+      } catch (walletErr: any) {
+        // Wallet creation failed — save the customer ID anyway
+        responseExtra.wallet_error = walletErr?.message || String(walletErr)
+        console.warn(`Manual link: customer ID saved for ${customer.email} but wallet creation failed:`, responseExtra.wallet_error)
+      }
+    }
+
+    // ── Save wallet ID directly (admin looked it up in Embedly portal) ────
+    if (embedly_wallet_id) {
+      update.embedly_wallet_id  = embedly_wallet_id
+      update.is_wallet_active   = true
+      update.last_wallet_sync   = new Date().toISOString()
+    }
+
+    await admin.from('profiles').update(update).eq('id', customer_id)
+
+    return NextResponse.json({ success: true, updated: update, ...responseExtra })
+
+  } catch (error) {
+    console.error('Manual Embedly link error:', error)
+    return NextResponse.json({ error: 'Failed to update customer' }, { status: 500 })
+  }
+}

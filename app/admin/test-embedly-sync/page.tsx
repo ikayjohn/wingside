@@ -7,8 +7,8 @@ interface SignupRow {
   email: string;
   full_name?: string;
   created_at: string;
-  embedly_customer_id?: string;
-  embedly_wallet_id?: string;
+  embedly_customer_id?: string | null;
+  embedly_wallet_id?: string | null;
   has_embedly_customer: boolean;
   has_embedly_wallet: boolean;
   sync_status: string;
@@ -94,6 +94,31 @@ export default function TestEmbedlySyncPage() {
       const data = await response.json();
       if (response.ok) {
         setActionMessage(`✅ Wallet created${data.bank_account ? ` — Account: ${data.bank_account}` : ''} — refresh the list to see updated status`);
+      } else {
+        setActionMessage(`❌ Failed: ${data.error || JSON.stringify(data)}`);
+      }
+    } catch (error: any) {
+      setActionMessage(`❌ Error: ${error.message}`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Manual link — paste Embedly IDs from the Embedly portal
+  const manualLink = async (customerId: string, field: 'embedly_customer_id' | 'embedly_wallet_id', label: string) => {
+    const value = window.prompt(`Paste the ${label} from the Embedly dashboard:`);
+    if (!value?.trim()) return;
+    setActionLoading(customerId + '_manual');
+    try {
+      const response = await fetch('/api/admin/test-embedly-sync', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customer_id: customerId, [field]: value.trim() }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        const extra = data.wallet_created ? ` + wallet ${data.wallet_id} created` : data.wallet_error ? ` (wallet failed: ${data.wallet_error})` : '';
+        setActionMessage(`✅ Saved${extra} — refresh the list to confirm`);
       } else {
         setActionMessage(`❌ Failed: ${data.error || JSON.stringify(data)}`);
       }
@@ -281,24 +306,49 @@ export default function TestEmbedlySyncPage() {
                         </span>
                       </td>
                       <td className="px-4 py-2 text-sm">
-                        {customer.sync_status === '❌ Not synced' && (
-                          <button
-                            onClick={() => syncCustomer(customer.id)}
-                            disabled={actionLoading === customer.id}
-                            className="text-blue-600 hover:text-blue-800 disabled:opacity-50 text-xs font-medium"
-                          >
-                            {actionLoading === customer.id ? 'Syncing…' : 'Full Sync'}
-                          </button>
-                        )}
-                        {customer.sync_status === '⚠️  Customer only' && (
-                          <button
-                            onClick={() => addWallet(customer.id)}
-                            disabled={actionLoading === customer.id + '_wallet'}
-                            className="text-orange-600 hover:text-orange-800 disabled:opacity-50 text-xs font-medium"
-                          >
-                            {actionLoading === customer.id + '_wallet' ? 'Creating…' : 'Add Wallet'}
-                          </button>
-                        )}
+                        <div className="flex flex-col gap-1">
+                          {customer.sync_status === '❌ Not synced' && (
+                            <>
+                              <button
+                                onClick={() => syncCustomer(customer.id)}
+                                disabled={!!actionLoading}
+                                className="text-blue-600 hover:text-blue-800 disabled:opacity-50 text-xs font-medium text-left"
+                              >
+                                {actionLoading === customer.id ? 'Syncing…' : 'Auto Sync'}
+                              </button>
+                              <button
+                                onClick={() => manualLink(customer.id, 'embedly_customer_id', 'Embedly Customer ID')}
+                                disabled={!!actionLoading}
+                                className="text-purple-600 hover:text-purple-800 disabled:opacity-50 text-xs font-medium text-left"
+                                title="Paste customer ID from Embedly dashboard"
+                              >
+                                Set Customer ID ✏️
+                              </button>
+                            </>
+                          )}
+                          {customer.sync_status === '⚠️  Customer only' && (
+                            <>
+                              <button
+                                onClick={() => addWallet(customer.id)}
+                                disabled={!!actionLoading}
+                                className="text-orange-600 hover:text-orange-800 disabled:opacity-50 text-xs font-medium text-left"
+                              >
+                                {actionLoading === customer.id + '_wallet' ? 'Creating…' : 'Add Wallet'}
+                              </button>
+                              <button
+                                onClick={() => manualLink(customer.id, 'embedly_wallet_id', 'Embedly Wallet ID')}
+                                disabled={!!actionLoading}
+                                className="text-purple-600 hover:text-purple-800 disabled:opacity-50 text-xs font-medium text-left"
+                                title="Paste wallet ID from Embedly dashboard (for 'wallet limit reached' errors)"
+                              >
+                                Set Wallet ID ✏️
+                              </button>
+                              <span className="text-xs text-gray-400 font-mono truncate max-w-[120px]" title={customer.embedly_customer_id}>
+                                {customer.embedly_customer_id?.slice(0, 8)}…
+                              </span>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
