@@ -29,13 +29,13 @@ export async function GET(request: NextRequest) {
 
     results.env_configured = !!(process.env.EMBEDLY_API_KEY && process.env.EMBEDLY_ORG_ID)
 
-    // Get recent customer signups (last 10)
+    // Get recent customer signups (last 30)
     const { data: recentCustomers, error: customersError } = await admin
       .from('profiles')
       .select('id, email, full_name, created_at, embedly_customer_id, embedly_wallet_id')
       .eq('role', 'customer')
       .order('created_at', { ascending: false })
-      .limit(10)
+      .limit(30)
 
     if (!customersError && recentCustomers) {
       results.recent_signups = recentCustomers.map(c => ({
@@ -65,13 +65,21 @@ export async function GET(request: NextRequest) {
 
         // Update the profile with the sync result
         if (testResult.embedly) {
+          const updatePayload: any = {
+            embedly_customer_id: testResult.embedly.customer_id,
+            updated_at: new Date().toISOString()
+          };
+          if (testResult.embedly.wallet_id) {
+            updatePayload.embedly_wallet_id = testResult.embedly.wallet_id;
+            if (testResult.embedly.bank_account) updatePayload.bank_account = testResult.embedly.bank_account;
+            if (testResult.embedly.bank_name) updatePayload.bank_name = testResult.embedly.bank_name;
+            if (testResult.embedly.bank_code) updatePayload.bank_code = testResult.embedly.bank_code;
+            updatePayload.is_wallet_active = true;
+            updatePayload.last_wallet_sync = new Date().toISOString();
+          }
           await admin
             .from('profiles')
-            .update({
-              embedly_customer_id: testResult.embedly.customer_id,
-              embedly_wallet_id: testResult.embedly.wallet_id || null,
-              updated_at: new Date().toISOString()
-            })
+            .update(updatePayload)
             .eq('id', unsyncedCustomer.id)
         }
       }
@@ -131,13 +139,21 @@ export async function POST(request: NextRequest) {
 
     // Update profile if sync succeeded
     if (syncResult.embedly) {
+      const updatePayload: any = {
+        embedly_customer_id: syncResult.embedly.customer_id,
+        updated_at: new Date().toISOString()
+      };
+      if (syncResult.embedly.wallet_id) {
+        updatePayload.embedly_wallet_id = syncResult.embedly.wallet_id;
+        if (syncResult.embedly.bank_account) updatePayload.bank_account = syncResult.embedly.bank_account;
+        if (syncResult.embedly.bank_name) updatePayload.bank_name = syncResult.embedly.bank_name;
+        if (syncResult.embedly.bank_code) updatePayload.bank_code = syncResult.embedly.bank_code;
+        updatePayload.is_wallet_active = true;
+        updatePayload.last_wallet_sync = new Date().toISOString();
+      }
       await admin
         .from('profiles')
-        .update({
-          embedly_customer_id: syncResult.embedly.customer_id,
-          embedly_wallet_id: syncResult.embedly.wallet_id || null,
-          updated_at: new Date().toISOString()
-        })
+        .update(updatePayload)
         .eq('id', customer.id)
     }
 

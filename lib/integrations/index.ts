@@ -7,7 +7,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 export interface SyncResult {
   zoho?: { contact_id: string; action: 'created' | 'updated' };
-  embedly?: { customer_id: string; wallet_id: string; isNewCustomer: boolean };
+  embedly?: { customer_id: string; wallet_id: string; isNewCustomer: boolean; bank_account?: string; bank_name?: string; bank_code?: string };
   error?: string;
 }
 
@@ -55,6 +55,9 @@ export async function syncNewCustomer(customer: {
         customer_id: embedlyResult.customerId,
         wallet_id: embedlyResult.walletId,
         isNewCustomer: embedlyResult.isNewCustomer,
+        bank_account: embedlyResult.bankAccount,
+        bank_name: embedlyResult.bankName,
+        bank_code: embedlyResult.bankCode,
       };
     }
   }
@@ -68,9 +71,14 @@ export async function syncNewCustomer(customer: {
       updated_at: new Date().toISOString(),
     };
 
-    // Only update wallet_id if we have one (non-empty string)
     if (result.embedly?.wallet_id) {
       updateData.embedly_wallet_id = result.embedly.wallet_id;
+      // Save virtual account details so the user can see their TAP card number immediately
+      if (result.embedly.bank_account) updateData.bank_account = result.embedly.bank_account;
+      if (result.embedly.bank_name) updateData.bank_name = result.embedly.bank_name;
+      if (result.embedly.bank_code) updateData.bank_code = result.embedly.bank_code;
+      updateData.is_wallet_active = true;
+      updateData.last_wallet_sync = new Date().toISOString();
     }
 
     await admin

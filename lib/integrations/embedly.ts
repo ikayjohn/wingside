@@ -209,17 +209,33 @@ export interface EmbedlyWallet {
   status: string;
 }
 
-// Create wallet for customer
-export async function createWallet(customerId: string, customerName?: string, currency: string = 'NGN'): Promise<string> {
-  // Get NGN currency GUID
+interface WalletCreateResult {
+  walletId: string;
+  bankAccount?: string;
+  bankName?: string;
+  bankCode?: string;
+}
+
+// Create wallet for customer — returns wallet ID and virtual account details
+export async function createWallet(customerId: string, customerName?: string): Promise<WalletCreateResult> {
   const currencyId = await getNgnCurrencyId();
 
   const result = await embedlyRequest<any>('/wallets/add', 'POST', {
     customerId,
     currencyId,
-    name: customerName || 'Wallet', // Use customer name if provided
+    name: customerName || 'Wallet',
   });
-  return result.data?.id || (result as any).walletId || (result as any).id;
+
+  // Embedly returns { walletId, virtualAccount: { accountNumber, bankName, bankCode } }
+  const walletId: string = result.data?.id || (result as any).walletId || (result as any).id;
+  const va = (result as any).virtualAccount;
+
+  return {
+    walletId,
+    bankAccount: va?.accountNumber,
+    bankName: va?.bankName,
+    bankCode: va?.bankCode,
+  };
 }
 
 // Get wallet by ID
@@ -284,103 +300,106 @@ export function isEmbedlyConfigured(): boolean {
   return !!(EMBEDLY_API_KEY && EMBEDLY_ORG_ID);
 }
 
+// Strip +234 country code prefix so Embedly gets local format (e.g. "08012345678")
+function normalisePhoneForEmbedly(phone?: string): string {
+  if (!phone) return '';
+  // Remove +234 prefix, replace with leading 0
+  if (phone.startsWith('+234')) return '0' + phone.slice(4);
+  // Remove 234 prefix without +
+  if (phone.startsWith('234') && phone.length > 10) return '0' + phone.slice(3);
+  return phone;
+}
+
 // Create customer and wallet in one call
 // Also handles linking to existing Embedly customers created offline/at store
 export async function setupCustomerWithWallet(customer: {
   email: string;
   full_name: string;
   phone?: string;
-}): Promise<{ customerId: string; walletId: string; isNewCustomer: boolean } | null> {
+}): Promise<{ customerId: string; walletId: string; isNewCustomer: boolean; bankAccount?: string; bankName?: string; bankCode?: string } | null> {
   if (!isEmbedlyConfigured()) {
     console.warn('Embedly not configured, skipping setup');
     return null;
   }
 
+  const nameParts = customer.full_name.split(' ');
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.slice(1).join(' ') || firstName;
+  // Embedly expects local phone format e.g. "08012345678", not "+2348012345678"
+  const localPhone = normalisePhoneForEmbedly(customer.phone);
+
+  let customerId: string | undefined;
+  let isNewCustomer = false;
+
   try {
-    const nameParts = customer.full_name.split(' ');
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.slice(1).join(' ') || firstName;
-
-    let customerId: string;
-    let isNewCustomer = false;
-
     // Check if customer already exists in Embedly (e.g., created at store)
     const existingCustomer = await getCustomerByEmail(customer.email);
 
     if (existingCustomer?.id) {
-      // Customer exists - link to existing account
       customerId = existingCustomer.id;
       console.log(`Embedly: Found existing customer ${customerId} for ${customer.email} - linking account`);
     } else {
-      // Create new customer
       customerId = await createCustomer({
         email: customer.email,
         firstName,
         lastName,
-        phone: customer.phone,
+        phone: localPhone,
       });
       isNewCustomer = true;
       console.log(`Embedly: Created new customer ${customerId} for ${customer.email}`);
     }
 
-    // Try to get existing wallet for the customer
-    let walletId: string;
+    if (!customerId) {
+      throw new Error(`Embedly customer creation returned no ID for ${customer.email}`);
+    }
+  } catch (customerError: unknown) {
+    const msg = customerError instanceof Error ? customerError.message : String(customerError);
+    console.error(`❌ Embedly customer creation failed for ${customer.email}:`, msg);
+    return null;
+  }
 
-    // Try to create wallet (will use existing if customer has one, or create new)
+  // Create wallet (separate try so we keep the customerId for error tracking)
+  try {
+    const walletResult = await createWallet(customerId, customer.full_name);
+    if (!walletResult.walletId) {
+      throw new Error(`Embedly wallet creation returned no ID for customer ${customerId}`);
+    }
+    console.log(`Embedly: Wallet ${walletResult.walletId} ready for customer ${customerId}`);
+    return {
+      customerId,
+      walletId: walletResult.walletId,
+      isNewCustomer,
+      bankAccount: walletResult.bankAccount,
+      bankName: walletResult.bankName,
+      bankCode: walletResult.bankCode,
+    };
+  } catch (walletError: unknown) {
+    const errorMessage = walletError instanceof Error ? walletError.message : String(walletError);
+    console.error(`❌ CRITICAL: Embedly wallet creation failed for customer ${customerId} (${customer.email}):`, errorMessage);
+
+    // Track the failure for manual recovery using the admin client (no cookie context needed)
     try {
-      walletId = await createWallet(customerId, customer.full_name);
-      console.log(`Embedly: Wallet ${walletId} ready for customer ${customerId}`);
-    } catch (walletError: unknown) {
-      // CRITICAL: Wallet creation failed - this prevents loyalty points from being credited
-      const errorMessage = walletError instanceof Error ? walletError.message : String(walletError);
-      console.error(`❌ CRITICAL: Embedly wallet creation failed for customer ${customerId}:`, errorMessage);
+      const { createAdminClient } = await import('@/lib/supabase/admin');
+      const admin = createAdminClient();
 
-      // Track the failure for manual recovery
-      try {
-        const { createClient } = await import('@/lib/supabase/server');
-        const supabase = await createClient();
-
-        await supabase.from('failed_integrations').insert({
-          integration_type: 'embedly_wallet_creation',
-          user_email: customer.email,
-          error_message: errorMessage,
-          error_details: {
-            customer_id: customerId,
-            embedly_customer_id: customerId,
-            full_name: customer.full_name,
-            email: customer.email,
-            error: errorMessage
-          },
-          status: 'pending_retry',
-          created_at: new Date().toISOString()
-        });
-
-        // Create admin notification
-        await supabase.from('notifications').insert({
-          user_id: null,
-          type: 'integration_failure',
-          title: 'Embedly Wallet Creation Failed',
-          message: `Failed to create wallet for ${customer.email}. Loyalty points cannot be credited.`,
-          metadata: {
-            customer_email: customer.email,
-            embedly_customer_id: customerId,
-            error: errorMessage,
-            urgency: 'high',
-            action_required: 'Manually create wallet and credit pending points'
-          },
-          is_read: false
-        });
-      } catch (trackingError) {
-        console.error('Failed to track wallet creation error:', trackingError);
-      }
-
-      // Don't silently continue - throw error to prevent incomplete integration
-      throw new Error(`Embedly wallet creation failed: ${errorMessage}`);
+      await admin.from('failed_integrations').insert({
+        integration_type: 'embedly_wallet_creation',
+        user_email: customer.email,
+        error_message: errorMessage,
+        error_details: {
+          embedly_customer_id: customerId,
+          full_name: customer.full_name,
+          email: customer.email,
+          error: errorMessage,
+        },
+        status: 'pending_retry',
+        created_at: new Date().toISOString(),
+      });
+    } catch (trackingError) {
+      console.error('Failed to track wallet creation failure:', trackingError);
     }
 
-    return { customerId, walletId, isNewCustomer };
-  } catch (error) {
-    console.error('Embedly setup error:', error);
+    // Return null — signup should still succeed even when wallet creation fails
     return null;
   }
 }
