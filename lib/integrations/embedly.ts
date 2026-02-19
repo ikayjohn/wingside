@@ -168,7 +168,7 @@ export async function createCustomer(customer: Omit<EmbedlyCustomer, 'id'>): Pro
     mobileNumber: customer.phone || '',
     countryId,
     customerTypeId,
-    dateOfBirth: customer.dateOfBirth || '01-01-1990', // Embedly requires DD-MM-YYYY format
+    dob: formatDobForEmbedly(customer.dateOfBirth) || '1990-01-01T00:00:00.000Z', // Embedly requires YYYY-MM-DDTHH:MM:SS.000Z
     city: 'Port Harcourt', // Default city - can be overridden
     address: 'Wingside Customer', // Default address - can be overridden
   });
@@ -342,6 +342,25 @@ export async function debitWallet(
 
 export function isEmbedlyConfigured(): boolean {
   return !!(EMBEDLY_API_KEY && EMBEDLY_ORG_ID);
+}
+
+// Convert app's DOB format (DD-MM-YYYY or DD-MM) to Embedly's YYYY-MM-DDTHH:MM:SS.000Z
+// Returns undefined if conversion fails — caller uses the placeholder
+function formatDobForEmbedly(dob?: string): string | undefined {
+  if (!dob) return undefined;
+  const parts = dob.split('-');
+  if (parts.length === 3) {
+    let year: string, month: string, day: string;
+    if (parts[0].length === 4) {
+      // Already YYYY-MM-DD
+      [year, month, day] = parts;
+    } else {
+      // DD-MM-YYYY (app storage format)
+      [day, month, year] = parts;
+    }
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00:00.000Z`;
+  }
+  return undefined; // DD-MM only (no year) — not enough for Embedly
 }
 
 // Strip +234 country code prefix so Embedly gets local format (e.g. "08012345678")
