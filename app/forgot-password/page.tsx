@@ -23,11 +23,9 @@ export default function ForgotPasswordPage() {
       // Fix 5: Include trailing slash to match next.config.ts trailingSlash: true,
       // otherwise Next.js 301-redirects the link and the code param may fail Supabase URL validation
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        // Route through server-side callback so the code is exchanged there and
-        // the session is in cookies before the reset-password page loads.
-        // Must include trailing slash to match Next.js trailingSlash: true canonical URLs
-        // and match the Supabase redirect URL whitelist entry exactly.
-        redirectTo: `${window.location.origin}/auth/callback/`,
+        // Send user directly to reset-password page. Supabase appends ?code=xxx
+        // and createBrowserClient auto-exchanges it, firing PASSWORD_RECOVERY event.
+        redirectTo: `${window.location.origin}/reset-password/`,
       });
 
       if (error) {

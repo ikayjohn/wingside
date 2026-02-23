@@ -16,18 +16,35 @@ function ResetPasswordForm() {
   const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
-    // The auth/callback route handler exchanges the PKCE code server-side and
-    // sets the session in cookies before this page loads. We just verify it exists.
     const supabase = createClient();
 
+    // createBrowserClient automatically detects ?code= in the URL and exchanges it.
+    // When the exchange completes, Supabase fires PASSWORD_RECOVERY event.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setSessionReady(true);
+        setCheckingSession(false);
+      }
+    });
+
+    // Also handle session already established (e.g. user navigated back)
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setSessionReady(true);
-      } else {
-        setError('This reset link has expired or has already been used. Please request a new one.');
+        setCheckingSession(false);
+        return;
       }
-      setCheckingSession(false);
+
+      // No session yet — only show error if there's no code to exchange
+      const hasCode = new URLSearchParams(window.location.search).has('code');
+      if (!hasCode) {
+        setError('This reset link has expired or has already been used. Please request a new one.');
+        setCheckingSession(false);
+      }
+      // If code exists, wait for PASSWORD_RECOVERY event above
     });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
