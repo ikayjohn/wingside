@@ -7,17 +7,25 @@ import { createClient } from '@/lib/supabase/server'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/'
+  const type = searchParams.get('type') // Supabase passes type=recovery for password resets
 
   if (code) {
-    const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`)
+    try {
+      const supabase = await createClient()
+      const { error } = await supabase.auth.exchangeCodeForSession(code)
+      if (!error) {
+        // Route to the right page based on the auth type
+        if (type === 'recovery') {
+          return NextResponse.redirect(`${origin}/reset-password/`)
+        }
+        return NextResponse.redirect(`${origin}/my-account`)
+      }
+      console.error('[auth/callback] exchangeCodeForSession error:', error.message)
+    } catch (err) {
+      console.error('[auth/callback] unexpected error:', err)
     }
-    console.error('[auth/callback] exchangeCodeForSession error:', error.message)
   }
 
-  // Invalid or already-used code — send to forgot-password with error flag
+  // Invalid, expired, or already-used code
   return NextResponse.redirect(`${origin}/forgot-password?error=invalid_link`)
 }
