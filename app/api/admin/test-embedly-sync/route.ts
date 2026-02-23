@@ -13,6 +13,36 @@ export async function GET(request: NextRequest) {
 
   const { admin } = auth
 
+  // Debug mode: dump raw wallet API responses for a given Embedly customer ID
+  const debugCustomerId = request.nextUrl.searchParams.get('debug_wallet_customer')?.trim()
+  if (debugCustomerId) {
+    const baseUrl = process.env.EMBEDLY_BASE_URL || 'https://waas-prod.embedly.ng/api/v1'
+    const orgId   = process.env.EMBEDLY_ORG_ID
+    const apiKey  = process.env.EMBEDLY_API_KEY
+    if (!apiKey || !orgId) return NextResponse.json({ error: 'Embedly not configured' }, { status: 400 })
+
+    const hit = async (url: string) => {
+      try {
+        const r = await fetch(url, { headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' } })
+        const body = await r.json().catch(() => null)
+        return { status: r.status, keys: body ? Object.keys(body) : [], raw: JSON.stringify(body).slice(0, 2000) }
+      } catch (e: any) { return { status: 'fetch_error', error: e.message } }
+    }
+
+    return NextResponse.json({
+      debug_wallet_customer: debugCustomerId,
+      endpoints: {
+        by_customer_1:   await hit(`${baseUrl}/wallet/customer/${debugCustomerId}`),
+        by_customer_2:   await hit(`${baseUrl}/wallets/customer/${debugCustomerId}`),
+        all_by_customer: await hit(`${baseUrl}/wallets/get/all?customerId=${debugCustomerId}&organizationId=${orgId}`),
+        all_wallets:     await hit(`${baseUrl}/wallets/get/all?organizationId=${orgId}`),
+        all_wallets_2:   await hit(`${baseUrl}/wallet/get/all?organizationId=${orgId}`),
+        customer_detail: await hit(`${baseUrl}/customers/get/${debugCustomerId}`),
+        customer_2:      await hit(`${baseUrl}/customers/${debugCustomerId}`),
+      }
+    })
+  }
+
   // Debug mode: return raw Embedly API response for a given email
   const debugEmail = request.nextUrl.searchParams.get('debug_email')?.trim()
   if (debugEmail) {
