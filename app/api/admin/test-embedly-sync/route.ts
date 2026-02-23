@@ -3,20 +3,86 @@ import { syncNewCustomer } from '@/lib/integrations'
 import { createWallet, isEmbedlyConfigured } from '@/lib/integrations/embedly'
 import { requireAdmin } from '@/lib/admin-auth'
 
-// GET /api/admin/test-embedly-sync - Test Embedly configuration and last syncs
+// GET /api/admin/test-embedly-sync
+// Returns env config + ALL customers needing attention + recent synced customers (for context)
+// Optional query param: ?email=xxx to search by email
+// Optional query param: ?debug_email=xxx to return raw Embedly API response for diagnosis
 export async function GET(request: NextRequest) {
-  // Verify admin authentication first
   const auth = await requireAdmin()
   if (auth.success !== true) return auth.error
 
   const { admin } = auth
 
+  // Debug mode: return raw Embedly API response for a given email
+  const debugEmail = request.nextUrl.searchParams.get('debug_email')?.trim()
+  if (debugEmail) {
+    try {
+      const baseUrl = process.env.EMBEDLY_BASE_URL || 'https://waas-prod.embedly.ng/api/v1'
+      const orgId   = process.env.EMBEDLY_ORG_ID
+      const apiKey  = process.env.EMBEDLY_API_KEY
+
+      if (!apiKey || !orgId) {
+        return NextResponse.json({ error: 'Embedly not configured' }, { status: 400 })
+      }
+
+      // Fetch first page of customer list to see raw response shape
+      const endpoint = `${baseUrl}/customers/get/all?organizationId=${orgId}&page=1&pageSize=20`
+      const res = await fetch(endpoint, {
+        headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
+      })
+      const raw = await res.json()
+
+      // Also try filter by email
+      const filterEndpoint = `${baseUrl}/customers/get/all?organizationId=${orgId}&email=${encodeURIComponent(debugEmail)}&page=1&pageSize=10`
+      const filterRes = await fetch(filterEndpoint, {
+        headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
+      })
+      const filterRaw = await filterRes.json()
+
+      // Try emailAddress param too
+      const filterEndpoint2 = `${baseUrl}/customers/get/all?organizationId=${orgId}&emailAddress=${encodeURIComponent(debugEmail)}&page=1&pageSize=10`
+      const filterRes2 = await fetch(filterEndpoint2, {
+        headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
+      })
+      const filterRaw2 = await filterRes2.json()
+
+      return NextResponse.json({
+        debug_email: debugEmail,
+        list_response: {
+          status: res.status,
+          top_level_keys: Object.keys(raw),
+          data_type: Array.isArray(raw.data) ? 'array' : typeof raw.data,
+          data_keys: raw.data && !Array.isArray(raw.data) ? Object.keys(raw.data) : null,
+          sample_item: Array.isArray(raw.data) ? raw.data[0] : (raw.data?.items?.[0] || raw.data?.content?.[0] || raw.data?.records?.[0] || null),
+          total_in_page: Array.isArray(raw.data) ? raw.data.length : (raw.data?.items?.length ?? raw.data?.content?.length ?? raw.data?.records?.length ?? 'unknown'),
+          raw_truncated: JSON.stringify(raw).slice(0, 2000),
+        },
+        filter_by_email: {
+          status: filterRes.status,
+          top_level_keys: Object.keys(filterRaw),
+          data_type: Array.isArray(filterRaw.data) ? 'array' : typeof filterRaw.data,
+          sample_item: Array.isArray(filterRaw.data) ? filterRaw.data[0] : null,
+          raw_truncated: JSON.stringify(filterRaw).slice(0, 1000),
+        },
+        filter_by_emailAddress: {
+          status: filterRes2.status,
+          top_level_keys: Object.keys(filterRaw2),
+          data_type: Array.isArray(filterRaw2.data) ? 'array' : typeof filterRaw2.data,
+          sample_item: Array.isArray(filterRaw2.data) ? filterRaw2.data[0] : null,
+          raw_truncated: JSON.stringify(filterRaw2).slice(0, 1000),
+        },
+      })
+    } catch (err: any) {
+      return NextResponse.json({ error: err.message }, { status: 500 })
+    }
+  }
+
+  const emailFilter = request.nextUrl.searchParams.get('email')?.toLowerCase().trim() || ''
+
   const results = {
     env_configured: false,
     env_vars: {} as Record<string, string>,
     recent_signups: [] as any[],
-    sync_results: [] as any[],
-    test_sync: null as any,
     error: null as string | null
   }
 
@@ -30,61 +96,59 @@ export async function GET(request: NextRequest) {
 
     results.env_configured = !!(process.env.EMBEDLY_API_KEY && process.env.EMBEDLY_ORG_ID)
 
-    // Get recent customer signups (last 50)
-    const { data: recentCustomers, error: customersError } = await admin
-      .from('profiles')
-      .select('id, email, full_name, phone, date_of_birth, created_at, embedly_customer_id, embedly_wallet_id')
-      .eq('role', 'customer')
-      .order('created_at', { ascending: false })
-      .limit(50)
+    if (emailFilter) {
+      // Email search: query all customers matching the filter regardless of sync status
+      const { data: found, error } = await admin
+        .from('profiles')
+        .select('id, email, full_name, phone, date_of_birth, created_at, embedly_customer_id, embedly_wallet_id')
+        .eq('role', 'customer')
+        .ilike('email', `%${emailFilter}%`)
+        .order('created_at', { ascending: false })
+        .limit(50)
 
-    if (!customersError && recentCustomers) {
-      results.recent_signups = recentCustomers.map(c => ({
+      if (error) throw error
+
+      results.recent_signups = (found || []).map(c => ({
         ...c,
         has_embedly_customer: !!c.embedly_customer_id,
         has_embedly_wallet: !!c.embedly_wallet_id,
         sync_status: !c.embedly_customer_id ? '❌ Not synced' : c.embedly_wallet_id ? '✅ Fully synced' : '⚠️  Customer only'
       }))
+    } else {
+      // Default view: ALL customers needing attention (no limit), plus last 20 synced for context
 
-      // Test sync for the most recent customer that hasn't been synced
-      const unsyncedCustomer = recentCustomers.find(c => !c.embedly_customer_id)
+      // 1. All unsynced (no embedly_customer_id)
+      const { data: unsynced } = await admin
+        .from('profiles')
+        .select('id, email, full_name, phone, date_of_birth, created_at, embedly_customer_id, embedly_wallet_id')
+        .eq('role', 'customer')
+        .is('embedly_customer_id', null)
+        .order('created_at', { ascending: false })
 
-      if (unsyncedCustomer) {
-        const testResult = await syncNewCustomer({
-          id: unsyncedCustomer.id,
-          email: unsyncedCustomer.email,
-          full_name: unsyncedCustomer.full_name || '',
-          phone: unsyncedCustomer.phone || undefined,
-          dateOfBirth: unsyncedCustomer.date_of_birth || undefined,
-        })
+      // 2. All customer-only (has customer_id but no wallet)
+      const { data: walletOnly } = await admin
+        .from('profiles')
+        .select('id, email, full_name, phone, date_of_birth, created_at, embedly_customer_id, embedly_wallet_id')
+        .eq('role', 'customer')
+        .not('embedly_customer_id', 'is', null)
+        .is('embedly_wallet_id', null)
+        .order('created_at', { ascending: false })
 
-        results.test_sync = {
-          customer_email: unsyncedCustomer.email,
-          customer_id: unsyncedCustomer.id,
-          result: testResult,
-          success: !!(testResult.embedly || testResult.zoho)
-        }
+      // 3. Last 20 fully synced (just for context — admins can confirm recent signups are OK)
+      const { data: recentSynced } = await admin
+        .from('profiles')
+        .select('id, email, full_name, phone, date_of_birth, created_at, embedly_customer_id, embedly_wallet_id')
+        .eq('role', 'customer')
+        .not('embedly_customer_id', 'is', null)
+        .not('embedly_wallet_id', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(20)
 
-        // Update the profile with the sync result
-        if (testResult.embedly) {
-          const updatePayload: any = {
-            embedly_customer_id: testResult.embedly.customer_id,
-            updated_at: new Date().toISOString()
-          };
-          if (testResult.embedly.wallet_id) {
-            updatePayload.embedly_wallet_id = testResult.embedly.wallet_id;
-            if (testResult.embedly.bank_account) updatePayload.bank_account = testResult.embedly.bank_account;
-            if (testResult.embedly.bank_name) updatePayload.bank_name = testResult.embedly.bank_name;
-            if (testResult.embedly.bank_code) updatePayload.bank_code = testResult.embedly.bank_code;
-            updatePayload.is_wallet_active = true;
-            updatePayload.last_wallet_sync = new Date().toISOString();
-          }
-          await admin
-            .from('profiles')
-            .update(updatePayload)
-            .eq('id', unsyncedCustomer.id)
-        }
-      }
+      results.recent_signups = [
+        ...(unsynced || []).map(c => ({ ...c, has_embedly_customer: false, has_embedly_wallet: false, sync_status: '❌ Not synced' })),
+        ...(walletOnly || []).map(c => ({ ...c, has_embedly_customer: true, has_embedly_wallet: false, sync_status: '⚠️  Customer only' })),
+        ...(recentSynced || []).map(c => ({ ...c, has_embedly_customer: true, has_embedly_wallet: true, sync_status: '✅ Fully synced' })),
+      ]
     }
 
     return NextResponse.json(results)
@@ -96,11 +160,10 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/admin/test-embedly-sync
-// body: { customer_id }              → full sync (create customer + wallet)
-// body: { customer_id, action: 'add_wallet' } → wallet only (customer already exists)
-// body: { action: 'bulk_fix' }       → fix all unsynced + customer-only in last 50
+// body: { customer_id }                          → full sync (create customer + wallet)
+// body: { customer_id, action: 'add_wallet' }    → wallet only (customer already exists in Embedly)
+// body: { action: 'bulk_fix' }                   → fix ALL unsynced + customer-only (no limit)
 export async function POST(request: NextRequest) {
-  // Verify admin authentication
   const auth = await requireAdmin()
   if (auth.success !== true) return auth.error
 
@@ -116,22 +179,67 @@ export async function POST(request: NextRequest) {
 
     const { customer_id, action } = body
 
+    // ── DIAGNOSE: attempt sync for a list of emails and report real error per customer ──
+    if (action === 'diagnose') {
+      const emails: string[] = body.emails || []
+      if (!emails.length) {
+        return NextResponse.json({ error: 'emails array is required' }, { status: 400 })
+      }
+
+      const { data: customers } = await admin
+        .from('profiles')
+        .select('id, email, full_name, phone, date_of_birth')
+        .in('email', emails)
+
+      const report: Array<{ email: string; has_phone: boolean; error: string }> = []
+
+      for (const c of customers || []) {
+        try {
+          const syncResult = await syncNewCustomer({
+            id: c.id,
+            email: c.email,
+            full_name: c.full_name || '',
+            phone: c.phone || undefined,
+            dateOfBirth: c.date_of_birth || undefined,
+          })
+          if (syncResult.embedly) {
+            report.push({ email: c.email, has_phone: !!c.phone, error: '✅ Now synced successfully' })
+          } else {
+            report.push({ email: c.email, has_phone: !!c.phone, error: syncResult.error || 'no embedly data returned' })
+          }
+        } catch (err: any) {
+          report.push({ email: c.email, has_phone: !!c.phone, error: err?.message || String(err) })
+        }
+      }
+
+      const missing = emails.filter(e => !(customers || []).find(c => c.email === e))
+      return NextResponse.json({ report, missing_from_db: missing })
+    }
+
     // ── BULK FIX ────────────────────────────────────────────────────────────────
     if (action === 'bulk_fix') {
       if (!isEmbedlyConfigured()) {
         return NextResponse.json({ error: 'Embedly is not configured' }, { status: 500 })
       }
 
-      // Fetch all customers needing attention (last 50)
-      const { data: customers } = await admin
+      // Fetch ALL customers needing attention — no limit
+      const { data: unsyncedCustomers } = await admin
         .from('profiles')
         .select('id, email, full_name, phone, date_of_birth, embedly_customer_id, embedly_wallet_id')
         .eq('role', 'customer')
+        .is('embedly_customer_id', null)
         .order('created_at', { ascending: false })
-        .limit(50)
 
-      const needsCustomer = (customers || []).filter(c => !c.embedly_customer_id)
-      const needsWallet   = (customers || []).filter(c => c.embedly_customer_id && !c.embedly_wallet_id)
+      const { data: walletOnlyCustomers } = await admin
+        .from('profiles')
+        .select('id, email, full_name, phone, date_of_birth, embedly_customer_id, embedly_wallet_id')
+        .eq('role', 'customer')
+        .not('embedly_customer_id', 'is', null)
+        .is('embedly_wallet_id', null)
+        .order('created_at', { ascending: false })
+
+      const needsCustomer = unsyncedCustomers || []
+      const needsWallet   = walletOnlyCustomers || []
 
       const fixedCustomer: string[] = []
       const fixedWallet:   string[] = []
@@ -164,7 +272,7 @@ export async function POST(request: NextRequest) {
             await admin.from('profiles').update(payload).eq('id', c.id)
             fixedCustomer.push(c.email)
           } else {
-            failed.push({ email: c.email, error: 'Sync returned no Embedly data' })
+            failed.push({ email: c.email, error: syncResult.error || 'Sync returned no Embedly data' })
           }
         } catch (err: any) {
           failed.push({ email: c.email, error: err?.message || String(err) })

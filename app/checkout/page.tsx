@@ -38,6 +38,10 @@ export default function CheckoutPage() {
     createAccount: false,
     password: '',
     confirmPassword: '',
+    dobDay: '',
+    dobMonth: '',
+    dobYear: '',
+    gender: '',
     agreeTerms: false,
     referralCode: '',
   });
@@ -676,6 +680,14 @@ export default function CheckoutPage() {
         setSubmitError('Passwords do not match');
         return;
       }
+      if (!formData.dobDay || !formData.dobMonth || !formData.dobYear) {
+        setSubmitError('Please enter your date of birth to create an account');
+        return;
+      }
+      if (!formData.gender) {
+        setSubmitError('Please select your gender to create an account');
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -683,6 +695,23 @@ export default function CheckoutPage() {
     // Create account if checkbox is checked
     let userId: string | null = null;
     if (formData.createAccount) {
+      // Check phone uniqueness before creating account
+      try {
+        const { data: existingPhone } = await supabase
+          .from('profiles')
+          .select('id, email')
+          .eq('phone', `+234${formattedPhone}`)
+          .maybeSingle();
+
+        if (existingPhone) {
+          setSubmitError('This phone number is already linked to an existing account. Please log in instead.');
+          setSubmitting(false);
+          return;
+        }
+      } catch {
+        // If the check fails, continue — don't block the signup
+      }
+
       try {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: formData.email,
@@ -708,6 +737,9 @@ export default function CheckoutPage() {
         if (signUpData.user) {
           userId = signUpData.user.id;
 
+          // Format DOB for storage: DD-MM-YYYY
+          const dobFormatted = `${formData.dobDay.padStart(2, '0')}-${formData.dobMonth.padStart(2, '0')}-${formData.dobYear}`;
+
           // Create profile
           const { error: profileError } = await supabase.from('profiles').insert({
             id: signUpData.user.id,
@@ -715,6 +747,8 @@ export default function CheckoutPage() {
             full_name: `${formData.firstName} ${formData.lastName}`,
             phone: `+234${formattedPhone}`,
             role: 'customer',
+            date_of_birth: dobFormatted,
+            gender: formData.gender,
           });
 
           if (profileError) {
@@ -731,6 +765,7 @@ export default function CheckoutPage() {
               email: formData.email,
               full_name: `${formData.firstName} ${formData.lastName}`,
               phone: `+234${formattedPhone}`,
+              dateOfBirth: dobFormatted,
               address: formData.streetAddress,
               city: formData.city,
               state: 'Rivers',
@@ -1386,6 +1421,88 @@ export default function CheckoutPage() {
                                 placeholder="Re-enter password"
                                 className="checkout-input"
                               />
+                            </div>
+                          </div>
+                          <div className="mt-4 pt-4 border-t border-[#F7C400]/30">
+                            <p className="text-sm text-[#552627] font-medium mb-3">Date of birth &amp; gender</p>
+                            <div className="grid grid-cols-4 gap-2">
+                              {/* Day */}
+                              <div>
+                                <label className="checkout-label text-xs">Day *</label>
+                                <select
+                                  name="dobDay"
+                                  value={formData.dobDay}
+                                  onChange={handleInputChange}
+                                  className="checkout-input text-sm"
+                                >
+                                  <option value="">Day</option>
+                                  {Array.from({ length: 31 }, (_, i) => (
+                                    <option key={i + 1} value={i + 1}>{i + 1}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              {/* Month */}
+                              <div>
+                                <label className="checkout-label text-xs">Month *</label>
+                                <select
+                                  name="dobMonth"
+                                  value={formData.dobMonth}
+                                  onChange={handleInputChange}
+                                  className="checkout-input text-sm"
+                                >
+                                  <option value="">Month</option>
+                                  <option value="1">Jan</option>
+                                  <option value="2">Feb</option>
+                                  <option value="3">Mar</option>
+                                  <option value="4">Apr</option>
+                                  <option value="5">May</option>
+                                  <option value="6">Jun</option>
+                                  <option value="7">Jul</option>
+                                  <option value="8">Aug</option>
+                                  <option value="9">Sep</option>
+                                  <option value="10">Oct</option>
+                                  <option value="11">Nov</option>
+                                  <option value="12">Dec</option>
+                                </select>
+                              </div>
+                              {/* Year */}
+                              <div>
+                                <label className="checkout-label text-xs">Year *</label>
+                                <input
+                                  type="number"
+                                  name="dobYear"
+                                  value={formData.dobYear}
+                                  onChange={handleInputChange}
+                                  placeholder="YYYY"
+                                  min="1900"
+                                  max={new Date().getFullYear()}
+                                  className="checkout-input text-sm"
+                                />
+                              </div>
+                              {/* Gender */}
+                              <div>
+                                <label className="checkout-label text-xs">Gender *</label>
+                                <div className="flex items-center bg-gray-100 rounded-lg p-1 h-[38px]">
+                                  <button
+                                    type="button"
+                                    className={`flex-1 py-1 px-2 rounded-md text-xs font-medium transition-all ${
+                                      formData.gender === 'Male' ? 'bg-[#F7C400] text-black' : 'text-gray-600'
+                                    }`}
+                                    onClick={() => setFormData(prev => ({ ...prev, gender: 'Male' }))}
+                                  >
+                                    M
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={`flex-1 py-1 px-2 rounded-md text-xs font-medium transition-all ${
+                                      formData.gender === 'Female' ? 'bg-[#F7C400] text-black' : 'text-gray-600'
+                                    }`}
+                                    onClick={() => setFormData(prev => ({ ...prev, gender: 'Female' }))}
+                                  >
+                                    F
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         <p className="text-xs text-gray-500 mt-2">

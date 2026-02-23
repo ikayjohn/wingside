@@ -45,22 +45,32 @@ export async function syncNewCustomer(customer: {
 
   // Setup Embedly customer and wallet
   if (isEmbedlyConfigured()) {
-    const embedlyResult = await setupCustomerWithWallet({
-      email: customer.email,
-      full_name: customer.full_name,
-      phone: customer.phone,
-      dateOfBirth: customer.dateOfBirth,
-    });
+    try {
+      const embedlyResult = await setupCustomerWithWallet({
+        email: customer.email,
+        full_name: customer.full_name,
+        phone: customer.phone,
+        dateOfBirth: customer.dateOfBirth,
+      });
 
-    if (embedlyResult) {
-      result.embedly = {
-        customer_id: embedlyResult.customerId,
-        wallet_id: embedlyResult.walletId,
-        isNewCustomer: embedlyResult.isNewCustomer,
-        bank_account: embedlyResult.bankAccount,
-        bank_name: embedlyResult.bankName,
-        bank_code: embedlyResult.bankCode,
-      };
+      if (embedlyResult) {
+        result.embedly = {
+          customer_id: embedlyResult.customerId,
+          wallet_id: embedlyResult.walletId,
+          isNewCustomer: embedlyResult.isNewCustomer,
+          bank_account: embedlyResult.bankAccount,
+          bank_name: embedlyResult.bankName,
+          bank_code: embedlyResult.bankCode,
+        };
+      } else {
+        // setupCustomerWithWallet returns null on failure (error already logged inside)
+        result.error = result.error
+          ? `${result.error}; Embedly: setup returned null — check server logs`
+          : 'Embedly: setup returned null — check server logs for the specific API error';
+      }
+    } catch (embedlyError: unknown) {
+      const msg = embedlyError instanceof Error ? embedlyError.message : String(embedlyError);
+      result.error = result.error ? `${result.error}; Embedly: ${msg}` : `Embedly: ${msg}`;
     }
   }
 

@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!email || !password || !firstName || !lastName || !phone || !gender) {
+    if (!email || !password || !firstName || !lastName || !phone || !gender || !dateOfBirth) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -125,6 +125,20 @@ export async function POST(request: NextRequest) {
       }
 
       referredByUserId = referrerData.id;
+    }
+
+    // Check if phone number is already registered
+    const { data: existingPhoneProfile } = await supabase
+      .from('profiles')
+      .select('id, email')
+      .eq('phone', `+234${phone}`)
+      .maybeSingle();
+
+    if (existingPhoneProfile) {
+      return NextResponse.json(
+        { error: 'This phone number is already linked to an existing account. Please log in instead.' },
+        { status: 409 }
+      );
     }
 
     // Create auth user
