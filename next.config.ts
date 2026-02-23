@@ -19,6 +19,15 @@ const nextConfig: NextConfig = {
         destination: '/my-account/',
         permanent: true,
       },
+      // When Supabase whitelist rejects the redirectTo URL, it falls back to
+      // the Site URL (homepage) but still appends ?code=xxx. Catch that here
+      // and send the user to the correct reset-password page with the code.
+      {
+        source: '/',
+        has: [{ type: 'query', key: 'code', value: '(?<code>.+)' }],
+        destination: '/reset-password/?code=:code',
+        permanent: false,
+      },
     ]
   },
 
