@@ -27,6 +27,8 @@ interface Tag {
 interface Props {
   onFilterChange: (filters: FilterState) => void;
   availableTags: Tag[];
+  // Fix 10: When this value increments, the segments selection is cleared
+  resetSegmentsTrigger?: number;
 }
 
 const initialFilters: FilterState = {
@@ -42,7 +44,7 @@ const initialFilters: FilterState = {
   sortOrder: 'desc'
 };
 
-export default function CustomerSearchFilters({ onFilterChange, availableTags }: Props) {
+export default function CustomerSearchFilters({ onFilterChange, availableTags, resetSegmentsTrigger }: Props) {
   const [filters, setFilters] = useState<FilterState>(initialFilters);
 
   useEffect(() => {
@@ -51,6 +53,13 @@ export default function CustomerSearchFilters({ onFilterChange, availableTags }:
     }, 300);
     return () => clearTimeout(timer);
   }, [filters, onFilterChange]);
+
+  // Fix 10: Clear sidebar segments when a segment card is clicked on the parent page
+  useEffect(() => {
+    if (resetSegmentsTrigger) {
+      setFilters(prev => ({ ...prev, segments: [] }));
+    }
+  }, [resetSegmentsTrigger]);
 
   const updateFilter = (key: keyof FilterState, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));

@@ -1,7 +1,9 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
+import { hasPermission } from '@/lib/permissions'
 import { NextRequest, NextResponse } from 'next/server'
 
-const supabase = createClient(
+const supabase = createServiceClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
@@ -12,6 +14,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Auth + permission check
+    const authClient = await createClient()
+    const { data: { user } } = await authClient.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const { data: authProfile } = await authClient.from('profiles').select('role').eq('id', user.id).single()
+    if (!hasPermission(authProfile?.role, 'customers', 'view')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     const { id: customerId } = await params
 
     // Fetch customer info
@@ -28,14 +39,8 @@ export async function GET(
       )
     }
 
-    // Fetch all timeline events in parallel
-    const [
-      ordersResult,
-      referralsResult,
-      socialVerificationsResult,
-      leadResult,
-      leadActivitiesResult
-    ] = await Promise.all([
+    // Fix 8: Fetch lead first, then use its ID for lead_activities (avoids nested await inside Promise.all)
+    const [ordersResult, referralsResult, socialVerificationsResult, leadResult] = await Promise.all([
       // Orders
       supabase
         .from('orders')
@@ -63,14 +68,16 @@ export async function GET(
         .select('id, name, source, status, score, converted_at')
         .eq('converted_to_customer_id', customerId)
         .single(),
-
-      // Lead activities (if was a lead)
-      supabase
-        .from('lead_activities')
-        .select('id, activity_type, subject, description, created_at')
-        .eq('lead_id', (await supabase.from('leads').select('id').eq('converted_to_customer_id', customerId).single()).data?.id)
-        .order('created_at', { ascending: false })
     ])
+
+    // Fix 8: Fetch lead activities only after we have the lead ID
+    const leadActivitiesResult = leadResult.data?.id
+      ? await supabase
+          .from('lead_activities')
+          .select('id, activity_type, subject, description, created_at')
+          .eq('lead_id', leadResult.data.id)
+          .order('created_at', { ascending: false })
+      : { data: null }
 
     // Build timeline array
     const timeline: any[] = []
@@ -185,13 +192,11 @@ export async function GET(
         link: `/admin/leads`
       })
 
-      // Add lead activities (before conversion)
       if (leadActivitiesResult.data) {
         leadActivitiesResult.data.forEach((activity: any) => {
           const activityDate = new Date(activity.created_at)
           const conversionDate = new Date(lead.converted_at)
 
-          // Only show activities before conversion
           if (activityDate < conversionDate) {
             timeline.push({
               type: 'lead_activity',
@@ -214,14 +219,14 @@ export async function GET(
     // Sort by date descending
     timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
-    // Calculate summary statistics
+    // Fix 4: Calculate lifetime_value from orders (profiles.total_spent is not a real column)
     const stats = {
       total_orders: ordersResult.data?.length || 0,
       total_referrals: referralsResult.data?.length || 0,
       total_verifications: socialVerificationsResult.data?.length || 0,
       first_order: ordersResult.data?.[ordersResult.data.length - 1],
       last_order: ordersResult.data?.[0],
-      lifetime_value: customer.total_spent || 0,
+      lifetime_value: ordersResult.data?.reduce((sum, o) => sum + (Number(o.total) || 0), 0) || 0,
       days_since_last_order: ordersResult.data?.[0]
         ? Math.floor((Date.now() - new Date(ordersResult.data[0].created_at).getTime()) / (1000 * 60 * 60 * 24))
         : null

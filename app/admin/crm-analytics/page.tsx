@@ -60,6 +60,9 @@ export default function CRManalyticsPage() {
     start: '',
     end: ''
   });
+  const [totalCount, setTotalCount] = useState(0);
+  // Fix 10: Incrementing this tells CustomerSearchFilters to clear its segment selection
+  const [segmentResetTrigger, setSegmentResetTrigger] = useState(0);
 
   useEffect(() => {
     fetchAvailableTags();
@@ -124,14 +127,8 @@ export default function CRManalyticsPage() {
         setCustomersWithoutOrders(data.customers_without_orders || 0);
         setCustomersWithOrders(data.customers_with_orders || 0);
         setTotalProfiles(data.total_profiles || 0);
-
-        // Debug logging
-        console.log('📊 CRM Analytics Data:', {
-          customersWithOrders: data.customers_with_orders,
-          customersWithoutOrders: data.customers_without_orders,
-          totalProfiles: data.total_profiles,
-          debug: data._debug
-        });
+        // Fix 7: Track total matching count for truncation notice
+        setTotalCount(data.total || 0);
       }
     } catch (error) {
       console.error('Error fetching customer data:', error);
@@ -389,8 +386,15 @@ export default function CRManalyticsPage() {
         {/* Filters Sidebar */}
         <div className="col-span-1">
           <CustomerSearchFilters
-            onFilterChange={setFilters}
+            onFilterChange={(newFilters) => {
+              // Fix 10: Clear segment card selection when sidebar segments change
+              if (newFilters.segments.length > 0 && selectedSegment) {
+                setSelectedSegment('');
+              }
+              setFilters(newFilters);
+            }}
             availableTags={availableTags}
+            resetSegmentsTrigger={segmentResetTrigger}
           />
         </div>
 
@@ -469,7 +473,12 @@ export default function CRManalyticsPage() {
           {segmentData.map((segment) => (
             <button
               key={segment.id}
-              onClick={() => setSelectedSegment(selectedSegment === segment.id ? '' : segment.id)}
+              onClick={() => {
+                const next = selectedSegment === segment.id ? '' : segment.id;
+                setSelectedSegment(next);
+                // Fix 10: Clear sidebar segment filter when a card is clicked
+                if (next) setSegmentResetTrigger(prev => prev + 1);
+              }}
               className={`p-4 rounded-lg border-2 transition-all ${
                 selectedSegment === segment.id
                   ? 'border-blue-600 bg-blue-50'
@@ -491,6 +500,12 @@ export default function CRManalyticsPage() {
           <h2 className="text-xl font-bold text-gray-900">
             {selectedSegment ? `Segment: ${selectedSegment.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}` : 'All Customers'}
           </h2>
+          {/* Fix 7: Show truncation notice when more results exist than are displayed */}
+          {!loading && totalCount > customers.length && (
+            <p className="text-sm text-amber-600 mt-1">
+              Showing {customers.length} of {totalCount} customers — use filters or export to see all
+            </p>
+          )}
         </div>
 
         {loading ? (
@@ -550,7 +565,8 @@ export default function CRManalyticsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getChurnRiskColor(customer.churn_risk)}`}>
-                        {customer.churn_risk}%
+                        {/* Fix 5: Round churn risk to avoid float display (e.g. 15.000000002%) */}
+                        {Math.round(customer.churn_risk)}%
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">

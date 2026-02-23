@@ -2,6 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+// Fix 6: In-memory rate limiter — max 5 attempts per user per 15 minutes
+// Keyed by user ID so it's not affected by NAT / shared IPs
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+
+function isRateLimited(userId: string): boolean {
+  const now = Date.now()
+  const windowMs = 15 * 60 * 1000 // 15 minutes
+  const max = 5
+
+  const record = rateLimitMap.get(userId)
+  if (!record || record.resetAt < now) {
+    rateLimitMap.set(userId, { count: 1, resetAt: now + windowMs })
+    return false
+  }
+  if (record.count >= max) return true
+  record.count++
+  return false
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -16,6 +35,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Unauthorized - Please log in' },
         { status: 401 }
+      )
+    }
+
+    // Fix 6: Apply rate limit before any further processing
+    if (isRateLimited(user.id)) {
+      return NextResponse.json(
+        { error: 'Too many password change attempts. Please try again in 15 minutes.' },
+        { status: 429 }
       )
     }
 
@@ -39,10 +66,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate new password length
-    if (newPassword.length < 6) {
+    // Fix 8: Raise minimum from 6 to 8 characters
+    if (newPassword.length < 8) {
       return NextResponse.json(
-        { error: 'New password must be at least 6 characters long' },
+        { error: 'New password must be at least 8 characters long' },
         { status: 400 }
       )
     }
