@@ -154,13 +154,13 @@ export interface EmbedlyCustomer {
   walletId?: string; // If customer has a default wallet
 }
 
-// Create customer
-export async function createCustomer(customer: Omit<EmbedlyCustomer, 'id'>): Promise<string> {
+// Create customer — returns customer ID and any wallet ID embedded in the creation response
+export async function createCustomer(customer: Omit<EmbedlyCustomer, 'id'>): Promise<{ customerId: string; walletId?: string }> {
   // Get required GUIDs
   const countryId = await getNigeriaCountryId();
   const customerTypeId = await getIndividualCustomerTypeId();
 
-  const result = await embedlyRequest<{ id?: string }>('/customers/add', 'POST', {
+  const result = await embedlyRequest<any>('/customers/add', 'POST', {
     organizationId: EMBEDLY_ORG_ID,
     firstName: customer.firstName,
     lastName: customer.lastName,
@@ -168,11 +168,24 @@ export async function createCustomer(customer: Omit<EmbedlyCustomer, 'id'>): Pro
     mobileNumber: customer.phone || '',
     countryId,
     customerTypeId,
-    dob: formatDobForEmbedly(customer.dateOfBirth) || '1990-01-01T00:00:00.000Z', // Embedly requires YYYY-MM-DDTHH:MM:SS.000Z
-    city: 'Port Harcourt', // Default city - can be overridden
-    address: 'Wingside Customer', // Default address - can be overridden
+    dob: formatDobForEmbedly(customer.dateOfBirth) || '1990-01-01T00:00:00.000Z',
+    city: 'Port Harcourt',
+    address: 'Wingside Customer',
   });
-  return result.data?.id || (result as any).id;
+
+  const raw = result.data ?? result;
+  const customerId: string = raw?.id || raw?.customerId || (result as any).id;
+
+  // Embedly may auto-create a wallet on customer creation — capture it if present
+  const walletId: string | undefined = extractWalletId(raw) ?? extractWalletId((result as any).wallet) ?? undefined;
+
+  if (walletId) {
+    console.log(`Embedly createCustomer: auto-created wallet ${walletId} detected in creation response`);
+  }
+
+  console.log(`Embedly createCustomer: full response keys: ${Object.keys(raw || {}).join(', ')}`);
+
+  return { customerId, walletId };
 }
 
 // Get customer by ID — try multiple endpoint patterns since Embedly docs are unclear
@@ -639,15 +652,22 @@ export async function setupCustomerWithWallet(customer: {
         return { customerId, walletId: existingWalletId, isNewCustomer: false };
       }
     } else {
-      customerId = await createCustomer({
+      const created = await createCustomer({
         email: customer.email,
         firstName,
         lastName,
         phone: localPhone,
-        dateOfBirth: customer.dateOfBirth, // Pass actual DOB from profile (DD-MM-YYYY)
+        dateOfBirth: customer.dateOfBirth,
       });
+      customerId = created.customerId;
       isNewCustomer = true;
       console.log(`Embedly: Created new customer ${customerId} for ${customer.email}`);
+
+      // If Embedly auto-created a wallet during customer creation, return it immediately
+      if (created.walletId) {
+        console.log(`Embedly: Using auto-created wallet ${created.walletId} from customer creation response`);
+        return { customerId, walletId: created.walletId, isNewCustomer: true };
+      }
     }
 
     if (!customerId) {
@@ -656,9 +676,40 @@ export async function setupCustomerWithWallet(customer: {
   } catch (customerError: unknown) {
     const msg = customerError instanceof Error ? customerError.message : String(customerError);
 
+    // "Allowed number of wallets reached" from createCustomer means Embedly auto-created a wallet
+    // during a previous customer creation and then blocked a new one. Treat exactly like "already exists":
+    // find the customer by email or phone and recover their wallet.
+    if (msg.includes('Allowed number of wallets reached')) {
+      console.log(`Embedly: "Allowed number of wallets reached" during createCustomer for ${customer.email} — customer already exists, searching by email then phone`);
+      const existingByEmail = await getCustomerByEmail(customer.email);
+      if (existingByEmail?.id) {
+        customerId = existingByEmail.id;
+        const existingWalletId = extractWalletId(existingByEmail);
+        if (existingWalletId) {
+          console.log(`Embedly: Found customer ${customerId} with wallet ${existingWalletId} via email after "Allowed number" error`);
+          return { customerId, walletId: existingWalletId, isNewCustomer: false };
+        }
+      } else if (localPhone) {
+        const existingByPhone = await getCustomerByPhone(localPhone);
+        if (existingByPhone?.id) {
+          customerId = existingByPhone.id;
+          const existingWalletId = extractWalletId(existingByPhone);
+          if (existingWalletId) {
+            console.log(`Embedly: Found customer ${customerId} with wallet ${existingWalletId} via phone after "Allowed number" error`);
+            return { customerId, walletId: existingWalletId, isNewCustomer: false };
+          }
+        }
+      }
+      // Customer found but no wallet ID on record — fall through to wallet creation below
+      if (!customerId) {
+        console.warn(`Embedly: "Allowed number" during createCustomer but couldn't find existing customer for ${customer.email}`);
+        throw customerError;
+      }
+    }
+
     // "already exists" can mean email OR phone is duplicated.
     // Search by email first, then by phone, before giving up.
-    if (msg.toLowerCase().includes('already exist')) {
+    else if (msg.toLowerCase().includes('already exist')) {
       console.log(`Embedly: "already exists" for ${customer.email} (original: "${msg}") — searching by email then phone`);
 
       // 1. Try email lookup
