@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import AdminLoader from '@/components/admin/AdminLoader';
 
 interface Order {
   id: string;
@@ -206,7 +207,7 @@ export default function AdminOrdersPage() {
   };
 
   if (loading) {
-    return <div className="text-gray-600">Loading orders...</div>;
+    return <AdminLoader label="Loading orders..." />;
   }
 
   return (

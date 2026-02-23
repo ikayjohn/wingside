@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { NAVIGATION_LINKS } from '@/lib/navigation-links';
+import AdminLoader from '@/components/admin/AdminLoader';
 
 interface SettingItem {
   key: string;
@@ -172,15 +173,7 @@ export default function AdminSettingsPage() {
   };
 
   if (loading) {
-    return (
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Site Settings</h1>
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-          <p className="mt-4 text-gray-600">Loading settings...</p>
-        </div>
-      </div>
-    );
+    return <AdminLoader label="Loading settings..." />;
   }
 
   return (

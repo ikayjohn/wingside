@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import AdminLoader from '@/components/admin/AdminLoader'
 
 interface PromoCode {
   id: string
@@ -176,11 +177,7 @@ export default function AdminPromoCodesPage() {
   }
 
   if (loading) {
-    return (
-      <div className="p-8">
-        <p className="text-gray-600">Loading promo codes...</p>
-      </div>
-    )
+    return <AdminLoader label="Loading promo codes..." />
   }
 
   return (

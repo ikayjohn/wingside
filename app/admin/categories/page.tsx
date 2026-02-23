@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import AdminLoader from '@/components/admin/AdminLoader'
 
 interface Subcategory {
     id: string
@@ -196,7 +197,7 @@ export default function AdminCategoriesPage() {
     }
 
     if (loading) {
-        return <div className="p-8 text-gray-600">Loading categories...</div>
+        return <AdminLoader label="Loading categories..." />
     }
 
     return (

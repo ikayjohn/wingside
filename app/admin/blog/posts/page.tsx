@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import AdminLoader from '@/components/admin/AdminLoader';
 
 interface BlogPost {
   id?: string;

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { StatCard, BarChart, ProgressBar } from '@/components/admin/Charts';
 import ExportButton from '@/components/admin/ExportButton';
 import type { ExportSection } from '@/lib/export-utils';
+import AdminLoader from '@/components/admin/AdminLoader';
 
 interface SalesData {
   totalRevenue: number;
@@ -941,7 +942,7 @@ export default function AnalyticsPage() {
   };
 
   if (loading) {
-    return <div className="text-gray-600">Loading analytics...</div>;
+    return <AdminLoader label="Loading analytics..." />;
   }
 
   return (

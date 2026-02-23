@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import AdminLoader from '@/components/admin/AdminLoader';
 
 interface Flavor {
   id: string;
@@ -175,11 +176,7 @@ export default function AdminFlavorsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-600">Loading flavors...</div>
-      </div>
-    );
+    return <AdminLoader label="Loading flavors..." />;
   }
 
   return (

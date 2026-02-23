@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useRoleAccess } from '@/lib/hooks/useRoleAccess'
+import AdminLoader from '@/components/admin/AdminLoader'
 
 interface Product {
   id: string
@@ -442,11 +443,7 @@ export default function AdminProductsPage() {
   }
 
   if (loading) {
-    return (
-      <div className="p-8">
-        <p className="text-gray-600">Loading products...</p>
-      </div>
-    )
+    return <AdminLoader label="Loading products..." />
   }
 
   return (

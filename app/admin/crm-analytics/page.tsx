@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import CustomerSearchFilters, { FilterState } from '@/components/admin/CustomerSearchFilters';
 import ExportButton from '@/components/admin/ExportButton';
 import type { ExportSection } from '@/lib/export-utils';
+import AdminLoader from '@/components/admin/AdminLoader';
 
 interface CustomerSegment {
   id: string;
