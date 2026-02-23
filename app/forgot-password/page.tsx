@@ -25,7 +25,9 @@ export default function ForgotPasswordPage() {
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
         // Route through server-side callback so the code is exchanged there and
         // the session is in cookies before the reset-password page loads.
-        redirectTo: `${window.location.origin}/auth/callback`,
+        // Must include trailing slash to match Next.js trailingSlash: true canonical URLs
+        // and match the Supabase redirect URL whitelist entry exactly.
+        redirectTo: `${window.location.origin}/auth/callback/`,
       });
 
       if (error) {

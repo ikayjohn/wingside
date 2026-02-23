@@ -1,24 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-// Handles Supabase auth callbacks: password reset, email confirmation, OAuth
+// Handles Supabase auth callback for password reset (PKCE flow).
 // The code is exchanged server-side so the session is properly set in cookies
-// before the client page loads — eliminating "Auth session missing" errors.
+// before the reset-password page loads — eliminating "Auth session missing" errors.
+//
+// NOTE: In Supabase's PKCE flow, `type=recovery` is NOT passed as a URL param —
+// the type is encoded inside the PKCE code itself. This route is only used for
+// password reset, so we always redirect to /reset-password/ on success.
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const type = searchParams.get('type') // Supabase passes type=recovery for password resets
 
   if (code) {
     try {
       const supabase = await createClient()
       const { error } = await supabase.auth.exchangeCodeForSession(code)
       if (!error) {
-        // Route to the right page based on the auth type
-        if (type === 'recovery') {
-          return NextResponse.redirect(`${origin}/reset-password/`)
-        }
-        return NextResponse.redirect(`${origin}/my-account`)
+        return NextResponse.redirect(`${origin}/reset-password/`)
       }
       console.error('[auth/callback] exchangeCodeForSession error:', error.message)
     } catch (err) {
