@@ -332,3 +332,99 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// PUT /api/admin/wallet-fix - Link wallet by account number (NUBAN visible in Embedly dashboard)
+export async function PUT(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    if (profile?.role !== 'admin' && profile?.role !== 'super_admin') {
+      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
+    }
+
+    let body;
+    try { body = await request.json(); } catch {
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
+
+    const { userId, accountNumber } = body;
+    if (!userId || !accountNumber) {
+      return NextResponse.json({ error: 'userId and accountNumber are required' }, { status: 400 });
+    }
+
+    const adminClient = createAdminClient();
+
+    // Verify user exists
+    const { data: targetProfile, error: profileError } = await adminClient
+      .from('profiles')
+      .select('id, email, full_name, embedly_customer_id')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || !targetProfile) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Look up wallet by account number to get the real UUID
+    let wallet;
+    try {
+      wallet = await embedlyClient.getWalletByAccountNumber(accountNumber.trim());
+    } catch (lookupError: any) {
+      return NextResponse.json(
+        { error: `Account number not found in Embedly: ${lookupError.message}` },
+        { status: 404 }
+      );
+    }
+
+    if (!wallet?.id) {
+      return NextResponse.json({ error: 'Embedly returned no wallet ID for that account number' }, { status: 404 });
+    }
+
+    // Optionally verify the wallet belongs to this customer
+    if (wallet.customerId && targetProfile.embedly_customer_id && wallet.customerId !== targetProfile.embedly_customer_id) {
+      return NextResponse.json(
+        { error: `That account number belongs to a different customer (wallet customerId: ${wallet.customerId})` },
+        { status: 409 }
+      );
+    }
+
+    const isActive =
+      wallet.isActive !== false &&
+      (!wallet.status || wallet.status.toLowerCase() === 'active');
+
+    const { error: updateError } = await adminClient.from('profiles').update({
+      embedly_wallet_id: wallet.id,
+      bank_account: wallet.virtualAccount?.accountNumber,
+      bank_name: wallet.virtualAccount?.bankName,
+      bank_code: wallet.virtualAccount?.bankCode,
+      is_wallet_active: isActive,
+      last_wallet_sync: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }).eq('id', userId);
+
+    if (updateError) {
+      return NextResponse.json({ error: `Failed to update profile: ${updateError.message}` }, { status: 500 });
+    }
+
+    console.log(`[Admin] ✅ Wallet linked for ${targetProfile.email}: accountNumber ${accountNumber} → walletId ${wallet.id}`);
+
+    return NextResponse.json({
+      success: true,
+      message: `Wallet linked for ${targetProfile.email}`,
+      walletId: wallet.id,
+      accountNumber: wallet.virtualAccount?.accountNumber,
+      bankName: wallet.virtualAccount?.bankName,
+      balance: wallet.availableBalance,
+      status: isActive ? 'active' : 'inactive',
+    });
+
+  } catch (error: any) {
+    console.error('[Admin] Wallet link error:', error);
+    return NextResponse.json({ error: `Failed to link wallet: ${error.message}` }, { status: 500 });
+  }
+}

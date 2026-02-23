@@ -176,6 +176,8 @@ export default function CustomerDetailsPage() {
   const [checkingWallet, setCheckingWallet] = useState(false);
   const [fixingWallet, setFixingWallet] = useState(false);
   const [walletMessage, setWalletMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [manualAccountNumber, setManualAccountNumber] = useState('');
+  const [linkingWallet, setLinkingWallet] = useState(false);
 
   const fetchCustomerDetails = useCallback(async () => {
     try {
@@ -483,6 +485,45 @@ export default function CustomerDetailsPage() {
       setWalletMessage({ type: 'error', text: 'Failed to fix wallet' });
     } finally {
       setFixingWallet(false);
+    }
+  }
+
+  async function linkWalletByAccountNumber() {
+    const acctNum = manualAccountNumber.trim();
+    if (!acctNum) {
+      setWalletMessage({ type: 'error', text: 'Please enter the account number from Embedly dashboard' });
+      return;
+    }
+    try {
+      setLinkingWallet(true);
+      setWalletMessage(null);
+
+      const res = await fetch('/api/admin/wallet-fix', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: customerId, accountNumber: acctNum }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setWalletMessage({ type: 'error', text: data.error || 'Failed to link wallet' });
+        return;
+      }
+
+      setWalletMessage({
+        type: 'success',
+        text: `Wallet linked! UUID: ${data.walletId} | Account: ${data.accountNumber} (${data.bankName}) | Status: ${data.status}`,
+      });
+      setManualAccountNumber('');
+      await fetchCustomerDetails();
+      await checkWalletStatus();
+      setTimeout(() => setWalletMessage(null), 8000);
+    } catch (error) {
+      console.error('Wallet link error:', error);
+      setWalletMessage({ type: 'error', text: 'Failed to link wallet' });
+    } finally {
+      setLinkingWallet(false);
     }
   }
 
@@ -1263,6 +1304,30 @@ export default function CustomerDetailsPage() {
                 Click "Check Wallet Status" to view wallet details and diagnostics
               </div>
             )}
+
+            {/* Manual account number link — use account number visible in Embedly dashboard */}
+            <div className="mt-4 border-t pt-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">Link wallet by account number</p>
+              <p className="text-xs text-gray-500 mb-3">
+                If automatic recovery fails, enter the <strong>account number</strong> shown in the Embedly dashboard for this customer. The system will look up the real wallet UUID and save it.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={manualAccountNumber}
+                  onChange={e => setManualAccountNumber(e.target.value)}
+                  placeholder="e.g. 9710257906"
+                  className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+                />
+                <button
+                  onClick={linkWalletByAccountNumber}
+                  disabled={linkingWallet || !manualAccountNumber.trim()}
+                  className="px-4 py-2 bg-[#552627] text-white rounded font-medium text-sm hover:bg-[#4a1f20] transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                >
+                  {linkingWallet ? 'Linking...' : 'Link Wallet'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
