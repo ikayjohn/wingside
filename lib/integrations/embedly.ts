@@ -52,14 +52,29 @@ async function embedlyRequest<T = unknown>(
     throw new Error('Embedly API key not configured');
   }
 
-  const response = await fetch(`${EMBEDLY_BASE_URL}${endpoint}`, {
-    method,
-    headers: {
-      'x-api-key': EMBEDLY_API_KEY,
-      'Content-Type': 'application/json',
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const controller = new AbortController();
+  const timeoutMs = method === 'POST' ? 15000 : 10000; // 15s for writes, 10s for reads
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  let response: Response;
+  try {
+    response = await fetch(`${EMBEDLY_BASE_URL}${endpoint}`, {
+      method,
+      headers: {
+        'x-api-key': EMBEDLY_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    if (err?.name === 'AbortError') {
+      throw new Error(`Embedly API timeout after ${timeoutMs}ms (${method} ${endpoint})`);
+    }
+    throw err;
+  }
+  clearTimeout(timeoutId);
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -174,7 +189,13 @@ export async function createCustomer(customer: Omit<EmbedlyCustomer, 'id'>): Pro
   });
 
   const raw = result.data ?? result;
-  const customerId: string = raw?.id || raw?.customerId || (result as any).id;
+  // Try every known field name Embedly uses for the customer ID across API versions
+  const customerId: string = raw?.id || raw?.customerId || raw?.customer_id || raw?.customerGuid
+    || (result as any).id || (result as any).customerId;
+
+  if (!customerId) {
+    console.error(`Embedly createCustomer: could not extract customer ID. Response keys: [${Object.keys(raw || {}).join(', ')}]. Raw: ${JSON.stringify(raw).slice(0, 500)}`);
+  }
 
   // Embedly may auto-create a wallet on customer creation — capture it if present
   const walletId: string | undefined = extractWalletId(raw) ?? extractWalletId((result as any).wallet) ?? undefined;
