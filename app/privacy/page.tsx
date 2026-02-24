@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function PrivacyPage() {
+function PrivacyContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('general');
 
@@ -693,5 +693,13 @@ export default function PrivacyPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function PrivacyPage() {
+  return (
+    <Suspense>
+      <PrivacyContent />
+    </Suspense>
   );
 }
