@@ -371,17 +371,6 @@ export default function Header() {
                   </li>
                 )}
 
-                {/* Valentine's Special Link */}
-                <li role="none">
-                  <Link
-                    href="/valentines"
-                    className="sidebar-link"
-                    onClick={handleClose}
-                    role="menuitem"
-                  >
-                    Valentine's Special
-                  </Link>
-                </li>
 
                 {/* Dynamic navigation links based on visibility settings */}
                 {visibleHeaderLinks.map((link) => (
