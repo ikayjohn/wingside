@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { HoneypotField } from '@/components/HoneypotField';
 import { canAccessAdmin, UserRole } from '@/lib/permissions';
@@ -12,7 +11,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter();
   const supabase = createClient();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -55,14 +53,14 @@ export default function LoginPage() {
         console.log('Login - User role:', userRole);
         console.log('Login - Can access admin?', canAccessAdmin(userRole));
 
-        // Redirect based on role - staff go to admin, customers to their account
+        // Redirect based on role - staff go to admin, customers to redirect target
+        const redirectTo = sessionStorage.getItem('loginRedirect') || '/my-account';
+        sessionStorage.removeItem('loginRedirect');
         if (canAccessAdmin(userRole)) {
-          console.log('Redirecting to /admin');
           window.location.href = '/admin';
           return;
         } else {
-          console.log('Redirecting to /my-account');
-          router.push('/my-account');
+          window.location.href = redirectTo;
         }
       }
     } catch (err: any) {

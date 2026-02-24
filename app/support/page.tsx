@@ -2,17 +2,31 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { fetchWithCsrf } from '@/lib/client/csrf';
 
 export default function SupportPage() {
   const [activeTab, setActiveTab] = useState<'faq' | 'contact' | 'suggestion'>('faq');
   const [activeCategory, setActiveCategory] = useState('General');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showFlavorModal, setShowFlavorModal] = useState(false);
+  const [flavorForm, setFlavorForm] = useState({ submitterName: '', submitterEmail: '', name: '', description: '', spiceLevel: '', inspiration: '' });
+  const [flavorSubmitted, setFlavorSubmitted] = useState(false);
+  const [flavorSubmitting, setFlavorSubmitting] = useState(false);
+  const [flavorError, setFlavorError] = useState('');
+  const [flavorModalOpenTime, setFlavorModalOpenTime] = useState(0);
+
+  const [showOtherModal, setShowOtherModal] = useState(false);
+  const [otherForm, setOtherForm] = useState({ name: '', email: '', message: '' });
+  const [otherSubmitted, setOtherSubmitted] = useState(false);
+  const [otherSubmitting, setOtherSubmitting] = useState(false);
+  const [otherError, setOtherError] = useState('');
+  const [otherModalOpenTime, setOtherModalOpenTime] = useState(0);
 
   const faqCategories = [
     'General',
     'Wingside Business',
     'Partnership',
-    'Flavours',
+    'Flavors',
     'Rewards',
     'Wingclub',
     'Other',
@@ -36,7 +50,7 @@ export default function SupportPage() {
       { question: 'What is the Hotspot program?', answer: 'The Hotspot program allows businesses to earn commissions by hosting Wingside QR codes at their locations.' },
       { question: 'How do I become a Hotspot partner?', answer: 'Apply through our Hotspots page. Our team will review your application within 48 hours.' },
     ],
-    Flavours: [
+    Flavors: [
       { question: 'What are your most popular flavors?', answer: 'Our top flavors include Lemon Pepper, Honey BBQ, Buffalo Hot, and Dragon Breath.' },
       { question: 'Do you have spicy options?', answer: 'Yes! We have multiple spice levels from mild to extremely hot.' },
     ],
@@ -70,13 +84,13 @@ export default function SupportPage() {
   };
 
   const contactOptions = [
-    { title: 'Contact My Local Wingside Store?', link: '/locations' },
+    { title: 'Contact My Local Wingside Store?', link: '/contact' },
     { title: 'Customer Assist', link: '/contact' },
   ];
 
   const suggestionOptions = [
-    { title: 'Recommend a flavour', link: '/suggest-flavor' },
-    { title: 'Other', link: '/suggest-other' },
+    { title: 'Recommend a Flavor', action: () => { setFlavorForm({ submitterName: '', submitterEmail: '', name: '', description: '', spiceLevel: '', inspiration: '' }); setFlavorSubmitted(false); setFlavorError(''); setFlavorModalOpenTime(Date.now()); setShowFlavorModal(true); } },
+    { title: 'Other', action: () => { setOtherForm({ name: '', email: '', message: '' }); setOtherSubmitted(false); setOtherError(''); setOtherModalOpenTime(Date.now()); setShowOtherModal(true); } },
   ];
 
   const filteredFaqs = faqData[activeCategory]?.filter(faq =>
@@ -94,7 +108,7 @@ export default function SupportPage() {
           </h1>
           <p className="support-hero-subtitle">We're always here for you.</p>
           <p className="support-hero-description">
-            At Wingside, your experience matters to us. Whether you have a question, feedback, or need support, our team is ready to help. Reach out anytime — we'd love to hear from you.
+            At Wingside, your experience matters to us. Whether you have a question, feedback, or need support, our team is ready to help. Reach out anytime, we'd love to hear from you.
           </p>
           <button className="support-hero-btn">Find A Store</button>
         </div>
@@ -194,12 +208,12 @@ export default function SupportPage() {
               <h2 className="support-section-title">Got a suggestion? Let's hear it!</h2>
               <div className="support-options-list">
                 {suggestionOptions.map((option, index) => (
-                  <Link key={index} href={option.link} className="support-option-card">
+                  <button key={index} onClick={option.action} className="support-option-card w-full text-left">
                     <span>{option.title}</span>
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="9 18 15 12 9 6"></polyline>
                     </svg>
-                  </Link>
+                  </button>
                 ))}
               </div>
             </div>
@@ -207,6 +221,278 @@ export default function SupportPage() {
 
         </div>
       </section>
+
+      {/* Flavor Suggestion Modal */}
+      {showFlavorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowFlavorModal(false)}
+              className="absolute top-4 right-5 text-gray-400 hover:text-gray-700 text-2xl font-bold"
+            >
+              &times;
+            </button>
+
+            {flavorSubmitted ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-[#F7C400] rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-[#552627] mb-2">Thanks for the idea!</h3>
+                <p className="text-gray-600 mb-6">We've received your flavor suggestion and our team will look into it. Who knows — it might end up on the menu!</p>
+                <button
+                  onClick={() => setShowFlavorModal(false)}
+                  className="bg-[#F7C400] text-black px-8 py-3 rounded-full font-semibold hover:bg-[#e5b500] transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <>
+                <h3 className="text-2xl font-bold text-[#552627] mb-1">Suggest a Flavor</h3>
+                <p className="text-gray-500 text-sm mb-6">Got a wild idea for a new wing flavor? Tell us everything.</p>
+
+                {flavorError && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{flavorError}</div>
+                )}
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Your Name <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Chidi Okeke"
+                        value={flavorForm.submitterName}
+                        onChange={(e) => setFlavorForm({ ...flavorForm, submitterName: e.target.value })}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Your Email <span className="text-red-500">*</span></label>
+                      <input
+                        type="email"
+                        placeholder="you@example.com"
+                        value={flavorForm.submitterEmail}
+                        onChange={(e) => setFlavorForm({ ...flavorForm, submitterEmail: e.target.value })}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Flavor Name <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Mango Habanero"
+                      value={flavorForm.name}
+                      onChange={(e) => setFlavorForm({ ...flavorForm, name: e.target.value })}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Describe the Flavor</label>
+                    <textarea
+                      placeholder="What does it taste like? What makes it special?"
+                      value={flavorForm.description}
+                      onChange={(e) => setFlavorForm({ ...flavorForm, description: e.target.value })}
+                      rows={3}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400] resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Spice Level</label>
+                    <div className="flex gap-2 flex-wrap">
+                      {['Mild', 'Medium', 'Hot', 'Extra Hot'].map((level) => (
+                        <button
+                          key={level}
+                          onClick={() => setFlavorForm({ ...flavorForm, spiceLevel: level })}
+                          className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
+                            flavorForm.spiceLevel === level
+                              ? 'bg-[#F7C400] border-[#F7C400] text-black'
+                              : 'border-gray-200 text-gray-600 hover:border-[#F7C400]'
+                          }`}
+                        >
+                          {level}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">What inspired this?</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. A sauce I tried in Lagos"
+                      value={flavorForm.inspiration}
+                      onChange={(e) => setFlavorForm({ ...flavorForm, inspiration: e.target.value })}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+                    />
+                  </div>
+                </div>
+
+                {/* Hidden honeypot */}
+                <input type="text" name="website" style={{ display: 'none' }} readOnly value="" />
+
+                <button
+                  onClick={async () => {
+                    if (!flavorForm.submitterName.trim() || !flavorForm.submitterEmail.trim() || !flavorForm.name.trim()) return;
+                    setFlavorSubmitting(true);
+                    setFlavorError('');
+                    try {
+                      const res = await fetchWithCsrf('/api/contact', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                          type: 'flavor-suggestion',
+                          name: flavorForm.submitterName,
+                          email: flavorForm.submitterEmail,
+                          message: flavorForm.description || undefined,
+                          website: '',
+                          _timestamp: flavorModalOpenTime,
+                          formData: {
+                            flavorName: flavorForm.name,
+                            description: flavorForm.description,
+                            spiceLevel: flavorForm.spiceLevel,
+                            inspiration: flavorForm.inspiration,
+                            source: 'support_page',
+                          },
+                        }),
+                      });
+                      const data = await res.json();
+                      if (!res.ok) throw new Error(data.error || 'Submission failed');
+                      setFlavorSubmitted(true);
+                    } catch (err: any) {
+                      setFlavorError(err.message || 'Something went wrong. Please try again.');
+                    } finally {
+                      setFlavorSubmitting(false);
+                    }
+                  }}
+                  disabled={!flavorForm.submitterName.trim() || !flavorForm.submitterEmail.trim() || !flavorForm.name.trim() || flavorSubmitting}
+                  className="mt-6 w-full bg-[#F7C400] text-black py-3 rounded-full font-semibold hover:bg-[#e5b500] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {flavorSubmitting ? 'Submitting...' : 'Submit Suggestion'}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Other Suggestion Modal */}
+      {showOtherModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl relative">
+            <button
+              onClick={() => setShowOtherModal(false)}
+              className="absolute top-4 right-5 text-gray-400 hover:text-gray-700 text-2xl font-bold"
+            >
+              &times;
+            </button>
+
+            {otherSubmitted ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-[#F7C400] rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-[#552627] mb-2">Got it, thanks!</h3>
+                <p className="text-gray-600 mb-6">We've received your suggestion. Our team reviews all feedback and we appreciate you taking the time.</p>
+                <button
+                  onClick={() => setShowOtherModal(false)}
+                  className="bg-[#F7C400] text-black px-8 py-3 rounded-full font-semibold hover:bg-[#e5b500] transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <>
+                <h3 className="text-2xl font-bold text-[#552627] mb-1">Share a Suggestion</h3>
+                <p className="text-gray-500 text-sm mb-6">Have an idea to make Wingside better? We're all ears.</p>
+
+                {otherError && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{otherError}</div>
+                )}
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Your Name <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Amara Nwosu"
+                      value={otherForm.name}
+                      onChange={(e) => setOtherForm({ ...otherForm, name: e.target.value })}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Your Email <span className="text-red-500">*</span></label>
+                    <input
+                      type="email"
+                      placeholder="you@example.com"
+                      value={otherForm.email}
+                      onChange={(e) => setOtherForm({ ...otherForm, email: e.target.value })}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Your Suggestion <span className="text-red-500">*</span></label>
+                    <textarea
+                      placeholder="Tell us what's on your mind — menu ideas, service improvements, anything!"
+                      value={otherForm.message}
+                      onChange={(e) => setOtherForm({ ...otherForm, message: e.target.value })}
+                      rows={4}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F7C400] resize-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Hidden honeypot */}
+                <input type="text" name="website" style={{ display: 'none' }} readOnly value="" />
+
+                <button
+                  onClick={async () => {
+                    if (!otherForm.name.trim() || !otherForm.email.trim() || !otherForm.message.trim()) return;
+                    setOtherSubmitting(true);
+                    setOtherError('');
+                    try {
+                      const res = await fetchWithCsrf('/api/contact', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                          type: 'suggestion',
+                          name: otherForm.name,
+                          email: otherForm.email,
+                          message: otherForm.message,
+                          website: '',
+                          _timestamp: otherModalOpenTime,
+                          formData: { source: 'support_page' },
+                        }),
+                      });
+                      const data = await res.json();
+                      if (!res.ok) throw new Error(data.error || 'Submission failed');
+                      setOtherSubmitted(true);
+                    } catch (err: any) {
+                      setOtherError(err.message || 'Something went wrong. Please try again.');
+                    } finally {
+                      setOtherSubmitting(false);
+                    }
+                  }}
+                  disabled={!otherForm.name.trim() || !otherForm.email.trim() || !otherForm.message.trim() || otherSubmitting}
+                  className="mt-6 w-full bg-[#F7C400] text-black py-3 rounded-full font-semibold hover:bg-[#e5b500] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {otherSubmitting ? 'Submitting...' : 'Submit Suggestion'}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   );

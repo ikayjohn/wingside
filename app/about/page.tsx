@@ -47,13 +47,13 @@ export default function AboutPage() {
                 <span className="text-5xl md:text-6xl lg:text-8xl text-[#F7C400]">WINGS!</span>
               </h2>
               <p className="text-lg md:text-xl text-gray-700 mb-8 max-w-lg">
-                Wingside isn't just food, it's an experience. Crispy, saucy, and unforgeable - one bite and you're in.
+                Wingside isn't just food, it's an experience. Crispy, saucy, and unforgettable - one bite and you're in.
               </p>
               <Link
                 href="/order"
                 className="inline-block bg-[#F7C400] text-black px-8 py-4 rounded-full font-semibold text-lg hover:bg-[#e5b500] transition-colors"
               >
-                Get on the wingside
+                Get on the Wingside
               </Link>
             </div>
 
@@ -76,7 +76,9 @@ export default function AboutPage() {
             We do one thing really well: <strong>CHICKEN WINGS</strong>.
           </p>
           <p className="text-xl md:text-2xl text-gray-800">
-            Tossed, sauced, and dripping in flavor. With 20 wild and<br></br> exciting varieties, we've got something for every craving.
+            Tossed, sauced, and dripping in flavors. 20 exciting flavors with their individual stories<br />
+            from the classic tang of Lemon Pepper to our own experiment gone better, giving<br />
+            birth to the Wing of the North, there's always something perfect for the moment.
           </p>
         </div>
       </div>

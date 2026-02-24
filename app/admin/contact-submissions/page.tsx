@@ -136,6 +136,8 @@ export default function ContactSubmissionsPage() {
       case 'connect': return 'bg-indigo-100 text-indigo-800';
       case 'hotspot': return 'bg-amber-100 text-amber-800';
       case 'general': return 'bg-gray-100 text-gray-800';
+      case 'flavor-suggestion': return 'bg-yellow-100 text-yellow-800';
+      case 'suggestion': return 'bg-lime-100 text-lime-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -163,6 +165,8 @@ export default function ContactSubmissionsPage() {
       case 'connect': return 'Wingside Connect';
       case 'hotspot': return 'Hotspot Partner';
       case 'general': return 'General';
+      case 'flavor-suggestion': return 'Flavor Suggestion';
+      case 'suggestion': return 'Suggestion';
       default: return type;
     }
   };
@@ -193,6 +197,8 @@ export default function ContactSubmissionsPage() {
             <option value="connect">Wingside Connect</option>
             <option value="hotspot">Hotspot Partner</option>
             <option value="general">General</option>
+            <option value="flavor-suggestion">Flavor Suggestion</option>
+            <option value="suggestion">Suggestion</option>
           </select>
         </div>
 

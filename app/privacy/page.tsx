@@ -1,9 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 export default function PrivacyPage() {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('general');
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) setActiveTab(tab);
+  }, [searchParams]);
 
   const tabs = [
     { id: 'general', label: 'General Notice' },
@@ -575,67 +582,11 @@ export default function PrivacyPage() {
               <section>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">3. Third-Party Cookies</h3>
                 <p className="text-gray-700 leading-relaxed mb-3">
-                  We allow trusted third parties to place cookies on your device for the services listed below:
+                  Some features of our website rely on trusted third-party services that may set their own cookies or use local storage on your device. These include providers for analytics, authentication, payment processing, mapping, and spam prevention.
                 </p>
-
-                <div className="overflow-x-auto">
-                  <table className="min-w-full border border-gray-300">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-sm font-semibold">Service</th>
-                        <th className="px-4 py-2 text-left text-sm font-semibold">Purpose</th>
-                        <th className="px-4 py-2 text-left text-sm font-semibold">Privacy Policy</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="border-t">
-                        <td className="px-4 py-2 text-sm">Google Analytics</td>
-                        <td className="px-4 py-2 text-sm">Website analytics</td>
-                        <td className="px-4 py-2 text-sm">
-                          <a href="https://policies.google.com/privacy" className="text-blue-600 underline" target="_blank" rel="noopener">
-                            View Policy
-                          </a>
-                        </td>
-                      </tr>
-                      <tr className="border-t">
-                        <td className="px-4 py-2 text-sm">Google Ads</td>
-                        <td className="px-4 py-2 text-sm">Advertising</td>
-                        <td className="px-4 py-2 text-sm">
-                          <a href="https://policies.google.com/privacy" className="text-blue-600 underline" target="_blank" rel="noopener">
-                            View Policy
-                          </a>
-                        </td>
-                      </tr>
-                      <tr className="border-t">
-                        <td className="px-4 py-2 text-sm">Facebook/Meta</td>
-                        <td className="px-4 py-2 text-sm">Social media tracking</td>
-                        <td className="px-4 py-2 text-sm">
-                          <a href="https://www.facebook.com/privacy/policy/" className="text-blue-600 underline" target="_blank" rel="noopener">
-                            View Policy
-                          </a>
-                        </td>
-                      </tr>
-                      <tr className="border-t">
-                        <td className="px-4 py-2 text-sm">Paystack</td>
-                        <td className="px-4 py-2 text-sm">Payment processing</td>
-                        <td className="px-4 py-2 text-sm">
-                          <a href="https://paystack.com/privacy" className="text-blue-600 underline" target="_blank" rel="noopener">
-                            View Policy
-                          </a>
-                        </td>
-                      </tr>
-                      <tr className="border-t">
-                        <td className="px-4 py-2 text-sm">Nomba</td>
-                        <td className="px-4 py-2 text-sm">Payment processing</td>
-                        <td className="px-4 py-2 text-sm">
-                          <a href="https://nomba.com/privacy" className="text-blue-600 underline" target="_blank" rel="noopener">
-                            View Policy
-                          </a>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+                <p className="text-gray-700 leading-relaxed">
+                  Each third-party service operates under its own privacy policy. We only work with providers who meet appropriate data protection standards.
+                </p>
               </section>
 
               <section>

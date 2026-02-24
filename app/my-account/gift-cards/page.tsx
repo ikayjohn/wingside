@@ -41,7 +41,8 @@ export default function GiftCardsPage() {
       // Check auth
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        window.location.href = '/login?redirect=/my-account/gift-cards';
+        sessionStorage.setItem('loginRedirect', '/my-account/gift-cards');
+        window.location.href = '/login';
         return;
       }
 
@@ -247,7 +248,6 @@ export default function GiftCardsPage() {
           <div>
             {activeCards.length === 0 ? (
               <div className="text-center py-16">
-                <div className="text-6xl mb-4">🎁</div>
                 <h3 className="text-xl font-semibold text-gray-700 mb-2">No Active Gift Cards</h3>
                 <p className="text-gray-600 mb-6">You don't have any active gift cards at the moment.</p>
                 <Link
@@ -269,7 +269,6 @@ export default function GiftCardsPage() {
           <div>
             {usedCards.length === 0 ? (
               <div className="text-center py-16">
-                <div className="text-6xl mb-4">📋</div>
                 <h3 className="text-xl font-semibold text-gray-700 mb-2">No Used Gift Cards</h3>
                 <p className="text-gray-600">You haven't fully used any gift cards yet.</p>
               </div>
@@ -285,7 +284,6 @@ export default function GiftCardsPage() {
           <div>
             {expiredCards.length === 0 ? (
               <div className="text-center py-16">
-                <div className="text-6xl mb-4">✓</div>
                 <h3 className="text-xl font-semibold text-gray-700 mb-2">No Expired Gift Cards</h3>
                 <p className="text-gray-600">Great! You don't have any expired gift cards.</p>
               </div>

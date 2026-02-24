@@ -107,7 +107,7 @@ export default function Footer() {
               </p>
               <p className="text-gray-500 text-xs md:text-sm mb-6 md:mb-8 leading-relaxed">
                 Be the first to know about exclusive offers, benefits, events<br className="hidden lg:block" />
-                and more sent via emails. We promise not to spam you.
+                and more sent via email. We promise not to spam you.
               </p>
 
               {/* Email Input */}

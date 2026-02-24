@@ -17,7 +17,7 @@ export default function GiftsPage() {
   const [selectedDenomination, setSelectedDenomination] = useState<Denomination | null>(null);
   const [recipientName, setRecipientName] = useState('');
   const [recipientEmail, setRecipientEmail] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'paystack' | 'nomba'>('paystack');
+  const paymentMethod = 'nomba';
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [user, setUser] = useState<any>(null);
@@ -35,8 +35,8 @@ export default function GiftsPage() {
   const handleCardClick = async (design: CardDesign) => {
     // Check if user is authenticated
     if (!user) {
-      // Redirect to login
-      router.push('/login?redirect=/gifts');
+      sessionStorage.setItem('loginRedirect', '/gifts');
+      router.push('/login');
       return;
     }
 
@@ -407,37 +407,6 @@ export default function GiftsPage() {
                     placeholder="Enter recipient's email"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] disabled:opacity-50"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-[#552627] mb-2">
-                    Payment Method
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('paystack')}
-                      disabled={isLoading}
-                      className={`p-3 rounded-lg border-2 font-medium transition-all disabled:opacity-50 ${
-                        paymentMethod === 'paystack'
-                          ? 'border-[#F7C400] bg-[#FDF5E5] text-[#552627]'
-                          : 'border-gray-200 hover:border-[#F7C400] text-gray-700'
-                      }`}
-                    >
-                      Paystack
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('nomba')}
-                      disabled={isLoading}
-                      className={`p-3 rounded-lg border-2 font-medium transition-all disabled:opacity-50 ${
-                        paymentMethod === 'nomba'
-                          ? 'border-[#F7C400] bg-[#FDF5E5] text-[#552627]'
-                          : 'border-gray-200 hover:border-[#F7C400] text-gray-700'
-                      }`}
-                    >
-                      Nomba
-                    </button>
-                  </div>
                 </div>
               </div>
 

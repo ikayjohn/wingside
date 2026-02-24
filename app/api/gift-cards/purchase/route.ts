@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { sanitizeEmail, sanitizeUrl } from '@/lib/security'
 import { checkRateLimit, getClientIp, rateLimitErrorResponse } from '@/lib/rate-limit'
 import { csrfProtection } from '@/lib/csrf'
@@ -119,6 +119,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Use service client for all data operations to avoid RLS permission issues
+    const db = createServiceClient()
+
     // Rate limiting: 3 purchases per hour per user+IP
     const clientIp = await getClientIp()
     const rateLimitKey = `gift-card-purchase:${user.id}:${clientIp}`
@@ -137,7 +140,7 @@ export async function POST(request: NextRequest) {
     expiryDate.setMonth(expiryDate.getMonth() + 6)
 
     // Generate unique gift card code via database function
-    const { data: codeData, error: codeError } = await supabase.rpc('generate_gift_card_code')
+    const { data: codeData, error: codeError } = await db.rpc('generate_gift_card_code')
 
     if (codeError || !codeData) {
       console.error('Error generating gift card code:', codeError)
@@ -150,7 +153,7 @@ export async function POST(request: NextRequest) {
     const giftCardCode = codeData as string
 
     // Create gift card record (inactive until payment)
-    const { data: giftCard, error: giftCardError } = await supabase
+    const { data: giftCard, error: giftCardError } = await db
       .from('gift_cards')
       .insert({
         code: giftCardCode,
@@ -246,7 +249,7 @@ export async function POST(request: NextRequest) {
         console.error('Paystack initialization error:', paystackData)
 
         // Delete the gift card since payment initialization failed
-        await supabase
+        await db
           .from('gift_cards')
           .delete()
           .eq('id', giftCard.id)
@@ -294,7 +297,7 @@ export async function POST(request: NextRequest) {
         console.error('Failed to get Nomba access token:', tokenData)
 
         // Delete the gift card since payment initialization failed
-        await supabase
+        await db
           .from('gift_cards')
           .delete()
           .eq('id', giftCard.id)
@@ -316,26 +319,16 @@ export async function POST(request: NextRequest) {
           'accountId': nombaAccountId,
         },
         body: JSON.stringify({
-          orderReference: paymentReference,
-          amount: denomination,
-          currency: 'NGN',
-          customerEmail: user.email || sanitizedEmail,
-          customization: {
-            title: 'Wingside Gift Card',
-            description: `${sanitizedName} - ${design_image}`,
-            logo: `${sanitizedAppUrl}/logo.png`,
+          order: {
+            orderReference: paymentReference,
+            customerId: giftCard.id,
+            callbackUrl: `${sanitizedAppUrl}/payment/nomba/callback?type=gift_card&gift_card_id=${encodeURIComponent(giftCard.id)}`,
+            customerEmail: user.email || sanitizedEmail,
+            amount: denomination,
+            currency: 'NGN',
+            accountId: nombaAccountId,
           },
-          callbackUrl: `${sanitizedAppUrl}/payment/nomba/callback?type=gift_card&gift_card_id=${encodeURIComponent(giftCard.id)}`,
-          metadata: {
-            type: 'gift_card_purchase',
-            gift_card_id: giftCard.id,
-            gift_card_code: giftCardCode,
-            design_image: design_image,
-            denomination: denomination,
-            recipient_name: sanitizedName,
-            recipient_email: sanitizedEmail,
-            purchased_by: user.id,
-          },
+          tokenizeCard: false,
         }),
       })
 
@@ -345,7 +338,7 @@ export async function POST(request: NextRequest) {
         console.error('Nomba checkout initialization error:', checkoutData)
 
         // Delete the gift card since payment initialization failed
-        await supabase
+        await db
           .from('gift_cards')
           .delete()
           .eq('id', giftCard.id)
@@ -360,12 +353,11 @@ export async function POST(request: NextRequest) {
       reference = checkoutData.data.orderReference
     }
 
-    // Update gift card with payment reference and method
-    await supabase
+    // Update gift card with payment reference
+    await db
       .from('gift_cards')
       .update({
         payment_reference: paymentReference,
-        payment_method: selectedPaymentMethod,
       })
       .eq('id', giftCard.id)
 

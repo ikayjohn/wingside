@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 
 // GET /api/user/gift-cards - Get user's gift cards
 export async function GET(request: NextRequest) {
@@ -16,8 +16,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const db = createServiceClient()
+
     // Fetch gift cards where user is recipient (by email) or purchaser
-    const { data: giftCards, error: giftCardsError } = await supabase
+    const { data: giftCards, error: giftCardsError } = await db
       .from('gift_cards')
       .select('id, code, card_number, initial_balance, current_balance, recipient_name, recipient_email, is_active, expires_at, created_at, last_used_at, design_image, denomination, purchased_by')
       .or(`recipient_email.eq.${user.email},purchased_by.eq.${user.id}`)
