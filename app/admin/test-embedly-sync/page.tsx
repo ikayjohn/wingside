@@ -14,10 +14,21 @@ interface SignupRow {
   sync_status: string;
 }
 
+interface FailedIntegration {
+  id: string;
+  integration_type: string;
+  user_email: string;
+  error_message: string;
+  status: string;
+  retry_count: number;
+  created_at: string;
+}
+
 interface TestResult {
   env_configured: boolean;
   env_vars: Record<string, string>;
   recent_signups: SignupRow[];
+  failed_integrations: FailedIntegration[];
   error?: string;
 }
 
@@ -491,6 +502,42 @@ export default function TestEmbedlySyncPage() {
               </table>
             </div>
           </div>
+
+          {/* Failure Log */}
+          {result.failed_integrations && result.failed_integrations.length > 0 && (
+            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
+              <h2 className="text-xl font-bold text-gray-900 mb-1">Failure Log</h2>
+              <p className="text-xs text-gray-500 mb-4">Recent pending_retry entries from the failed_integrations table — shows the actual error for each failure</p>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 text-xs">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium text-gray-500 uppercase">Email</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-500 uppercase">Type</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-500 uppercase">Error</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-500 uppercase">Date</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-500 uppercase">Retries</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {result.failed_integrations.map(f => (
+                      <tr key={f.id} className="hover:bg-red-50">
+                        <td className="px-3 py-2 text-gray-700 font-medium">{f.user_email}</td>
+                        <td className="px-3 py-2">
+                          <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${f.integration_type.includes('wallet') ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>
+                            {f.integration_type.replace('embedly_', '').replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-red-700 font-mono max-w-xs truncate" title={f.error_message}>{f.error_message}</td>
+                        <td className="px-3 py-2 text-gray-500 whitespace-nowrap">{new Date(f.created_at).toLocaleDateString()}</td>
+                        <td className="px-3 py-2 text-gray-500 text-center">{f.retry_count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Error Display */}
           {result.error && (

@@ -113,6 +113,7 @@ export async function GET(request: NextRequest) {
     env_configured: false,
     env_vars: {} as Record<string, string>,
     recent_signups: [] as any[],
+    failed_integrations: [] as any[],
     error: null as string | null
   }
 
@@ -180,6 +181,16 @@ export async function GET(request: NextRequest) {
         ...(recentSynced || []).map(c => ({ ...c, has_embedly_customer: true, has_embedly_wallet: true, sync_status: '✅ Fully synced' })),
       ]
     }
+
+    // Fetch recent failure log from failed_integrations table
+    const { data: failureLogs } = await admin
+      .from('failed_integrations')
+      .select('id, integration_type, user_email, error_message, status, retry_count, created_at')
+      .eq('status', 'pending_retry')
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    results.failed_integrations = failureLogs || []
 
     return NextResponse.json(results)
   } catch (error) {
