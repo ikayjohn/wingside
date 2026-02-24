@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
     const [{ data: profiles }, { count: totalProfilesCount }] = await Promise.all([
       supabase
         .from('profiles')
-        .select('id, full_name, email, phone, role, created_at, wallet_balance, total_points')
+        .select('id, full_name, email, phone, role, created_at, wallet_balance, total_points, bank_account')
         .in('email', customerEmails.length > 0 ? customerEmails : ['none']),
       supabase
         .from('profiles')
@@ -129,7 +129,8 @@ export async function GET(request: NextRequest) {
         role: 'customer',
         created_at: new Date().toISOString(),
         wallet_balance: 0,
-        total_points: 0
+        total_points: 0,
+        bank_account: null
       }
 
       const customerOrders = allOrders?.filter(order => {

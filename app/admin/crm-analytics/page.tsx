@@ -28,6 +28,9 @@ interface CustomerWithSegments {
   segment_objects: any[];
   last_order_date?: string;
   predicted_next_order?: string;
+  created_at?: string;
+  total_points?: number;
+  bank_account?: string | null;
 }
 
 const SEGMENT_COLORS: Record<string, string> = {
@@ -170,6 +173,12 @@ export default function CRManalyticsPage() {
     return `₦${amount.toLocaleString()}`;
   };
 
+  const getTier = (points: number = 0): string => {
+    if (points >= 20000) return 'Wingzard';
+    if (points >= 5001) return 'Wing Leader';
+    return 'Wing Member';
+  };
+
   const segmentData: CustomerSegment[] = Object.entries(segmentStats).map(([id, count]) => ({
     id,
     name: id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
@@ -233,6 +242,10 @@ export default function CRManalyticsPage() {
         headers: [
           'Name',
           'Email',
+          'Joined Date',
+          'Points',
+          'Tier',
+          'Account Number',
           'Segments',
           'Total Orders',
           'Total Spent (₦)',
@@ -244,6 +257,10 @@ export default function CRManalyticsPage() {
         rows: customers.map(c => [
           c.full_name || 'No Name',
           c.email,
+          c.created_at ? new Date(c.created_at).toLocaleDateString('en-NG') : '',
+          c.total_points ?? 0,
+          getTier(c.total_points),
+          c.bank_account || '',
           c.segments.join(', '),
           c.total_orders,
           c.total_spent,
@@ -521,6 +538,10 @@ export default function CRManalyticsPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Points</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tier</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account No.</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Segments</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Orders</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Spent</th>
@@ -537,6 +558,28 @@ export default function CRManalyticsPage() {
                         {customer.full_name || 'No Name'}
                       </div>
                       <div className="text-sm text-gray-500">{customer.email}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {customer.created_at
+                        ? new Date(customer.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })
+                        : '—'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                      {(customer.total_points ?? 0).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                        getTier(customer.total_points) === 'Wingzard'
+                          ? 'bg-purple-100 text-purple-800'
+                          : getTier(customer.total_points) === 'Wing Leader'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {getTier(customer.total_points)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">
+                      {customer.bank_account || <span className="text-gray-400 text-xs">—</span>}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
