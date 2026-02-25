@@ -108,7 +108,7 @@ export async function PATCH(
     // If approved, award the points
     if (action === 'approve' && !verification.reward_claimed) {
       // Use claim_reward function to award points and track the claim
-      const { error: pointsError } = await admin.rpc('claim_reward', {
+      const { data: claimResult, error: pointsError } = await admin.rpc('claim_reward', {
         p_user_id: verification.user_id,
         p_reward_type: `${verification.platform}_follow`,
         p_points: verification.reward_points,
@@ -125,6 +125,9 @@ export async function PATCH(
         console.error('Error awarding points:', pointsError);
         // Don't fail the request if points awarding fails, just log it
         // The verification is still approved, admin can manually award points if needed
+      } else if (claimResult === false) {
+        // claim_reward returns FALSE when reward_type already exists in reward_claims
+        console.warn(`⚠️ Reward "${verification.platform}_follow" already claimed by user ${verification.user_id} — points not awarded again`);
       } else {
         // Mark reward as claimed in verification record
         await admin

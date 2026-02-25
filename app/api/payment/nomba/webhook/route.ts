@@ -400,19 +400,44 @@ export async function POST(request: NextRequest) {
       // Note: admin client already created above for order update
 
       // 1. Get or create customer profile
-      const { data: existingProfile, error: profileError } = await admin
-        .from('profiles')
-        .select('id, zoho_contact_id, embedly_customer_id')
-        .eq('email', order.customer_email)
-        .single()
+      // Prefer order.user_id (set at checkout) over email lookup to avoid
+      // duplicate profiles from case/whitespace mismatches
+      let profileId = order.user_id || null
+      let existingProfile = null
+      let needsSync = false
 
-      // Profile not found is OK (guest checkout), other errors are not
-      if (profileError && profileError.code !== 'PGRST116') {
-        console.error('Error checking customer profile:', profileError)
+      if (profileId) {
+        // User was logged in at checkout — verify profile exists
+        const { data: profile, error: profileError } = await admin
+          .from('profiles')
+          .select('id, zoho_contact_id, embedly_customer_id')
+          .eq('id', profileId)
+          .single()
+
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error('Error checking customer profile by ID:', profileError)
+        }
+        existingProfile = profile
+        if (!existingProfile) {
+          // user_id on order but no profile — fall through to email lookup
+          profileId = null
+        }
       }
 
-      let profileId = existingProfile?.id
-      let needsSync = false
+      if (!profileId) {
+        // Guest checkout or user_id missing — fall back to email lookup
+        const { data: profileByEmail, error: profileError } = await admin
+          .from('profiles')
+          .select('id, zoho_contact_id, embedly_customer_id')
+          .eq('email', order.customer_email)
+          .single()
+
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error('Error checking customer profile by email:', profileError)
+        }
+        existingProfile = profileByEmail
+        profileId = existingProfile?.id || null
+      }
 
       if (!existingProfile) {
         console.log(`Creating profile for new customer: ${order.customer_email}`)

@@ -51,10 +51,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the signature from headers
-    const signature = request.headers.get('x-embedly-signature');
+    // Embedly sends X-Auth-Signature with sha256(secret) per their docs
+    const signature = request.headers.get('x-auth-signature');
 
     if (!signature) {
-      console.error('[Wingside Card Webhook] No signature in webhook request');
+      console.error('[Wingside Card Webhook] No X-Auth-Signature in webhook request');
       return NextResponse.json(
         { error: 'Invalid signature' },
         { status: 401 }
@@ -64,17 +65,17 @@ export async function POST(request: NextRequest) {
     // Get raw body
     const body = await request.text();
 
-    // Validate signature
+    // Validate signature — Embedly uses sha256(secret), not HMAC of body
+    const expectedSignature = crypto
+      .createHash('sha256')
+      .update(webhookSecret)
+      .digest('hex');
+
     let isValidSignature = false;
     try {
-      const hash = crypto
-        .createHmac('sha256', webhookSecret)
-        .update(body)
-        .digest('hex');
-
       isValidSignature = crypto.timingSafeEqual(
         Buffer.from(signature),
-        Buffer.from(hash)
+        Buffer.from(expectedSignature)
       );
     } catch {
       // Signature length mismatch or invalid format

@@ -692,90 +692,58 @@ export default function CheckoutPage() {
 
     setSubmitting(true);
 
-    // Create account if checkbox is checked
+    // Create account if checkbox is checked — uses the same server-side
+    // signup API as my-account so Embedly wallet, referral code, welcome
+    // email, and profile are all created reliably.
     let userId: string | null = null;
+
+    // For logged-in users, use their existing user ID so the order is linked
+    if (isLoggedIn) {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      userId = currentUser?.id || null;
+    }
+
     if (formData.createAccount) {
-      // Check phone uniqueness before creating account
       try {
-        const { data: existingPhone } = await supabase
-          .from('profiles')
-          .select('id, email')
-          .eq('phone', `+234${formattedPhone}`)
-          .maybeSingle();
+        // Format DOB for the signup API: DD-MM-YYYY
+        const dobFormatted = `${formData.dobDay.padStart(2, '0')}-${formData.dobMonth.padStart(2, '0')}-${formData.dobYear}`;
 
-        if (existingPhone) {
-          setSubmitError('This phone number is already linked to an existing account. Please log in instead.');
-          setSubmitting(false);
-          return;
-        }
-      } catch {
-        // If the check fails, continue — don't block the signup
-      }
-
-      try {
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            data: {
-              full_name: `${formData.firstName} ${formData.lastName}`,
-              phone: `+234${formattedPhone}`,
-            },
-          },
+        const signupResponse = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            phone: formattedPhone, // API adds +234 prefix
+            dateOfBirth: dobFormatted,
+            gender: formData.gender,
+            referralId: formData.referralCode || undefined,
+          }),
         });
 
-        if (signUpError) {
-          if (signUpError.message.includes('already registered')) {
-            setSubmitError('This email is already registered. Please log in or use a different email.');
-          } else {
-            setSubmitError(signUpError.message);
-          }
+        const signupResult = await signupResponse.json();
+
+        if (!signupResponse.ok) {
+          setSubmitError(signupResult.error || 'Failed to create account. Please try again.');
           setSubmitting(false);
           return;
         }
 
-        if (signUpData.user) {
-          userId = signUpData.user.id;
+        userId = signupResult.user?.id || null;
 
-          // Format DOB for storage: DD-MM-YYYY
-          const dobFormatted = `${formData.dobDay.padStart(2, '0')}-${formData.dobMonth.padStart(2, '0')}-${formData.dobYear}`;
-
-          // Create profile
-          const { error: profileError } = await supabase.from('profiles').insert({
-            id: signUpData.user.id,
+        // Sign in so the user has an active session for the rest of checkout
+        if (userId) {
+          await supabase.auth.signInWithPassword({
             email: formData.email,
-            full_name: `${formData.firstName} ${formData.lastName}`,
-            phone: `+234${formattedPhone}`,
-            role: 'customer',
-            date_of_birth: dobFormatted,
-            gender: formData.gender,
+            password: formData.password,
           });
 
-          if (profileError) {
-            console.error('Profile creation error:', profileError);
-            // Continue anyway - auth user was created
-          }
-
-          // Sync new customer to Zoho CRM and Embedly
-          fetch('/api/integrations/sync-customer', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: signUpData.user.id,
-              email: formData.email,
-              full_name: `${formData.firstName} ${formData.lastName}`,
-              phone: `+234${formattedPhone}`,
-              dateOfBirth: dobFormatted,
-              address: formData.streetAddress,
-              city: formData.city,
-              state: 'Rivers',
-            }),
-          }).catch(console.error); // Fire and forget
-
-          // Create address for the user
+          // Create address for the user (signup API doesn't handle addresses)
           if (orderType === 'delivery' && formData.streetAddress) {
             await supabase.from('addresses').insert({
-              user_id: signUpData.user.id,
+              user_id: userId,
               label: 'Home',
               street_address: formData.streetAddress + (formData.streetAddress2 ? ', ' + formData.streetAddress2 : ''),
               city: formData.city,
@@ -1542,7 +1510,7 @@ export default function CheckoutPage() {
                           : item.drink;
 
                         return (
-                          <div key={index} className="flex items-start justify-between gap-4">
+                          <div key={`${item.id}-${item.size}-${Array.isArray(item.flavor) ? item.flavor.join('-') : item.flavor}-${Array.isArray(item.rice) ? item.rice.join('-') : item.rice || ''}-${Array.isArray(item.drink) ? item.drink.join('-') : item.drink || ''}-${item.milkshake || ''}-${item.cake || ''}`} className="flex items-start justify-between gap-4">
                             <div className="flex-1">
                               <p className="font-medium text-sm">{item.name}</p>
                               <p className="text-xs text-gray-500">{item.size}</p>

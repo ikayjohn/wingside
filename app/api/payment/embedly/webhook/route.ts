@@ -20,24 +20,25 @@ export async function POST(request: NextRequest) {
     console.log('[Embedly Webhook] Payload:', JSON.stringify(event, null, 2))
 
     // Verify webhook signature (if configured)
+    // Embedly sends X-Auth-Signature header with sha256(secret)
     const webhookSecret = process.env.EMBEDLY_WEBHOOK_SECRET
 
     if (webhookSecret) {
-      const signature = request.headers.get('x-embedly-signature')
+      const signature = request.headers.get('x-auth-signature')
 
       if (!signature) {
-        console.error('[Embedly Webhook] Missing signature header')
+        console.error('[Embedly Webhook] Missing X-Auth-Signature header')
         return NextResponse.json(
           { error: 'Missing signature' },
           { status: 401 }
         )
       }
 
-      // Verify HMAC signature
+      // Embedly signature is sha256(secret) per their docs
       const crypto = require('crypto')
       const expectedSignature = crypto
-        .createHmac('sha256', webhookSecret)
-        .update(rawBody)
+        .createHash('sha256')
+        .update(webhookSecret)
         .digest('hex')
 
       if (signature !== expectedSignature) {
@@ -48,13 +49,14 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      console.log('[Embedly Webhook] ✅ Signature verified')
+      console.log('[Embedly Webhook] Signature verified')
     } else {
-      console.warn('[Embedly Webhook] ⚠️  No webhook secret configured - skipping verification')
+      console.warn('[Embedly Webhook] No webhook secret configured - skipping verification')
     }
 
-    // Handle payment success event
-    if (event.event === 'checkout.wallet.payment_received') {
+    // Handle checkout payment success event
+    // Embedly sends event name "checkout.payment.success" per their docs
+    if (event.event === 'checkout.payment.success') {
       const { data } = event
 
       if (!data) {
@@ -65,16 +67,19 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      // Field names from Embedly's checkout.payment.success webhook payload:
+      // walletId, checkoutRef, amount (in Naira), transactionId,
+      // senderAccountNumber, senderName, reference, status
       const walletId = data.walletId
-      const invoiceReference = data.invoiceReference
-      const amount = data.amount
-      const transactionId = data.transactionId
+      const checkoutRef = data.checkoutRef
+      const amount = data.amount // Naira (not kobo)
+      const transactionId = data.transactionId || data.reference
       const senderAccountNumber = data.senderAccountNumber
       const senderName = data.senderName
 
       console.log('[Embedly Webhook] Payment received:', {
         walletId,
-        invoiceReference,
+        checkoutRef,
         amount,
         transactionId,
         senderAccountNumber,
@@ -88,11 +93,11 @@ export async function POST(request: NextRequest) {
       const { data: order, error: orderError } = await admin
         .from('orders')
         .select('*, order_items(*)')
-        .or(`payment_reference.eq.${walletId},checkout_ref.eq.${invoiceReference}`)
+        .or(`payment_reference.eq.${walletId},checkout_ref.eq.${checkoutRef}`)
         .single()
 
       if (orderError || !order) {
-        console.error('[Embedly Webhook] Order not found for:', { walletId, invoiceReference })
+        console.error('[Embedly Webhook] Order not found for:', { walletId, checkoutRef })
         return NextResponse.json(
           { error: 'Order not found' },
           { status: 404 }
@@ -103,16 +108,16 @@ export async function POST(request: NextRequest) {
 
       // Idempotency: Skip if already paid
       if (order.payment_status === 'paid') {
-        console.log('[Embedly Webhook] ✓ Order already processed')
+        console.log('[Embedly Webhook] Order already processed')
         return NextResponse.json({ success: true, message: 'Already processed' })
       }
 
-      // Validate payment amount
-      const expectedAmount = Math.round(Number(order.total) * 100) // Convert to kobo
-      const receivedAmount = amount
+      // Validate payment amount (Embedly sends amount in Naira)
+      const expectedAmount = Number(order.total)
+      const receivedAmount = Number(amount)
 
-      if (Math.abs(receivedAmount - expectedAmount) > 100) { // Allow 1 naira (100 kobo) variance
-        console.warn('[Embedly Webhook] ⚠️  Amount mismatch:', {
+      if (Math.abs(receivedAmount - expectedAmount) > 1) { // Allow 1 Naira variance
+        console.warn('[Embedly Webhook] Amount mismatch:', {
           expected: expectedAmount,
           received: receivedAmount,
           variance: Math.abs(receivedAmount - expectedAmount),
@@ -124,7 +129,7 @@ export async function POST(request: NextRequest) {
           user_id: null,
           type: 'amount_mismatch',
           title: 'Payment Amount Mismatch',
-          message: `Order ${order.order_number} received ₦${(receivedAmount / 100).toLocaleString()} but expected ₦${(expectedAmount / 100).toLocaleString()}`,
+          message: `Order ${order.order_number} received ₦${receivedAmount.toLocaleString()} but expected ₦${expectedAmount.toLocaleString()}`,
           metadata: {
             order_id: order.id,
             order_number: order.order_number,

@@ -164,6 +164,7 @@ export default function AdminLayout({
         { href: '/admin/categories', label: 'Categories', permission: 'categories' },
         { href: '/admin/flavors', label: 'Flavors', permission: 'flavors' },
         { href: '/admin/delivery-areas', label: 'Delivery Areas', permission: 'delivery_areas' },
+        { href: '/admin/pickup-locations', label: 'Pickup Locations', permission: 'delivery_areas' },
         { href: '/admin/promo-codes', label: 'Promo Codes', permission: 'promo_codes' },
         { href: '/admin/customers', label: 'Customers', permission: 'customers' },
         { href: '/admin/gift-cards', label: 'Gift Cards', permission: 'gift_cards' },

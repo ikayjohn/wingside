@@ -39,44 +39,6 @@ export interface EmbedlyWallet {
   isActive?: boolean; // Alternative active flag
 }
 
-export interface EmbedlyCard {
-  id: string;
-  cardId: string;
-  customerId: string;
-  walletId: string;
-  cardType: 'VIRTUAL' | 'PHYSICAL';
-  cardStatus: 'ACTIVE' | 'FROZEN' | 'BLOCKED' | 'TERMINATED';
-  maskedPan: string;
-  expiryDate: string;
-  balance: number;
-  currencyId: string;
-  cardPinSet: boolean;
-  spendLimit?: number;
-  dailyLimit?: number;
-  monthlyLimit?: number;
-  isDefault: boolean;
-  createdAt: string;
-}
-
-export interface CreateCardRequest {
-  customerId: string;
-  walletId: string;
-  cardType: 'VIRTUAL' | 'PHYSICAL';
-  cardName?: string;
-}
-
-export interface FundCardRequest {
-  cardId: string;
-  amount: number;
-  narration?: string;
-}
-
-export interface UpdateCardLimitRequest {
-  cardId: string;
-  dailyLimit?: number;
-  monthlyLimit?: number;
-}
-
 export interface EmbedlyTransaction {
   id: string;
   walletId: string;
@@ -198,7 +160,6 @@ class EmbedlyClient {
   private baseUrl: string;
   private payoutUrl: string;
   private checkoutUrl: string;
-  private cardUrl: string;
 
   constructor(apiKey: string, environment: 'production' | 'staging' = 'production') {
     this.apiKey = apiKey;
@@ -208,19 +169,16 @@ class EmbedlyClient {
       baseUrl: 'https://waas-prod.embedly.ng/api/v1',
       payoutUrl: 'https://payout-prod.embedly.ng/api/Payout',
       checkoutUrl: 'https://checkout-prod.embedly.ng',
-      cardUrl: 'https://waas-card-middleware-api-prod.embedly.ng',
     } : {
       baseUrl: 'https://waas-staging.embedly.ng/api/v1',
       payoutUrl: 'https://payout-staging.embedly.ng/api/Payout',
       checkoutUrl: 'https://checkout-staging.embedly.ng',
-      cardUrl: 'https://waas-card-middleware-api-staging.embedly.ng',
     };
 
     // Allow environment variable overrides for flexibility
     this.baseUrl = process.env.EMBEDLY_BASE_URL || defaultUrls.baseUrl;
     this.payoutUrl = process.env.EMBEDLY_PAYOUT_URL || defaultUrls.payoutUrl;
     this.checkoutUrl = process.env.EMBEDLY_CHECKOUT_URL || defaultUrls.checkoutUrl;
-    this.cardUrl = process.env.EMBEDLY_CARD_URL || defaultUrls.cardUrl;
 
     // Log environment for debugging (only on initialization)
     if (process.env.NODE_ENV !== 'production') {
@@ -651,78 +609,6 @@ class EmbedlyClient {
     }, this.checkoutUrl);
 
     return response.data;
-  }
-
-  // Card Management
-  async createCard(cardData: CreateCardRequest): Promise<EmbedlyCard> {
-    const response = await this.makeRequest<{
-      statusCode: number;
-      message: string;
-      data: EmbedlyCard;
-    }>('/cards/create', {
-      method: 'POST',
-      body: JSON.stringify(cardData),
-    }, this.cardUrl);
-
-    return response.data;
-  }
-
-  async getCards(customerId: string): Promise<EmbedlyCard[]> {
-    const response = await this.makeRequest<{
-      statusCode: number;
-      message: string;
-      data: EmbedlyCard[];
-    }>(`/cards/customer/${customerId}`, {}, this.cardUrl);
-
-    return response.data;
-  }
-
-  async getCardDetails(cardId: string): Promise<EmbedlyCard> {
-    const response = await this.makeRequest<{
-      statusCode: number;
-      message: string;
-      data: EmbedlyCard;
-    }>(`/cards/${cardId}`, {}, this.cardUrl);
-
-    return response.data;
-  }
-
-  async blockCard(cardId: string): Promise<void> {
-    await this.makeRequest(`/cards/${cardId}/block`, {
-      method: 'POST',
-    }, this.cardUrl);
-  }
-
-  async unblockCard(cardId: string): Promise<void> {
-    await this.makeRequest(`/cards/${cardId}/unblock`, {
-      method: 'POST',
-    }, this.cardUrl);
-  }
-
-  async freezeCard(cardId: string): Promise<void> {
-    await this.makeRequest(`/cards/${cardId}/freeze`, {
-      method: 'POST',
-    }, this.cardUrl);
-  }
-
-  async unfreezeCard(cardId: string): Promise<void> {
-    await this.makeRequest(`/cards/${cardId}/unfreeze`, {
-      method: 'POST',
-    }, this.cardUrl);
-  }
-
-  async fundCard(fundData: FundCardRequest): Promise<void> {
-    await this.makeRequest('/cards/fund', {
-      method: 'POST',
-      body: JSON.stringify(fundData),
-    }, this.cardUrl);
-  }
-
-  async updateCardLimit(limitData: UpdateCardLimitRequest): Promise<void> {
-    await this.makeRequest('/cards/update-limit', {
-      method: 'POST',
-      body: JSON.stringify(limitData),
-    }, this.cardUrl);
   }
 
   // KYC Operations

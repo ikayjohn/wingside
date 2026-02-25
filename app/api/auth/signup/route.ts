@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { syncNewCustomer } from '@/lib/integrations';
 import { sendWelcomeEmail } from '@/lib/notifications/email';
 import { comprehensiveBotProtection } from '@/lib/bot-protection';
+import crypto from 'crypto';
 
 // Validate environment variables
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -26,12 +27,12 @@ function generateReferralCode(firstName: string, lastName: string): string {
   const firstPart = cleanFirst.slice(0, 4).toLowerCase();
   const lastPart = cleanLast.slice(0, 4).toLowerCase();
 
-  const randomDigits = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+  const randomDigits = crypto.randomInt(1000).toString().padStart(3, '0');
 
   let code = `${firstPart}${lastPart}${randomDigits}`;
 
   if (code.length < 5) {
-    const extraRandom = Math.random().toString(36).substring(2, 4).toLowerCase();
+    const extraRandom = crypto.randomBytes(2).toString('hex').substring(0, 2).toLowerCase();
     code = `${code}${extraRandom}`;
   }
 
@@ -127,6 +128,20 @@ export async function POST(request: NextRequest) {
       referredByUserId = referrerData.id;
     }
 
+    // Check if email is already registered
+    const { data: existingEmailProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email.toLowerCase().trim())
+      .maybeSingle();
+
+    if (existingEmailProfile) {
+      return NextResponse.json(
+        { error: 'This email is already registered. Please log in instead.' },
+        { status: 409 }
+      );
+    }
+
     // Check if phone number is already registered
     const { data: existingPhoneProfile } = await supabase
       .from('profiles')
@@ -154,6 +169,13 @@ export async function POST(request: NextRequest) {
 
     if (authError) {
       console.error('Auth creation error:', authError);
+      const msg = authError.message?.toLowerCase() || '';
+      if (msg.includes('already') || msg.includes('exists') || msg.includes('duplicate') || msg.includes('registered')) {
+        return NextResponse.json(
+          { error: 'This email is already registered. Please log in instead.' },
+          { status: 409 }
+        );
+      }
       return NextResponse.json(
         { error: 'Failed to create account. Please try again.' },
         { status: 400 }
