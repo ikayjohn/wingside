@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 function getSupabaseAdminClient() {
   return createClient(
@@ -188,14 +189,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate card number (16 digits)
-    const cardNumber = Array.from({ length: 16 }, () =>
-      Math.floor(Math.random() * 10)
-    ).join('');
+    const cardNumber = Array.from(crypto.randomBytes(16), b => b % 10).join('');
 
     // Generate PIN (4 digits)
-    const pin = Array.from({ length: 4 }, () =>
-      Math.floor(Math.random() * 10)
-    ).join('');
+    const pin = Array.from(crypto.randomBytes(4), b => b % 10).join('');
 
     // Calculate expiry date
     const expiresAt = new Date();

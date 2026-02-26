@@ -104,7 +104,14 @@
       "Bash(powershell.exe -Command \"Start-Process ''http://localhost:3000/preview-notification.html''\")",
       "Bash(powershell.exe -Command \"\nStart-Process ''http://localhost:3000/connect''\nStart-Sleep -Milliseconds 500\nStart-Process ''http://localhost:3000/hotspots''\nStart-Sleep -Milliseconds 500\nStart-Process ''http://localhost:3000/sports''\nStart-Sleep -Milliseconds 500\nStart-Process ''http://localhost:3000/business/catering''\n\")",
       "Bash(powershell.exe -Command \"\nStart-Process ''http://localhost:3000/business/meetings''\nStart-Sleep -Milliseconds 500\nStart-Process ''http://localhost:3000/business/officelunch''\nStart-Sleep -Milliseconds 500\nStart-Process ''http://localhost:3000/business/wingpost''\n\")",
-      "Bash(do sed -i 's/_formStartTime/_timestamp/g' \"$file\")"
+      "Bash(do sed -i 's/_formStartTime/_timestamp/g' \"$file\")",
+      "Bash(node_modules/.bin/next build:*)",
+      "Bash(npm i:*)",
+      "WebFetch(domain:docs.embedly.ng)",
+      "WebFetch(domain:waas-prod.embedly.ng)",
+      "WebFetch(domain:developer.embedly.ng)",
+      "Bash(rm -rf \"C:/Users/ikayj/Documents/webprojects/wingside/.next\" && cd \"C:/Users/ikayj/Documents/webprojects/wingside\" && npm run build 2>&1)",
+      "Bash(cd:*)"
     ],
     "deny": [],
     "ask": []

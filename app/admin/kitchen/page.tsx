@@ -35,6 +35,7 @@ export default function KitchenDisplayPage() {
   const [lastOrderTime, setLastOrderTime] = useState<string>('--');
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Request notification permission on mount
@@ -79,21 +80,48 @@ export default function KitchenDisplayPage() {
           console.log('Order change:', payload);
 
           if (payload.eventType === 'INSERT') {
-            // Fetch full order with items
-            const { data } = await supabase
-              .from('orders')
-              .select(`
-                *,
-                order_items (*)
-              `)
-              .eq('id', payload.new.id)
-              .single();
+            if (payload.new.status === 'preparing') {
+              // Fetch full order with items
+              const { data } = await supabase
+                .from('orders')
+                .select(`
+                  *,
+                  order_items (*)
+                `)
+                .eq('id', payload.new.id)
+                .single();
 
-            if (data && ['confirmed', 'preparing', 'ready'].includes(data.status)) {
-              handleNewOrder(data);
+              if (data) {
+                handleNewOrder(data);
+              }
             }
           } else if (payload.eventType === 'UPDATE') {
-            handleOrderUpdate(payload.new);
+            if (payload.new.status === 'preparing') {
+              // Order moved to preparing — fetch full data and add to display
+              const { data } = await supabase
+                .from('orders')
+                .select(`
+                  *,
+                  order_items (*)
+                `)
+                .eq('id', payload.new.id)
+                .single();
+
+              if (data) {
+                setOrders(prev => {
+                  const exists = prev.some(o => o.id === data.id);
+                  if (exists) {
+                    return prev.map(o => o.id === data.id ? data : o);
+                  }
+                  // New preparing order — trigger alerts
+                  handleNewOrder(data);
+                  return prev;
+                });
+              }
+            } else {
+              // Order moved away from preparing — remove from display
+              setOrders(prev => prev.filter(o => o.id !== payload.new.id));
+            }
           } else if (payload.eventType === 'DELETE') {
             setOrders(prev => prev.filter(o => o.id !== payload.old.id));
           }
@@ -114,7 +142,7 @@ export default function KitchenDisplayPage() {
         *,
         order_items (*)
       `)
-      .in('status', ['confirmed', 'preparing', 'ready'])
+      .eq('status', 'preparing')
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -122,7 +150,6 @@ export default function KitchenDisplayPage() {
     }
 
     if (data) {
-      console.log('Fetched orders:', data);
       setOrders(data);
     }
   };
@@ -150,14 +177,24 @@ export default function KitchenDisplayPage() {
     }
   };
 
-  const handleOrderUpdate = (updatedOrder: any) => {
-    if (['confirmed', 'preparing', 'ready'].includes(updatedOrder.status)) {
-      setOrders(prev =>
-        prev.map(o => o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o)
-      );
-    } else {
-      // Order moved to different status (delivered, cancelled, etc.)
-      setOrders(prev => prev.filter(o => o.id !== updatedOrder.id));
+  const markReady = async (orderId: string) => {
+    setUpdatingOrderId(orderId);
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'ready' }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        console.error('Failed to mark order ready:', data.error);
+      }
+      // Real-time subscription will handle removing the card
+    } catch (error) {
+      console.error('Error marking order ready:', error);
+    } finally {
+      setUpdatingOrderId(null);
     }
   };
 
@@ -194,112 +231,6 @@ export default function KitchenDisplayPage() {
     return `${hours}h ${minutes % 60}m ago`;
   };
 
-  const OrderColumn = ({ title, status, color }: { title: string, status: string, color: string }) => {
-    const columnOrders = orders.filter(o => o.status === status);
-
-    const headerColors = {
-      blue: 'bg-blue-500',
-      purple: 'bg-purple-500',
-      green: 'bg-green-500'
-    };
-
-    return (
-      <div className="bg-gray-800 rounded-2xl p-4 overflow-y-auto max-h-[85vh]">
-        <h2 className={`${headerColors[color as keyof typeof headerColors]} text-white text-xl font-bold text-center py-2 px-3 rounded-xl mb-4`}>
-          {title} ({columnOrders.length})
-        </h2>
-        <div className="flex flex-col gap-3">
-          {columnOrders.length === 0 ? (
-            <div className="text-center text-gray-400 py-12">
-              <svg className="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              <p className="text-sm">No orders</p>
-            </div>
-          ) : (
-            columnOrders.map(order => (
-              <div key={order.id} className="bg-white rounded-xl p-4 shadow-lg">
-                {/* Order Header */}
-                <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-200">
-                  <span className="text-lg font-bold text-[#552627]">{order.order_number}</span>
-                  <span className="text-gray-400 text-xs flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    {getTimeAgo(order.created_at)}
-                  </span>
-                </div>
-
-                {/* Customer Info */}
-                <div className="mb-3">
-                  <div className="font-semibold text-base mb-1 flex items-center gap-2 text-gray-900">
-                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    {order.customer_name}
-                  </div>
-                  {order.customer_phone && (
-                    <div className="text-gray-500 text-xs flex items-center gap-1 ml-6">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                      </svg>
-                      {order.customer_phone}
-                    </div>
-                  )}
-                </div>
-
-                {/* Order Items */}
-                <div className="space-y-2 mb-3">
-                  {order.order_items?.map((item, idx) => (
-                    <div key={idx} className="bg-gray-50 rounded-lg p-2">
-                      <div className="flex items-start gap-2">
-                        <span className="bg-[#F7C400] text-black px-2 py-0.5 rounded text-xs font-bold flex-shrink-0 mt-0.5">
-                          {item.quantity}x
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-sm text-gray-900 leading-tight">
-                            {item.product_name}
-                            {item.product_size && <span className="text-gray-500 font-normal"> ({item.product_size})</span>}
-                          </div>
-                          {item.flavors?.length > 0 && (
-                            <div className="text-[#F7C400] text-xs mt-1 flex items-start gap-1">
-                              <svg className="w-3 h-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                              </svg>
-                              <span className="leading-tight">{item.flavors.join(', ')}</span>
-                            </div>
-                          )}
-                          {/* Notes - Always show */}
-                          <div className={`text-xs mt-1.5 flex items-start gap-1 p-1.5 rounded border ${
-                            item.notes
-                              ? 'text-red-700 bg-red-50 border-red-200 font-medium'
-                              : 'text-gray-400 bg-gray-50 border-gray-200 italic'
-                          }`}>
-                            <svg className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                            <span className="leading-tight">
-                              {item.notes || 'No special instructions'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Total */}
-                <div className="text-xl font-bold text-[#552627] text-right pt-2 border-t border-gray-200">
-                  ₦{order.total.toLocaleString()}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    );
-  };
-
   if (loading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen text-4xl text-[#F7C400]">
@@ -332,9 +263,12 @@ export default function KitchenDisplayPage() {
           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
-          Kitchen Display System
+          Kitchen Display
         </h1>
         <div className="flex items-center gap-4 text-base">
+          <span className="text-gray-300 text-lg font-semibold">
+            {orders.length} order{orders.length !== 1 ? 's' : ''} preparing
+          </span>
           <span className="bg-red-500 text-white px-4 py-1.5 rounded-full font-bold animate-pulse flex items-center gap-2">
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <circle cx="10" cy="10" r="6" />
@@ -380,15 +314,123 @@ export default function KitchenDisplayPage() {
         </div>
       </div>
 
-      {/* Kanban Columns */}
-      <div className="grid grid-cols-3 gap-4 min-h-[85vh]">
-        <OrderColumn title="CONFIRMED" status="confirmed" color="blue" />
-        <OrderColumn title="PREPARING" status="preparing" color="purple" />
-        <OrderColumn title="READY" status="ready" color="green" />
-      </div>
+      {/* Orders Grid */}
+      {orders.length === 0 ? (
+        <div className="flex flex-col items-center justify-center min-h-[70vh] text-gray-500">
+          <svg className="w-24 h-24 mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+          <p className="text-2xl font-semibold mb-2">No orders preparing</p>
+          <p className="text-gray-600">Orders will appear here when they start being prepared</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {orders.map(order => (
+            <div key={order.id} className="bg-white rounded-xl p-4 shadow-lg flex flex-col">
+              {/* Order Header */}
+              <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-200">
+                <span className="text-lg font-bold text-[#552627]">{order.order_number}</span>
+                <span className="text-gray-400 text-xs flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {getTimeAgo(order.created_at)}
+                </span>
+              </div>
+
+              {/* Customer Info */}
+              <div className="mb-3">
+                <div className="font-semibold text-base mb-1 flex items-center gap-2 text-gray-900">
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  {order.customer_name}
+                </div>
+                {order.customer_phone && (
+                  <div className="text-gray-500 text-xs flex items-center gap-1 ml-6">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    {order.customer_phone}
+                  </div>
+                )}
+              </div>
+
+              {/* Order Items */}
+              <div className="space-y-2 mb-3 flex-1">
+                {order.order_items?.map((item, idx) => (
+                  <div key={idx} className="bg-gray-50 rounded-lg p-2">
+                    <div className="flex items-start gap-2">
+                      <span className="bg-[#F7C400] text-black px-2 py-0.5 rounded text-xs font-bold flex-shrink-0 mt-0.5">
+                        {item.quantity}x
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm text-gray-900 leading-tight">
+                          {item.product_name}
+                          {item.product_size && <span className="text-gray-500 font-normal"> ({item.product_size})</span>}
+                        </div>
+                        {item.flavors?.length > 0 && (
+                          <div className="text-[#F7C400] text-xs mt-1 flex items-start gap-1">
+                            <svg className="w-3 h-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                            <span className="leading-tight">{item.flavors.join(', ')}</span>
+                          </div>
+                        )}
+                        {/* Notes */}
+                        <div className={`text-xs mt-1.5 flex items-start gap-1 p-1.5 rounded border ${
+                          item.notes
+                            ? 'text-red-700 bg-red-50 border-red-200 font-medium'
+                            : 'text-gray-400 bg-gray-50 border-gray-200 italic'
+                        }`}>
+                          <svg className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          <span className="leading-tight">
+                            {item.notes || 'No special instructions'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Total + Ready Button */}
+              <div className="pt-2 border-t border-gray-200">
+                <div className="text-xl font-bold text-[#552627] text-right mb-3">
+                  ₦{order.total.toLocaleString()}
+                </div>
+                <button
+                  onClick={() => markReady(order.id)}
+                  disabled={updatingOrderId === order.id}
+                  className="w-full bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white font-bold py-3 px-4 rounded-xl text-lg transition-colors cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {updatingOrderId === order.id ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Ready
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Notification Warning */}
-      {Notification.permission === 'denied' && (
+      {'Notification' in globalThis && typeof Notification !== 'undefined' && Notification.permission === 'denied' && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-yellow-400 text-black px-6 py-3 rounded-lg font-bold shadow-xl flex items-center gap-2 text-sm">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server'
 import { canAccessAdmin, UserRole } from '@/lib/permissions';
+import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     // Generate unique filename
     const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const fileName = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${fileExt}`;
     const filePath = `sports-events/${fileName}`;
 
     // Convert file to buffer

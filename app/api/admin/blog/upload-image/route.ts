@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server'
 import { canAccessAdmin, UserRole } from '@/lib/permissions';
+import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
     // Generate unique filename
     const fileExt = file.name.split('.').pop();
     const timestamp = Date.now();
-    const random = Math.random().toString(36).substring(7);
+    const random = crypto.randomBytes(6).toString('hex');
     const fileName = `blog-${timestamp}-${random}.${fileExt}`;
     const filePath = `blog/${fileName}`;
 

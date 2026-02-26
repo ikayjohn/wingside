@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { canAccessAdmin, UserRole } from '@/lib/permissions';
+import crypto from 'crypto';
 
 // Enhanced referral code generator
 function generateReferralCode(firstName: string, lastName: string, existingCodes: string[] = []): string {
@@ -13,7 +14,7 @@ function generateReferralCode(firstName: string, lastName: string, existingCodes
 
   const namePart = cleanName(firstName + lastName);
   if (namePart.length < 3) {
-    return cleanName(firstName) + Math.floor(Math.random() * 1000);
+    return cleanName(firstName) + crypto.randomInt(1000);
   }
 
   let baseCode = namePart;
