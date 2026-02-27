@@ -110,11 +110,11 @@ export async function GET(request: NextRequest) {
       if (points >= 20000) {
         oldTier = 'Wingzard'
         newTier = 'Wing Leader'
-        newPoints = 20000
+        newPoints = 19999
       } else if (points >= 5001) {
         oldTier = 'Wing Leader'
         newTier = 'Wing Member'
-        newPoints = 5001
+        newPoints = 5000
       }
 
       return {

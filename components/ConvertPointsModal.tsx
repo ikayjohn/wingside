@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { fetchWithCsrf } from '@/lib/client/csrf';
 
 interface ConvertPointsModalProps {
   isOpen: boolean;
@@ -42,9 +43,8 @@ export default function ConvertPointsModal({
     if (!canConvert) return;
 
     try {
-      const response = await fetch('/api/points/convert', {
+      const response = await fetchWithCsrf('/api/points/convert', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ points: pointsValue })
       });
 

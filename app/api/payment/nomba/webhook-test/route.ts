@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { hasPermission, UserRole } from '@/lib/permissions'
 
 /**
  * DEBUG ENDPOINT - Test webhook processing without signature verification
  *
- * ⚠️  SECURITY WARNING: This endpoint bypasses signature verification
- * Only use for testing. Remove or restrict access in production.
+ * RESTRICTED: Requires admin authentication.
  *
  * Usage:
  * POST /api/payment/nomba/webhook-test
@@ -16,6 +17,24 @@ export async function POST(request: NextRequest) {
   console.log('\n🧪 [WEBHOOK TEST] Starting manual webhook test...\n')
 
   try {
+    // Require admin authentication
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (!hasPermission(profile?.role as UserRole, 'orders', 'full')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     const { orderReference } = await request.json()
 
     if (!orderReference) {
@@ -144,8 +163,26 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET endpoint to check webhook status
+// GET endpoint to check webhook status (admin only)
 export async function GET(request: NextRequest) {
+  // Require admin authentication
+  const supabase = await createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (!hasPermission(profile?.role as UserRole, 'orders', 'view')) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const { searchParams } = new URL(request.url)
   const orderNumber = searchParams.get('orderNumber')
   const orderReference = searchParams.get('orderReference')

@@ -342,11 +342,12 @@ export async function POST(request: NextRequest) {
     )
     const deliveryFee = body.delivery_fee || 0
     const tax = body.tax || 0
-    const discountAmount = body.discount_amount || 0
-    const referralDiscount = body.referral_discount || 0
-    const total = subtotal + deliveryFee + tax - discountAmount - referralDiscount
 
-    // Validate promo code if provided
+    // Server-side discount calculation (NEVER trust client-sent amounts)
+    let discountAmount = 0
+    let referralDiscount = 0
+
+    // Validate and calculate promo code discount server-side
     if (body.promo_code_id) {
       const { data: promoCode, error: promoError } = await supabase
         .from('promo_codes')
@@ -387,13 +388,49 @@ export async function POST(request: NextRequest) {
       }
 
       // Check minimum order amount
-      if (subtotal < promoCode.min_order_amount) {
+      const orderAmount = subtotal + deliveryFee
+      if (orderAmount < promoCode.min_order_amount) {
         return NextResponse.json(
           { error: `Minimum order amount for this promo code is ₦${promoCode.min_order_amount.toLocaleString()}` },
           { status: 400 }
         )
       }
+
+      // Calculate discount server-side (matches /api/promo-codes/validate logic)
+      if (promoCode.discount_type === 'percentage') {
+        discountAmount = Math.round((orderAmount * promoCode.discount_value) / 100 * 100) / 100
+        if (promoCode.max_discount_amount && discountAmount > promoCode.max_discount_amount) {
+          discountAmount = promoCode.max_discount_amount
+        }
+      } else {
+        discountAmount = promoCode.discount_value
+      }
+
+      // Don't allow discount to exceed order amount
+      if (discountAmount > orderAmount) {
+        discountAmount = orderAmount
+      }
+
+      discountAmount = Math.round(discountAmount * 100) / 100
     }
+
+    // Validate and calculate referral discount server-side
+    if (body.referral_code && subtotal + deliveryFee >= 1000) {
+      const { data: rewardSettings } = await supabase
+        .from('site_settings')
+        .select('setting_key, setting_value')
+        .eq('setting_key', 'referred_reward_amount')
+        .single()
+
+      referralDiscount = parseInt(rewardSettings?.setting_value || '0')
+
+      // Sanity check: referral discount should never exceed a reasonable cap
+      if (referralDiscount > subtotal + deliveryFee) {
+        referralDiscount = 0
+      }
+    }
+
+    const total = subtotal + deliveryFee + tax - discountAmount - referralDiscount
 
     // Generate secure tracking token for guest order tracking
     const trackingToken = crypto.randomBytes(32).toString('hex');
@@ -422,9 +459,9 @@ export async function POST(request: NextRequest) {
         total,
         notes: body.notes,
         promo_code_id: body.promo_code_id || null,
-        discount_amount: body.discount_amount || 0,
+        discount_amount: discountAmount,
         referral_code: body.referral_code || null,
-        referral_discount: body.referral_discount || 0,
+        referral_discount: referralDiscount,
       })
       .select()
       .single()

@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { csrfProtection } from '@/lib/csrf';
 
-// POST /api/rewards/award - Award points to user
+// POST /api/rewards/award - Award purchase-based points to user
+// Only handles 'purchase' reward type. For one-time rewards, use /api/rewards/claim instead.
 export async function POST(request: NextRequest) {
   try {
+    // Check CSRF token
+    const csrfError = await csrfProtection(request)
+    if (csrfError) {
+      return csrfError
+    }
+
     const supabase = await createClient();
     const body = await request.json();
-    const { rewardType, points, amountSpent, description, metadata } = body;
+    const { rewardType, amountSpent, description, metadata } = body;
 
     // Get authenticated user
     const {
@@ -18,13 +26,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Call the award_points function
+    // Only allow 'purchase' reward type through this endpoint
+    // All other reward types must go through /api/rewards/claim (server-enforced points)
+    if (rewardType !== 'purchase') {
+      return NextResponse.json(
+        { error: 'This endpoint only supports purchase rewards. Use /api/rewards/claim for other reward types.' },
+        { status: 400 }
+      );
+    }
+
+    // Validate amountSpent
+    if (!amountSpent || amountSpent <= 0) {
+      return NextResponse.json(
+        { error: 'amountSpent must be a positive number' },
+        { status: 400 }
+      );
+    }
+
+    // Server-enforced points calculation: 1 point per ₦100 spent
+    const enforced_points = Math.floor(amountSpent / 100);
+
+    if (enforced_points <= 0) {
+      return NextResponse.json(
+        { error: 'Order amount too low to earn points (minimum ₦100)' },
+        { status: 400 }
+      );
+    }
+
+    // Call the award_points function with server-calculated points
     const { data, error } = await supabase.rpc('award_points', {
       p_user_id: user.id,
-      p_reward_type: rewardType,
-      p_points: points,
-      p_amount_spent: amountSpent || 0,
-      p_description: description,
+      p_reward_type: 'purchase',
+      p_points: enforced_points,
+      p_amount_spent: amountSpent,
+      p_description: description || `Earned ${enforced_points} points from ₦${amountSpent.toLocaleString()} purchase`,
       p_metadata: metadata || {}
     });
 
@@ -46,6 +81,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       rewardId: data,
+      pointsAwarded: enforced_points,
       newPointsTotal: profile?.total_points || 0
     });
   } catch (error) {

@@ -16,10 +16,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's profile with points and order count
+    // Get user's profile with points, birthday, and order count
     const { data: profile } = await supabase
       .from('profiles')
-      .select('total_points, created_at')
+      .select('total_points, created_at, birthday_day, birthday_month')
       .eq('id', user.id)
       .single();
 
@@ -59,7 +59,7 @@ export async function GET() {
       {
         id: 'instagram_follow',
         name: 'Instagram Follower',
-        points: 10,
+        points: 30,
         description: 'Follow us on Instagram and earn points!',
         icon: '📸',
         category: 'social',
@@ -71,7 +71,7 @@ export async function GET() {
       {
         id: 'twitter_follow',
         name: 'Twitter Follower',
-        points: 10,
+        points: 25,
         description: 'Follow us on Twitter/X and earn points!',
         icon: '🐦',
         category: 'social',
@@ -79,6 +79,42 @@ export async function GET() {
         claimed: claimedTypes.has('twitter_follow'),
         claimedAt: claimedRewards?.find(r => r.reward_type === 'twitter_follow')?.claimed_at,
         requirement: 'Follow our Twitter account'
+      },
+      {
+        id: 'tiktok_follow',
+        name: 'TikTok Follower',
+        points: 30,
+        description: 'Follow us on TikTok and earn points!',
+        icon: '🎵',
+        category: 'social',
+        canClaim: !claimedTypes.has('tiktok_follow'),
+        claimed: claimedTypes.has('tiktok_follow'),
+        claimedAt: claimedRewards?.find(r => r.reward_type === 'tiktok_follow')?.claimed_at,
+        requirement: 'Follow our TikTok account'
+      },
+      {
+        id: 'facebook_follow',
+        name: 'Facebook Follower',
+        points: 25,
+        description: 'Follow us on Facebook and earn points!',
+        icon: '👍',
+        category: 'social',
+        canClaim: !claimedTypes.has('facebook_follow'),
+        claimed: claimedTypes.has('facebook_follow'),
+        claimedAt: claimedRewards?.find(r => r.reward_type === 'facebook_follow')?.claimed_at,
+        requirement: 'Follow our Facebook page'
+      },
+      {
+        id: 'youtube_follow',
+        name: 'YouTube Subscriber',
+        points: 40,
+        description: 'Subscribe to our YouTube channel and earn points!',
+        icon: '▶️',
+        category: 'social',
+        canClaim: !claimedTypes.has('youtube_follow'),
+        claimed: claimedTypes.has('youtube_follow'),
+        claimedAt: claimedRewards?.find(r => r.reward_type === 'youtube_follow')?.claimed_at,
+        requirement: 'Subscribe to our YouTube channel'
       },
       {
         id: 'review',
@@ -99,7 +135,7 @@ export async function GET() {
         description: 'Special points on your birthday!',
         icon: '🎂',
         category: 'special',
-        canClaim: !claimedTypes.has('birthday') && isBirthdayToday(profile?.created_at),
+        canClaim: !claimedTypes.has('birthday') && isBirthdayToday(profile?.birthday_day, profile?.birthday_month),
         claimed: claimedTypes.has('birthday'),
         claimedAt: claimedRewards?.find(r => r.reward_type === 'birthday')?.claimed_at,
         requirement: 'Available on your birthday'
@@ -135,16 +171,12 @@ export async function GET() {
   }
 }
 
-function isBirthdayToday(createdAt: string | null | undefined): boolean {
-  if (!createdAt) return false;
+function isBirthdayToday(birthdayDay: number | null | undefined, birthdayMonth: number | null | undefined): boolean {
+  if (!birthdayDay || !birthdayMonth) return false;
 
-  // For this demo, we'll just check if the account was created today
-  // In production, you'd have a birthday field in profiles
   const today = new Date();
-  const created = new Date(createdAt);
-
   return (
-    today.getMonth() === created.getMonth() &&
-    today.getDate() === created.getDate()
+    today.getDate() === birthdayDay &&
+    (today.getMonth() + 1) === birthdayMonth // getMonth() is 0-indexed, birthday_month is 1-indexed
   );
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { canAccessAdmin, UserRole } from '@/lib/permissions'
+import { hasPermission, UserRole } from '@/lib/permissions'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 // GET /api/admin/points/[userId] - Get detailed points information for a user (Admin only)
@@ -28,9 +28,9 @@ export async function GET(
       .eq('id', user.id)
       .single()
 
-    if (profile?.role !== 'admin') {
+    if (!hasPermission(profile?.role as UserRole, 'customers', 'view')) {
       return NextResponse.json(
-        { error: 'Forbidden - Admin access required' },
+        { error: 'Forbidden' },
         { status: 403 }
       )
     }

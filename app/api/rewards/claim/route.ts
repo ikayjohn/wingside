@@ -25,14 +25,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Validate reward type
-    const validRewardTypes = ['first_order', 'instagram_follow', 'twitter_follow', 'review', 'birthday'];
-    if (!validRewardTypes.includes(rewardType)) {
+    // Server-enforced points per reward type
+    const REWARD_POINTS: Record<string, number> = {
+      first_order: 15,
+      instagram_follow: 30,
+      twitter_follow: 25,
+      tiktok_follow: 30,
+      facebook_follow: 25,
+      youtube_follow: 40,
+      review: 20,
+      birthday: 100,
+    };
+
+    if (!REWARD_POINTS[rewardType]) {
       return NextResponse.json(
         { error: 'Invalid reward type' },
         { status: 400 }
       );
     }
+
+    // Override client-supplied points with server-enforced value
+    const enforced_points = REWARD_POINTS[rewardType];
 
     // Check if already claimed
     const { data: existingClaim } = await supabase
@@ -49,11 +62,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call the claim_reward function
+    // Call the claim_reward function with server-enforced points
     const { data, error } = await supabase.rpc('claim_reward', {
       p_user_id: user.id,
       p_reward_type: rewardType,
-      p_points: points,
+      p_points: enforced_points,
       p_description: description,
       p_metadata: metadata || {}
     });
@@ -77,7 +90,7 @@ export async function POST(request: NextRequest) {
       success: true,
       rewardId: data,
       newPointsTotal: profile?.total_points || 0,
-      message: `You've earned ${points} points!`
+      message: `You've earned ${enforced_points} points!`
     });
   } catch (error) {
     console.error('Claim reward error:', error);

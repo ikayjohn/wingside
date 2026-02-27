@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { creditWallet } from '@/lib/wallet/helper';
 import { csrfProtection } from '@/lib/csrf';
 
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
     const { points } = await request.json();
 
     // Validate input
-    if (!points || points < 100) {
+    if (!points || !Number.isInteger(points) || points < 100) {
       return NextResponse.json(
         { error: 'Minimum 100 points required' },
         { status: 400 }
@@ -51,19 +52,21 @@ export async function POST(request: NextRequest) {
     // Convert points to cash (1 point = ₦10)
     const cashAmount = points * 10;
 
-    // Deduct points from profile
-    const { error: pointsError } = await supabase
+    // Atomic deduction using optimistic lock: only deduct if total_points
+    // hasn't changed since we read it (prevents double-deduction race condition)
+    const adminSupabase = createAdminClient();
+    const { data: deducted, error: updateError } = await adminSupabase
       .from('profiles')
-      .update({
-        total_points: profile.total_points - points
-      })
-      .eq('id', user.id);
+      .update({ total_points: profile.total_points - points })
+      .eq('id', user.id)
+      .eq('total_points', profile.total_points)
+      .select('total_points')
+      .single();
 
-    if (pointsError) {
-      console.error('Error deducting points:', pointsError);
+    if (updateError || !deducted) {
       return NextResponse.json(
-        { error: 'Failed to deduct points' },
-        { status: 500 }
+        { error: 'Points balance changed, please try again' },
+        { status: 409 }
       );
     }
 
@@ -80,11 +83,9 @@ export async function POST(request: NextRequest) {
 
     if (!walletResult.success) {
       // Rollback points deduction
-      await supabase
+      await adminSupabase
         .from('profiles')
-        .update({
-          total_points: profile.total_points
-        })
+        .update({ total_points: profile.total_points })
         .eq('id', user.id);
 
       return NextResponse.json(
