@@ -62,6 +62,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Verify user owns this order
+    const { data: orderData, error: orderCheckError } = await supabase
+      .from('orders')
+      .select('user_id')
+      .eq('id', order_id)
+      .single()
+
+    if (orderCheckError || !orderData) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+    }
+
+    if (orderData.user_id !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     // Call database function to redeem gift card
     const { data, error: redeemError } = await supabase.rpc('redeem_gift_card_by_code', {
       p_code: codeStr,

@@ -335,13 +335,79 @@ export async function POST(request: NextRequest) {
     const { data: orderNumberData } = await supabase.rpc('generate_order_number')
     const orderNumber = orderNumberData || `WS${Date.now()}`
 
-    // Calculate totals
-    const subtotal = body.items.reduce(
-      (sum: number, item: any) => sum + item.total_price,
-      0
-    )
-    const deliveryFee = body.delivery_fee || 0
-    const tax = body.tax || 0
+    // Limit cart size to prevent abuse
+    if (!body.items || body.items.length === 0) {
+      return NextResponse.json({ error: 'Order must contain at least one item' }, { status: 400 })
+    }
+    if (body.items.length > 100) {
+      return NextResponse.json({ error: 'Too many items in order' }, { status: 400 })
+    }
+
+    // Use admin client for server-side validation (bypasses RLS for product lookups)
+    const admin = createAdminClient();
+
+    // Server-side price validation: fetch all product prices from database
+    const productIds = [...new Set(body.items.map((item: any) => item.product_id).filter(Boolean))]
+    const { data: dbProducts, error: productsError } = await admin
+      .from('products')
+      .select('id, name, product_sizes(id, name, price)')
+      .in('id', productIds)
+
+    if (productsError || !dbProducts) {
+      console.error('Error fetching products for validation:', productsError)
+      return NextResponse.json({ error: 'Failed to validate product prices' }, { status: 500 })
+    }
+
+    // Build lookup map: product_id -> { size_name -> price }
+    const productPriceMap = new Map<string, Map<string, number>>()
+    for (const product of dbProducts) {
+      const sizeMap = new Map<string, number>()
+      for (const size of (product as any).product_sizes || []) {
+        sizeMap.set(size.name, parseFloat(size.price))
+      }
+      productPriceMap.set(product.id, sizeMap)
+    }
+
+    // Validate each item's price against database and recalculate subtotal
+    let subtotal = 0
+    for (const item of body.items) {
+      if (!item.product_id || !item.size || !item.quantity || item.quantity < 1) {
+        return NextResponse.json({ error: `Invalid item: ${item.product_name || 'unknown'}` }, { status: 400 })
+      }
+
+      const sizeMap = productPriceMap.get(item.product_id)
+      if (!sizeMap) {
+        return NextResponse.json({ error: `Product not found: ${item.product_name || item.product_id}` }, { status: 400 })
+      }
+
+      const dbPrice = sizeMap.get(item.size)
+      if (dbPrice === undefined) {
+        return NextResponse.json({ error: `Invalid size "${item.size}" for ${item.product_name}` }, { status: 400 })
+      }
+
+      // Override client-sent prices with database values
+      item.unit_price = dbPrice
+      item.total_price = dbPrice * item.quantity
+      subtotal += item.total_price
+    }
+
+    // Validate delivery fee server-side
+    let deliveryFee = 0
+    if (body.delivery_fee && body.delivery_fee > 0) {
+      // Verify against delivery_areas table
+      const { data: deliveryAreas } = await admin
+        .from('delivery_areas')
+        .select('delivery_fee')
+        .eq('is_active', true)
+
+      const validFees = new Set((deliveryAreas || []).map((a: any) => parseFloat(a.delivery_fee)))
+      if (!validFees.has(body.delivery_fee)) {
+        return NextResponse.json({ error: 'Invalid delivery fee' }, { status: 400 })
+      }
+      deliveryFee = body.delivery_fee
+    }
+
+    const tax = 0 // Tax removed
 
     // Server-side discount calculation (NEVER trust client-sent amounts)
     let discountAmount = 0
@@ -434,9 +500,6 @@ export async function POST(request: NextRequest) {
 
     // Generate secure tracking token for guest order tracking
     const trackingToken = crypto.randomBytes(32).toString('hex');
-
-    // Use admin client to create order (bypasses RLS - this is intentional for server-side order creation)
-    const admin = createAdminClient();
 
     // Create order
     const { data: order, error: orderError } = await admin
