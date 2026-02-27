@@ -52,18 +52,12 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
 
-    // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // Get user (optional — gift cards can be used by guests)
+    const { data: { user } } = await supabase.auth.getUser()
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-
-    // Verify user owns this order
-    const { data: orderData, error: orderCheckError } = await supabase
+    // Verify order exists and caller is authorized
+    const admin = (await import('@/lib/supabase/admin')).createAdminClient()
+    const { data: orderData, error: orderCheckError } = await admin
       .from('orders')
       .select('user_id')
       .eq('id', order_id)
@@ -73,16 +67,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
-    if (orderData.user_id !== user.id) {
+    // If order belongs to a user, ensure the caller is that user
+    if (orderData.user_id && user && orderData.user_id !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // Call database function to redeem gift card
-    const { data, error: redeemError } = await supabase.rpc('redeem_gift_card_by_code', {
+    const { data, error: redeemError } = await admin.rpc('redeem_gift_card_by_code', {
       p_code: codeStr,
       p_amount: numericAmount,
       p_order_id: order_id,
-      p_user_id: user.id,
+      p_user_id: user?.id || null,
     })
 
     if (redeemError) {
@@ -107,7 +102,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update order with gift card information
-    const { error: orderUpdateError } = await supabase
+    const { error: orderUpdateError } = await admin
       .from('orders')
       .update({
         gift_card_id: result.gift_card_id,
