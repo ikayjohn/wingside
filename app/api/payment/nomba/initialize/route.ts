@@ -142,9 +142,8 @@ export async function POST(request: NextRequest) {
     }
 
     // CRITICAL: Verify amount matches order total to prevent amount manipulation
-    // Allow ₦1 difference for rounding errors
-    const amountDifference = Math.abs(numericAmount - order.total)
-    if (amountDifference > 1) {
+    const amountDifference = Math.abs(numericAmount - Number(order.total))
+    if (amountDifference > 0.01) {
       console.error(`[Nomba Initialize ${requestId}] ❌ Amount mismatch: sent=${numericAmount}, expected=${order.total}`)
       return NextResponse.json(
         { error: 'Amount does not match order total' },
@@ -183,7 +182,7 @@ export async function POST(request: NextRequest) {
 
     // Build callback URL
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.wingside.ng'
-    const callbackUrl = `${appUrl}/payment/nomba/callback?order_id=${order_id}`
+    const callbackUrl = `${appUrl}/payment/nomba/callback?order_id=${encodeURIComponent(order_id)}`
 
     console.log(`[Nomba Initialize ${requestId}] Callback URL: ${callbackUrl}`)
 

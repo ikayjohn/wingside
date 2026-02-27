@@ -4,16 +4,16 @@ import { useState } from "react";
 import QRScannerModal from "@/components/QRScannerModal";
 
 export default function GiftBalancePage() {
-  const [cardNumber, setCardNumber] = useState("");
-  const [pin, setPin] = useState("");
+  const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   const [balanceResult, setBalanceResult] = useState<{
     success: boolean;
     balance?: number;
     currency?: string;
-    cardNumber?: string;
+    code?: string;
     expiresAt?: string;
+    recipientName?: string;
     error?: string;
   } | null>(null);
 
@@ -22,17 +22,33 @@ export default function GiftBalancePage() {
     setIsLoading(true);
     setBalanceResult(null);
 
+    const cleanCode = code.replace(/[\s-]/g, '').toUpperCase();
+
+    // Determine which API to call based on format
+    const isLegacyFormat = /^\d{16}$/.test(cleanCode);
+
     try {
-      const response = await fetch('/api/gift-cards/balance', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          cardNumber: cardNumber.replace(/\s/g, ''),
-          pin,
-        }),
-      });
+      let response;
+
+      if (isLegacyFormat) {
+        // Legacy 16-digit card number format — requires PIN
+        // For backward compat, check with default PIN '0000' since new cards use that
+        response = await fetch('/api/gift-cards/balance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cardNumber: cleanCode,
+            pin: '0000',
+          }),
+        });
+      } else {
+        // New 12-digit alphanumeric code format
+        response = await fetch('/api/gift-cards/balance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: cleanCode }),
+        });
+      }
 
       const data = await response.json();
 
@@ -45,9 +61,10 @@ export default function GiftBalancePage() {
         setBalanceResult({
           success: true,
           balance: data.balance,
-          currency: data.currency,
-          cardNumber: data.cardNumber,
+          currency: data.currency || 'NGN',
+          code: data.code || data.cardNumber,
           expiresAt: data.expiresAt,
+          recipientName: data.recipientName,
         });
       }
     } catch (error) {
@@ -62,42 +79,45 @@ export default function GiftBalancePage() {
   };
 
   const handleQRScanSuccess = (decodedText: string) => {
-    // Parse the QR code data to extract card number and PIN
-    // Assuming QR code contains data like: "cardNumber:1234567890123456,pin:1234"
-    // Or JSON: {"cardNumber":"1234567890123456","pin":"1234"}
-    // Adjust parsing based on your actual QR code format
-
-    let scannedCardNumber = "";
-    let scannedPin = "";
+    let scannedCode = "";
 
     try {
       // Try to parse as JSON first
       const data = JSON.parse(decodedText);
-      scannedCardNumber = data.cardNumber || data.cardNumber || "";
-      scannedPin = data.pin || data.pin || "";
+      scannedCode = data.code || data.cardNumber || "";
     } catch {
       // If not JSON, try to parse key-value format
       const parts = decodedText.split(",");
-      parts.forEach((part) => {
+      for (const part of parts) {
         const [key, value] = part.split(":");
-        if (key === "cardNumber") {
-          scannedCardNumber = value;
-        } else if (key === "pin") {
-          scannedPin = value;
+        if (key?.trim() === "code" || key?.trim() === "cardNumber") {
+          scannedCode = value?.trim() || "";
+          break;
         }
-      });
+      }
 
-      // If still no card number, treat entire text as card number
-      if (!scannedCardNumber) {
-        scannedCardNumber = decodedText;
+      // If still no code, treat entire text as the code
+      if (!scannedCode) {
+        scannedCode = decodedText.trim();
       }
     }
 
-    // Update form fields with scanned data
-    setCardNumber(scannedCardNumber);
-    if (scannedPin) {
-      setPin(scannedPin);
+    setCode(scannedCode);
+
+    // Auto-submit after QR scan
+    if (scannedCode) {
+      setTimeout(() => {
+        const form = document.querySelector('form');
+        if (form) form.requestSubmit();
+      }, 300);
     }
+  };
+
+  // Format the code input with spaces for readability
+  const formatCodeDisplay = (input: string) => {
+    const clean = input.replace(/[\s-]/g, '').toUpperCase();
+    // Group into chunks of 4 for readability
+    return clean.replace(/(.{4})/g, '$1 ').trim();
   };
 
   return (
@@ -115,43 +135,30 @@ export default function GiftBalancePage() {
           </p>
 
           {/* Input Section */}
-          <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
-            <div className="flex flex-col md:flex-row gap-4 items-start mb-2">
-              {/* Card Number Input - 55% width */}
-              <div className="w-full md:w-[55%]">
+          <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
+            <div className="flex flex-col md:flex-row gap-4 items-start">
+              {/* Code Input - 70% width */}
+              <div className="w-full md:w-[70%]">
                 <input
                   type="text"
-                  value={cardNumber}
-                  onChange={(e) => setCardNumber(e.target.value)}
-                  placeholder="Card Number Here"
-                  className="w-full px-5 py-4 bg-gray-50 border-2 border-gray-200 rounded-full focus:border-[#F7C400] focus:outline-none transition-colors text-lg"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/[^A-Za-z0-9\s-]/g, ''))}
+                  placeholder="Enter gift card code"
+                  maxLength={20}
+                  className="w-full px-5 py-4 bg-gray-50 border-2 border-gray-200 rounded-full focus:border-[#F7C400] focus:outline-none transition-colors text-lg uppercase tracking-wider font-mono"
                   required
                 />
-              </div>
-
-              {/* PIN Input - 22% width */}
-              <div className="w-full md:w-[22%]">
-                <input
-                  type="text"
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value)}
-                  placeholder="4 digit pin"
-                  maxLength={4}
-                  className="w-full px-5 py-4 bg-gray-50 border-2 border-gray-200 rounded-full focus:border-[#F7C400] focus:outline-none transition-colors text-lg"
-                  required
-                />
-                {/* PIN Note */}
                 <p className="text-gray-500 text-xs mt-2 ml-1">
-                  *this is your card pin for verification
+                  *Enter the 12-character code from your gift card
                 </p>
               </div>
 
-              {/* Check Balance Button - 23% width */}
-              <div className="w-full md:w-[23%]">
+              {/* Check Balance Button - 30% width */}
+              <div className="w-full md:w-[30%]">
                 <button
                   type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-[#5c3a3a] hover:bg-[#4a2e2e] text-white font-bold py-4 px-6 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-nowrap h-[60px] flex items-center justify-center text-sm md:text-base whitespace-nowrap cursor-pointer"
+                  disabled={isLoading || code.replace(/[\s-]/g, '').length < 6}
+                  className="w-full bg-[#5c3a3a] hover:bg-[#4a2e2e] text-white font-bold py-4 px-6 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed h-[60px] flex items-center justify-center text-sm md:text-base whitespace-nowrap cursor-pointer"
                 >
                   {isLoading ? "Checking..." : "Check Balance"}
                 </button>
@@ -186,19 +193,29 @@ export default function GiftBalancePage() {
                     {balanceResult.currency === 'NGN' ? '₦' : balanceResult.currency}
                     {balanceResult.balance?.toLocaleString()}
                   </div>
-                  <p className="text-gray-600 mb-2">
-                    Card: {balanceResult.cardNumber}
-                  </p>
+                  {balanceResult.recipientName && (
+                    <p className="text-gray-700 mb-2 font-medium">
+                      {balanceResult.recipientName}
+                    </p>
+                  )}
+                  {balanceResult.code && (
+                    <p className="text-gray-600 mb-2">
+                      Code: <span className="font-mono font-semibold">{formatCodeDisplay(balanceResult.code)}</span>
+                    </p>
+                  )}
                   {balanceResult.expiresAt && (
                     <p className="text-sm text-gray-500">
-                      Expires: {new Date(balanceResult.expiresAt).toLocaleDateString()}
+                      Expires: {new Date(balanceResult.expiresAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
                     </p>
                   )}
                   <button
                     onClick={() => {
                       setBalanceResult(null);
-                      setCardNumber('');
-                      setPin('');
+                      setCode('');
                     }}
                     className="mt-6 px-6 py-2 bg-gray-800 text-white rounded-full hover:bg-gray-700 transition-colors"
                   >

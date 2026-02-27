@@ -100,8 +100,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (bypassVerification) {
-      console.warn('⚠️  WEBHOOK SIGNATURE VERIFICATION BYPASSED - Set up mode only!')
-      console.warn('⚠️  Remember to remove NOMBA_WEBHOOK_BYPASS_VERIFICATION after setup!')
+      console.warn('⚠️  WEBHOOK SIGNATURE VERIFICATION BYPASSED')
       // Continue to webhook processing without verification
     } else if (webhookSecret) {
       if (!signature) {
@@ -209,13 +208,7 @@ export async function POST(request: NextRequest) {
       })
 
       if (!isValidSignature) {
-        console.error('❌ Invalid Nomba webhook signature')
-        console.error('Received signature:', signature)
-        console.error('Tried formats:', Object.keys(signatures))
-        console.error('Expected (rawBody base64):', signatures.rawBody)
-        console.error('Expected (rawBody hex):', signatures.rawBodyHex)
-        console.error('Event type:', event.event_type)
-        console.error('Request ID:', event.requestId)
+        console.error('❌ Invalid Nomba webhook signature for event:', event.event_type, 'requestId:', event.requestId)
 
         // REJECT invalid signatures - security enforcement
         return NextResponse.json(
@@ -370,14 +363,9 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Idempotency: Skip if already paid
-      if (order.payment_status === 'paid') {
-        console.log(`✓ Order ${order.order_number} already processed`)
-        return NextResponse.json({ success: true, message: 'Already processed' })
-      }
-
-      // Update order payment status
-      const { error: updateError } = await admin
+      // Atomic idempotency: only update if not already paid (prevents race condition)
+      // The .eq('payment_status', 'pending') ensures only one concurrent webhook wins
+      const { data: updatedOrder, error: updateError } = await admin
         .from('orders')
         .update({
           payment_status: 'paid',
@@ -385,6 +373,15 @@ export async function POST(request: NextRequest) {
           status: 'confirmed',
         })
         .eq('id', order.id)
+        .eq('payment_status', 'pending')
+        .select('id')
+        .maybeSingle()
+
+      if (!updateError && !updatedOrder) {
+        // No rows updated — order was already paid by another webhook
+        console.log(`✓ Order ${order.order_number} already processed (atomic check)`)
+        return NextResponse.json({ success: true, message: 'Already processed' })
+      }
 
       if (updateError) {
         console.error('Error updating order from webhook:', updateError)

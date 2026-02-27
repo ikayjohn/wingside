@@ -40,6 +40,12 @@ export async function sendGiftCardEmail(data: GiftCardEmailData) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.wingside.ng'
   const cardImageUrl = `${appUrl}/${designImage}`
   const orderUrl = `${appUrl}/order`
+  const balanceCheckUrl = `${appUrl}/gift-balance`
+
+  // Generate QR code URL containing the gift card code as JSON
+  // The balance page QR scanner expects JSON: {"code":"ABCD1234EFGH"}
+  const qrData = encodeURIComponent(JSON.stringify({ code }))
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}&bgcolor=FFFFFF&color=552627`
 
   // Create HTML email
   const html = `
@@ -242,13 +248,24 @@ export async function sendGiftCardEmail(data: GiftCardEmailData) {
         </div>
       </div>
 
+      <!-- QR Code -->
+      <div style="text-align: center; margin: 30px 0;">
+        <p style="font-size: 14px; color: #552627; font-weight: 600; margin-bottom: 12px;">Scan to check balance or redeem</p>
+        <a href="${balanceCheckUrl}" style="display: inline-block;">
+          <img src="${qrCodeUrl}" alt="Gift Card QR Code" width="200" height="200" style="border-radius: 8px; border: 2px solid #F7C400;" />
+        </a>
+        <p style="font-size: 12px; color: #888; margin-top: 8px;">
+          Scan this QR code on <a href="${balanceCheckUrl}" style="color: #F7C400;">wingside.ng/gift-balance</a>
+        </p>
+      </div>
+
       <!-- Redemption Instructions -->
       <div class="instructions">
         <h2>How to Redeem Your Gift Card</h2>
         <ol>
           <li><strong>Visit our order page</strong> and add your favorite wings to your cart</li>
           <li><strong>Proceed to checkout</strong> and look for the "Gift Card" section</li>
-          <li><strong>Enter your code</strong> (${code}) and click "Apply"</li>
+          <li><strong>Enter your code</strong> (${code}) or <strong>scan the QR code</strong> above</li>
           <li><strong>Complete your order</strong> and enjoy your wings!</li>
         </ol>
       </div>

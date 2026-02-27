@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { csrfProtection } from '@/lib/csrf';
 
 // POST /api/rewards/award - Award purchase-based points to user
@@ -14,7 +15,7 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
     const body = await request.json();
-    const { rewardType, amountSpent, description, metadata } = body;
+    const { rewardType, orderId, description, metadata } = body;
 
     // Get authenticated user
     const {
@@ -35,13 +36,55 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate amountSpent
-    if (!amountSpent || amountSpent <= 0) {
+    // Require orderId — we validate the amount from the database, never from the client
+    if (!orderId) {
       return NextResponse.json(
-        { error: 'amountSpent must be a positive number' },
+        { error: 'orderId is required for purchase rewards' },
         { status: 400 }
       );
     }
+
+    // Look up the actual order total from the database (never trust client amountSpent)
+    const admin = createAdminClient();
+    const { data: order, error: orderError } = await admin
+      .from('orders')
+      .select('id, total_amount, user_id, payment_status')
+      .eq('id', orderId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (orderError || !order) {
+      return NextResponse.json(
+        { error: 'Order not found or does not belong to you' },
+        { status: 404 }
+      );
+    }
+
+    // Only award points for paid orders
+    if (order.payment_status !== 'paid') {
+      return NextResponse.json(
+        { error: 'Points can only be awarded for paid orders' },
+        { status: 400 }
+      );
+    }
+
+    // Check if points were already awarded for this order
+    const { data: existingReward } = await admin
+      .from('rewards')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('reward_type', 'purchase')
+      .eq('metadata->>order_id', orderId)
+      .maybeSingle();
+
+    if (existingReward) {
+      return NextResponse.json(
+        { error: 'Points already awarded for this order' },
+        { status: 409 }
+      );
+    }
+
+    const amountSpent = Number(order.total_amount);
 
     // Server-enforced points calculation: 1 point per ₦100 spent
     const enforced_points = Math.floor(amountSpent / 100);
@@ -60,7 +103,7 @@ export async function POST(request: NextRequest) {
       p_points: enforced_points,
       p_amount_spent: amountSpent,
       p_description: description || `Earned ${enforced_points} points from ₦${amountSpent.toLocaleString()} purchase`,
-      p_metadata: metadata || {}
+      p_metadata: { ...(metadata || {}), order_id: orderId }
     });
 
     if (error) {

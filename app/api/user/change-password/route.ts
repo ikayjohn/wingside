@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { csrfProtection } from '@/lib/csrf'
 
 // Fix 6: In-memory rate limiter — max 5 attempts per user per 15 minutes
 // Keyed by user ID so it's not affected by NAT / shared IPs
@@ -23,6 +24,10 @@ function isRateLimited(userId: string): boolean {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check CSRF token
+    const csrfError = await csrfProtection(request)
+    if (csrfError) return csrfError
+
     const supabase = await createClient()
 
     // Check authentication

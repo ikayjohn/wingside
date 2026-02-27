@@ -478,6 +478,31 @@ export async function POST(request: NextRequest) {
       }
 
       discountAmount = Math.round(discountAmount * 100) / 100
+
+      // Atomically increment used_count (prevents race condition with concurrent orders)
+      // Only increment if usage_limit not yet reached (conditional update)
+      if (promoCode.usage_limit) {
+        const { data: updated, error: incrementError } = await admin
+          .from('promo_codes')
+          .update({ used_count: promoCode.used_count + 1 })
+          .eq('id', body.promo_code_id)
+          .lt('used_count', promoCode.usage_limit)
+          .select('id')
+          .single()
+
+        if (incrementError || !updated) {
+          return NextResponse.json(
+            { error: 'Promo code usage limit reached' },
+            { status: 400 }
+          )
+        }
+      } else {
+        // No usage limit — just increment the counter
+        await admin
+          .from('promo_codes')
+          .update({ used_count: promoCode.used_count + 1 })
+          .eq('id', body.promo_code_id)
+      }
     }
 
     // Validate and calculate referral discount server-side
