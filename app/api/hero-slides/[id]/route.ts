@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { hasPermission, UserRole } from '@/lib/permissions';
 
 // PATCH /api/hero-slides/[id] - Update a hero slide
 export async function PATCH(
@@ -28,7 +29,7 @@ export async function PATCH(
       .eq('id', user.id)
       .single();
 
-    if (!profile || profile.role !== 'admin') {
+    if (!profile || !hasPermission(profile.role as UserRole, 'hero_slides', 'full')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -108,7 +109,7 @@ export async function DELETE(
       .eq('id', user.id)
       .single();
 
-    if (!profile || profile.role !== 'admin') {
+    if (!profile || !hasPermission(profile.role as UserRole, 'hero_slides', 'full')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

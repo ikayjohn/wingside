@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server'
-import { canAccessAdmin, UserRole } from '@/lib/permissions';
+import { hasPermission, UserRole } from '@/lib/permissions';
 import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (profile?.role !== 'admin') {
+    if (!hasPermission(profile?.role as UserRole, 'sports_events', 'edit')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

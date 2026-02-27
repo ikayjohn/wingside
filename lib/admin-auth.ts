@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { canAccessAdmin, UserRole } from '@/lib/permissions';
 
 /**
  * Result type for requireAdmin function
  */
 export type AdminAuthResult =
-  | { success: true; supabase: Awaited<ReturnType<typeof createClient>>; admin: ReturnType<typeof createAdminClient> }
+  | { success: true; supabase: Awaited<ReturnType<typeof createClient>>; admin: ReturnType<typeof createAdminClient>; role: UserRole }
   | { success: false; error: NextResponse };
 
 /**
@@ -60,27 +61,28 @@ export async function requireAdmin(): Promise<AdminAuthResult> {
     };
   }
 
-  if (profile.role !== 'admin') {
+  if (!canAccessAdmin(profile.role as UserRole)) {
     return {
       success: false,
       error: NextResponse.json(
-        { error: 'Forbidden - Admin access required' },
+        { error: 'Forbidden' },
         { status: 403 }
       ),
     };
   }
 
-  // Return both clients for convenience
+  // Return both clients and role for convenience
   return {
     success: true,
     supabase,
     admin: createAdminClient(),
+    role: profile.role as UserRole,
   };
 }
 
 /**
  * Convenience type guard to narrow the result type
  */
-export function isAdminAuth(result: AdminAuthResult): result is { success: true; supabase: Awaited<ReturnType<typeof createClient>>; admin: ReturnType<typeof createAdminClient> } {
+export function isAdminAuth(result: AdminAuthResult): result is { success: true; supabase: Awaited<ReturnType<typeof createClient>>; admin: ReturnType<typeof createAdminClient>; role: UserRole } {
   return result.success === true;
 }

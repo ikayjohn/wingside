@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
-import { canAccessAdmin, UserRole } from '@/lib/permissions'
+import { hasPermission, UserRole } from '@/lib/permissions'
 import { validateImageFile, generateSafeFilename } from '@/lib/file-validation'
 import { loggers } from '@/lib/logger'
 
@@ -50,9 +50,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to verify admin role' }, { status: 500 })
     }
 
-    if (profile?.role !== 'admin') {
+    if (!hasPermission(profile?.role as UserRole, 'settings', 'edit')) {
       loggers.auth.warn('Non-admin upload attempt', { userId: user.id, role: profile?.role })
-      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 })
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     loggers.admin.debug('Admin role verified', { userId: user.id })

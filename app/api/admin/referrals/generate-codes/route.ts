@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server'
-import { canAccessAdmin, UserRole } from '@/lib/permissions';
+import { hasPermission, UserRole } from '@/lib/permissions';
 import crypto from 'crypto';
 
 // Enhanced referral code generator
@@ -49,9 +49,9 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (profileError || profile?.role !== 'admin') {
+    if (profileError || !hasPermission(profile?.role as UserRole, 'referrals', 'full')) {
       return NextResponse.json(
-        { error: 'Admin access required' },
+        { error: 'Forbidden' },
         { status: 403 }
       );
     }
@@ -264,9 +264,9 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (profileError || profile?.role !== 'admin') {
+    if (profileError || !hasPermission(profile?.role as UserRole, 'referrals', 'full')) {
       return NextResponse.json(
-        { error: 'Admin access required' },
+        { error: 'Forbidden' },
         { status: 403 }
       );
     }

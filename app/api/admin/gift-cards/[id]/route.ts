@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { hasPermission, UserRole } from '@/lib/permissions'
 import { csrfProtection } from '@/lib/csrf'
 
 // GET /api/admin/gift-cards/[id] - Get single gift card with transaction history (admin only)
@@ -28,9 +29,9 @@ export async function GET(
       .eq('id', user.id)
       .single()
 
-    if (profileError || !profile || profile.role !== 'admin') {
+    if (profileError || !profile || !hasPermission(profile.role as UserRole, 'gift_cards', 'full')) {
       return NextResponse.json(
-        { error: 'Unauthorized. Admin access required.' },
+        { error: 'Forbidden' },
         { status: 403 }
       )
     }
@@ -124,9 +125,9 @@ export async function PUT(
       .eq('id', user.id)
       .single()
 
-    if (profileError || !profile || profile.role !== 'admin') {
+    if (profileError || !profile || !hasPermission(profile.role as UserRole, 'gift_cards', 'full')) {
       return NextResponse.json(
-        { error: 'Unauthorized. Admin access required.' },
+        { error: 'Forbidden' },
         { status: 403 }
       )
     }

@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { hasPermission, UserRole } from '@/lib/permissions';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -41,7 +42,7 @@ export async function GET(request: Request) {
       .eq('id', user.id)
       .single();
 
-    if (!profile || profile.role !== 'admin') {
+    if (!profile || !hasPermission(profile.role as UserRole, 'notifications', 'full')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -97,7 +98,7 @@ export async function PUT(request: Request) {
       .eq('id', user.id)
       .single();
 
-    if (!profile || profile.role !== 'admin') {
+    if (!profile || !hasPermission(profile.role as UserRole, 'notifications', 'full')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { sendSMS, isSMSEnabled, formatPhoneNumber } from '@/lib/notifications/sms';
+import { hasPermission, UserRole } from '@/lib/permissions';
 
 // Admin endpoint to send test SMS
 export async function POST(request: NextRequest) {
@@ -44,9 +45,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (profile?.role !== 'admin') {
+    if (!hasPermission(profile?.role as UserRole, 'notifications', 'full')) {
       return NextResponse.json(
-        { error: 'Forbidden - Admin access required' },
+        { error: 'Forbidden' },
         { status: 403 }
       );
     }

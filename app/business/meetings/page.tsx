@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { fetchWithCsrf } from '@/lib/client/csrf';
 
 export default function MeetingsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -27,9 +28,8 @@ export default function MeetingsPage() {
     setSubmitMessage(null);
 
     try {
-      const response = await fetch('/api/contact', {
+      const response = await fetchWithCsrf('/api/contact', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'meetings',
           name: formData.fullName,

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { fetchWithCsrf } from '@/lib/client/csrf';
 
 interface FormData {
   firstName: string;
@@ -52,11 +53,8 @@ export default function FranchiseApplicationModal({ isOpen, onClose }: Franchise
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/franchise-application', {
+      const response = await fetchWithCsrf('/api/franchise-application', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(formData),
       });
 

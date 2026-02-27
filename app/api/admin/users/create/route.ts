@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server'
-import { canAccessAdmin, UserRole } from '@/lib/permissions';
+import { canAccessAdmin, hasPermission, UserRole } from '@/lib/permissions';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function POST(request: NextRequest) {
@@ -22,8 +22,8 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized - Admin only' }, { status: 403 });
+    if (!hasPermission(profile?.role as UserRole, 'users', 'full')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Get request body

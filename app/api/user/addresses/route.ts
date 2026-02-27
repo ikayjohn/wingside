@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { validateAddressInput, sanitizeString } from '@/lib/validation'
+import { csrfProtection } from '@/lib/csrf'
 
 // GET /api/user/addresses - Fetch user's addresses
 export async function GET() {
@@ -45,6 +46,9 @@ export async function GET() {
 // POST /api/user/addresses - Create new address
 export async function POST(request: NextRequest) {
   try {
+    const csrfError = await csrfProtection(request)
+    if (csrfError) return csrfError
+
     const supabase = await createClient()
     let body
     try {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
+import { hasPermission, UserRole } from '@/lib/permissions';
 import crypto from 'crypto';
 
 function getSupabaseAdminClient() {
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (!profile || profile.role !== 'admin') {
+    if (!profile || !hasPermission(profile.role as UserRole, 'gift_cards', 'full')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -156,7 +157,7 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (!profile || profile.role !== 'admin') {
+    if (!profile || !hasPermission(profile.role as UserRole, 'gift_cards', 'full')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

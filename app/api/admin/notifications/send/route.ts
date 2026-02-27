@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { sendNotification, sendBroadcastPush } from '@/lib/notifications';
+import { hasPermission, UserRole } from '@/lib/permissions';
 
 export async function POST(request: Request) {
   try {
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
       .eq('id', user.id)
       .single();
 
-    if (!profile || profile.role !== 'admin') {
+    if (!profile || !hasPermission(profile.role as UserRole, 'notifications', 'full')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

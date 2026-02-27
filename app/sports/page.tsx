@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
+import { fetchWithCsrf } from '@/lib/client/csrf';
 
 interface SportsEvent {
   id: string;
@@ -58,9 +59,8 @@ export default function SportsPage() {
     setSubmitMessage(null);
 
     try {
-      const response = await fetch('/api/contact', {
+      const response = await fetchWithCsrf('/api/contact', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'sports-community',
           name: formData.fullName,

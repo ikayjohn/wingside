@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { hasPermission, UserRole } from '@/lib/permissions';
 
 // POST /api/hero-slides/test-auth - Test auth flow
 export async function POST(request: NextRequest) {
@@ -52,8 +53,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(debug);
     }
 
-    if (profile.role !== 'admin') {
-      debug.errors.push(`User is not admin. Role: ${profile.role}`);
+    if (!hasPermission(profile.role as UserRole, 'hero_slides', 'full')) {
+      debug.errors.push(`User does not have hero_slides full permission. Role: ${profile.role}`);
       return NextResponse.json(debug);
     }
 

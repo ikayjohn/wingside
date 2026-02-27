@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server'
-import { canAccessAdmin, UserRole } from '@/lib/permissions';
+import { hasPermission, UserRole } from '@/lib/permissions';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getStaffRoles } from '@/lib/permissions';
 
@@ -23,8 +23,8 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized - Admin only' }, { status: 403 });
+    if (!hasPermission(profile?.role as UserRole, 'users', 'view')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Use admin client to bypass RLS

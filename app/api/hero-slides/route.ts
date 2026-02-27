@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { hasPermission, UserRole } from '@/lib/permissions';
 
 // GET /api/hero-slides - Fetch all hero slides
 export async function GET(request: NextRequest) {
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
       console.log(`[Hero Slides API] User role: ${profile?.role}`);
     }
 
-    if (!profile || profile.role !== 'admin') {
+    if (!profile || !hasPermission(profile.role as UserRole, 'hero_slides', 'full')) {
       console.log('[Hero Slides API] Forbidden - not admin');
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -104,9 +105,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 403 });
     }
 
-    if (profile.role !== 'admin') {
+    if (!hasPermission(profile.role as UserRole, 'hero_slides', 'full')) {
       console.log('[Hero Slides API] POST - Not admin, role:', profile.role);
-      return NextResponse.json({ error: 'Forbidden - not admin' }, { status: 403 });
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     console.log('[Hero Slides API] POST - User is admin, proceeding...');

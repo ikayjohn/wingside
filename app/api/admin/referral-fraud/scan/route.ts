@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { hasPermission, UserRole } from '@/lib/permissions'
 
 // POST /api/admin/referral-fraud/scan - Run fraud detection scan
 export async function POST(request: NextRequest) {
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
 
         if (profileError) {
           console.error('Error fetching profile:', profileError)
-        } else if (profile?.role === 'admin') {
+        } else if (hasPermission(profile?.role as UserRole, 'referrals', 'view')) {
           isAuthorized = true
         }
       }

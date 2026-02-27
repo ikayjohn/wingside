@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { HoneypotField } from '@/components/HoneypotField';
 import Turnstile from '@/components/Turnstile';
+import { fetchWithCsrf } from '@/lib/client/csrf';
 
 export default function WingsideCares() {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -59,11 +60,8 @@ export default function WingsideCares() {
       }
 
       // Submit the form
-      const response = await fetch('/api/partnership', {
+      const response = await fetchWithCsrf('/api/partnership', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(formData),
       });
 

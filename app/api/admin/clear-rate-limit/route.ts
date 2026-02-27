@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server'
-import { canAccessAdmin, UserRole } from '@/lib/permissions';
+import { hasPermission, UserRole } from '@/lib/permissions';
 import { resetRateLimit } from '@/lib/rate-limit';
 
 // POST /api/admin/clear-rate-limit - Clear rate limit for an IP or email
@@ -28,9 +28,9 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (profile?.role !== 'admin') {
+    if (!hasPermission(profile?.role as UserRole, 'settings', 'full')) {
       return NextResponse.json(
-        { error: 'Forbidden - Admin access required' },
+        { error: 'Forbidden' },
         { status: 403 }
       );
     }

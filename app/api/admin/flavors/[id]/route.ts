@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server'
-import { canAccessAdmin, UserRole } from '@/lib/permissions';
+import { canAccessAdmin, hasPermission, UserRole } from '@/lib/permissions';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { CacheInvalidation, deleteCachePattern } from '@/lib/redis';
 import { csrfProtection } from '@/lib/csrf';
@@ -35,8 +35,8 @@ export async function PATCH(
       .eq('id', user.id)
       .single();
 
-    if (profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden - Admin only' }, { status: 403 });
+    if (!hasPermission(profile?.role as UserRole, 'flavors', 'full')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     let body;
@@ -139,8 +139,8 @@ export async function DELETE(
       .eq('id', user.id)
       .single();
 
-    if (profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden - Admin only' }, { status: 403 });
+    if (!hasPermission(profile?.role as UserRole, 'flavors', 'full')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Check if flavor is being used by any products

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server'
-import { canAccessAdmin, UserRole } from '@/lib/permissions';
+import { hasPermission, UserRole } from '@/lib/permissions';
 import { createAdminClient } from '@/lib/supabase/admin';
 import embedlyClient from '@/lib/embedly/client';
 
@@ -24,8 +24,8 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden - Admin only' }, { status: 403 });
+    if (!hasPermission(profile?.role as UserRole, 'emergency_refund', 'full')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const body = await request.json();

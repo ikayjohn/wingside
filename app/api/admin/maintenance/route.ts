@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { hasPermission, UserRole } from '@/lib/permissions'
 
 // GET /api/admin/maintenance - Get current maintenance settings
 export async function GET() {
@@ -57,7 +58,7 @@ export async function GET() {
       )
     }
 
-    if (!profile || profile.role !== 'admin') {
+    if (!profile || !hasPermission(profile.role as UserRole, 'maintenance', 'full')) {
       console.log('[Admin GET] Returning 403 Forbidden')
       return NextResponse.json(
         { error: 'Forbidden' },
@@ -168,7 +169,7 @@ export async function POST(request: Request) {
       )
     }
 
-    if (!profile || profile.role !== 'admin') {
+    if (!profile || !hasPermission(profile.role as UserRole, 'maintenance', 'full')) {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403, headers: { 'content-type': 'application/json' } }

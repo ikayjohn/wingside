@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server'
-import { canAccessAdmin, UserRole } from '@/lib/permissions';
+import { hasPermission, UserRole } from '@/lib/permissions';
 
 // PATCH /api/events/[id] - Update event (admin only)
 export async function PATCH(
@@ -27,7 +27,7 @@ export async function PATCH(
       .eq('id', user.id)
       .single();
 
-    if (profile?.role !== 'admin') {
+    if (!hasPermission(profile?.role as UserRole, 'events', 'full')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -103,7 +103,7 @@ export async function DELETE(
       .eq('id', user.id)
       .single();
 
-    if (profile?.role !== 'admin') {
+    if (!hasPermission(profile?.role as UserRole, 'events', 'full')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

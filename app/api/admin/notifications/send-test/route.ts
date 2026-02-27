@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
+import { hasPermission, UserRole } from '@/lib/permissions';
 
 function getResendClient() {
   const apiKey = process.env.RESEND_API_KEY;
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
       .eq('id', user.id)
       .single();
 
-    if (!profile || profile.role !== 'admin') {
+    if (!profile || !hasPermission(profile.role as UserRole, 'notifications', 'full')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

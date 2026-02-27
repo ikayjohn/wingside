@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { fetchWithCsrf } from '@/lib/client/csrf';
 
 interface Location {
   id: number;
@@ -67,9 +68,8 @@ export default function WingpostPage() {
     setSubmitMessage(null);
 
     try {
-      const response = await fetch('/api/contact', {
+      const response = await fetchWithCsrf('/api/contact', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'wingpost',
           name: formData.contactName,

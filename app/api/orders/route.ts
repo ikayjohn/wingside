@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { canAccessAdmin, UserRole } from '@/lib/permissions'
+import { hasPermission, UserRole } from '@/lib/permissions'
 import { createAdminClient } from '@/lib/supabase/admin'
 import crypto from 'crypto'
 import { sendOrderConfirmation, sendOrderNotification } from '@/lib/emails/service'
@@ -149,7 +149,7 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
 
     // If not admin, only show user's orders
-    if (profile?.role !== 'admin') {
+    if (!hasPermission(profile?.role as UserRole, 'orders', 'view')) {
       query = query.eq('user_id', user.id)
     }
 

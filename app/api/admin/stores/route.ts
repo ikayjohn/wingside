@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { deleteFromCache, memoryCache, CACHE_KEYS } from '@/lib/redis';
+import { hasPermission, UserRole } from '@/lib/permissions';
 
 // GET /api/admin/stores - Get all stores (including inactive) for admin
 export async function GET() {
@@ -32,9 +33,9 @@ export async function GET() {
       );
     }
 
-    if (!profile || profile.role !== 'admin') {
+    if (!profile || !hasPermission(profile.role as UserRole, 'stores', 'full')) {
       return NextResponse.json(
-        { error: 'Forbidden - Admin access required' },
+        { error: 'Forbidden' },
         { status: 403 }
       );
     }
@@ -85,9 +86,9 @@ export async function POST(request: Request) {
       .eq('id', user.id)
       .single();
 
-    if (!profile || profile.role !== 'admin') {
+    if (!profile || !hasPermission(profile.role as UserRole, 'stores', 'full')) {
       return NextResponse.json(
-        { error: 'Forbidden - Admin access required' },
+        { error: 'Forbidden' },
         { status: 403 }
       );
     }

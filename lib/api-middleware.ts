@@ -8,6 +8,7 @@ import { checkRateLimit, RateLimitResult, RateLimitConfig } from './rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { AuthenticationError, AuthorizationError, errorToResponse } from './errors';
 import { csrfProtection } from './csrf';
+import { canAccessAdmin, UserRole } from './permissions';
 
 export interface MiddlewareContext {
   request: NextRequest;
@@ -89,7 +90,7 @@ export async function requireAuth(request: NextRequest): Promise<MiddlewareConte
 export async function requireAdmin(request: NextRequest): Promise<MiddlewareContext> {
   const context = await requireAuth(request);
 
-  if (context.user?.role !== 'admin') {
+  if (!canAccessAdmin(context.user?.role as UserRole)) {
     throw new AuthorizationError('Admin access required');
   }
 
@@ -102,7 +103,7 @@ export async function requireAdmin(request: NextRequest): Promise<MiddlewareCont
 export async function requireCustomer(request: NextRequest): Promise<MiddlewareContext> {
   const context = await requireAuth(request);
 
-  if (context.user?.role !== 'customer' && context.user?.role !== 'admin') {
+  if (context.user?.role !== 'customer' && !canAccessAdmin(context.user?.role as UserRole)) {
     throw new AuthorizationError('Customer access required');
   }
 

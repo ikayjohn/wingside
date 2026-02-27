@@ -78,14 +78,6 @@ export const POINTS_EARN_RATE = 0.01; // ₦100 = 1 point (0.01 points per ₦1)
 export const POINTS_REDEEM_RATE = 10; // 1 point = ₦10
 export const MINIMUM_REDEEM_POINTS = 100; // Minimum points to redeem
 
-// Loyalty Tiers
-export const LOYALTY_TIERS = {
-  BRONZE: { name: 'Bronze', minPoints: 0, multiplier: 1 },
-  SILVER: { name: 'Silver', minPoints: 5000, multiplier: 1.05 },
-  GOLD: { name: 'Gold', minPoints: 15000, multiplier: 1.1 },
-  PLATINUM: { name: 'Platinum', minPoints: 30000, multiplier: 1.15 },
-} as const;
-
 // API Endpoints
 export const API_ENDPOINTS = {
   SETTINGS: '/api/settings',

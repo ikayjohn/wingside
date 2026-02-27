@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server'
-import { canAccessAdmin, UserRole } from '@/lib/permissions';
+import { hasPermission, UserRole } from '@/lib/permissions';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 /**
@@ -40,9 +40,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (profile.role !== 'admin') {
+    if (!hasPermission(profile?.role as UserRole, 'wingside_cards', 'full')) {
       return NextResponse.json(
-        { error: 'Admin access required' },
+        { error: 'Forbidden' },
         { status: 403 }
       );
     }
@@ -139,9 +139,9 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (profile?.role !== 'admin') {
+    if (!hasPermission(profile?.role as UserRole, 'wingside_cards', 'full')) {
       return NextResponse.json(
-        { error: 'Admin access required' },
+        { error: 'Forbidden' },
         { status: 403 }
       );
     }
