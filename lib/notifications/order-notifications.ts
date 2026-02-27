@@ -103,7 +103,17 @@ export async function onOrderStatusChanged(
       notificationData.deliveryDriver = order.delivery_driver_name;
       notificationData.estimatedArrival = order.estimated_arrival;
     } else if (newStatus === 'ready' && !order.delivery_address) {
-      notificationData.pickupAddress = '123 Wingside Street, Lagos, Nigeria'; // Your pickup address
+      // Fetch pickup address from database
+      const { data: pickupLocation } = await supabase
+        .from('pickup_locations')
+        .select('name, address')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true })
+        .limit(1)
+        .single();
+      notificationData.pickupAddress = pickupLocation
+        ? `${pickupLocation.name}, ${pickupLocation.address}`
+        : 'Our store (check your order for details)';
     } else if (newStatus === 'delivered') {
       // Get user's reward points
       const { data: profile } = await supabase

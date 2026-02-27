@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { validateAddressInput, sanitizeString, isValidUUID } from '@/lib/validation'
+import { csrfProtection } from '@/lib/csrf'
 
 // PUT /api/user/addresses/[id] - Update address
 export async function PUT(
@@ -8,6 +9,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const csrfError = await csrfProtection(request)
+    if (csrfError) return csrfError
+
     const supabase = await createClient()
     let body
     try {
@@ -119,10 +123,13 @@ export async function PUT(
 
 // DELETE /api/user/addresses/[id] - Delete address
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const csrfError = await csrfProtection(request)
+    if (csrfError) return csrfError
+
     const supabase = await createClient()
     const { id } = await params
 

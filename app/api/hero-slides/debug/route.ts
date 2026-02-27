@@ -1,8 +1,12 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
-// GET /api/hero-slides/debug - Debug endpoint
+// GET /api/hero-slides/debug - Debug endpoint (dev only)
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
+  }
+
   const debug: any = {
     steps: [],
     errors: [],

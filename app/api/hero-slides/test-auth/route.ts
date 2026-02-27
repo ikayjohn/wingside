@@ -2,8 +2,12 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { hasPermission, UserRole } from '@/lib/permissions';
 
-// POST /api/hero-slides/test-auth - Test auth flow
+// POST /api/hero-slides/test-auth - Test auth flow (dev only)
 export async function POST(request: NextRequest) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
+  }
+
   const debug: any = { steps: [], errors: [], data: {} };
 
   try {

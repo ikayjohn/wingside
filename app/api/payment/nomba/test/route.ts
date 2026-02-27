@@ -9,8 +9,12 @@ interface NombaAuthResponse {
   }
 }
 
-// GET /api/payment/nomba/test - Test Nomba credentials and API access
+// GET /api/payment/nomba/test - Test Nomba credentials and API access (dev only)
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
+  }
+
   const results = {
     timestamp: new Date().toISOString(),
     credentials: {

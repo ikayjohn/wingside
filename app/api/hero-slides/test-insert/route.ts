@@ -1,8 +1,12 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
-// POST /api/hero-slides/test-insert - Test endpoint for inserting
+// POST /api/hero-slides/test-insert - Test endpoint for inserting (dev only)
 export async function POST(request: NextRequest) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
+  }
+
   console.log('[TEST INSERT] Starting...');
 
   try {
