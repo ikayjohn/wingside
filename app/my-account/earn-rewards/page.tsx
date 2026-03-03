@@ -147,15 +147,20 @@ export default function EarnRewardsPage() {
   };
 
   const getSocialStatus = (platform: string): 'none' | 'pending' | 'claimed' => {
-    // Check reward_claims first (source of truth for points awarded)
+    // Check reward_claims first (source of truth for points actually awarded)
     if (isClaimed(`${platform}_follow`)) return 'claimed';
-    // Check social_verifications for pending submissions
+    // Check social_verifications for pending/verified submissions
     const verification = socialVerifications.find(
       v => v.platform === platform && (v.status === 'pending' || v.status === 'verified')
     );
     if (verification) {
-      if (verification.reward_claimed || verification.status === 'verified') return 'claimed';
+      // Only treat as claimed if reward_claimed flag is true (points were actually awarded)
+      if (verification.reward_claimed) return 'claimed';
+      // Pending review by admin
       if (verification.status === 'pending') return 'pending';
+      // Verified by admin but points not yet awarded (stuck state) — show as pending
+      // so admin can retry via the dashboard
+      if (verification.status === 'verified' && !verification.reward_claimed) return 'pending';
     }
     return 'none';
   };

@@ -293,9 +293,22 @@ export default function SocialVerificationsPage() {
                     </div>
                   )}
 
-                  {verification.status === 'verified' && (
+                  {verification.status === 'verified' && verification.reward_claimed && (
                     <div className="text-xs text-center text-green-600 font-medium px-3 py-2">
-                      {verification.reward_claimed ? 'Points Awarded' : 'Points Pending'}
+                      Points Awarded
+                    </div>
+                  )}
+
+                  {verification.status === 'verified' && !verification.reward_claimed && (
+                    <div className="flex flex-col gap-1 items-center">
+                      <div className="text-xs text-red-600 font-medium">Points Failed</div>
+                      <button
+                        onClick={() => handleAction(verification.id, 'approve')}
+                        disabled={processing === verification.id}
+                        className="px-3 py-1 text-xs bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors font-medium disabled:opacity-50"
+                      >
+                        {processing === verification.id ? '...' : 'Retry Award'}
+                      </button>
                     </div>
                   )}
                 </div>

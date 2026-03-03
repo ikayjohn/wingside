@@ -76,7 +76,9 @@ export async function PATCH(
       );
     }
 
-    if (verification.status !== 'pending') {
+    // Allow re-processing verified records where points weren't awarded (stuck state)
+    const isStuckVerified = verification.status === 'verified' && !verification.reward_claimed;
+    if (verification.status !== 'pending' && !isStuckVerified) {
       return NextResponse.json(
         { error: `Verification already ${verification.status}` },
         { status: 400 }
