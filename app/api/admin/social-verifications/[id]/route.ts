@@ -106,9 +106,11 @@ export async function PATCH(
     }
 
     // If approved, award the points
+    let pointsAwarded = false;
+    let pointsError: string | null = null;
+
     if (action === 'approve' && !verification.reward_claimed) {
-      // Use claim_reward function to award points and track the claim
-      const { data: claimResult, error: pointsError } = await admin.rpc('claim_reward', {
+      const { data: claimResult, error: rpcError } = await admin.rpc('claim_reward', {
         p_user_id: verification.user_id,
         p_reward_type: `${verification.platform}_follow`,
         p_points: verification.reward_points,
@@ -121,20 +123,35 @@ export async function PATCH(
         }
       });
 
-      if (pointsError) {
-        console.error('Error awarding points:', pointsError);
-        // Don't fail the request if points awarding fails, just log it
-        // The verification is still approved, admin can manually award points if needed
+      if (rpcError) {
+        console.error('Error awarding points:', rpcError);
+        pointsError = rpcError.message;
+
+        // Revert status back to pending so admin can retry
+        await admin
+          .from('social_verifications')
+          .update({ status: 'pending', verified_at: null, verified_by: null })
+          .eq('id', id);
+
+        return NextResponse.json(
+          { error: `Verification could not be approved: points award failed (${rpcError.message}). Status reverted to pending.` },
+          { status: 500 }
+        );
       } else if (claimResult === false) {
-        // claim_reward returns FALSE when reward_type already exists in reward_claims
-        console.warn(`⚠️ Reward "${verification.platform}_follow" already claimed by user ${verification.user_id} — points not awarded again`);
-      } else {
-        // Mark reward as claimed in verification record
+        // Already claimed in reward_claims — still mark social_verifications as claimed
+        console.warn(`⚠️ Reward "${verification.platform}_follow" already claimed by user ${verification.user_id} — syncing flag`);
         await admin
           .from('social_verifications')
           .update({ reward_claimed: true })
           .eq('id', id);
-
+        pointsAwarded = true; // Already awarded previously
+      } else {
+        // Successfully awarded
+        await admin
+          .from('social_verifications')
+          .update({ reward_claimed: true })
+          .eq('id', id);
+        pointsAwarded = true;
         console.log(`✅ Awarded ${verification.reward_points} points to user ${verification.user_id} for ${verification.platform} follow`);
       }
     }
@@ -142,7 +159,8 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
       verification: updatedVerification,
-      message: `Verification ${newStatus} successfully`
+      pointsAwarded,
+      message: `Verification ${newStatus} successfully${pointsAwarded ? ` — ${verification.reward_points} points awarded` : ''}`
     });
   } catch (error) {
     console.error('Verification action error:', error);

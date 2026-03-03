@@ -20,6 +20,13 @@ interface Reward {
   created_at: string;
 }
 
+interface SocialVerification {
+  id: string;
+  platform: string;
+  status: 'pending' | 'verified' | 'rejected';
+  reward_claimed: boolean;
+}
+
 interface RewardsData {
   points: number;
   purchasePoints: number;
@@ -32,6 +39,7 @@ export default function EarnRewardsPage() {
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState<string | null>(null);
   const [rewardsData, setRewardsData] = useState<RewardsData | null>(null);
+  const [socialVerifications, setSocialVerifications] = useState<SocialVerification[]>([]);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [socialVerifyModal, setSocialVerifyModal] = useState<{
@@ -48,19 +56,27 @@ export default function EarnRewardsPage() {
     points: 0
   });
 
-  // Fetch rewards data
+  // Fetch rewards data and social verifications
   useEffect(() => {
     const fetchRewards = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/rewards');
+        const [rewardsRes, socialRes] = await Promise.all([
+          fetch('/api/rewards'),
+          fetch('/api/rewards/social-verify'),
+        ]);
 
-        if (!response.ok) {
+        if (!rewardsRes.ok) {
           throw new Error('Failed to fetch rewards');
         }
 
-        const data = await response.json();
+        const data = await rewardsRes.json();
         setRewardsData(data);
+
+        if (socialRes.ok) {
+          const socialData = await socialRes.json();
+          setSocialVerifications(socialData.verifications || []);
+        }
       } catch (err: any) {
         console.error('Error fetching rewards:', err);
         setError(err.message || 'Failed to load rewards');
@@ -128,6 +144,20 @@ export default function EarnRewardsPage() {
 
   const isClaimed = (rewardType: string) => {
     return rewardsData?.claimedRewards?.some(r => r.reward_type === rewardType);
+  };
+
+  const getSocialStatus = (platform: string): 'none' | 'pending' | 'claimed' => {
+    // Check reward_claims first (source of truth for points awarded)
+    if (isClaimed(`${platform}_follow`)) return 'claimed';
+    // Check social_verifications for pending submissions
+    const verification = socialVerifications.find(
+      v => v.platform === platform && (v.status === 'pending' || v.status === 'verified')
+    );
+    if (verification) {
+      if (verification.reward_claimed || verification.status === 'verified') return 'claimed';
+      if (verification.status === 'pending') return 'pending';
+    }
+    return 'none';
   };
 
   const getIcon = (iconName: string) => {
@@ -213,7 +243,7 @@ export default function EarnRewardsPage() {
       id: 'first_order',
       title: 'Place Your First Order',
       description: 'Order any wings to start earning points',
-      points: 15,
+      points: 50,
       icon: 'cart',
       iconColor: 'blue',
       type: 'one-time',
@@ -370,9 +400,10 @@ export default function EarnRewardsPage() {
         <div className="earn-rewards-tasks">
           {tasks.map((task) => {
             const claimed = task.type === 'one-time' && isClaimed(task.id);
+            const socialStatus = task.type === 'social-verify' ? getSocialStatus(task.platform!) : 'none';
 
             return (
-              <div key={task.id} className={`earn-rewards-task-card ${claimed ? 'opacity-60' : ''}`}>
+              <div key={task.id} className={`earn-rewards-task-card ${claimed || socialStatus === 'claimed' ? 'opacity-60' : ''}`}>
                 <div className="earn-rewards-task-content">
                   <div className={`earn-rewards-task-icon ${task.iconColor}`}>
                     {getIcon(task.icon)}
@@ -386,6 +417,8 @@ export default function EarnRewardsPage() {
                         </span>
                       )}
                       {claimed && <span className="ml-2 text-xs text-green-600 font-medium">✓ Claimed</span>}
+                      {socialStatus === 'claimed' && <span className="ml-2 text-xs text-green-600 font-medium">✓ Claimed</span>}
+                      {socialStatus === 'pending' && <span className="ml-2 text-xs text-yellow-600 font-medium">Pending Review</span>}
                     </h3>
                     <p className="earn-rewards-task-description">{task.description}</p>
                   </div>
@@ -401,18 +434,29 @@ export default function EarnRewardsPage() {
                       <div className="text-xs text-gray-500">points earned</div>
                     </div>
                   ) : task.type === 'social-verify' ? (
-                    <button
-                      onClick={() => setSocialVerifyModal({
-                        open: true,
-                        platform: task.platform as 'instagram' | 'twitter' | 'tiktok' | 'facebook' | 'youtube',
-                        platformName: task.platformName ?? '',
-                        platformUrl: task.platformUrl ?? '',
-                        points: task.points
-                      })}
-                      className="bg-[#F7C400] text-gray-900 py-2 px-4 rounded-full font-medium text-sm hover:bg-[#e5b500] transition-colors"
-                    >
-                      Verify & Claim
-                    </button>
+                    socialStatus === 'claimed' ? (
+                      <span className="text-gray-500 text-sm py-2 px-4">Claimed</span>
+                    ) : socialStatus === 'pending' ? (
+                      <button
+                        disabled
+                        className="bg-gray-200 text-gray-500 py-2 px-4 rounded-full font-medium text-sm cursor-not-allowed"
+                      >
+                        Under Review
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setSocialVerifyModal({
+                          open: true,
+                          platform: task.platform as 'instagram' | 'twitter' | 'tiktok' | 'facebook' | 'youtube',
+                          platformName: task.platformName ?? '',
+                          platformUrl: task.platformUrl ?? '',
+                          points: task.points
+                        })}
+                        className="bg-[#F7C400] text-gray-900 py-2 px-4 rounded-full font-medium text-sm hover:bg-[#e5b500] transition-colors"
+                      >
+                        Verify & Claim
+                      </button>
+                    )
                   ) : claimed ? (
                     <span className="text-gray-500 text-sm py-2 px-4">Claimed</span>
                   ) : task.actionLink ? (
