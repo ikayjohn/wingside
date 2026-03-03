@@ -217,6 +217,25 @@ async function processOrderFulfillment(admin: any, order: any, transactionId: st
   }
 
   // 2. Process rewards atomically
+  if (!profileId) {
+    console.error(`[Embedly Webhook] ❌ No profileId for order ${order.order_number} (${order.customer_email}) — rewards skipped`)
+    await admin.from('notifications').insert({
+      user_id: null,
+      type: 'reward_processing_failed',
+      title: 'Rewards Skipped - No Profile',
+      message: `Order ${order.order_number} paid but no customer profile found/created for ${order.customer_email}. Rewards not awarded.`,
+      metadata: {
+        order_id: order.id,
+        order_number: order.order_number,
+        customer_email: order.customer_email,
+        customer_name: order.customer_name,
+        order_total: order.total,
+        reason: 'profile_not_found_or_created',
+        gateway: 'embedly'
+      }
+    })
+  }
+
   if (profileId) {
     const { data: paymentResult } = await admin.rpc('process_payment_atomically', {
       p_order_id: order.id,

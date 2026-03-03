@@ -375,6 +375,26 @@ export async function POST(request: NextRequest) {
             }
           }
 
+          // Alert if no profileId — rewards will be skipped
+          if (!profileId) {
+            console.error(`❌ No profileId for order ${order.order_number} (${order.customer_email}) — rewards skipped`)
+            await admin.from('notifications').insert({
+              user_id: null,
+              type: 'reward_processing_failed',
+              title: 'Rewards Skipped - No Profile',
+              message: `Order ${order.order_number} paid but no customer profile found/created for ${order.customer_email}. Rewards not awarded.`,
+              metadata: {
+                order_id: order.id,
+                order_number: order.order_number,
+                customer_email: order.customer_email,
+                customer_name: order.customer_name,
+                order_total: order.total,
+                reason: 'profile_not_found_or_created',
+                gateway: 'paystack'
+              }
+            })
+          }
+
           // 2. Sync order to Zoho CRM and credit Embedly loyalty points
           const syncResult = await syncOrderCompletion({
             id: order.id,
@@ -392,74 +412,78 @@ export async function POST(request: NextRequest) {
             console.log(`✅ Created Zoho deal: ${syncResult.zoho_deal_id}`)
           }
 
-          // 3. Increment promo code usage atomically if a promo code was used
-          if (order.promo_code_id) {
-            try {
-              // Use atomic RPC function to prevent race conditions
-              const { data: promoResult, error: promoError } = await admin.rpc('increment_promo_usage', {
-                promo_id: order.promo_code_id
-              });
-
-              if (!promoError && promoResult && promoResult.length > 0) {
-                const result = promoResult[0];
-                if (result.success) {
-                  console.log(`✅ Incremented promo code usage for: ${order.promo_code_id}`)
-                } else {
-                  console.error(`⚠️ Promo code increment failed: ${result.error_message}`)
-                }
-              } else if (!promoError) {
-                console.log(`✅ Incremented promo code usage for: ${order.promo_code_id}`)
-              } else {
-                console.error('⚠️ Error incrementing promo code usage:', promoError)
-              }
-            } catch (promoError) {
-              console.error('⚠️ Error incrementing promo code usage:', promoError)
-            }
-          }
-
-          // 4. Award purchase points (₦100 = 1 point)
-          const purchasePoints = Math.floor(Number(order.total) / 100);
-
-          if (purchasePoints > 0 && profileId) {
-            const { error: pointsError } = await admin.rpc('award_points', {
+          // 3. Process all rewards atomically (points, first order bonus, referrals)
+          if (profileId) {
+            const { data: paymentResult, error: paymentError } = await admin.rpc('process_payment_atomically', {
+              p_order_id: order.id,
               p_user_id: profileId,
-              p_reward_type: 'purchase',
-              p_points: purchasePoints,
-              p_amount_spent: Number(order.total),
-              p_description: `Points earned from order #${order.order_number}`,
-              p_metadata: { order_id: order.id, order_number: order.order_number }
+              p_order_total: Number(order.total)
             });
 
-            if (!pointsError) {
-              console.log(`✅ Awarded ${purchasePoints} points for ₦${order.total} spent`)
-            } else {
-              console.error('Error awarding points:', pointsError)
+            if (paymentError || !paymentResult || paymentResult.length === 0) {
+              console.error('❌ Rewards processing failed:', paymentError)
+
+              await admin.from('notifications').insert({
+                user_id: null,
+                type: 'reward_processing_failed',
+                title: 'Reward Processing Failed',
+                message: `Order ${order.order_number} was paid successfully but rewards failed. Manual processing required.`,
+                metadata: {
+                  user_id: profileId,
+                  order_id: order.id,
+                  order_number: order.order_number,
+                  customer_email: order.customer_email,
+                  order_total: order.total,
+                  error: paymentError?.message || 'Unknown error',
+                  gateway: 'paystack'
+                }
+              })
+
+              console.log(`⚠️ Order ${order.order_number} paid but rewards pending manual processing`)
             }
-          }
 
-          // 4. Check and award first order bonus
-          if (profileId) {
-            const { data: existingClaim } = await admin
-              .from('reward_claims')
-              .select('id')
-              .eq('user_id', profileId)
-              .eq('reward_type', 'first_order')
-              .maybeSingle();
+            if (paymentResult && paymentResult.length > 0) {
+              const result = paymentResult[0];
 
-            if (!existingClaim) {
-              // Award first order bonus (15 points)
-              const { error: firstOrderError } = await admin.rpc('claim_reward', {
-                p_user_id: profileId,
-                p_reward_type: 'first_order',
-                p_points: 15,
-                p_description: 'First order bonus',
-                p_metadata: { order_id: order.id, order_number: order.order_number }
-              });
+              if (!result.success) {
+                console.error('❌ Rewards processing failed:', result.error_message)
 
-              if (!firstOrderError) {
-                console.log(`✅ Awarded 15 points for first order`)
+                await admin.from('notifications').insert({
+                  user_id: null,
+                  type: 'reward_processing_failed',
+                  title: 'Reward Processing Failed',
+                  message: `Order ${order.order_number} paid but rewards failed: ${result.error_message}`,
+                  metadata: {
+                    user_id: profileId,
+                    order_id: order.id,
+                    order_number: order.order_number,
+                    error: result.error_message,
+                    gateway: 'paystack'
+                  }
+                })
               } else {
-                console.error('Error awarding first order bonus:', firstOrderError)
+                console.log(`✅ Payment processed atomically:`, {
+                  points: result.points_awarded,
+                  firstOrderBonus: result.first_order_bonus_claimed,
+                  referralProcessed: result.referral_processed
+                })
+
+                // Increment promo code usage ONLY after successful reward processing
+                if (order.promo_code_id) {
+                  try {
+                    const { error: promoError } = await admin.rpc('increment_promo_usage', {
+                      promo_id: order.promo_code_id
+                    });
+
+                    if (!promoError) {
+                      console.log(`✅ Incremented promo code usage for: ${order.promo_code_id}`)
+                    } else {
+                      console.error('⚠️ Error incrementing promo code usage:', promoError)
+                    }
+                  } catch (promoError) {
+                    console.error('⚠️ Error incrementing promo code usage:', promoError)
+                  }
+                }
               }
             }
           }
