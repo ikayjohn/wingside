@@ -15,6 +15,9 @@ export interface Customer {
   avg_order_value?: number;
   last_order_value?: number;
   weekend_order_ratio?: number;
+  morning_order_ratio?: number;
+  afternoon_order_ratio?: number;
+  evening_order_ratio?: number;
 }
 
 export interface CustomerSegment {
@@ -32,7 +35,7 @@ export const CUSTOMER_SEGMENTS: CustomerSegment[] = [
     name: 'VIP Customer',
     description: 'High-value customers with significant spending',
     color: 'purple',
-    icon: '👑',
+    icon: 'vip',
     criteria: (c) => (c.total_spent || 0) >= 100000
   },
   {
@@ -40,7 +43,7 @@ export const CUSTOMER_SEGMENTS: CustomerSegment[] = [
     name: 'Regular Customer',
     description: 'Frequent customers who order consistently',
     color: 'blue',
-    icon: '⭐',
+    icon: 'regular',
     criteria: (c) => (c.total_orders || 0) >= 10 && (c.total_spent || 0) < 100000
   },
   {
@@ -48,7 +51,7 @@ export const CUSTOMER_SEGMENTS: CustomerSegment[] = [
     name: 'New Customer',
     description: 'Recently joined customers',
     color: 'green',
-    icon: '🆕',
+    icon: 'new',
     criteria: (c) => {
       const daysSinceJoined = Math.floor((Date.now() - new Date(c.created_at).getTime()) / (1000 * 60 * 60 * 24));
       return daysSinceJoined <= 30;
@@ -59,7 +62,7 @@ export const CUSTOMER_SEGMENTS: CustomerSegment[] = [
     name: 'At Risk',
     description: 'Customers who haven\'t ordered in 60+ days',
     color: 'orange',
-    icon: '⚠️',
+    icon: 'at-risk',
     criteria: (c) => {
       if (!c.last_order_date) return false;
       const daysSinceLastOrder = Math.floor((Date.now() - new Date(c.last_order_date).getTime()) / (1000 * 60 * 60 * 24));
@@ -71,7 +74,7 @@ export const CUSTOMER_SEGMENTS: CustomerSegment[] = [
     name: 'Churned',
     description: 'Inactive customers (90+ days since last order)',
     color: 'red',
-    icon: '❌',
+    icon: 'churned',
     criteria: (c) => {
       if (!c.last_order_date) return false;
       const daysSinceLastOrder = Math.floor((Date.now() - new Date(c.last_order_date).getTime()) / (1000 * 60 * 60 * 24));
@@ -83,7 +86,7 @@ export const CUSTOMER_SEGMENTS: CustomerSegment[] = [
     name: 'Corporate',
     description: 'Business customers with high order volume',
     color: 'indigo',
-    icon: '🏢',
+    icon: 'corporate',
     criteria: (c) => (c.total_orders || 0) >= 20 && (c.avg_order_value || 0) >= 15000
   },
   {
@@ -91,7 +94,7 @@ export const CUSTOMER_SEGMENTS: CustomerSegment[] = [
     name: 'Weekend Warrior',
     description: 'Prefers ordering on weekends',
     color: 'yellow',
-    icon: '🎉',
+    icon: 'weekend-warrior',
     criteria: (c) => (c.weekend_order_ratio ?? 0) >= 0.6
   },
   {
@@ -99,7 +102,7 @@ export const CUSTOMER_SEGMENTS: CustomerSegment[] = [
     name: 'Big Spender',
     description: 'High average order value',
     color: 'emerald',
-    icon: '💰',
+    icon: 'big-spender',
     criteria: (c) => (c.avg_order_value || 0) >= 10000
   },
   {
@@ -107,8 +110,78 @@ export const CUSTOMER_SEGMENTS: CustomerSegment[] = [
     name: 'One-Time Customer',
     description: 'Only ordered once',
     color: 'gray',
-    icon: '🔸',
+    icon: 'one-time',
     criteria: (c) => (c.total_orders || 0) === 1
+  },
+  {
+    id: 'loyal',
+    name: 'Loyal Customer',
+    description: 'Orders consistently over time',
+    color: 'sky',
+    icon: 'loyal',
+    criteria: (c) => {
+      if ((c.total_orders || 0) < 5) return false;
+      if (!c.avg_days_between_orders || c.avg_days_between_orders > 30) return false;
+      if (!c.last_order_date) return false;
+      const daysSinceLast = Math.floor((Date.now() - new Date(c.last_order_date).getTime()) / (1000 * 60 * 60 * 24));
+      return daysSinceLast <= 60;
+    }
+  },
+  {
+    id: 'frequent',
+    name: 'Frequent Customer',
+    description: 'High order frequency (every 2 weeks or more)',
+    color: 'cyan',
+    icon: 'frequent',
+    criteria: (c) => (c.total_orders || 0) >= 3 && (c.avg_days_between_orders || Infinity) <= 14
+  },
+  {
+    id: 'high-ltv',
+    name: 'High Lifetime Value',
+    description: 'High total spend with retention',
+    color: 'amber',
+    icon: 'high-ltv',
+    criteria: (c) => {
+      if ((c.total_spent || 0) < 50000 || (c.total_orders || 0) < 5) return false;
+      if (!c.last_order_date) return false;
+      const daysSinceLast = Math.floor((Date.now() - new Date(c.last_order_date).getTime()) / (1000 * 60 * 60 * 24));
+      return daysSinceLast <= 90;
+    }
+  },
+  {
+    id: 'morning-orderer',
+    name: 'Morning Orderer',
+    description: 'Prefers ordering in the morning (6am-12pm)',
+    color: 'rose',
+    icon: 'morning-orderer',
+    criteria: (c) => (c.morning_order_ratio ?? 0) >= 0.6
+  },
+  {
+    id: 'afternoon-orderer',
+    name: 'Afternoon Orderer',
+    description: 'Prefers ordering in the afternoon (12pm-5pm)',
+    color: 'lime',
+    icon: 'afternoon-orderer',
+    criteria: (c) => (c.afternoon_order_ratio ?? 0) >= 0.6
+  },
+  {
+    id: 'evening-orderer',
+    name: 'Evening Orderer',
+    description: 'Prefers ordering in the evening (5pm-12am)',
+    color: 'violet',
+    icon: 'evening-orderer',
+    criteria: (c) => (c.evening_order_ratio ?? 0) >= 0.6
+  },
+  {
+    id: 'weekday-orderer',
+    name: 'Weekday Orderer',
+    description: 'Prefers ordering on weekdays',
+    color: 'stone',
+    icon: 'weekday-orderer',
+    criteria: (c) => {
+      const weekdayRatio = 1 - (c.weekend_order_ratio ?? 0);
+      return weekdayRatio >= 0.7;
+    }
   }
 ];
 

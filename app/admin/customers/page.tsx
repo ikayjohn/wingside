@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -28,7 +28,7 @@ function TierIcon({ points }: { points?: number }) {
       width={24}
       height={24}
       className="inline-block"
-      title={alt}
+      title={`${alt} (${points.toLocaleString()} pts)`}
     />
   );
 }
@@ -50,6 +50,8 @@ interface Customer {
   last_visit_date?: string;
   // Address info
   default_address?: string;
+  // Loyalty
+  total_points?: number;
   // Integration fields
   zoho_contact_id?: string;
   embedly_customer_id?: string;
@@ -62,11 +64,12 @@ export default function AdminCustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('all');
+  const [tier, setTier] = useState('all');
   const [error, setError] = useState<string>('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCustomers, setTotalCustomers] = useState(0);
   const [sort, setSort] = useState<'created_at_desc' | 'created_at_asc'>('created_at_desc');
   const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
 
@@ -76,7 +79,7 @@ export default function AdminCustomersPage() {
       setError('');
 
       const params = new URLSearchParams();
-      params.set('role', filter);
+      params.set('tier', tier);
       if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim());
       params.set('page', String(page));
       params.set('pageSize', String(pageSize));
@@ -91,6 +94,7 @@ export default function AdminCustomersPage() {
       if (!res.ok) {
         setCustomers([]);
         setTotalPages(1);
+        setTotalCustomers(0);
         console.error('API Error:', res.status, res.statusText, json);
         setError(json?.error || `Failed to load customers (${res.status})`);
         return;
@@ -98,13 +102,14 @@ export default function AdminCustomersPage() {
 
       setCustomers(json.customers || []);
       setTotalPages(json.pagination?.totalPages || 1);
+      setTotalCustomers(json.pagination?.total || 0);
     } catch (error) {
       console.error('Error fetching customers:', error);
       setError(`Failed to load customers: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
-  }, [filter, debouncedSearch, page, pageSize, sort, setLoading, setError, setCustomers, setTotalPages]);
+  }, [tier, debouncedSearch, page, pageSize, sort]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchTerm), 350);
@@ -113,11 +118,11 @@ export default function AdminCustomersPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [filter, debouncedSearch, pageSize, sort, setPage]);
+  }, [tier, debouncedSearch, pageSize, sort]);
 
   useEffect(() => {
     fetchCustomers();
-  }, [filter, debouncedSearch, page, pageSize, sort, fetchCustomers]);
+  }, [fetchCustomers]);
 
   function formatDate(dateString: string) {
     return new Date(dateString).toLocaleDateString('en-NG', {
@@ -136,7 +141,6 @@ export default function AdminCustomersPage() {
     }).format(amount);
   }
 
-  const filteredCustomers = useMemo(() => customers, [customers]);
 
   if (loading) {
     return <AdminLoader label="Loading customers..." />;
@@ -147,7 +151,7 @@ export default function AdminCustomersPage() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-[#552627]">Customers</h1>
         <div className="text-sm text-gray-600">
-          {filteredCustomers.length} customer{filteredCustomers.length !== 1 ? 's' : ''}
+          {totalCustomers.toLocaleString()} customer{totalCustomers !== 1 ? 's' : ''}
         </div>
       </div>
 
@@ -171,13 +175,15 @@ export default function AdminCustomersPage() {
           </div>
           <div className="flex gap-2">
             <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
+              value={tier}
+              onChange={(e) => setTier(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400]"
             >
-              <option value="all">All Customers</option>
-              <option value="customer">Customers</option>
-              <option value="staff">Staff</option>
+              <option value="all">All Tiers</option>
+              <option value="wingzard">Wingzard (20,000+)</option>
+              <option value="wing_leader">Wing Leader (5,001–19,999)</option>
+              <option value="wing_member">Wing Member (1–5,000)</option>
+              <option value="no_tier">No Tier (0 pts)</option>
             </select>
 
             <select
@@ -229,17 +235,19 @@ export default function AdminCustomersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredCustomers.map((customer) => (
+              {customers.map((customer) => (
                 <tr key={customer.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
                       <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
                         {customer.full_name || 'No name'}
-                        <TierIcon points={customer.wallet_balance} />
+                        <TierIcon points={customer.total_points} />
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {customer.role}
-                      </div>
+                      {customer.total_points ? (
+                        <div className="text-xs text-gray-500">
+                          {customer.total_points.toLocaleString()} pts
+                        </div>
+                      ) : null}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -276,7 +284,7 @@ export default function AdminCustomersPage() {
           </table>
         </div>
 
-        {filteredCustomers.length === 0 && (
+        {customers.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-500">No customers found</div>
           </div>

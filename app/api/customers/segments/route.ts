@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Fetch profile data for these customers
+    // Fetch profile data for these customers (only customer role, exclude staff)
     const customerEmails = Array.from(customerMap.values())
       .map(c => c.email)
       .filter(Boolean)
@@ -90,12 +90,32 @@ export async function GET(request: NextRequest) {
       supabase
         .from('profiles')
         .select('id, full_name, email, phone, role, created_at, wallet_balance, total_points, bank_account')
-        .in('email', customerEmails.length > 0 ? customerEmails : ['none']),
+        .in('email', customerEmails.length > 0 ? customerEmails : ['none'])
+        .eq('role', 'customer'),
       supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
         .eq('role', 'customer')
     ])
+
+    // Remove staff from customerMap — only keep entries that either have a customer profile or no profile (guests)
+    const staffEmails = new Set<string>()
+    // We need to check which emails belong to non-customer profiles
+    if (customerEmails.length > 0) {
+      const { data: staffProfiles } = await supabase
+        .from('profiles')
+        .select('email')
+        .in('email', customerEmails)
+        .neq('role', 'customer')
+      staffProfiles?.forEach(p => { if (p.email) staffEmails.add(p.email) })
+    }
+
+    // Remove staff entries from the customer map
+    for (const [customerId, customerInfo] of customerMap.entries()) {
+      if (customerInfo.email && staffEmails.has(customerInfo.email)) {
+        customerMap.delete(customerId)
+      }
+    }
 
     // Fix 3: Batch fetch referrals and social verifications instead of N+1 queries
     const profileIds = profiles?.map(p => p.id) || []
@@ -196,9 +216,14 @@ export async function GET(request: NextRequest) {
     })
 
     const enrichedCustomers = allEnrichedCustomers
-    const customersWithOrders = enrichedCustomers.length
-    // Fix 6: Guard against negative count when guest orders exceed registered profiles
-    const customersWithoutOrders = Math.max(0, (totalProfilesCount || 0) - customersWithOrders)
+
+    // Separate profiled customers from guests for accurate stats
+    const profiledCustomers = enrichedCustomers.filter((c: any) =>
+      profiles?.some(p => p.email === c.email)
+    )
+    const profilesWithOrders = profiledCustomers.length
+    const customersWithOrders = profilesWithOrders
+    const customersWithoutOrders = Math.max(0, (totalProfilesCount || 0) - profilesWithOrders)
 
     // Apply advanced filters
     let filteredCustomers = enrichedCustomers
@@ -293,9 +318,9 @@ export async function GET(request: NextRequest) {
       return sortOrder === 'asc' ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1)
     })
 
-    // Fix 2: CUSTOMER_SEGMENTS now includes 'emerging' so it shows in stats
+    // Segment stats based on profiled customers only (excludes guests)
     const segmentStats = CUSTOMER_SEGMENTS.reduce((acc, segment) => {
-      acc[segment.id] = enrichedCustomers.filter((c: any) => c.segments.includes(segment.id)).length
+      acc[segment.id] = profiledCustomers.filter((c: any) => c.segments.includes(segment.id)).length
       return acc
     }, {} as Record<string, number>)
 
@@ -303,13 +328,12 @@ export async function GET(request: NextRequest) {
       customers: filteredCustomers.slice(0, limit),
       total: filteredCustomers.length,
       segment_stats: segmentStats,
-      average_health_score: enrichedCustomers.length > 0
-        ? enrichedCustomers.reduce((sum: number, c: { health_score: number }) => sum + c.health_score, 0) / enrichedCustomers.length
+      average_health_score: profiledCustomers.length > 0
+        ? profiledCustomers.reduce((sum: number, c: { health_score: number }) => sum + c.health_score, 0) / profiledCustomers.length
         : 0,
       customers_without_orders: customersWithoutOrders,
       total_profiles: totalProfilesCount || 0,
       customers_with_orders: customersWithOrders,
-      // Fix 9: _debug field removed
     })
   } catch (error) {
     console.error('Error fetching customer segments:', error)

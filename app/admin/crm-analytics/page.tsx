@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import Image from 'next/image';
 import CustomerSearchFilters, { FilterState } from '@/components/admin/CustomerSearchFilters';
 import ExportButton from '@/components/admin/ExportButton';
 import type { ExportSection } from '@/lib/export-utils';
@@ -43,8 +44,37 @@ const SEGMENT_COLORS: Record<string, string> = {
   'weekend-warrior': 'bg-yellow-100 text-yellow-800',
   'big-spender': 'bg-emerald-100 text-emerald-800',
   'one-time': 'bg-gray-100 text-gray-800',
-  'emerging': 'bg-teal-100 text-teal-800'
+  'emerging': 'bg-teal-100 text-teal-800',
+  'loyal': 'bg-sky-100 text-sky-800',
+  'frequent': 'bg-cyan-100 text-cyan-800',
+  'high-ltv': 'bg-amber-100 text-amber-800',
+  'morning-orderer': 'bg-rose-100 text-rose-800',
+  'afternoon-orderer': 'bg-lime-100 text-lime-800',
+  'evening-orderer': 'bg-violet-100 text-violet-800',
+  'weekday-orderer': 'bg-stone-100 text-stone-800'
 };
+
+const SEGMENT_BAR_COLORS: Record<string, string> = {
+  'vip': '#9333ea', 'regular': '#3b82f6', 'new': '#22c55e',
+  'at-risk': '#f97316', 'churned': '#ef4444', 'corporate': '#6366f1',
+  'weekend-warrior': '#eab308', 'big-spender': '#10b981', 'one-time': '#6b7280',
+  'emerging': '#14b8a6', 'loyal': '#0ea5e9', 'frequent': '#06b6d4',
+  'high-ltv': '#f59e0b', 'morning-orderer': '#f43f5e', 'afternoon-orderer': '#84cc16',
+  'evening-orderer': '#8b5cf6', 'weekday-orderer': '#78716c'
+};
+
+// Segment names map for consistent display
+const SEGMENT_NAMES: Record<string, string> = {
+  'vip': 'VIP', 'regular': 'Regular', 'new': 'New',
+  'at-risk': 'At Risk', 'churned': 'Churned', 'corporate': 'Corporate',
+  'weekend-warrior': 'Weekend Warrior', 'big-spender': 'Big Spender',
+  'one-time': 'One-Time', 'emerging': 'Emerging',
+  'loyal': 'Loyal', 'frequent': 'Frequent', 'high-ltv': 'High LTV',
+  'morning-orderer': 'Morning', 'afternoon-orderer': 'Afternoon',
+  'evening-orderer': 'Evening', 'weekday-orderer': 'Weekday'
+};
+
+type DurationPreset = 'all' | '7' | '30' | '90' | 'month';
 
 export default function CRManalyticsPage() {
   const [customers, setCustomers] = useState<CustomerWithSegments[]>([]);
@@ -60,35 +90,19 @@ export default function CRManalyticsPage() {
   const [totalProfiles, setTotalProfiles] = useState(0);
   const [filters, setFilters] = useState<FilterState | null>(null);
   const [availableTags, setAvailableTags] = useState<any[]>([]);
+  const [activeDuration, setActiveDuration] = useState<DurationPreset>('all');
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
     start: '',
     end: ''
   });
   const [totalCount, setTotalCount] = useState(0);
-  // Fix 10: Incrementing this tells CustomerSearchFilters to clear its segment selection
   const [segmentResetTrigger, setSegmentResetTrigger] = useState(0);
 
   useEffect(() => {
     fetchAvailableTags();
   }, []);
 
-  useEffect(() => {
-    fetchCustomerData();
-  }, [selectedSegment, filters, dateRange]);
-
-  const fetchAvailableTags = async () => {
-    try {
-      const response = await fetch('/api/customer-tags');
-      const data = await response.json();
-      if (response.ok) {
-        setAvailableTags(data.tags || []);
-      }
-    } catch (error) {
-      console.error('Error fetching tags:', error);
-    }
-  };
-
-  const fetchCustomerData = async () => {
+  const fetchCustomerData = useCallback(async (bustCache = false) => {
     try {
       setLoading(true);
 
@@ -116,12 +130,13 @@ export default function CRManalyticsPage() {
         params.set('sortOrder', filters.sortOrder);
       }
 
-      // Add date range for overall analytics filtering
       if (dateRange.start) params.set('dateRangeStart', dateRange.start);
       if (dateRange.end) params.set('dateRangeEnd', dateRange.end);
 
+      if (bustCache) params.set('_t', Date.now().toString());
+
       const url = `/api/customers/segments?${params.toString()}`;
-      const response = await fetch(url);
+      const response = await fetch(url, bustCache ? { cache: 'no-store' } : undefined);
       const data = await response.json();
 
       if (response.ok) {
@@ -131,13 +146,28 @@ export default function CRManalyticsPage() {
         setCustomersWithoutOrders(data.customers_without_orders || 0);
         setCustomersWithOrders(data.customers_with_orders || 0);
         setTotalProfiles(data.total_profiles || 0);
-        // Fix 7: Track total matching count for truncation notice
         setTotalCount(data.total || 0);
       }
     } catch (error) {
       console.error('Error fetching customer data:', error);
     } finally {
       setLoading(false);
+    }
+  }, [selectedSegment, filters, dateRange]);
+
+  useEffect(() => {
+    fetchCustomerData();
+  }, [fetchCustomerData]);
+
+  const fetchAvailableTags = async () => {
+    try {
+      const response = await fetch('/api/customer-tags');
+      const data = await response.json();
+      if (response.ok) {
+        setAvailableTags(data.tags || []);
+      }
+    } catch (error) {
+      console.error('Error fetching tags:', error);
     }
   };
 
@@ -154,6 +184,25 @@ export default function CRManalyticsPage() {
     } catch (error) {
       console.error('Error fetching timeline:', error);
     }
+  };
+
+  const setDuration = (preset: DurationPreset) => {
+    setActiveDuration(preset);
+    if (preset === 'all') {
+      setDateRange({ start: '', end: '' });
+      return;
+    }
+    const end = new Date();
+    const start = new Date();
+    if (preset === 'month') {
+      start.setDate(1);
+    } else {
+      start.setDate(start.getDate() - parseInt(preset));
+    }
+    setDateRange({
+      start: start.toISOString().split('T')[0],
+      end: end.toISOString().split('T')[0]
+    });
   };
 
   const getHealthColor = (score: number) => {
@@ -179,36 +228,52 @@ export default function CRManalyticsPage() {
     return 'Wing Member';
   };
 
+  const formatSegmentName = (id: string) => SEGMENT_NAMES[id] || id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+  function getSegmentIcon(id: string): React.ReactNode {
+    const icons: Record<string, React.ReactNode> = {
+      'vip': <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.699-3.181a1 1 0 011.827 1.035L17.128 8H18a1 1 0 110 2h-.782l-1.304 6.524a1 1 0 01-.978.806l-2.621.328a1 1 0 01-1.13-.874l-.56-3.355-2.23 2.23a1 1 0 01-1.414 0l-2.23-2.23-.56 3.355a1 1 0 01-1.13.874l-2.621-.328a1 1 0 01-.978-.806L2.782 10H2a1 1 0 110-2h.872l1.352-3.241a1 1 0 011.827-1.035L8.046 6.323V3a1 1 0 011-1z" clipRule="evenodd" /></svg>,
+      'regular': <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>,
+      'new': <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>,
+      'at-risk': <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>,
+      'churned': <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>,
+      'corporate': <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd" /></svg>,
+      'weekend-warrior': <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>,
+      'big-spender': <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4z" /><path fillRule="evenodd" d="M6 10a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>,
+      'one-time': <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" /></svg>,
+      'emerging': <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" /></svg>,
+      'loyal': <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>,
+      'frequent': <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" /></svg>,
+      'high-ltv': <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>,
+      'morning-orderer': <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" /></svg>,
+      'afternoon-orderer': <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" /></svg>,
+      'evening-orderer': <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" /></svg>,
+      'weekday-orderer': <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
+    };
+    return icons[id] || <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>;
+  }
+
+  // Group segments for organized card display
+  const segmentGroups = [
+    { label: 'Value', ids: ['vip', 'big-spender', 'high-ltv', 'corporate'] },
+    { label: 'Behavior', ids: ['regular', 'loyal', 'frequent', 'new', 'one-time', 'emerging'] },
+    { label: 'Risk', ids: ['at-risk', 'churned'] },
+    { label: 'Timing', ids: ['morning-orderer', 'afternoon-orderer', 'evening-orderer', 'weekend-warrior', 'weekday-orderer'] },
+  ];
+
   const segmentData: CustomerSegment[] = Object.entries(segmentStats).map(([id, count]) => ({
     id,
-    name: id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+    name: formatSegmentName(id),
     description: '',
     color: SEGMENT_COLORS[id] || 'bg-gray-100 text-gray-800',
     icon: getSegmentIcon(id),
     count: count as number,
-    percentage: customers.length > 0 ? ((count as number) / customers.length * 100).toFixed(1) as any : 0
+    percentage: customers.length > 0 ? parseFloat(((count as number) / customers.length * 100).toFixed(1)) : 0
   }));
-
-  function getSegmentIcon(id: string): React.ReactNode {
-    const icons: Record<string, React.ReactNode> = {
-      'vip': <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.699-3.181a1 1 0 011.827 1.035L17.128 8H18a1 1 0 110 2h-.782l-1.304 6.524a1 1 0 01-.978.806l-2.621.328a1 1 0 01-1.13-.874l-.56-3.355-2.23 2.23a1 1 0 01-1.414 0l-2.23-2.23-.56 3.355a1 1 0 01-1.13.874l-2.621-.328a1 1 0 01-.978-.806L2.782 10H2a1 1 0 110-2h.872l1.352-3.241a1 1 0 011.827-1.035L8.046 6.323V3a1 1 0 011-1z" clipRule="evenodd" /></svg>,
-      'regular': <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>,
-      'new': <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>,
-      'at-risk': <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>,
-      'churned': <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>,
-      'corporate': <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd" /></svg>,
-      'weekend-warrior': <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>,
-      'big-spender': <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4z" /><path fillRule="evenodd" d="M6 10a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>,
-      'one-time': <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" /></svg>,
-      'emerging': <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" /></svg>
-    };
-    return icons[id] || <svg className="w-5 h-5 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>;
-  }
 
   const getCRMExportData = (): ExportSection[] => {
     const sections: ExportSection[] = [];
 
-    // Overview stats
     sections.push({
       title: 'Overview',
       headers: ['Metric', 'Value'],
@@ -222,37 +287,25 @@ export default function CRManalyticsPage() {
       ],
     });
 
-    // Segment breakdown
     if (Object.keys(segmentStats).length > 0) {
       sections.push({
         title: 'Segment Breakdown',
         headers: ['Segment', 'Customer Count', '% of Total'],
         rows: Object.entries(segmentStats).map(([seg, count]) => [
-          seg.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+          formatSegmentName(seg),
           count as number,
           customers.length > 0 ? (((count as number) / customers.length) * 100).toFixed(1) : '0',
         ]),
       });
     }
 
-    // Customer list
     if (customers.length > 0) {
       sections.push({
         title: 'Customer List',
         headers: [
-          'Name',
-          'Email',
-          'Joined Date',
-          'Points',
-          'Tier',
-          'Account Number',
-          'Segments',
-          'Total Orders',
-          'Total Spent (₦)',
-          'Health Score',
-          'Churn Risk (%)',
-          'Last Order Date',
-          'Predicted Next Order',
+          'Name', 'Email', 'Joined Date', 'Points', 'Tier', 'Account Number',
+          'Segments', 'Total Orders', 'Total Spent', 'Health Score', 'Churn Risk (%)',
+          'Last Order Date', 'Predicted Next Order',
         ],
         rows: customers.map(c => [
           c.full_name || 'No Name',
@@ -266,12 +319,8 @@ export default function CRManalyticsPage() {
           c.total_spent,
           c.health_score,
           Math.round(c.churn_risk),
-          c.last_order_date
-            ? new Date(c.last_order_date).toLocaleDateString('en-NG')
-            : 'Never',
-          c.predicted_next_order
-            ? new Date(c.predicted_next_order).toLocaleDateString('en-NG')
-            : '',
+          c.last_order_date ? new Date(c.last_order_date).toLocaleDateString('en-NG') : 'Never',
+          c.predicted_next_order ? new Date(c.predicted_next_order).toLocaleDateString('en-NG') : '',
         ]),
       });
     }
@@ -279,133 +328,77 @@ export default function CRManalyticsPage() {
     return sections;
   };
 
+  const durationBtnClass = (preset: DurationPreset) =>
+    `px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+      activeDuration === preset
+        ? 'bg-[#552627] text-white'
+        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+    }`;
+
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-4 lg:p-6 space-y-4">
+      {/* Header + Duration Bar */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">CRM Analytics</h1>
-          <p className="text-gray-600 mt-1">Customer segmentation and lifetime value insights</p>
+          <h1 className="text-2xl font-bold text-[#552627]">CRM Analytics</h1>
+          <p className="text-sm text-gray-500">Customer segmentation and lifetime value insights</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <ExportButton
             filename="wingside-crm"
             getExportData={getCRMExportData}
           />
           <button
-            onClick={fetchCustomerData}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            onClick={() => fetchCustomerData(true)}
+            disabled={loading}
+            className="px-3 py-1.5 text-xs bg-[#552627] text-white rounded-md hover:bg-[#6a3435] transition-colors disabled:opacity-50"
           >
-            Refresh Data
+            {loading ? 'Loading...' : 'Refresh'}
           </button>
         </div>
       </div>
 
-      {/* Date Range Selector */}
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">Date Range:</label>
+      {/* Duration Filter Bar */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Period:</span>
+          <div className="flex gap-1.5">
+            <button onClick={() => setDuration('all')} className={durationBtnClass('all')}>All-Time</button>
+            <button onClick={() => setDuration('7')} className={durationBtnClass('7')}>7 Days</button>
+            <button onClick={() => setDuration('30')} className={durationBtnClass('30')}>30 Days</button>
+            <button onClick={() => setDuration('90')} className={durationBtnClass('90')}>90 Days</button>
+            <button onClick={() => setDuration('month')} className={durationBtnClass('month')}>This Month</button>
+          </div>
+          <div className="flex items-center gap-1.5 ml-auto">
             <input
               type="date"
               value={dateRange.start}
-              onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => {
+                setDateRange(prev => ({ ...prev, start: e.target.value }));
+                setActiveDuration('all'); // clear preset highlight on custom range
+              }}
+              className="px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-[#F7C400]"
             />
-            <span className="text-gray-500">to</span>
+            <span className="text-gray-400 text-xs">to</span>
             <input
               type="date"
               value={dateRange.end}
-              onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => {
+                setDateRange(prev => ({ ...prev, end: e.target.value }));
+                setActiveDuration('all');
+              }}
+              className="px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-[#F7C400]"
             />
           </div>
-
-          <div className="flex gap-2">
-            <button
-              onClick={() => {
-                const end = new Date();
-                const start = new Date();
-                start.setDate(start.getDate() - 7);
-                setDateRange({
-                  start: start.toISOString().split('T')[0],
-                  end: end.toISOString().split('T')[0]
-                });
-              }}
-              className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md"
-            >
-              Last 7 Days
-            </button>
-            <button
-              onClick={() => {
-                const end = new Date();
-                const start = new Date();
-                start.setDate(start.getDate() - 30);
-                setDateRange({
-                  start: start.toISOString().split('T')[0],
-                  end: end.toISOString().split('T')[0]
-                });
-              }}
-              className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md"
-            >
-              Last 30 Days
-            </button>
-            <button
-              onClick={() => {
-                const end = new Date();
-                const start = new Date();
-                start.setDate(start.getDate() - 90);
-                setDateRange({
-                  start: start.toISOString().split('T')[0],
-                  end: end.toISOString().split('T')[0]
-                });
-              }}
-              className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md"
-            >
-              Last 90 Days
-            </button>
-            <button
-              onClick={() => {
-                const now = new Date();
-                const start = new Date(now.getFullYear(), now.getMonth(), 1);
-                setDateRange({
-                  start: start.toISOString().split('T')[0],
-                  end: now.toISOString().split('T')[0]
-                });
-              }}
-              className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md"
-            >
-              This Month
-            </button>
-            <button
-              onClick={() => setDateRange({ start: '', end: '' })}
-              className="px-3 py-1.5 text-sm bg-red-50 hover:bg-red-100 text-red-700 rounded-md"
-            >
-              Clear
-            </button>
-          </div>
-
-          {(dateRange.start || dateRange.end) && (
-            <div className="text-sm text-gray-600">
-              {dateRange.start && dateRange.end ? (
-                <>Showing data from {new Date(dateRange.start).toLocaleDateString()} to {new Date(dateRange.end).toLocaleDateString()}</>
-              ) : dateRange.start ? (
-                <>Showing data from {new Date(dateRange.start).toLocaleDateString()} onwards</>
-              ) : (
-                <>Showing data until {new Date(dateRange.end).toLocaleDateString()}</>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
       {/* Main Content Grid - Sidebar + Content */}
-      <div className="grid grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Filters Sidebar */}
-        <div className="col-span-1">
+        <div className="lg:col-span-1">
           <CustomerSearchFilters
             onFilterChange={(newFilters) => {
-              // Fix 10: Clear segment card selection when sidebar segments change
               if (newFilters.segments.length > 0 && selectedSegment) {
                 setSelectedSegment('');
               }
@@ -417,208 +410,350 @@ export default function CRManalyticsPage() {
         </div>
 
         {/* Main Content */}
-        <div className="col-span-3 space-y-6">
+        <div className="lg:col-span-3 space-y-4">
 
       {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Active Customers</p>
-              <p className="text-xs text-gray-400 mt-0.5">With orders</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{customersWithOrders}</p>
-            </div>
-            <svg className="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-            </svg>
-          </div>
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <p className="text-xs text-gray-500">Active Customers</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{customersWithOrders}</p>
+          <p className="text-[10px] text-gray-400">With orders</p>
         </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Never Ordered</p>
-              <p className="text-xs text-gray-400 mt-0.5">Signed up only</p>
-              <p className="text-3xl font-bold text-gray-600 mt-1">{customersWithoutOrders}</p>
-            </div>
-            <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-            </svg>
-          </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <p className="text-xs text-gray-500">Never Ordered</p>
+          <p className="text-2xl font-bold text-gray-500 mt-1">{customersWithoutOrders}</p>
+          <p className="text-[10px] text-gray-400">Signed up only</p>
         </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Avg. Health Score</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{averageHealthScore.toFixed(0)}</p>
-            </div>
-            <svg className="w-8 h-8 text-gray-900" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-            </svg>
-          </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <p className="text-xs text-gray-500">Avg Health Score</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{averageHealthScore.toFixed(0)}</p>
+          <p className="text-[10px] text-gray-400">Out of 100</p>
         </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">At-Risk Customers</p>
-              <p className="text-3xl font-bold text-orange-600 mt-1">{segmentStats['at-risk'] || 0}</p>
-            </div>
-            <svg className="w-8 h-8 text-gray-900" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-          </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <p className="text-xs text-gray-500">At-Risk</p>
+          <p className="text-2xl font-bold text-orange-600 mt-1">{segmentStats['at-risk'] || 0}</p>
+          <p className="text-[10px] text-gray-400">60-90 days inactive</p>
         </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Churned Customers</p>
-              <p className="text-3xl font-bold text-red-600 mt-1">{segmentStats['churned'] || 0}</p>
-            </div>
-            <svg className="w-8 h-8 text-gray-900" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-          </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <p className="text-xs text-gray-500">Churned</p>
+          <p className="text-2xl font-bold text-red-600 mt-1">{segmentStats['churned'] || 0}</p>
+          <p className="text-[10px] text-gray-400">90+ days inactive</p>
         </div>
       </div>
 
-      {/* Segments Overview */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Customer Segments</h2>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {segmentData.map((segment) => (
-            <button
-              key={segment.id}
-              onClick={() => {
-                const next = selectedSegment === segment.id ? '' : segment.id;
-                setSelectedSegment(next);
-                // Fix 10: Clear sidebar segment filter when a card is clicked
-                if (next) setSegmentResetTrigger(prev => prev + 1);
-              }}
-              className={`p-4 rounded-lg border-2 transition-all ${
-                selectedSegment === segment.id
-                  ? 'border-blue-600 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <div className="text-3xl mb-2">{segment.icon}</div>
-              <div className="font-semibold text-gray-900 text-sm">{segment.name}</div>
-              <div className="text-2xl font-bold text-gray-900 mt-1">{segment.count}</div>
-              <div className="text-xs text-gray-500">{segment.percentage}% of total</div>
-            </button>
-          ))}
+      {/* Segment Cards - Grouped */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <h2 className="text-sm font-bold text-gray-900 mb-3">Customer Segments</h2>
+        <div className="space-y-4">
+          {segmentGroups.map(group => {
+            const groupSegments = group.ids
+              .map(id => segmentData.find(s => s.id === id))
+              .filter(Boolean) as CustomerSegment[];
+            if (groupSegments.length === 0) return null;
+            return (
+              <div key={group.label}>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">{group.label}</p>
+                <div className="flex flex-wrap gap-2">
+                  {groupSegments.map(segment => (
+                    <button
+                      key={segment.id}
+                      onClick={() => {
+                        const next = selectedSegment === segment.id ? '' : segment.id;
+                        setSelectedSegment(next);
+                        if (next) setSegmentResetTrigger(prev => prev + 1);
+                      }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs transition-all ${
+                        selectedSegment === segment.id
+                          ? 'border-[#552627] bg-[#552627]/5 text-[#552627] font-semibold'
+                          : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                      }`}
+                    >
+                      <span className="opacity-70">{segment.icon}</span>
+                      <span>{segment.name}</span>
+                      <span className={`ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                        selectedSegment === segment.id
+                          ? 'bg-[#552627] text-white'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {segment.count}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Customer List with Segments */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">
-            {selectedSegment ? `Segment: ${selectedSegment.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}` : 'All Customers'}
+      {/* Analytics Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Segment Distribution */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <h3 className="text-sm font-bold text-gray-900 mb-3">Segment Distribution</h3>
+          <div className="space-y-2">
+            {segmentData
+              .filter(s => s.count > 0)
+              .sort((a, b) => b.count - a.count)
+              .slice(0, 12)
+              .map((segment) => {
+                const maxCount = Math.max(...segmentData.map(s => s.count), 1);
+                return (
+                  <div key={segment.id} className="flex items-center gap-2">
+                    <div className="w-24 text-[11px] text-gray-600 truncate" title={segment.name}>
+                      {segment.name}
+                    </div>
+                    <div className="flex-1 bg-gray-50 rounded h-5 relative overflow-hidden">
+                      <div
+                        className="h-full rounded transition-all duration-500"
+                        style={{
+                          width: `${Math.max((segment.count / maxCount) * 100, 3)}%`,
+                          backgroundColor: SEGMENT_BAR_COLORS[segment.id] || '#6b7280'
+                        }}
+                      />
+                      <span className="absolute inset-0 flex items-center justify-end pr-1.5 text-[10px] font-semibold text-gray-600">
+                        {segment.count}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            {segmentData.filter(s => s.count > 0).length === 0 && (
+              <p className="text-xs text-gray-400 text-center py-3">No segment data</p>
+            )}
+          </div>
+        </div>
+
+        {/* Top 10 Customers by Spend */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <h3 className="text-sm font-bold text-gray-900 mb-3">Top 10 by Spend</h3>
+          <div className="space-y-2">
+            {[...customers]
+              .sort((a, b) => b.total_spent - a.total_spent)
+              .slice(0, 10)
+              .map((customer, i) => {
+                const topCustomers = [...customers].sort((a, b) => b.total_spent - a.total_spent).slice(0, 10);
+                const maxSpent = Math.max(...topCustomers.map(c => c.total_spent), 1);
+                return (
+                  <div key={customer.id} className="flex items-center gap-2">
+                    <div className="w-4 text-[10px] text-gray-400 font-bold text-right">{i + 1}</div>
+                    <div className="w-20 text-[11px] text-gray-600 truncate" title={customer.full_name || customer.email}>
+                      {customer.full_name || customer.email.split('@')[0]}
+                    </div>
+                    <div className="flex-1 bg-gray-50 rounded h-5 relative overflow-hidden">
+                      <div
+                        className="h-full rounded bg-emerald-500 transition-all duration-500"
+                        style={{ width: `${Math.max((customer.total_spent / maxSpent) * 100, 3)}%` }}
+                      />
+                      <span className="absolute inset-0 flex items-center justify-end pr-1.5 text-[10px] font-semibold text-gray-600">
+                        {formatCurrency(customer.total_spent)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            {customers.length === 0 && (
+              <p className="text-xs text-gray-400 text-center py-3">No customer data</p>
+            )}
+          </div>
+        </div>
+
+        {/* Health Score Distribution */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <h3 className="text-sm font-bold text-gray-900 mb-3">Health Score Distribution</h3>
+          {(() => {
+            const buckets = [
+              { label: 'Critical (0-20)', min: 0, max: 20, color: '#ef4444' },
+              { label: 'Poor (21-40)', min: 21, max: 40, color: '#f97316' },
+              { label: 'Fair (41-60)', min: 41, max: 60, color: '#eab308' },
+              { label: 'Good (61-80)', min: 61, max: 80, color: '#22c55e' },
+              { label: 'Excellent (81+)', min: 81, max: 100, color: '#3b82f6' },
+            ];
+            const counts = buckets.map(b => ({
+              ...b,
+              count: customers.filter(c => c.health_score >= b.min && c.health_score <= b.max).length
+            }));
+            const maxBucket = Math.max(...counts.map(c => c.count), 1);
+            return (
+              <div className="space-y-2">
+                {counts.map((bucket) => (
+                  <div key={bucket.label} className="flex items-center gap-2">
+                    <div className="w-24 text-[11px] text-gray-600">{bucket.label}</div>
+                    <div className="flex-1 bg-gray-50 rounded h-5 relative overflow-hidden">
+                      <div
+                        className="h-full rounded transition-all duration-500"
+                        style={{
+                          width: `${Math.max((bucket.count / maxBucket) * 100, 3)}%`,
+                          backgroundColor: bucket.color
+                        }}
+                      />
+                      <span className="absolute inset-0 flex items-center justify-end pr-1.5 text-[10px] font-semibold text-gray-600">
+                        {bucket.count}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* Tier Breakdown */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <h3 className="text-sm font-bold text-gray-900 mb-3">Wing Club Tiers</h3>
+          {(() => {
+            const tiers = [
+              { name: 'Wingzard', color: '#9333ea', icon: '/loyalty/wingzard.png' },
+              { name: 'Wing Leader', color: '#3b82f6', icon: '/loyalty/wing-leader.png' },
+              { name: 'Wing Member', color: '#6b7280', icon: '/loyalty/wing-member.png' },
+              { name: 'No Tier', color: '#d1d5db', icon: '' },
+            ];
+            const tierCounts = tiers.map(t => ({
+              ...t,
+              count: customers.filter(c => {
+                const pts = c.total_points ?? 0;
+                if (t.name === 'Wingzard') return pts >= 20000;
+                if (t.name === 'Wing Leader') return pts >= 5001 && pts <= 19999;
+                if (t.name === 'Wing Member') return pts >= 1 && pts <= 5000;
+                return pts === 0;
+              }).length
+            }));
+            const total = Math.max(customers.length, 1);
+            return (
+              <div className="space-y-2.5">
+                {tierCounts.map((tier) => (
+                  <div key={tier.name} className="flex items-center gap-2">
+                    <div className="w-24 flex items-center gap-1.5">
+                      {tier.icon && (
+                        <Image src={tier.icon} alt={tier.name} width={16} height={16} />
+                      )}
+                      <span className="text-[11px] text-gray-600">{tier.name}</span>
+                    </div>
+                    <div className="flex-1 bg-gray-50 rounded h-5 relative overflow-hidden">
+                      <div
+                        className="h-full rounded transition-all duration-500"
+                        style={{
+                          width: `${Math.max((tier.count / total) * 100, 2)}%`,
+                          backgroundColor: tier.color
+                        }}
+                      />
+                      <span className="absolute inset-0 flex items-center justify-end pr-1.5 text-[10px] font-semibold text-gray-600">
+                        {tier.count} ({((tier.count / total) * 100).toFixed(0)}%)
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      </div>
+
+      {/* Customer List */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="px-4 py-3 border-b border-gray-200">
+          <h2 className="text-sm font-bold text-gray-900">
+            {selectedSegment ? `Segment: ${formatSegmentName(selectedSegment)}` : 'All Customers'}
           </h2>
-          {/* Fix 7: Show truncation notice when more results exist than are displayed */}
           {!loading && totalCount > customers.length && (
-            <p className="text-sm text-amber-600 mt-1">
-              Showing {customers.length} of {totalCount} customers — use filters or export to see all
+            <p className="text-[11px] text-amber-600 mt-0.5">
+              Showing {customers.length} of {totalCount} — use filters or export to see all
             </p>
           )}
         </div>
 
         {loading ? (
-          <div className="p-12 text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="p-8 text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#552627]"></div>
           </div>
         ) : customers.length === 0 ? (
-          <div className="p-12 text-center text-gray-500">No customers found</div>
+          <div className="p-8 text-center text-sm text-gray-500">No customers found</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Points</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tier</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account No.</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Segments</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Orders</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Spent</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Health</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Churn Risk</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase">Customer</th>
+                  <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase">Joined</th>
+                  <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase">Points</th>
+                  <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase">Tier</th>
+                  <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase">Acct No.</th>
+                  <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase">Segments</th>
+                  <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase">Orders</th>
+                  <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase">Spent</th>
+                  <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase">Health</th>
+                  <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase">Churn</th>
+                  <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase"></th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-100">
                 {customers.map((customer) => (
                   <tr key={customer.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">
+                    <td className="px-4 py-2.5">
+                      <div className="text-xs font-medium text-gray-900">
                         {customer.full_name || 'No Name'}
                       </div>
-                      <div className="text-sm text-gray-500">{customer.email}</div>
+                      <div className="text-[11px] text-gray-400">{customer.email}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-4 py-2.5 whitespace-nowrap text-[11px] text-gray-500">
                       {customer.created_at
-                        ? new Date(customer.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })
-                        : '—'}
+                        ? new Date(customer.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: '2-digit' })
+                        : '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                    <td className="px-4 py-2.5 whitespace-nowrap text-xs text-gray-900 font-medium">
                       {(customer.total_points ?? 0).toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
                         getTier(customer.total_points) === 'Wingzard'
                           ? 'bg-purple-100 text-purple-800'
                           : getTier(customer.total_points) === 'Wing Leader'
                           ? 'bg-blue-100 text-blue-800'
-                          : 'bg-gray-100 text-gray-700'
+                          : 'bg-gray-100 text-gray-600'
                       }`}>
                         {getTier(customer.total_points)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">
-                      {customer.bank_account || <span className="text-gray-400 text-xs">—</span>}
+                    <td className="px-4 py-2.5 whitespace-nowrap text-[11px] font-mono text-gray-600">
+                      {customer.bank_account || <span className="text-gray-300">-</span>}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {customer.segments.slice(0, 2).map((segment) => (
+                    <td className="px-4 py-2.5">
+                      <div className="flex flex-wrap gap-0.5">
+                        {customer.segments.slice(0, 3).map((segment) => (
                           <span
                             key={segment}
-                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${SEGMENT_COLORS[segment] || 'bg-gray-100 text-gray-800'}`}
+                            className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium ${SEGMENT_COLORS[segment] || 'bg-gray-100 text-gray-800'}`}
                           >
-                            {getSegmentIcon(segment)} {segment.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                            {formatSegmentName(segment)}
                           </span>
                         ))}
-                        {customer.segments.length > 2 && (
-                          <span className="text-xs text-gray-500">+{customer.segments.length - 2} more</span>
+                        {customer.segments.length > 3 && (
+                          <span className="text-[10px] text-gray-400">+{customer.segments.length - 3}</span>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 py-2.5 whitespace-nowrap text-xs text-gray-900">
                       {customer.total_orders}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 py-2.5 whitespace-nowrap text-xs text-gray-900">
                       {formatCurrency(customer.total_spent)}
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getHealthColor(customer.health_score)}`}>
+                    <td className="px-4 py-2.5">
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getHealthColor(customer.health_score)}`}>
                         {customer.health_score}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getChurnRiskColor(customer.churn_risk)}`}>
-                        {/* Fix 5: Round churn risk to avoid float display (e.g. 15.000000002%) */}
+                    <td className="px-4 py-2.5">
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getChurnRiskColor(customer.churn_risk)}`}>
                         {Math.round(customer.churn_risk)}%
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="px-4 py-2.5 whitespace-nowrap">
                       <button
                         onClick={() => fetchCustomerTimeline(customer.id)}
-                        className="text-blue-600 hover:text-blue-900 font-medium"
+                        className="text-[11px] text-blue-600 hover:text-blue-800 font-medium"
                       >
-                        View Timeline
+                        Timeline
                       </button>
                     </td>
                   </tr>
@@ -631,14 +766,13 @@ export default function CRManalyticsPage() {
 
       {/* Timeline Modal */}
       {selectedCustomer && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            {/* Header */}
-            <div className="p-6 border-b border-gray-200">
+            <div className="p-5 border-b border-gray-200">
               <div className="flex justify-between items-start">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{selectedCustomer.full_name || 'Customer'}</h2>
-                  <p className="text-gray-600">{selectedCustomer.email}</p>
+                  <h2 className="text-xl font-bold text-gray-900">{selectedCustomer.full_name || 'Customer'}</h2>
+                  <p className="text-sm text-gray-500">{selectedCustomer.email}</p>
                 </div>
                 <button
                   onClick={() => {
@@ -646,47 +780,45 @@ export default function CRManalyticsPage() {
                     setTimeline([]);
                     setCustomerStats(null);
                   }}
-                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                  className="text-gray-400 hover:text-gray-600 text-xl leading-none"
                 >
-                  ×
+                  x
                 </button>
               </div>
 
-              {/* Stats */}
               {customerStats && (
-                <div className="grid grid-cols-4 gap-4 mt-4">
-                  <div className="bg-blue-50 p-3 rounded">
-                    <p className="text-xs text-blue-600">Total Orders</p>
-                    <p className="text-xl font-bold text-blue-900">{customerStats.total_orders}</p>
+                <div className="grid grid-cols-4 gap-3 mt-4">
+                  <div className="bg-blue-50 p-2.5 rounded">
+                    <p className="text-[10px] text-blue-600 font-medium">Total Orders</p>
+                    <p className="text-lg font-bold text-blue-900">{customerStats.total_orders}</p>
                   </div>
-                  <div className="bg-green-50 p-3 rounded">
-                    <p className="text-xs text-green-600">Lifetime Value</p>
-                    <p className="text-xl font-bold text-green-900">{formatCurrency(customerStats.lifetime_value)}</p>
+                  <div className="bg-green-50 p-2.5 rounded">
+                    <p className="text-[10px] text-green-600 font-medium">Lifetime Value</p>
+                    <p className="text-lg font-bold text-green-900">{formatCurrency(customerStats.lifetime_value)}</p>
                   </div>
-                  <div className="bg-purple-50 p-3 rounded">
-                    <p className="text-xs text-purple-600">Referrals</p>
-                    <p className="text-xl font-bold text-purple-900">{customerStats.total_referrals}</p>
+                  <div className="bg-purple-50 p-2.5 rounded">
+                    <p className="text-[10px] text-purple-600 font-medium">Referrals</p>
+                    <p className="text-lg font-bold text-purple-900">{customerStats.total_referrals}</p>
                   </div>
-                  <div className="bg-orange-50 p-3 rounded">
-                    <p className="text-xs text-orange-600">Days Since Last Order</p>
-                    <p className="text-xl font-bold text-orange-900">{customerStats.days_since_last_order || 'N/A'}</p>
+                  <div className="bg-orange-50 p-2.5 rounded">
+                    <p className="text-[10px] text-orange-600 font-medium">Days Since Last Order</p>
+                    <p className="text-lg font-bold text-orange-900">{customerStats.days_since_last_order || 'N/A'}</p>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Timeline */}
-            <div className="flex-1 overflow-y-auto p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Customer Journey</h3>
+            <div className="flex-1 overflow-y-auto p-5">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Customer Journey</h3>
 
               {timeline.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">No activity yet</div>
+                <div className="text-center py-6 text-sm text-gray-500">No activity yet</div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {timeline.map((event, index) => (
-                    <div key={index} className="flex gap-4">
+                    <div key={index} className="flex gap-3">
                       <div className="flex flex-col items-center">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl ${
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
                           event.color === 'green' ? 'bg-green-100' :
                           event.color === 'red' ? 'bg-red-100' :
                           event.color === 'blue' ? 'bg-blue-100' :
@@ -698,28 +830,28 @@ export default function CRManalyticsPage() {
                           {event.icon}
                         </div>
                         {index < timeline.length - 1 && (
-                          <div className="w-0.5 h-full bg-gray-200 mt-2"></div>
+                          <div className="w-0.5 h-full bg-gray-200 mt-1"></div>
                         )}
                       </div>
-                      <div className="flex-1 pb-6">
-                        <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex-1 pb-4">
+                        <div className="bg-gray-50 rounded-lg p-3">
                           <div className="flex justify-between items-start">
                             <div>
-                              <p className="font-semibold text-gray-900">{event.title}</p>
-                              <p className="text-sm text-gray-600 mt-1">{event.description}</p>
+                              <p className="text-sm font-medium text-gray-900">{event.title}</p>
+                              <p className="text-xs text-gray-500 mt-0.5">{event.description}</p>
                               {event.link && (
                                 <a
                                   href={event.link}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-xs text-blue-600 hover:underline mt-1 inline-block"
+                                  className="text-[10px] text-blue-600 hover:underline mt-0.5 inline-block"
                                 >
-                                  View →
+                                  View details
                                 </a>
                               )}
                             </div>
-                            <p className="text-xs text-gray-500">
-                              {new Date(event.date).toLocaleDateString()} at {new Date(event.date).toLocaleTimeString()}
+                            <p className="text-[10px] text-gray-400 whitespace-nowrap ml-2">
+                              {new Date(event.date).toLocaleDateString()} {new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </div>
                         </div>

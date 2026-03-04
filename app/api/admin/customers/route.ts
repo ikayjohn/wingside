@@ -42,8 +42,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
 
-    const role = searchParams.get('role')
     const search = (searchParams.get('search') || '').trim()
+    const tier = searchParams.get('tier') || 'all'
 
     const page = Math.max(1, Number(searchParams.get('page') || '1') || 1)
     const pageSize = Math.min(100, Math.max(5, Number(searchParams.get('pageSize') || '25') || 25))
@@ -53,13 +53,21 @@ export async function GET(request: NextRequest) {
     const from = (page - 1) * pageSize
     const to = from + pageSize - 1
 
+    // Only show customers — exclude all staff roles
     let profilesQuery = admin
       .from('profiles')
-      .select('id,email,full_name,phone,role,created_at,updated_at,zoho_contact_id,embedly_customer_id,embedly_wallet_id,wallet_balance', { count: 'exact' })
-      .neq('role', 'admin')
+      .select('id,email,full_name,phone,role,created_at,updated_at,zoho_contact_id,embedly_customer_id,embedly_wallet_id,wallet_balance,total_points', { count: 'exact' })
+      .eq('role', 'customer')
 
-    if (role && role !== 'all') {
-      profilesQuery = profilesQuery.eq('role', role)
+    // Filter by Wing Club tier based on total_points thresholds
+    if (tier === 'wingzard') {
+      profilesQuery = profilesQuery.gte('total_points', 20000)
+    } else if (tier === 'wing_leader') {
+      profilesQuery = profilesQuery.gte('total_points', 5001).lt('total_points', 20000)
+    } else if (tier === 'wing_member') {
+      profilesQuery = profilesQuery.gt('total_points', 0).lte('total_points', 5000)
+    } else if (tier === 'no_tier') {
+      profilesQuery = profilesQuery.or('total_points.is.null,total_points.eq.0')
     }
 
     if (search) {

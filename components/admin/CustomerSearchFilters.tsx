@@ -27,7 +27,6 @@ interface Tag {
 interface Props {
   onFilterChange: (filters: FilterState) => void;
   availableTags: Tag[];
-  // Fix 10: When this value increments, the segments selection is cleared
   resetSegmentsTrigger?: number;
 }
 
@@ -54,7 +53,6 @@ export default function CustomerSearchFilters({ onFilterChange, availableTags, r
     return () => clearTimeout(timer);
   }, [filters, onFilterChange]);
 
-  // Fix 10: Clear sidebar segments when a segment card is clicked on the parent page
   useEffect(() => {
     if (resetSegmentsTrigger) {
       setFilters(prev => ({ ...prev, segments: [] }));
@@ -70,16 +68,23 @@ export default function CustomerSearchFilters({ onFilterChange, availableTags, r
   };
 
   const segmentOptions = [
-    { id: 'vip', name: 'VIP Customer', icon: '👑' },
-    { id: 'regular', name: 'Regular Customer', icon: '⭐' },
-    { id: 'new', name: 'New Customer', icon: '🆕' },
-    { id: 'at-risk', name: 'At Risk', icon: '⚠️' },
-    { id: 'churned', name: 'Churned', icon: '❌' },
-    { id: 'corporate', name: 'Corporate', icon: '🏢' },
-    { id: 'weekend-warrior', name: 'Weekend Warrior', icon: '🎉' },
-    { id: 'big-spender', name: 'Big Spender', icon: '💰' },
-    { id: 'one-time', name: 'One-Time Customer', icon: '🔸' },
-    { id: 'emerging', name: 'Emerging', icon: '📈' }
+    { id: 'vip', name: 'VIP Customer' },
+    { id: 'regular', name: 'Regular Customer' },
+    { id: 'new', name: 'New Customer' },
+    { id: 'at-risk', name: 'At Risk' },
+    { id: 'churned', name: 'Churned' },
+    { id: 'corporate', name: 'Corporate' },
+    { id: 'weekend-warrior', name: 'Weekend Warrior' },
+    { id: 'big-spender', name: 'Big Spender' },
+    { id: 'one-time', name: 'One-Time Customer' },
+    { id: 'emerging', name: 'Emerging' },
+    { id: 'loyal', name: 'Loyal Customer' },
+    { id: 'frequent', name: 'Frequent Customer' },
+    { id: 'high-ltv', name: 'High Lifetime Value' },
+    { id: 'morning-orderer', name: 'Morning Orderer' },
+    { id: 'afternoon-orderer', name: 'Afternoon Orderer' },
+    { id: 'evening-orderer', name: 'Evening Orderer' },
+    { id: 'weekday-orderer', name: 'Weekday Orderer' }
   ];
 
   const sortOptions = [
@@ -91,41 +96,40 @@ export default function CustomerSearchFilters({ onFilterChange, availableTags, r
     { value: 'full_name', label: 'Name' }
   ];
 
+  const labelClass = "block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5";
+  const inputClass = "w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F7C400] focus:border-[#F7C400]";
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md space-y-6 sticky top-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-[#552627]">Filters</h2>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-4 sticky top-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-bold text-[#552627]">Filters</h2>
         <button
           onClick={resetFilters}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-[#552627] hover:bg-gray-100 rounded-lg transition-colors"
+          className="flex items-center gap-1 px-2 py-1 text-[11px] text-gray-500 hover:text-[#552627] hover:bg-gray-50 rounded transition-colors"
         >
-          <RotateCcw size={16} />
+          <RotateCcw size={12} />
           Reset
         </button>
       </div>
 
-      {/* Search Input */}
+      {/* Search */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Search Customers
-        </label>
+        <label className={labelClass}>Search</label>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
           <input
             type="text"
-            placeholder="Name, email, or phone..."
+            placeholder="Name, email, phone..."
             value={filters.search}
             onChange={(e) => updateFilter('search', e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
+            className={`${inputClass} pl-7`}
           />
         </div>
       </div>
 
-      {/* Segment Filter */}
+      {/* Segments */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Customer Segments
-        </label>
+        <label className={labelClass}>Segments</label>
         <MultiSelect
           options={segmentOptions}
           selected={filters.segments}
@@ -134,11 +138,9 @@ export default function CustomerSearchFilters({ onFilterChange, availableTags, r
         />
       </div>
 
-      {/* Health Score Range */}
+      {/* Health Score */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Health Score
-        </label>
+        <label className={labelClass}>Health Score</label>
         <RangeSlider
           min={0}
           max={100}
@@ -147,11 +149,9 @@ export default function CustomerSearchFilters({ onFilterChange, availableTags, r
         />
       </div>
 
-      {/* Churn Risk Range */}
+      {/* Churn Risk */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Churn Risk
-        </label>
+        <label className={labelClass}>Churn Risk</label>
         <RangeSlider
           min={0}
           max={100}
@@ -161,11 +161,9 @@ export default function CustomerSearchFilters({ onFilterChange, availableTags, r
         />
       </div>
 
-      {/* Order Count Range */}
+      {/* Order Count */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Order Count
-        </label>
+        <label className={labelClass}>Order Count</label>
         <RangeSlider
           min={0}
           max={100}
@@ -176,16 +174,14 @@ export default function CustomerSearchFilters({ onFilterChange, availableTags, r
           ]}
           onChange={(value) => updateFilter('orderCount', value)}
         />
-        <div className="text-xs text-gray-500 mt-1">
+        <div className="text-[10px] text-gray-400 mt-0.5">
           {filters.orderCount[1] >= 100 ? '100+' : `Up to ${filters.orderCount[1]}`} orders
         </div>
       </div>
 
-      {/* Total Spent Range */}
+      {/* Total Spent */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Total Spent
-        </label>
+        <label className={labelClass}>Total Spent</label>
         <RangeSlider
           min={0}
           max={500000}
@@ -197,17 +193,15 @@ export default function CustomerSearchFilters({ onFilterChange, availableTags, r
           onChange={(value) => updateFilter('totalSpent', value)}
           formatValue={(v) => `₦${(v / 1000).toFixed(0)}k`}
         />
-        <div className="text-xs text-gray-500 mt-1">
+        <div className="text-[10px] text-gray-400 mt-0.5">
           {filters.totalSpent[1] >= 500000 ? '₦500k+' : `Up to ₦${(filters.totalSpent[1] / 1000).toFixed(0)}k`}
         </div>
       </div>
 
-      {/* Last Order Date Range */}
+      {/* Last Order Date */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Last Order Date
-        </label>
-        <div className="space-y-2">
+        <label className={labelClass}>Last Order Date</label>
+        <div className="space-y-1.5">
           <input
             type="date"
             value={filters.lastOrderDate.start}
@@ -215,7 +209,7 @@ export default function CustomerSearchFilters({ onFilterChange, availableTags, r
               ...filters.lastOrderDate,
               start: e.target.value
             })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
+            className={inputClass}
           />
           <input
             type="date"
@@ -224,17 +218,15 @@ export default function CustomerSearchFilters({ onFilterChange, availableTags, r
               ...filters.lastOrderDate,
               end: e.target.value
             })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
+            className={inputClass}
           />
         </div>
       </div>
 
-      {/* Tags Filter */}
+      {/* Tags */}
       {availableTags.length > 0 && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Customer Tags
-          </label>
+          <label className={labelClass}>Tags</label>
           <MultiSelect
             options={availableTags.map(tag => ({ id: tag.id, name: tag.name }))}
             selected={filters.tags}
@@ -244,15 +236,13 @@ export default function CustomerSearchFilters({ onFilterChange, availableTags, r
         </div>
       )}
 
-      {/* Sort Options */}
+      {/* Sort */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Sort By
-        </label>
+        <label className={labelClass}>Sort By</label>
         <select
           value={filters.sortBy}
           onChange={(e) => updateFilter('sortBy', e.target.value)}
-          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent mb-2"
+          className={`${inputClass} mb-1.5`}
         >
           {sortOptions.map(opt => (
             <option key={opt.value} value={opt.value}>
@@ -263,7 +253,7 @@ export default function CustomerSearchFilters({ onFilterChange, availableTags, r
         <select
           value={filters.sortOrder}
           onChange={(e) => updateFilter('sortOrder', e.target.value as 'asc' | 'desc')}
-          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7C400] focus:border-transparent"
+          className={inputClass}
         >
           <option value="desc">Descending</option>
           <option value="asc">Ascending</option>
