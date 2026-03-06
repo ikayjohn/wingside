@@ -109,18 +109,19 @@ export async function GET(
       .order('created_at', { ascending: false })
       .limit(5);
 
-    // Get order statistics
+    // Get order statistics (only paid orders)
     const { count: totalOrders } = await admin
       .from('orders')
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', id);
+      .eq('user_id', id)
+      .eq('payment_status', 'paid');
 
-    // Calculate total spent (include all orders except cancelled)
+    // Calculate total spent (only paid orders)
     const { data: orderTotals } = await admin
       .from('orders')
-      .select('total, status')
+      .select('total, payment_status')
       .eq('user_id', id)
-      .neq('status', 'cancelled');
+      .eq('payment_status', 'paid');
 
     const totalSpent = orderTotals?.reduce((sum, order) => sum + (order.total || 0), 0) || 0;
 

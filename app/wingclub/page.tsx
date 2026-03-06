@@ -190,7 +190,6 @@ export default function WingclubPage() {
                     </svg>
                   </div>
                   <ul className="space-y-2 mb-16 text-base text-black">
-                    <li>• 10% off first order</li>
                     <li>• 1 point for every ₦100 spent</li>
                     <li>• ₦3000 off your 10th purchase</li>
                     <li>• Redeem points at ₦10 per point</li>

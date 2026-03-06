@@ -110,8 +110,9 @@ export async function GET(request: NextRequest) {
     if (userIds.length > 0) {
       const { data: orders, error: ordersError } = await admin
         .from('orders')
-        .select('user_id,total,created_at,status')
+        .select('user_id,total,created_at,payment_status')
         .in('user_id', userIds)
+        .eq('payment_status', 'paid')
         .order('created_at', { ascending: false })
 
       if (ordersError) {
@@ -122,20 +123,14 @@ export async function GET(request: NextRequest) {
           const agg = byUser[order.user_id]
           if (!agg) continue
           agg.total_orders += 1
+          agg.total_spent += Number(order.total || 0)
 
-          // Only add to total_spent if not cancelled
-          if (order.status !== 'cancelled') {
-            agg.total_spent += Number(order.total || 0)
+          if (!agg.last_order_date) {
+            agg.last_order_date = order.created_at
           }
 
-          // Track last visit date (most recent order of any status)
           if (!agg.last_visit_date) {
             agg.last_visit_date = order.created_at
-          }
-
-          // Track last order date (most recent non-cancelled order)
-          if (order.status !== 'cancelled' && !agg.last_order_date) {
-            agg.last_order_date = order.created_at
           }
         }
       }
